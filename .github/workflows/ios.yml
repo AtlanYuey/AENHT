@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build unsigned IPA
+    name: Build IPA
     runs-on: macos-26
     timeout-minutes: 60
     permissions:
@@ -81,6 +81,85 @@ jobs:
           grep -E "error:|e: " -A3 build.log | head -200 || true
           tail -80 build.log
 
+      # Signs the app when the signing secrets are set (see docs/ios-signing.md);
+      # without them the IPA stays unsigned for sideloading tools.
+      - name: Sign
+        id: sign
+        working-directory: iosApp
+        env:
+          P12_BASE64: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISION_BASE64 }}
+        run: |
+          if [ -z "$P12_BASE64" ] || [ -z "$PROFILE_BASE64" ]; then
+            echo "No signing secrets: the IPA is unsigned."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set -e
+          APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          WORK="$RUNNER_TEMP/signing"; mkdir -p "$WORK"
+          echo "$P12_BASE64" | base64 --decode > "$WORK/cert.p12"
+          echo "$PROFILE_BASE64" | base64 --decode > "$WORK/profile.mobileprovision"
+
+          # Temporary keychain with the certificate.
+          KEYCHAIN="$WORK/signing.keychain-db"
+          security create-keychain -p temp "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p temp "$KEYCHAIN"
+          security import "$WORK/cert.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -s -k temp "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -oE '"[^"]+"' | head -1 | tr -d '"')
+          if [ -z "$IDENTITY" ]; then echo "::error::The certificate has no valid code-signing identity (wrong password, expired or revoked?)"; security find-identity -p codesigning "$KEYCHAIN"; exit 1; fi
+
+          # What the profile allows.
+          security cms -D -i "$WORK/profile.mobileprovision" > "$WORK/profile.plist"
+          PB=/usr/libexec/PlistBuddy
+          TEAM=$($PB -c "Print :TeamIdentifier:0" "$WORK/profile.plist")
+          APPID=$($PB -c "Print :Entitlements:application-identifier" "$WORK/profile.plist")
+          PROFILE_ID="${APPID#${TEAM}.}"
+          EXPIRES=$($PB -c "Print :ExpirationDate" "$WORK/profile.plist")
+          NAME=$($PB -c "Print :Name" "$WORK/profile.plist")
+          DEVICES=$($PB -c "Print :ProvisionedDevices" "$WORK/profile.plist" 2>/dev/null | grep -c '^ ' || true)
+          echo "Identity:  $IDENTITY"
+          echo "Profile:   $NAME (team $TEAM, app id $PROFILE_ID, expires $EXPIRES, devices ${DEVICES:-all})"
+          echo "### iOS signing" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Certificate: $IDENTITY" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Profile: $NAME, team $TEAM, app id \`$PROFILE_ID\`, expires $EXPIRES" >> "$GITHUB_STEP_SUMMARY"
+
+          # A profile for one app id signs that bundle id; a wildcard keeps ours.
+          BUNDLE_ID=$($PB -c "Print :CFBundleIdentifier" "$APP/Info.plist")
+          if [ "$PROFILE_ID" != "*" ] && [[ "$PROFILE_ID" != *"*" ]]; then
+            BUNDLE_ID="$PROFILE_ID"
+            $PB -c "Set :CFBundleIdentifier $BUNDLE_ID" "$APP/Info.plist"
+          fi
+          echo "Bundle id: $BUNDLE_ID"
+
+          # Entitlements from the profile, with wildcards made concrete.
+          $PB -x -c "Print :Entitlements" "$WORK/profile.plist" > "$WORK/entitlements.plist"
+          $PB -c "Set :application-identifier $TEAM.$BUNDLE_ID" "$WORK/entitlements.plist"
+          if $PB -c "Print :com.apple.developer.ubiquity-kvstore-identifier" "$WORK/entitlements.plist" >/dev/null 2>&1; then
+            $PB -c "Set :com.apple.developer.ubiquity-kvstore-identifier $TEAM.$BUNDLE_ID" "$WORK/entitlements.plist"
+          fi
+          $PB -c "Delete :com.apple.developer.icloud-container-identifiers" "$WORK/entitlements.plist" 2>/dev/null || true
+          $PB -c "Delete :com.apple.developer.icloud-services" "$WORK/entitlements.plist" 2>/dev/null || true
+
+          cp "$WORK/profile.mobileprovision" "$APP/embedded.mobileprovision"
+          if [ -d "$APP/Frameworks" ]; then
+            find "$APP/Frameworks" \( -name "*.framework" -o -name "*.dylib" \) -maxdepth 1 -print0 | \
+              xargs -0 -I{} codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN" --timestamp=none "{}"
+          fi
+          codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN" --entitlements "$WORK/entitlements.plist" --timestamp=none "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -d --entitlements - "$APP" 2>/dev/null | head -40 || true
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+          echo "- Signed bundle id: \`$BUNDLE_ID\` ✅" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing/signing.keychain-db" 2>/dev/null || true
+
       - name: Package IPA
         working-directory: iosApp
         run: |
@@ -89,8 +168,9 @@ jobs:
           BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$APP/Info.plist")
           rm -rf build/ipa && mkdir -p build/ipa/Payload
           cp -R "$APP" build/ipa/Payload/
-          (cd build/ipa && zip -qry "../AENHT_${VERSION}_${BUILD}.ipa" Payload)
-          cp "build/AENHT_${VERSION}_${BUILD}.ipa" build/AENHT.ipa
+          SUFFIX=$([ "${{ steps.sign.outputs.signed }}" = "true" ] && echo "" || echo "_unsigned")
+          (cd build/ipa && zip -qry "../AENHT_${VERSION}_${BUILD}${SUFFIX}.ipa" Payload)
+          cp "build/AENHT_${VERSION}_${BUILD}${SUFFIX}.ipa" build/AENHT.ipa
           ls -lh build/*.ipa
 
       - name: Upload IPA
@@ -107,7 +187,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="Newest development build from the dev branch (iOS, commit ${GITHUB_SHA::7}). Experimental: not a release."
+          NOTES="Newest development build from the dev branch (commit ${GITHUB_SHA::7}). Experimental: not a release."
           gh release view dev-latest >/dev/null 2>&1 || \
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
           for i in 1 2 3; do gh release upload dev-latest iosApp/build/AENHT.ipa --clobber && break; sleep 10; done

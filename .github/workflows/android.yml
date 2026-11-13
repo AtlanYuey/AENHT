@@ -69,7 +69,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="Newest development build from the dev branch (Android, commit ${GITHUB_SHA::7}). Experimental: not a release."
+          NOTES="Newest development build from the dev branch (commit ${GITHUB_SHA::7}). Experimental: not a release."
           gh release view dev-latest >/dev/null 2>&1 || \
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
           for i in 1 2 3; do gh release upload dev-latest dist/AENHT-debug.apk --clobber && break; sleep 10; done
