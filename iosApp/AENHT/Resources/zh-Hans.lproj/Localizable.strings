@@ -1,0 +1,258 @@
+/* Tabs and titles */
+"Home" = "主页";
+"Favorites" = "收藏";
+"History" = "历史";
+"More" = "更多";
+"Search" = "搜索";
+"Comments" = "评论";
+"Pages" = "页面";
+"Appearance" = "外观";
+"Reading" = "阅读";
+"General" = "通用";
+"About" = "关于";
+"Card Size" = "卡片大小";
+"Reader Settings" = "阅读设置";
+"Log In" = "登录";
+"Log Out" = "退出登录";
+
+/* Home / lists */
+"Popular Now" = "当前热门";
+"More Like This" = "相似作品";
+"Language" = "语言";
+"Sort" = "排序";
+"Recent" = "最新";
+"Popular Today" = "今日热门";
+"Popular This Week" = "本周热门";
+"Popular This Month" = "本月热门";
+"All-Time Popular" = "历史热门";
+"All Languages" = "全部语言";
+"Japanese" = "日语";
+"Chinese" = "中文";
+"English" = "英语";
+"Translated" = "翻译";
+"No Galleries" = "没有作品";
+"Couldn't Load" = "加载失败";
+"Try Again" = "重试";
+"Retry" = "重试";
+"Share" = "分享";
+"Copy Link" = "复制链接";
+"%lld pages" = "%lld 页";
+"%lld results" = "%lld 个结果";
+"No Results" = "没有结果";
+
+/* Gallery */
+"Read" = "阅读";
+"Resume · %lld" = "继续 · 第 %lld 页";
+"From Start" = "从头开始";
+"Favorite" = "收藏";
+"Unfavorite" = "取消收藏";
+"Uploaded" = "上传";
+"ID" = "编号";
+"See All" = "全部";
+"See All (%lld)" = "全部（%lld）";
+"Write" = "写评论";
+"No comments yet" = "还没有评论";
+"No Comments" = "没有评论";
+"Add a comment…" = "写评论…";
+"Couldn't Post" = "发表失败";
+"OK" = "好";
+"Anonymous" = "匿名";
+"Parodies" = "原作";
+"Characters" = "角色";
+"Tags" = "标签";
+"Artists" = "作者";
+"Groups" = "团体";
+"Languages" = "语言";
+"Categories" = "分类";
+
+/* Reader */
+"Close" = "关闭";
+"Options" = "选项";
+"Reading Direction" = "阅读方向";
+"Left to Right" = "从左到右";
+"Right to Left" = "从右到左";
+"Top to Bottom" = "上下翻页";
+"Continuous (Webtoon)" = "上下连续（条漫）";
+"Auto Read" = "自动翻页";
+"Stop Auto Read" = "停止自动翻页";
+"Auto Read Interval" = "自动翻页间隔";
+"Preload Pages" = "预加载页数";
+"Tap Edges to Turn Pages" = "点按两侧翻页";
+"Keep Screen On" = "保持屏幕常亮";
+"Pages ahead of the current one are downloaded in advance." = "提前下载当前页之后的页面。";
+"Done" = "完成";
+" s" = " 秒";
+
+/* Search */
+"Titles, tags, artists, IDs" = "标题、标签、作者或编号";
+"Search nhentai" = "搜索 nhentai";
+"Search by title or use tags like artist:name, or enter a gallery number." = "按标题搜索，也可以使用 artist:名字 这样的标签，或直接输入作品编号。";
+"Recent Searches" = "最近搜索";
+"Clear" = "清除";
+
+/* Favorites */
+"Log in to your nhentai account to see your favorites." = "登录 nhentai 账号后即可查看收藏。";
+"No Favorites" = "没有收藏";
+"Please log in first" = "请先登录";
+
+/* History */
+"Search History" = "搜索历史记录";
+"No History" = "没有历史记录";
+"Galleries you open appear here." = "打开过的作品会显示在这里。";
+"Clear all history?" = "清除全部历史记录？";
+"Clear History" = "清除历史记录";
+"Today" = "今天";
+"Yesterday" = "昨天";
+"Page %lld of %lld · %@" = "第 %1$lld / %2$lld 页 · %3$@";
+
+/* More / settings */
+"Logged In" = "已登录";
+"nhentai account" = "nhentai 账号";
+"Sync favorites and post comments" = "同步收藏、发表评论";
+"Log out of nhentai?" = "退出 nhentai 登录？";
+"Theme" = "主题";
+"System" = "跟随系统";
+"Light" = "浅色";
+"Dark" = "深色";
+"Gallery List" = "作品列表";
+"List Style" = "列表样式";
+"Waterfall" = "瀑布流";
+"Grid" = "网格";
+"Waterfall (Compact)" = "瀑布流（紧凑）";
+"List" = "列表";
+"Blur Covers" = "模糊封面";
+"Card size applies to the grid and waterfall styles." = "卡片大小用于网格和瀑布流样式。";
+"Portrait" = "竖屏";
+"Landscape · follows split view" = "横屏 · 分栏随分割条";
+"Small" = "小";
+"Smaller" = "较小";
+"Standard" = "标准";
+"Larger" = "较大";
+"Large" = "大";
+"columns" = "列";
+"Columns are calculated from the width of the pane: rotating, Split View and Stage Manager add or remove columns automatically. “Standard” matches the automatic column count." = "列数按这一栏的实际宽度计算：旋转屏幕、分屏浏览和台前调度都会自动增减。「标准」与原来的自动列数相同。";
+"Detect Gallery Links" = "识别剪贴板链接";
+"When you return to the app, offer to open an nhentai link found on the clipboard. iOS asks for permission to paste." = "回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。iOS 会询问是否允许粘贴。";
+"Storage" = "存储空间";
+"Image Cache" = "图片缓存";
+"Clear Image Cache" = "清除图片缓存";
+"Clear the image cache?" = "清除图片缓存？";
+"Source Code" = "源代码";
+"Website" = "网站";
+"Acknowledgements" = "致谢";
+"Version %@" = "版本 %@";
+"Cancel" = "取消";
+
+/* Clipboard */
+"Open Gallery?" = "打开作品？";
+"The clipboard contains a link to gallery #%lld." = "剪贴板里有作品 #%lld 的链接。";
+"Open" = "打开";
+
+/* Errors */
+"Request failed (%lld)" = "请求失败（%lld）";
+"Unexpected response from the server" = "服务器返回了无法识别的内容";
+
+/* Downloads / account / tags */
+"Downloads" = "下载";
+"Download" = "下载";
+"Downloaded" = "已下载";
+"Pause Download" = "暂停下载";
+"Resume Download" = "继续下载";
+"Delete the downloaded pages?" = "删除已下载的页面？";
+"Delete Download" = "删除下载";
+"No Downloads" = "没有下载";
+"Download a gallery from its page to read it offline." = "在作品页点下载按钮，即可离线阅读。";
+"Open Gallery Page" = "打开作品页";
+"Delete" = "删除";
+"Pause" = "暂停";
+"Resume" = "继续";
+"Couldn't Update" = "操作失败";
+"Account" = "账号";
+"User ID" = "用户 ID";
+"Profile" = "个人主页";
+"Show Tags on Cards" = "在卡片上显示标签";
+"Translate Tags to Chinese" = "标签翻译为中文";
+"Update Tag Database" = "更新标签数据库";
+"%lld tags, %lld translations (EhTagTranslation). Updated automatically every week." = "%1$lld 个标签，%2$lld 条翻译（EhTagTranslation），每周自动更新。";
+
+/* Reader: gaps and page turns */
+"Continuous with Gaps" = "上下连续（有间距）";
+"Page Gap" = "页面间距";
+"Page Turn Animation" = "翻页动画";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "关闭动画后，页面不再滑动，而是在原处淡入下一页，快速翻页时眼睛更舒适。";
+
+/* iCloud sync */
+"iCloud Sync" = "iCloud 同步";
+"Sync Settings with iCloud" = "通过 iCloud 同步设置";
+"Sync With" = "同步范围";
+"All Devices" = "所有设备";
+"Other iPads Only" = "仅与其他 iPad 同步";
+"Other iPhones Only" = "仅与其他 iPhone 同步";
+"iCloud isn't available to this copy of the app: the certificate it was signed with doesn't include iCloud, so the settings stay on this device. Export and import them below instead." = "这份 App 无法使用 iCloud：签名所用的证书没有 iCloud 权限，设置只会保存在本机。可以用下方的导出和导入代替。";
+"Settings follow your Apple Account to your other devices. Choose whether this iPad shares them with your iPhone, or only with your other iPads." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPad 与 iPhone 共用设置，还是只与其他 iPad 同步。";
+"Settings follow your Apple Account to your other devices. Choose whether this iPhone shares them with your iPad, or only with your other iPhones." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPhone 与 iPad 共用设置，还是只与其他 iPhone 同步。";
+"Last synced: %@" = "上次同步：%@";
+"AENHT Settings" = "AENHT 设置";
+"Export Settings" = "导出设置";
+"Import Settings" = "导入设置";
+"Save the settings as a file, for example in iCloud Drive, and import it on another device." = "把设置存成文件（例如存到 iCloud 云盘），再在其他设备上导入。";
+"The settings were imported." = "设置已导入。";
+
+/* About / licenses */
+"A modified version of eros_n by honjow." = "基于 honjow 的 eros_n 修改而来。";
+"Original Project" = "原项目";
+"Open Source Licenses" = "开源许可";
+"Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "标签翻译来自 EhTagTranslation 数据库，采用 CC BY-NC-SA 3.0 协议（署名、非商业性使用、相同方式共享），在 App 更新标签库时下载。";
+
+/* App language */
+"System Language" = "系统语言";
+"The language can also be chosen for this app in the Settings app." = "也可以在系统「设置」App 中为本 App 单独选择语言。";
+"Restart to Apply" = "重新打开后生效";
+"Close App" = "关闭 App";
+"Later" = "稍后";
+"The new language is used the next time AENHT opens." = "下次打开 AENHT 时会使用新的语言。";
+
+/* iPad tab bar */
+"Tab Bar Position" = "标签栏位置";
+"Automatic" = "自动";
+"Left" = "靠左";
+"Center" = "居中";
+"Right" = "靠右";
+"Automatic moves the tab bar to the side of the screen you touched last." = "选择「自动」时，标签栏会移到你最后触摸的屏幕一侧。";
+
+/* Tags */
+"Show Less" = "收起";
+
+/* Search history */
+"Save Search History" = "保存搜索历史";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "开始搜索时会显示最近的搜索，并随设置通过 iCloud 同步。关闭后不再保存新的搜索，列表也会隐藏。";
+"Gallery #%lld" = "作品 #%lld";
+
+/* Hide bars when scrolling */
+"Hide Bars When Scrolling" = "滚动时隐藏栏";
+"Hide Search Too" = "同时隐藏搜索";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "向下滚动列表时隐藏顶部和底部的栏，向上滚动时重新显示。关闭「同时隐藏搜索」时，会保留一个圆形搜索按钮。";
+
+/* Tab bar follows the hand */
+"Tab Bar Follows Your Hand" = "标签栏跟随手的位置";
+"Follow Speed" = "跟随速度";
+"Fast" = "快";
+"Medium" = "中";
+"Slow" = "慢";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "标签栏会移到你触摸的屏幕一侧：「快」在第一次触摸时移动，「中」在同一侧连续触摸两次后移动，「慢」在四次后移动。";
+
+/* Tab bar hiding, reader controls delay */
+"Hide Tab Bar When Scrolling" = "滚动时隐藏标签栏";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "向下滚动列表时标签栏会滑走，向上滚动时回来。";
+"Hide Controls After" = "控制栏自动隐藏时间";
+"The reader's controls hide on their own after this long without a touch." = "阅读器的控制栏在这段时间内没有触摸就会自动隐藏。";
+
+/* iPhone tab bar minimize */
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "向下滚动列表时标签栏会缩成一个小按钮，向上滚动时恢复。";
+"Me" = "我的";
+"History and Downloads" = "历史和下载";
+"Cards" = "卡片";
+"Landscape" = "横屏";
+"Sync Columns" = "同步列数";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "直接选择卡片的列数。手机默认竖屏 2 列、横屏 4 列，平板默认竖屏 3 列、横屏 5 列。窗口较窄时（如分屏）可能会少显示几列。";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "列数会通过 iCloud 与你的其他设备同步，iPhone 和 iPad 各自保留自己的设置。";
