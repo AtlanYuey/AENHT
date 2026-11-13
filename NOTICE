@@ -1,0 +1,19 @@
+AENHT
+Copyright 2026 AtlanYuey
+
+This product is a modified version of eros_n
+(https://github.com/honjow/eros_n), licensed under the Apache License 2.0,
+by way of AEros-NHT (https://github.com/AtlanYuey/AEros-NHT).
+It is not affiliated with the original authors, nhentai or E-Hentai.
+
+Behaviour of several features was studied from, and re-implemented after:
+- NextE (https://github.com/erosTeam/NextE), MIT License
+- NextN (https://github.com/erosTeam/NextN), MIT License
+No source code of those projects is copied; they are written in ArkTS.
+
+Data:
+- Tag names: nhentai_tags_fetcher (https://github.com/honjow/nhentai_tags_fetcher)
+- Tag translations: EhTagTranslation (https://github.com/EhTagTranslation/Database)
+
+Licenses of the third-party libraries used by the apps are listed in the apps
+under About › Open Source Licenses.
