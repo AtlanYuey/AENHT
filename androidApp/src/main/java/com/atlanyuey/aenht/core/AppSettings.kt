@@ -198,12 +198,12 @@ object AppSettings {
         animatePageTurns = p.getBoolean("animatePageTurns", true)
         pageGap = p.getFloat("pageGap", 6f).toDouble()
         keepScreenOn = p.getBoolean("keepScreenOn", true)
-        detectClipboard = p.getBoolean("detectClipboard", false)
+        detectClipboard = p.getBoolean("detectClipboard", true)
         tabBarPosition = TabBarPosition.of(p.getString("tabBarPosition", null))
         followHand = p.getBoolean("followHand", false)
         followSpeed = FollowSpeed.of(p.getString("followSpeed", null))
         saveSearchHistory = p.getBoolean("saveSearchHistory", true)
-        hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", true)
+        hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", false)
         readerControlsDelay = p.getFloat("readerControlsDelay", 3f).toDouble().coerceIn(3.0, 10.0)
         libraryStyle = LibraryStyle.of(p.getString("libraryStyle", null))
         recentSearches.clear()
@@ -270,14 +270,14 @@ object AppSettings {
     /** Gap between pages in the "Continuous with Gaps" mode, in dp. */
     var pageGap by Pref(6.0) { save("pageGap", it) }
     var keepScreenOn by Pref(true) { save("keepScreenOn", it) }
-    var detectClipboard by Pref(false) { save("detectClipboard", it) }
+    var detectClipboard by Pref(true) { save("detectClipboard", it) }
     var tabBarPosition by Pref(TabBarPosition.Center) { save("tabBarPosition", it.raw) }
     /** Tablets: the tab bar moves to the side of the hand in use. */
     var followHand by Pref(false) { save("followHand", it) }
     var followSpeed by Pref(FollowSpeed.Fast) { save("followSpeed", it.raw) }
     var saveSearchHistory by Pref(true) { save("saveSearchHistory", it) }
     /** Scrolling a list down slides the tab bar away. */
-    var hideBarsOnScroll by Pref(true) { save("hideBarsOnScroll", it) }
+    var hideBarsOnScroll by Pref(false) { save("hideBarsOnScroll", it) }
     /** Seconds without a touch before the reader's controls hide (3 at least). */
     var readerControlsDelay by Pref(3.0) { save("readerControlsDelay", it) }
     var libraryStyle by Pref(LibraryStyle.Cards) { save("libraryStyle", it.raw) }

@@ -251,12 +251,12 @@ final class AppSettings {
         pageGap = d.object(forKey: "pageGap") as? Double ?? 6
         keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
         // Reading the clipboard shows the system paste prompt: opt in.
-        detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false
+        detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? true
         tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .center
         followHand = d.object(forKey: "followHand") as? Bool ?? false
         followSpeed = FollowSpeed(rawValue: d.string(forKey: "followSpeed") ?? "") ?? .fast
         saveSearchHistory = d.object(forKey: "saveSearchHistory") as? Bool ?? true
-        hideBarsOnScroll = d.object(forKey: "hideBarsOnScroll") as? Bool ?? true
+        hideBarsOnScroll = d.object(forKey: "hideBarsOnScroll") as? Bool ?? false
         readerControlsDelay = min(max(d.object(forKey: "readerControlsDelay") as? Double ?? 3, 3), 10)
         libraryStyle = LibraryStyle(rawValue: d.string(forKey: "libraryStyle") ?? "") ?? .cards
         recentSearches = d.stringArray(forKey: "recentSearches") ?? []
