@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
@@ -29,6 +31,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
             implementation(libs.okio)
+            api(libs.room.runtime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -38,12 +41,23 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             api(libs.okhttp)
+            implementation(libs.sqlite.framework)
         }
         jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.sqlite.bundled)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqlite.bundled)
         }
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+    listOf("kspAndroid", "kspJvm", "kspIosArm64", "kspIosSimulatorArm64").forEach { add(it, libs.room.compiler) }
 }

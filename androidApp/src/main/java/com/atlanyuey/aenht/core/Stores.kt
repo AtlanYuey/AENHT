@@ -30,6 +30,13 @@ import com.atlanyuey.aenht.shared.net.int
 import com.atlanyuey.aenht.shared.net.long
 import com.atlanyuey.aenht.shared.net.bool
 import java.io.File
+import com.atlanyuey.aenht.shared.db.HistoryRecord
+import com.atlanyuey.aenht.shared.db.HistoryRepository
+import com.atlanyuey.aenht.shared.db.openDatabase
+import com.atlanyuey.aenht.shared.site.GalleryKey
+import com.atlanyuey.aenht.shared.site.Site
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Coroutine scope for app-wide work (saving files, downloads). */
 val AppScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -57,21 +64,37 @@ data class HistoryEntry(
             thumbnailWidth = thumbWidth, thumbnailHeight = thumbHeight, numPages = numPages,
             tagIds = tagIds,
         )
+
+    companion object {
+        fun from(record: HistoryRecord) = HistoryEntry(
+            gid = record.galleryId.toInt(), mediaId = record.mediaId, title = record.title,
+            thumbnail = record.thumbnail, thumbWidth = record.thumbWidth, thumbHeight = record.thumbHeight,
+            numPages = record.numPages, lastPage = record.lastPage, lastRead = record.readAt,
+            tagIds = record.tagIdList,
+        )
+    }
 }
 
+/**
+ * Reading history, kept in the shared database (both sites; this screen
+ * shows nhentai until E-Hentai arrives). The list is updated at once; the
+ * database is written in order in the background.
+ */
 object HistoryStore {
-    private lateinit var file: File
+    private lateinit var repo: HistoryRepository
     val entries = mutableStateListOf<HistoryEntry>()
-    private var saveJob: Job? = null
+    private val writes = Mutex()
 
     fun init(context: Context) {
-        file = File(context.filesDir, "history.json")
-        val loaded = try {
-            Net.json.decodeFromString(ListSerializer(HistoryEntry.serializer()), file.readText())
-        } catch (_: Exception) {
-            emptyList()
+        repo = HistoryRepository(openDatabase(context))
+        AppScope.launch {
+            val loaded = runCatching { repo.all() }.getOrDefault(emptyList())
+                .filter { it.site == Site.NHENTAI.key }
+                .map { HistoryEntry.from(it) }
+            val known = entries.map { it.gid }.toSet()
+            entries.addAll(loaded.filter { it.gid !in known })
+            entries.sortByDescending { it.lastRead }
         }
-        entries.addAll(loaded.sortedByDescending { it.lastRead })
     }
 
     fun record(item: GalleryItem, title: String, numPages: Int, page: Int? = null) {
@@ -91,7 +114,12 @@ object HistoryStore {
         )
         if (index >= 0) entries.removeAt(index)
         entries.add(0, entry)
-        save()
+        write {
+            repo.record(
+                GalleryKey.nh(entry.gid), entry.title, entry.mediaId, entry.thumbnail,
+                entry.thumbWidth, entry.thumbHeight, entry.numPages, entry.lastPage, entry.tagIds,
+            )
+        }
     }
 
     fun record(detail: GalleryDetail, page: Int? = null) =
@@ -101,24 +129,17 @@ object HistoryStore {
 
     fun delete(gid: Int) {
         entries.removeAll { it.gid == gid }
-        save()
+        write { repo.delete(GalleryKey.nh(gid)) }
     }
 
     fun clear() {
         entries.clear()
-        save()
+        write { repo.clear() }
     }
 
-    private fun save() {
-        saveJob?.cancel()
-        saveJob = AppScope.launch {
-            delay(500)
-            val snapshot = entries.toList()
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    file.writeText(Net.json.encodeToString(ListSerializer(HistoryEntry.serializer()), snapshot))
-                }
-            }
+    private fun write(block: suspend () -> Unit) {
+        AppScope.launch {
+            writes.withLock { runCatching { block() } }
         }
     }
 }
