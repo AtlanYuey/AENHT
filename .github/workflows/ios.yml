@@ -18,7 +18,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v7
 
@@ -90,11 +90,25 @@ jobs:
           rm -rf build/ipa && mkdir -p build/ipa/Payload
           cp -R "$APP" build/ipa/Payload/
           (cd build/ipa && zip -qry "../AENHT_${VERSION}_${BUILD}.ipa" Payload)
+          cp "build/AENHT_${VERSION}_${BUILD}.ipa" build/AENHT.ipa
           ls -lh build/*.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v7
         with:
           name: aenht-ios
-          path: iosApp/build/*.ipa
+          path: iosApp/build/AENHT_*.ipa
           if-no-files-found: error
+
+      # Every push to dev replaces the files of the "dev-latest" pre-release,
+      # so the newest build is a direct download (no zip).
+      - name: Publish to the dev-latest pre-release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Newest development build from the dev branch (iOS, commit ${GITHUB_SHA::7}). Experimental: not a release."
+          gh release view dev-latest >/dev/null 2>&1 || \
+            gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
+          for i in 1 2 3; do gh release upload dev-latest iosApp/build/AENHT.ipa --clobber && break; sleep 10; done
+          gh release edit dev-latest --notes "$NOTES" || true

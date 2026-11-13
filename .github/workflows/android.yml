@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v7
 
@@ -53,13 +53,27 @@ jobs:
           CODE=$(grep -oP 'versionCode = \K[0-9]+' androidApp/build.gradle.kts)
           mkdir -p dist
           cp androidApp/build/outputs/apk/debug/androidApp-debug.apk "dist/AENHT_${VERSION}_${CODE}_debug.apk"
+          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk dist/AENHT-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: aenht-android-debug
-          path: dist/*.apk
+          path: dist/AENHT_*.apk
           if-no-files-found: error
+
+      # Every push to dev replaces the files of the "dev-latest" pre-release,
+      # so the newest build is a direct download (no zip).
+      - name: Publish to the dev-latest pre-release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Newest development build from the dev branch (Android, commit ${GITHUB_SHA::7}). Experimental: not a release."
+          gh release view dev-latest >/dev/null 2>&1 || \
+            gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
+          for i in 1 2 3; do gh release upload dev-latest dist/AENHT-debug.apk --clobber && break; sleep 10; done
+          gh release edit dev-latest --notes "$NOTES" || true
 
       - name: Upload screenshots
         if: always()
