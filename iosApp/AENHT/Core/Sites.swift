@@ -258,7 +258,7 @@ extension GalleryItem {
         category = g.category.map(CategoryInfo.init)
         rating = g.rating
         uploader = g.uploader
-        ehTags = g.tags.filter { $0.namespace != "language" }.map(\.name)
+        ehTags = g.tags.filter { !$0.full.hasPrefix("language:") }.map(\.name)
         // E-Hentai galleries without a language tag are Japanese.
         ehLanguage = g.language ?? (g.category?.label == "Western" ? nil : "japanese")
         favoriteFolder = g.favoriteFolder.map { Int(truncating: $0) }
@@ -316,8 +316,9 @@ final class EhPageDataLoader: DataLoading, @unchecked Sendable {
         return TaskCancellable(task: task)
     }
 
-    private struct TaskCancellable: Cancellable {
+    private final class TaskCancellable: Cancellable, @unchecked Sendable {
         let task: Task<Void, Never>
+        init(task: Task<Void, Never>) { self.task = task }
         func cancel() { task.cancel() }
     }
 }

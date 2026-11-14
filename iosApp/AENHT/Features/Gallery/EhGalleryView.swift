@@ -304,7 +304,7 @@ struct EhGalleryView: View {
                         .foregroundStyle(.secondary)
                     FlowLayout(spacing: 8) {
                         ForEach(Bridge.shared.tags(detail: detail, namespace: namespace), id: \.full) { tag in
-                            let name = tagStore.displayName(tag.name, type: tag.namespace)
+                            let name = tagStore.displayName(tag.name, type: namespace)
                             NavigationLink(value: EhSearchRoute(query: tag.query, title: name)) {
                                 TagChip(name: name)
                             }
