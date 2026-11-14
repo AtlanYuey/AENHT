@@ -20,3 +20,8 @@ fun openDatabase(): AenhtDatabase {
     val path = requireNotNull(dir?.path) { "No Application Support directory" } + "/" + AenhtDatabase.FILE_NAME
     return Room.databaseBuilder<AenhtDatabase>(name = path).buildAenht(BundledSQLiteDriver())
 }
+
+/** For Swift: the app's database, opened once. */
+object IosDatabase {
+    val shared: AenhtDatabase by lazy { openDatabase() }
+}

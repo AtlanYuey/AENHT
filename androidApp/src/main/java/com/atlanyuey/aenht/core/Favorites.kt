@@ -8,14 +8,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.atlanyuey.aenht.shared.db.AenhtDatabase
 import com.atlanyuey.aenht.shared.db.FavoriteRecord
+import com.atlanyuey.aenht.shared.db.FavoritesMirror
 import com.atlanyuey.aenht.shared.db.openDatabase
-import com.atlanyuey.aenht.shared.eh.EhListSource
 import com.atlanyuey.aenht.shared.site.GalleryKey
 import com.atlanyuey.aenht.shared.site.GallerySummary
 import com.atlanyuey.aenht.shared.site.Site
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /** The app's one database (shared module). */
 object AppDb {
@@ -35,7 +33,7 @@ object AppDb {
  * time they were seen.
  */
 object FavoritesStore {
-    private lateinit var db: AenhtDatabase
+    private lateinit var mirror: FavoritesMirror
     val records = mutableStateListOf<FavoriteRecord>()
     var syncing by mutableStateOf<Site?>(null)
         private set
@@ -45,53 +43,35 @@ object FavoritesStore {
     var error by mutableStateOf<String?>(null)
         private set
     private val lastSync = mutableMapOf<Site, Long>()
-    private val lock = Mutex()
 
     fun init(context: Context) {
-        db = AppDb.get(context)
+        mirror = FavoritesMirror(AppDb.get(context), NHClient.api, EhClient.api)
         AppScope.launch { reload() }
     }
 
     private suspend fun reload() {
-        val all = runCatching { db.favorites().observeAllOnce() }.getOrDefault(emptyList())
+        val all = runCatching { mirror.all() }.getOrDefault(emptyList())
         records.clear()
         records.addAll(all)
     }
-
-    private suspend fun com.atlanyuey.aenht.shared.db.FavoriteDao.observeAllOnce(): List<FavoriteRecord> =
-        bySite(Site.NHENTAI.key).plus(bySite(Site.EHENTAI.key)).sortedByDescending { it.favoritedAt }
 
     fun cards(site: Site?, ehFolders: Set<Int>?): List<GallerySummary> = records
         .filter { site == null || it.site == site.key }
         .filter { it.site != Site.EHENTAI.key || ehFolders == null || it.folder in ehFolders }
         .map(GallerySummary::from)
 
-    private fun record(card: GallerySummary, folder: Int, time: Long, exact: Boolean) = FavoriteRecord(
-        key = card.key.storageKey, site = card.site.key, galleryId = card.key.id, token = card.key.token,
-        mediaId = card.mediaId, title = card.title, thumbnail = card.thumbnail,
-        thumbWidth = card.thumbWidth, thumbHeight = card.thumbHeight, numPages = card.pages,
-        folder = folder, source = "account", favoritedAt = time, exactTime = exact,
-        tagIds = card.nhTagIds.joinToString(","),
-    )
-
     /** A gallery was favorited (or moved) in the app: known exactly when. */
     fun added(card: GallerySummary, folder: Int = 0) {
         AppScope.launch {
-            lock.withLock {
-                val previous = db.favorites().get(card.key.storageKey)
-                val rec = record(card, folder, previous?.favoritedAt ?: System.currentTimeMillis(), previous?.exactTime ?: true)
-                db.favorites().upsert(listOf(rec))
-                reload()
-            }
+            runCatching { mirror.added(card, folder) }
+            reload()
         }
     }
 
     fun removed(key: GalleryKey) {
         AppScope.launch {
-            lock.withLock {
-                db.favorites().delete(key.storageKey)
-                reload()
-            }
+            runCatching { mirror.removed(key) }
+            reload()
         }
     }
 
@@ -112,11 +92,13 @@ object FavoritesStore {
                 syncing = site
                 syncedCount = 0
                 try {
-                    val fetched = fetchAll(site)
-                    lock.withLock { merge(site, fetched) }
+                    EhClient.api.useExHentai = AppSettings.useExHentai
+                    mirror.sync(site) { count -> AppScope.launch { syncedCount = count } }
                     lastSync[site] = System.currentTimeMillis()
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
+                } catch (e: com.atlanyuey.aenht.shared.eh.EhException) {
+                    error = EhClient.localized(e)
                 } catch (e: Exception) {
                     error = e.localizedMessage
                 }
@@ -124,50 +106,5 @@ object FavoritesStore {
             syncing = null
             reload()
         }
-    }
-
-    /** All favorites of a site, newest first, with their folder (E-Hentai). */
-    private suspend fun fetchAll(site: Site): List<Pair<GallerySummary, Int>> {
-        val out = mutableListOf<Pair<GallerySummary, Int>>()
-        if (site == Site.NHENTAI) {
-            var page = 1
-            while (true) {
-                val r = NHClient.favorites(page)
-                out += r.result.map { GallerySummary.from(it) to 0 }
-                syncedCount = out.size
-                if (page >= r.numPages || r.result.isEmpty()) break
-                page++
-            }
-        } else {
-            var cursor: String? = null
-            while (true) {
-                val r = EhClient.list(EhListSource.Favorites(null), cursor)
-                out += r.galleries.map { GallerySummary.from(it) to (it.favoriteFolder ?: 0) }
-                syncedCount = out.size
-                cursor = r.nextCursor ?: break
-                if (r.galleries.isEmpty()) break
-            }
-        }
-        return out
-    }
-
-    private suspend fun merge(site: Site, fetched: List<Pair<GallerySummary, Int>>) {
-        val dao = db.favorites()
-        val existing = dao.bySite(site.key).associateBy { it.key }
-        val firstSync = existing.isEmpty()
-        val now = System.currentTimeMillis()
-        val merged = fetched.mapIndexed { index, (card, folder) ->
-            val old = existing[card.key.storageKey]
-            when {
-                old != null -> record(card, folder, old.favoritedAt, old.exactTime)
-                // First sync: the site's order, spread a second apart before now.
-                firstSync -> record(card, folder, now - index * 1000L, exact = false)
-                // Seen for the first time now: favorited since the last sync.
-                else -> record(card, folder, now - index, exact = true)
-            }
-        }
-        dao.upsert(merged)
-        val kept = merged.map { it.key }.toSet()
-        existing.keys.filter { it !in kept }.forEach { dao.delete(it) }
     }
 }
