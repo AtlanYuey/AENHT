@@ -2,10 +2,16 @@ package com.atlanyuey.aenht.core
 
 import android.content.Context
 import com.atlanyuey.aenht.shared.translate.LlmService
+import com.atlanyuey.aenht.shared.translate.LlmTestResult
+import com.atlanyuey.aenht.shared.translate.LlmUsage
+import com.atlanyuey.aenht.shared.translate.LlmUsageLedger
+import com.atlanyuey.aenht.shared.translate.TranslationException
 import com.atlanyuey.aenht.shared.translate.Translation
 import com.atlanyuey.aenht.shared.translate.TranslationKind
 import com.atlanyuey.aenht.shared.translate.Translator
 import java.util.Locale
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import java.util.UUID
 
 /**
@@ -19,12 +25,64 @@ object TranslationService {
     private val translator = Translator()
     private val cache = HashMap<String, Translation>()
 
-    fun init(context: Context) = secrets.init(context, "translation_keys")
+    private lateinit var prefs: android.content.SharedPreferences
+    /** Bumped when services, keys or usage change (screens read it). */
+    var revision by androidx.compose.runtime.mutableIntStateOf(0)
+        private set
+
+    fun init(context: Context) {
+        secrets.init(context, "translation_keys")
+        prefs = context.getSharedPreferences("translation", Context.MODE_PRIVATE)
+        translator.ledger = LlmUsageLedger.decode(prefs.getString("llmUsage", null))
+    }
+
+    private fun saveUsage() {
+        if (::prefs.isInitialized) prefs.edit().putString("llmUsage", translator.ledger.encode()).apply()
+        revision++
+    }
+
+    /** Adds or updates a service; an empty key keeps the saved one. */
+    fun store(service: LlmService, key: String) {
+        if (key.isNotBlank()) secrets[service.id] = key.trim()
+        val list = services.toMutableList()
+        val i = list.indexOfFirst { it.id == service.id }
+        if (i >= 0) list[i] = service else list += service
+        save(list)
+    }
+
+    fun key(id: String): String = secrets[id] ?: ""
+
+    fun usage(service: LlmService): LlmUsage { revision; return translator.usage(service) }
+    fun overLimit(service: LlmService): Boolean { revision; return translator.overLimit(service) }
+
+    fun resetUsage(service: LlmService) {
+        translator.ledger.reset(service.id)
+        saveUsage()
+    }
+
+    suspend fun models(baseUrl: String, key: String): List<String> = try {
+        translator.models(baseUrl, key)
+    } catch (e: TranslationException) {
+        throw NHException(e.message ?: L10n.string("Couldn't connect to the server."))
+    }
+
+    suspend fun publishedPrice(baseUrl: String, key: String, model: String): List<Double>? = translator.publishedPrice(baseUrl, key, model)
+
+    /** Translates a sample with the service (its usage counts too). */
+    suspend fun test(service: LlmService, key: String): LlmTestResult {
+        val sample = if (target.startsWith("en")) "今日はいい天気ですね。散歩に行きましょう。" else "It's a nice day today. Let's go for a walk."
+        return try {
+            translator.test(service, key, sample, target).also { saveUsage() }
+        } catch (e: TranslationException) {
+            throw NHException(e.message ?: L10n.string("Couldn't translate."))
+        }
+    }
 
     val services: List<LlmService> get() = Translator.decodeServices(AppSettings.llmServices)
 
     private fun save(services: List<LlmService>) {
         AppSettings.llmServices = Translator.encodeServices(services)
+        revision++
     }
 
     fun add(name: String, baseUrl: String, model: String, key: String) {
@@ -82,6 +140,8 @@ object TranslationService {
             translator.translate(text, target, kind, list, keys, DeviceTranslator.takeIf { AppSettings.deviceTranslation }).also { cache[key] = it }
         } catch (e: Exception) {
             throw NHException(e.message ?: L10n.string("Couldn't translate."))
+        } finally {
+            saveUsage()
         }
     }
 }

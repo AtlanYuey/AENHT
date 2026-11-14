@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.atlanyuey.aenht.core.*
 import com.atlanyuey.aenht.shared.site.Site
+import com.atlanyuey.aenht.shared.translate.LlmService
+import com.atlanyuey.aenht.shared.translate.LlmPreset
 import com.atlanyuey.aenht.ui.components.*
 import com.atlanyuey.aenht.ui.theme.AppTheme
 import com.atlanyuey.aenht.ui.theme.Icons
@@ -342,78 +344,222 @@ class FiltersScreen : Screen() {
 
 /** Me › Translation: the language models (in order) and Microsoft Translator. */
 class TranslationSettingsScreen : Screen() {
-    private var name by mutableStateOf("")
-    private var baseUrl by mutableStateOf("https://api.openai.com/v1")
-    private var model by mutableStateOf("")
-    private var key by mutableStateOf("")
     private var msKey by mutableStateOf(TranslationService.microsoftKey ?: "")
     private var msRegion by mutableStateOf(TranslationService.microsoftRegion ?: "")
-    private var revision by mutableStateOf(0)
-
-    @Composable
-    private fun Field(label: String, value: String, last: Boolean = false, secret: Boolean = false, onChange: (String) -> Unit) {
-        val colors = AppTheme.colors
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Txt(label, style = Type.footnote, color = colors.secondaryLabel)
-            BasicTextField(
-                value, onChange,
-                singleLine = true,
-                textStyle = Type.body.copy(color = colors.label),
-                cursorBrush = SolidColor(AppTheme.tint),
-                visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(colors.tertiaryFill).padding(horizontal = 12.dp, vertical = 10.dp),
-            )
-        }
-        if (!last) RowSeparator()
-    }
 
     @Composable
     override fun Content() {
-        revision
+        val navigator = LocalNavigator.current
+        TranslationService.revision
         val services = TranslationService.services
         GroupedListScreen(tr("Translation")) {
-            if (services.isNotEmpty()) {
-                section("Language Models", footer = { FooterText(tr("Tried from top to bottom: a model that refuses or fails hands over to the next one, then to Microsoft Translator.")) }) {
-                    services.forEachIndexed { i, s ->
-                        ListRow(
-                            s.name,
-                            subtitle = s.model + if (TranslationService.hasKey(s.id)) "" else " · " + tr("No key"),
-                            last = i == services.lastIndex,
-                            trailing = {
-                                GlassToggle(s.enabled, { TranslationService.setEnabled(s.id, it); revision++ })
-                                Box(Modifier.size(32.dp).clickable { TranslationService.move(s.id, up = true); revision++ }, contentAlignment = Alignment.Center) {
-                                    AppIcon(Icons.ArrowUp, tr("Move Up"), size = 16.dp)
+            section("Order of Use", footer = {
+                FooterText(tr("Tried from top to bottom: a model that refuses, fails or reaches its monthly spending limit hands over to the next one, then to Microsoft Translator, then to the on-device translation."))
+            }) {
+                services.forEachIndexed { i, s ->
+                    ListRow(
+                        s.name,
+                        subtitle = serviceSubtitle(s),
+                        titleColor = if (s.enabled) Color.Unspecified else AppTheme.colors.secondaryLabel,
+                        onClick = { navigator.push(LlmServiceScreen(s, isNew = false)) },
+                        trailing = {
+                            if (i > 0) {
+                                Box(Modifier.size(30.dp).clickable { TranslationService.move(s.id, up = true) }, contentAlignment = Alignment.Center) {
+                                    AppIcon(Icons.ArrowUp, tr("Move Up"), size = 15.dp)
                                 }
-                                Box(Modifier.size(32.dp).clickable { TranslationService.remove(s.id); revision++ }, contentAlignment = Alignment.Center) {
-                                    AppIcon(Icons.Trash, tr("Delete"), tint = AppTheme.colors.red, size = 16.dp)
+                            }
+                            if (i < services.lastIndex) {
+                                Box(Modifier.size(30.dp).clickable { TranslationService.move(s.id, up = false) }, contentAlignment = Alignment.Center) {
+                                    AppIcon(Icons.ArrowDown, tr("Move Down"), size = 15.dp)
                                 }
-                            },
-                        )
-                    }
+                            }
+                            GlassToggle(s.enabled, { TranslationService.setEnabled(s.id, it) })
+                        },
+                    )
                 }
-            }
-            section("Add a Language Model", footer = { FooterText(tr("Any service with an OpenAI-compatible API. Keys stay on this device (Android Keystore) and are not exported with the settings.")) }) {
-                Field(tr("Name"), name) { name = it }
-                Field(tr("API Address"), baseUrl) { baseUrl = it }
-                Field(tr("Model"), model) { model = it }
-                Field(tr("API Key"), key, secret = true) { key = it }
-                ButtonRow(tr("Add"), {
-                    TranslationService.add(name, baseUrl, model, key)
-                    name = ""; model = ""; key = ""
-                    revision++
-                }, enabled = baseUrl.isNotBlank() && model.isNotBlank() && key.isNotBlank(), last = true)
+                ButtonRow(tr("Add Service"), { navigator.push(LlmPresetScreen()) }, last = true)
             }
             section("Microsoft Translator", footer = { FooterText(tr("Used when no language model is set up or all of them fail. A key from Azure Translator has a free monthly allowance.")) }) {
-                Field(tr("API Key"), msKey, secret = true) { msKey = it }
-                Field(tr("Region (optional)"), msRegion) { msRegion = it }
+                FieldRow(tr("API Key"), msKey, secret = true) { msKey = it }
+                FieldRow(tr("Region (optional)"), msRegion) { msRegion = it }
                 ButtonRow(tr("Save"), {
                     TranslationService.microsoftKey = msKey
                     TranslationService.microsoftRegion = msRegion
-                    revision++
                 }, last = true)
             }
             section(footer = { FooterText(tr("The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.")) }) {
                 ToggleRow(tr("On-Device Translation"), AppSettings.deviceTranslation, { AppSettings.deviceTranslation = it }, last = true)
+            }
+        }
+    }
+
+    @Composable
+    private fun serviceSubtitle(s: LlmService): String {
+        val usage = TranslationService.usage(s)
+        return when {
+            !TranslationService.hasKey(s.id) -> s.model + " · " + tr("No key")
+            TranslationService.overLimit(s) -> s.model + " · " + tr("Spending limit reached")
+            usage.monthInput + usage.monthOutput > 0 ->
+                s.model + " · " + tr("This month") + " " + llmCost(usage.monthCost, s.currencySymbol) + " · " + llmTokens(usage.monthInput + usage.monthOutput)
+            else -> s.model
+        }
+    }
+}
+
+internal fun llmCost(value: Double, symbol: String) =
+    symbol + String.format(java.util.Locale.ROOT, if (value > 0 && value < 0.01) "%.4f" else "%.2f", value)
+
+@Composable
+internal fun llmTokens(count: Long): String = tr("%@ tokens", java.text.NumberFormat.getIntegerInstance().format(count))
+
+/** Add Service: the presets (address and a model filled in). */
+class LlmPresetScreen : Screen() {
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.current
+        GroupedListScreen(tr("Add Service")) {
+            section {
+                LlmPreset.entries.forEachIndexed { i, preset ->
+                    ListRow(
+                        if (preset == LlmPreset.OTHER) tr("Other (OpenAI-compatible)") else preset.displayName,
+                        subtitle = preset.baseUrl,
+                        chevron = true,
+                        last = i == LlmPreset.entries.lastIndex,
+                        onClick = { navigator.push(LlmServiceScreen(LlmService.create(java.util.UUID.randomUUID().toString(), preset), isNew = true)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** A service's settings: address, key, model (from its list), test, prices, monthly limit and usage. */
+class LlmServiceScreen(private val original: LlmService, private val isNew: Boolean) : Screen() {
+    private var name by mutableStateOf(original.name)
+    private var baseUrl by mutableStateOf(original.baseUrl)
+    private var key by mutableStateOf("")
+    private var model by mutableStateOf(original.model)
+    private var currency by mutableStateOf(original.currency)
+    private var inputPrice by mutableStateOf(original.inputPrice?.toString() ?: "")
+    private var outputPrice by mutableStateOf(original.outputPrice?.toString() ?: "")
+    private var limitOn by mutableStateOf(original.spendLimit != null)
+    private var limit by mutableStateOf((original.spendLimit ?: 1.0).toString())
+    private var models by mutableStateOf(emptyList<String>())
+    private var loadingModels by mutableStateOf(false)
+    private var testing by mutableStateOf(false)
+    private var testResult by mutableStateOf<String?>(null)
+
+    private val effectiveKey get() = key.ifBlank { TranslationService.key(original.id) }
+
+    private fun draft() = original.with(
+        name = name.trim().ifEmpty { model.trim() }, baseUrl = baseUrl.trim(), model = model.trim(), enabled = original.enabled,
+        inputPrice = inputPrice.toDoubleOrNull(), outputPrice = outputPrice.toDoubleOrNull(), currency = currency,
+        spendLimit = if (limitOn) limit.toDoubleOrNull() else null,
+    )
+
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.current
+        val overlays = LocalOverlays.current
+        val errorTitle = tr("Couldn't Connect")
+        val canSave = baseUrl.isNotBlank() && model.isNotBlank() && effectiveKey.isNotBlank()
+        TranslationService.revision
+        LaunchedEffect(model) {
+            if (original.presetKind != LlmPreset.OPENROUTER || model.isBlank()) return@LaunchedEffect
+            TranslationService.publishedPrice(baseUrl, effectiveKey, model)?.let { (i, o) ->
+                inputPrice = String.format(java.util.Locale.ROOT, "%.4f", i).trimEnd('0').trimEnd('.')
+                outputPrice = String.format(java.util.Locale.ROOT, "%.4f", o).trimEnd('0').trimEnd('.')
+            }
+        }
+        GroupedListScreen(name.ifBlank { original.name }, trailing = {
+            com.atlanyuey.aenht.ui.components.TextButton(tr("Save"), {
+                TranslationService.store(draft(), key)
+                if (isNew) navigator.popTo { it is TranslationSettingsScreen } else navigator.pop()
+            }, enabled = canSave, bold = true)
+        }) {
+            section("Service") {
+                FieldRow(tr("Name"), name) { name = it }
+                FieldRow(tr("API Address"), baseUrl, url = true) { baseUrl = it }
+                FieldRow(if (TranslationService.hasKey(original.id)) tr("API Key (saved)") else tr("API Key"), key, secret = true, last = true) { key = it }
+            }
+            section("Model", footer = { FooterText(tr("The model can be typed in, or chosen from the service's own list.")) }) {
+                FieldRow(tr("Model"), model) { model = it }
+                if (models.isNotEmpty()) {
+                    ListRow(tr("Choose from List"), value = "${models.size}", chevron = true, onClick = {
+                        navigator.push(ModelPickerScreen(models, model) { model = it })
+                    })
+                }
+                ButtonRow(if (loadingModels) tr("Loading…") else if (models.isEmpty()) tr("Load Model List") else tr("Reload Model List"), {
+                    loadingModels = true
+                    scope.launch {
+                        try {
+                            models = TranslationService.models(baseUrl.trim(), effectiveKey)
+                            if (model.isBlank()) models.firstOrNull()?.let { model = it }
+                        } catch (e: Exception) {
+                            overlays.alert(errorTitle, e.localizedMessage)
+                        }
+                        loadingModels = false
+                    }
+                }, enabled = !loadingModels && baseUrl.isNotBlank() && effectiveKey.isNotBlank(), last = true)
+            }
+            section(footer = { testResult?.let { FooterText(it) } }) {
+                ButtonRow(if (testing) tr("Testing…") else tr("Test Translation"), {
+                    testing = true
+                    scope.launch {
+                        try {
+                            val r = TranslationService.test(draft(), effectiveKey)
+                            testResult = r.text + "\n" + String.format(java.util.Locale.ROOT, "%.1f s", r.millis / 1000.0) +
+                                " · " + (r.inputTokens + r.outputTokens) + " tokens"
+                        } catch (e: Exception) {
+                            testResult = null
+                            overlays.alert(errorTitle, e.localizedMessage)
+                        }
+                        testing = false
+                    }
+                }, enabled = !testing && canSave, last = true)
+            }
+            section("Cost", footer = {
+                FooterText(tr("Prices are per million tokens in the service's billing currency (OpenRouter publishes its own). Past the monthly limit, the next service in the order takes over."))
+            }) {
+                val symbol = if (currency == "CNY") "¥" else "$"
+                if (original.presetKind.choosesCurrency) {
+                    PickerRow(tr("Billing Currency"), listOf("USD", "CNY"), currency, label = { if (it == "CNY") tr("Chinese Yuan (¥)") else tr("US Dollar ($)") }, onSelect = { currency = it })
+                }
+                FieldRow(tr("Input, per 1M tokens") + " ($symbol)", inputPrice) { inputPrice = it.filter { c -> c.isDigit() || c == '.' } }
+                FieldRow(tr("Output, per 1M tokens") + " ($symbol)", outputPrice) { outputPrice = it.filter { c -> c.isDigit() || c == '.' } }
+                ToggleRow(tr("Monthly Spending Limit"), limitOn, { limitOn = it }, last = !limitOn && isNew)
+                if (limitOn) FieldRow(tr("Limit") + " ($symbol)", limit, last = isNew) { limit = it.filter { c -> c.isDigit() || c == '.' } }
+                if (!isNew) {
+                    val usage = TranslationService.usage(original)
+                    ListRow(tr("This Month"), value = llmCost(usage.monthCost, symbol) + " · " + llmTokens(usage.monthInput + usage.monthOutput))
+                    ListRow(tr("Total"), value = llmCost(usage.totalCost, symbol) + " · " + llmTokens(usage.totalInput + usage.totalOutput))
+                    ButtonRow(tr("Reset Usage Figures"), { TranslationService.resetUsage(original) }, destructive = true, last = true)
+                }
+            }
+            if (!isNew) {
+                section {
+                    ButtonRow(tr("Delete Service"), {
+                        TranslationService.remove(original.id)
+                        navigator.pop()
+                    }, destructive = true, last = true)
+                }
+            }
+        }
+    }
+}
+
+/** A service's model list, to pick one. */
+class ModelPickerScreen(private val models: List<String>, private val selected: String, private val onPick: (String) -> Unit) : Screen() {
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.current
+        GroupedListScreen(tr("Model")) {
+            section {
+                models.forEachIndexed { i, m ->
+                    ListRow(m, last = i == models.lastIndex, onClick = { onPick(m); navigator.pop() }, trailing = {
+                        if (m == selected) AppIcon(Icons.Check, null, tint = AppTheme.tint, size = 16.dp)
+                    })
+                }
             }
         }
     }
