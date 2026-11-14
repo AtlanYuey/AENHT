@@ -459,9 +459,14 @@
     <string name="l_456">Tap an account to switch to it.</string>
     <string name="l_457">Add Account</string>
     <string name="l_458">Active</string>
-    <string name="l_459">Backup dos ajustes</string>
-    <string name="l_460">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_461">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_462">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_463">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_459">Display</string>
+    <string name="l_460">Controls</string>
+    <string name="l_461">Comment</string>
+    <string name="l_462">Commenter</string>
+    <string name="l_463">Settings</string>
+    <string name="l_464">Backup dos ajustes</string>
+    <string name="l_465">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_466">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_467">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_468">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

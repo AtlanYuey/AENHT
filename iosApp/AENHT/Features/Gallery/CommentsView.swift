@@ -17,7 +17,7 @@ struct CommentsView: View {
 
     var body: some View {
         List {
-            ForEach(comments) { comment in
+            ForEach(comments.filter { !Filters.shared.hidesComment(author: $0.poster?.username ?? "", text: $0.body) }) { comment in
                 CommentBubble(comment: comment)
                     .padding(.vertical, 4)
             }

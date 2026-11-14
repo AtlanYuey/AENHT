@@ -359,11 +359,13 @@ class FiltersScreen : Screen() {
     @Composable
     override fun Content() {
         val rules = Filters.rules
-        val targets = listOf("tag", "title", "uploader")
+        val targets = listOf("tag", "title", "uploader", "comment", "commenter")
         val targetTitle: @Composable (String) -> String = { t ->
             when (t) {
                 "tag" -> tr("Tag")
                 "title" -> tr("Title")
+                "comment" -> tr("Comment")
+                "commenter" -> tr("Commenter")
                 else -> tr("Uploader")
             }
         }

@@ -38,6 +38,9 @@ object Filters {
         get() = ContentFilter(rules, if (AppSettings.useNhBlacklist && Session.isLoggedIn) nhBlacklist else emptySet())
 
     /** Card tag names: E-Hentai's names, or the names of nhentai's tag ids. */
+    /** Whether a comment is hidden by a comment or commenter rule. */
+    fun hidesComment(author: String, text: String): Boolean = ContentFilter(rules).hidesComment(author, text)
+
     fun tagNames(card: GallerySummary): List<String> =
         if (card.site == Site.NHENTAI) card.nhTagIds.mapNotNull { TagStore.tag(it)?.name } else card.cardTags
 

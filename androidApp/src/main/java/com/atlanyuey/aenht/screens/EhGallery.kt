@@ -534,7 +534,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     TextButton(tr("Add a comment…"), { navigator.push(EhCommentsScreen(d)) })
                 }
             }
-            val shown = d.comments.filter { it.author !in AppSettings.blockedCommenterSet }
+            val shown = d.comments.filter { it.author !in AppSettings.blockedCommenterSet && !Filters.hidesComment(it.author, it.text) }
             if (shown.isEmpty()) {
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
             } else {
@@ -662,7 +662,7 @@ class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     val blocked = AppSettings.blockedCommenterSet
-                    val shown = comments.filter { it.author !in blocked }
+                    val shown = comments.filter { it.author !in blocked && !Filters.hidesComment(it.author, it.text) }
                     if (shown.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
                     items(shown, key = { it.id }) { comment ->
                         val anchor = rememberAnchor()

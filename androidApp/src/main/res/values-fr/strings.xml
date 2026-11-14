@@ -459,9 +459,14 @@
     <string name="l_456">Tap an account to switch to it.</string>
     <string name="l_457">Add Account</string>
     <string name="l_458">Active</string>
-    <string name="l_459">Sauvegarde des réglages</string>
-    <string name="l_460">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_461">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_462">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_463">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_459">Display</string>
+    <string name="l_460">Controls</string>
+    <string name="l_461">Comment</string>
+    <string name="l_462">Commenter</string>
+    <string name="l_463">Settings</string>
+    <string name="l_464">Sauvegarde des réglages</string>
+    <string name="l_465">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_466">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_467">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_468">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

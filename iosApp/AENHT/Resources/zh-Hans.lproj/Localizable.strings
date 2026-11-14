@@ -500,3 +500,8 @@
 "Tap an account to switch to it." = "点按账号即可切换。";
 "Add Account" = "添加账号";
 "Active" = "当前使用";
+"Display" = "显示";
+"Controls" = "操作";
+"Comment" = "评论内容";
+"Commenter" = "评论者";
+"Settings" = "设置";

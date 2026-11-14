@@ -441,7 +441,9 @@ struct EhGalleryView: View {
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: 12) {
-                        ForEach(detail.comments.filter { !settings.blockedCommenterSet.contains($0.author) }, id: \.id) { comment in
+                        ForEach(detail.comments.filter {
+                            !settings.blockedCommenterSet.contains($0.author) && !Filters.shared.hidesComment(author: $0.author, text: $0.text)
+                        }, id: \.id) { comment in
                             EhCommentBubble(comment: comment, lineLimit: 5)
                                 .frame(width: 300, alignment: .topLeading)
                                 .padding(14)
@@ -590,7 +592,9 @@ struct EhCommentsView: View {
 
     var body: some View {
         List {
-            ForEach(comments.filter { !settings.blockedCommenterSet.contains($0.author) }, id: \.id) { comment in
+            ForEach(comments.filter {
+                !settings.blockedCommenterSet.contains($0.author) && !Filters.shared.hidesComment(author: $0.author, text: $0.text)
+            }, id: \.id) { comment in
                 EhCommentBubble(comment: comment, lineLimit: nil)
                     .padding(.vertical, 4)
                     .contextMenu {

@@ -459,9 +459,14 @@
     <string name="l_456">Tap an account to switch to it.</string>
     <string name="l_457">Add Account</string>
     <string name="l_458">Active</string>
-    <string name="l_459">สำรองการตั้งค่า</string>
-    <string name="l_460">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
-    <string name="l_461">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
-    <string name="l_462">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
-    <string name="l_463">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
+    <string name="l_459">Display</string>
+    <string name="l_460">Controls</string>
+    <string name="l_461">Comment</string>
+    <string name="l_462">Commenter</string>
+    <string name="l_463">Settings</string>
+    <string name="l_464">สำรองการตั้งค่า</string>
+    <string name="l_465">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
+    <string name="l_466">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
+    <string name="l_467">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
+    <string name="l_468">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
 </resources>

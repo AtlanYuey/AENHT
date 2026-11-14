@@ -459,9 +459,14 @@
     <string name="l_456">アカウントをタップすると切り替わります。</string>
     <string name="l_457">アカウントを追加</string>
     <string name="l_458">使用中</string>
-    <string name="l_459">設定のバックアップ</string>
-    <string name="l_460">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_461">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_462">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_463">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_459">表示</string>
+    <string name="l_460">操作</string>
+    <string name="l_461">コメント本文</string>
+    <string name="l_462">コメント投稿者</string>
+    <string name="l_463">設定</string>
+    <string name="l_464">設定のバックアップ</string>
+    <string name="l_465">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_466">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_467">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_468">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

@@ -32,6 +32,11 @@ final class Filters {
         save(rules.filter { $0.id != rule.id })
     }
 
+    /// Whether a comment is hidden by a comment or commenter rule.
+    func hidesComment(author: String, text: String) -> Bool {
+        Bridge.shared.contentFilter(rules: rules, nhBlacklist: []).hidesComment(author: author, text: text)
+    }
+
     /// Cards that no rule hides.
     func visible(_ items: [GalleryItem]) -> [GalleryItem] {
         let blacklist = AppSettings.shared.useNhBlacklist && UserSession.shared.isLoggedIn ? nhBlacklist : []

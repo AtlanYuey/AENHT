@@ -459,9 +459,14 @@
     <string name="l_456">Toca una cuenta para cambiar a ella.</string>
     <string name="l_457">Añadir cuenta</string>
     <string name="l_458">En uso</string>
-    <string name="l_459">Copia de los ajustes</string>
-    <string name="l_460">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_461">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_462">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_463">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_459">Pantalla</string>
+    <string name="l_460">Controles</string>
+    <string name="l_461">Comentario</string>
+    <string name="l_462">Autor del comentario</string>
+    <string name="l_463">Ajustes</string>
+    <string name="l_464">Copia de los ajustes</string>
+    <string name="l_465">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_466">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_467">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_468">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

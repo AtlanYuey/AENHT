@@ -680,7 +680,7 @@ private struct CommentsPreview: View {
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: 12) {
-                        ForEach(comments.prefix(10)) { comment in
+                        ForEach(comments.filter { !Filters.shared.hidesComment(author: $0.poster?.username ?? "", text: $0.body) }.prefix(10)) { comment in
                             CommentBubble(comment: comment, lineLimit: 5)
                                 .frame(width: 280, alignment: .leading)
                                 .padding(14)

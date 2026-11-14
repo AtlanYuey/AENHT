@@ -352,4 +352,9 @@ T = [
     "Tap an account to switch to it.",
     "Add Account",
     "Active",
+    "Display",
+    "Controls",
+    "Comment",
+    "Commenter",
+    "Settings",
 ]

@@ -528,8 +528,28 @@ struct ReaderSettingsSheet: View {
 /// Shared by the reader sheet and the Reading settings page.
 struct ReadingSettingsSections: View {
     @Bindable var settings: AppSettings
+    /// Reading, Display or Controls (three tabs, as in NextN).
+    @State private var tab = 0
 
     var body: some View {
+        Section {
+            Picker("Settings", selection: $tab) {
+                Text("Reading").tag(0)
+                Text("Display").tag(1)
+                Text("Controls").tag(2)
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        }
+        switch tab {
+        case 0: reading
+        case 1: display
+        default: controls
+        }
+    }
+
+    @ViewBuilder private var reading: some View {
         Section {
             Picker("Reading Direction", selection: $settings.readMode) {
                 ForEach(ReadMode.allCases) { mode in
@@ -558,43 +578,6 @@ struct ReadingSettingsSections: View {
                     }
                 }
             }
-            Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
-            Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
-            Toggle("Swap Tap Zones", isOn: $settings.swapTapZones)
-            Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
-        } footer: {
-            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
-        }
-        Section {
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Page Brightness")
-                    Spacer()
-                    Text("\(Int(settings.readerBrightness * 100))%").foregroundStyle(.secondary).monospacedDigit()
-                }
-                Slider(value: $settings.readerBrightness, in: 0.2...1, step: 0.05)
-            }
-            Toggle("Grayscale", isOn: $settings.readerGrayscale)
-            Toggle("Invert Colors", isOn: $settings.readerInvert)
-        } footer: {
-            Text("Brightness, grayscale and inverted colors apply only to the pages.")
-        }
-        Section {
-            VStack(alignment: .leading) {
-                LabeledContent("Hide Controls After") {
-                    Text(settings.readerControlsDelay, format: .number.precision(.fractionLength(0)))
-                        + Text(" s")
-                }
-                Slider(value: $settings.readerControlsDelay, in: 3...10, step: 1) {
-                    Text("Hide Controls After")
-                } minimumValueLabel: {
-                    Text(verbatim: "3")
-                } maximumValueLabel: {
-                    Text(verbatim: "10")
-                }
-            }
-        } footer: {
-            Text("The reader's controls hide on their own after this long without a touch.")
         }
         Section {
             VStack(alignment: .leading) {
@@ -615,6 +598,51 @@ struct ReadingSettingsSections: View {
             }
         } footer: {
             Text("Pages ahead of the current one are downloaded in advance.")
+        }
+    }
+
+    @ViewBuilder private var display: some View {
+        Section {
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Page Brightness")
+                    Spacer()
+                    Text("\(Int(settings.readerBrightness * 100))%").foregroundStyle(.secondary).monospacedDigit()
+                }
+                Slider(value: $settings.readerBrightness, in: 0.2...1, step: 0.05)
+            }
+            Toggle("Grayscale", isOn: $settings.readerGrayscale)
+            Toggle("Invert Colors", isOn: $settings.readerInvert)
+        } footer: {
+            Text("Brightness, grayscale and inverted colors apply only to the pages.")
+        }
+        Section {
+            Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
+            VStack(alignment: .leading) {
+                LabeledContent("Hide Controls After") {
+                    Text(settings.readerControlsDelay, format: .number.precision(.fractionLength(0)))
+                        + Text(" s")
+                }
+                Slider(value: $settings.readerControlsDelay, in: 3...10, step: 1) {
+                    Text("Hide Controls After")
+                } minimumValueLabel: {
+                    Text(verbatim: "3")
+                } maximumValueLabel: {
+                    Text(verbatim: "10")
+                }
+            }
+        } footer: {
+            Text("The reader's controls hide on their own after this long without a touch.")
+        }
+    }
+
+    @ViewBuilder private var controls: some View {
+        Section {
+            Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
+            Toggle("Swap Tap Zones", isOn: $settings.swapTapZones)
+            Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
+        } footer: {
+            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
         }
     }
 }

@@ -458,3 +458,8 @@
 "Tap an account to switch to it." = "アカウントをタップすると切り替わります。";
 "Add Account" = "アカウントを追加";
 "Active" = "使用中";
+"Display" = "表示";
+"Controls" = "操作";
+"Comment" = "コメント本文";
+"Commenter" = "コメント投稿者";
+"Settings" = "設定";

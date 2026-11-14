@@ -458,3 +458,8 @@
 "Tap an account to switch to it." = "계정을 탭하면 전환됩니다.";
 "Add Account" = "계정 추가";
 "Active" = "사용 중";
+"Display" = "표시";
+"Controls" = "조작";
+"Comment" = "댓글 내용";
+"Commenter" = "댓글 작성자";
+"Settings" = "설정";

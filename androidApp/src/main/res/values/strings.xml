@@ -459,9 +459,14 @@
     <string name="l_456">Tap an account to switch to it.</string>
     <string name="l_457">Add Account</string>
     <string name="l_458">Active</string>
-    <string name="l_459">Settings Backup</string>
-    <string name="l_460">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_461">Android\'s own backup also keeps these settings.</string>
-    <string name="l_462">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_463">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_459">Display</string>
+    <string name="l_460">Controls</string>
+    <string name="l_461">Comment</string>
+    <string name="l_462">Commenter</string>
+    <string name="l_463">Settings</string>
+    <string name="l_464">Settings Backup</string>
+    <string name="l_465">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_466">Android\'s own backup also keeps these settings.</string>
+    <string name="l_467">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_468">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

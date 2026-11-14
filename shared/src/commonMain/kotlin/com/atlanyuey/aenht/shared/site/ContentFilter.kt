@@ -9,7 +9,11 @@ enum class FilterTarget(val key: String) {
     /** A tag by name, whatever its namespace (nhentai `tag:` = E-Hentai `female:` / `male:` …). */
     TAG("tag"),
     TITLE("title"),
-    UPLOADER("uploader");
+    UPLOADER("uploader"),
+    /** The text of a comment (hides the comment, not the gallery). */
+    COMMENT("comment"),
+    /** Who wrote a comment (hides the comment). */
+    COMMENTER("commenter");
 
     companion object {
         fun fromKey(key: String) = entries.firstOrNull { it.key == key } ?: TAG
@@ -49,7 +53,19 @@ class ContentFilter(rules: List<FilterRule> = emptyList(), nhBlacklist: Set<Int>
      */
     fun hides(card: GallerySummary, tagNames: List<String>): Boolean {
         if (card.site == Site.NHENTAI && card.nhTagIds.any { it in nhBlacklist }) return true
-        return rules.any { rule -> matches(rule, card, tagNames) }
+        return rules.any { rule -> rule.filterTarget != FilterTarget.COMMENT && rule.filterTarget != FilterTarget.COMMENTER && matches(rule, card, tagNames) }
+    }
+
+    /** Whether a comment by [author] saying [text] is hidden (comment and commenter rules). */
+    fun hidesComment(author: String, text: String): Boolean = rules.any { rule ->
+        val value = when (rule.filterTarget) {
+            FilterTarget.COMMENT -> text
+            FilterTarget.COMMENTER -> author
+            else -> return@any false
+        }
+        if (rule.regex) regexes[rule.id]?.containsMatchIn(value) == true
+        else if (rule.filterTarget == FilterTarget.COMMENTER) value.equals(rule.pattern.trim(), ignoreCase = true)
+        else value.contains(rule.pattern.trim(), ignoreCase = true)
     }
 
     private fun matches(rule: FilterRule, card: GallerySummary, tagNames: List<String>): Boolean {
@@ -57,6 +73,7 @@ class ContentFilter(rules: List<FilterRule> = emptyList(), nhBlacklist: Set<Int>
             FilterTarget.TAG -> tagNames.map { it.substringAfter(':') }
             FilterTarget.TITLE -> listOf(card.title)
             FilterTarget.UPLOADER -> listOfNotNull(card.uploader)
+            FilterTarget.COMMENT, FilterTarget.COMMENTER -> return false
         }
         if (rule.regex) {
             val r = regexes[rule.id] ?: return false

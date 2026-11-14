@@ -459,9 +459,14 @@
     <string name="l_456">Tap an account to switch to it.</string>
     <string name="l_457">Add Account</string>
     <string name="l_458">Active</string>
-    <string name="l_459">Cadangan Pengaturan</string>
-    <string name="l_460">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_461">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_462">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_463">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_459">Display</string>
+    <string name="l_460">Controls</string>
+    <string name="l_461">Comment</string>
+    <string name="l_462">Commenter</string>
+    <string name="l_463">Settings</string>
+    <string name="l_464">Cadangan Pengaturan</string>
+    <string name="l_465">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_466">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_467">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_468">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

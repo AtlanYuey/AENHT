@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.core.Filters
 import com.atlanyuey.aenht.core.EhPageRef
 import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
 import com.atlanyuey.aenht.shared.site.GallerySummary
@@ -598,7 +599,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
             } else {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(comments.take(10), key = { it.id }) { comment ->
+                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }.take(10), key = { it.id }) { comment ->
                         Box(
                             Modifier
                                 .width(300.dp)
@@ -731,7 +732,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
                     if (comments.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
-                    items(comments, key = { it.id }) { CommentBubble(it) }
+                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }, key = { it.id }) { CommentBubble(it) }
                 }
             }
         }

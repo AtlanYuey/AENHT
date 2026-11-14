@@ -79,3 +79,18 @@ class ContentFilterTest {
         kotlin.test.assertFalse(f.hides(card(nh, "B", ids = listOf(5)), emptyList()))
     }
 }
+
+class CommentFilterTest {
+    @Test
+    fun commentRules() {
+        val f = com.atlanyuey.aenht.shared.site.ContentFilter(listOf(
+            com.atlanyuey.aenht.shared.site.FilterRule("1", "comment", "spoiler"),
+            com.atlanyuey.aenht.shared.site.FilterRule("2", "commenter", "Troll"),
+            com.atlanyuey.aenht.shared.site.FilterRule("3", "comment", "^first!?$", regex = true),
+        ))
+        kotlin.test.assertTrue(f.hidesComment("a", "Big SPOILER ahead"))
+        kotlin.test.assertTrue(f.hidesComment("troll", "hi"))
+        kotlin.test.assertTrue(f.hidesComment("b", "First"))
+        kotlin.test.assertTrue(!f.hidesComment("trolley", "nice work"))
+    }
+}

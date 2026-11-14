@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import androidx.compose.ui.draw.clip
 import com.atlanyuey.aenht.ui.components.prompt
 import coil3.request.allowHardware
 import coil3.toBitmap
@@ -754,91 +755,139 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 }
 
-/** Shared by the reader sheet and More > Reading. */
+/** Which tab of the reading settings shows (Reading, Display, Controls), as in NextN. */
+var readingSettingsTab by androidx.compose.runtime.mutableIntStateOf(0)
+
+/** Three tabs in one capsule (iOS segmented control). */
+@Composable
+fun SegmentedTabs(titles: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    val colors = AppTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(colors.tertiaryFill)
+            .padding(2.dp),
+    ) {
+        titles.forEachIndexed { i, title ->
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (i == selected) colors.secondaryGroupedBackground else Color.Transparent)
+                    .clickable { onSelect(i) }
+                    .padding(vertical = 7.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Txt(title, style = Type.footnote.copy(fontWeight = if (i == selected) FontWeight.SemiBold else FontWeight.Medium), maxLines = 1)
+            }
+        }
+    }
+}
+
+/** Shared by the reader sheet and More > Reading: three tabs, like NextN. */
 fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
-    run {
-        section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
+    item(key = "readingTabs") {
+        SegmentedTabs(listOf(tr("Reading"), tr("Display"), tr("Controls")), readingSettingsTab) { readingSettingsTab = it }
+    }
+    when (readingSettingsTab) {
+        0 -> readingTab()
+        1 -> displayTab()
+        else -> controlsTab()
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
+    section {
+        PickerRow(
+            tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
+            label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
+            last = !(AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) && !AppSettings.readMode.isPaged && AppSettings.readMode != ReadMode.VerticalGap,
+        )
+        if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
             PickerRow(
-                tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
-                label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
+                tr("Double Page"), DoublePage.entries, AppSettings.doublePage,
+                label = { tr(it.title) }, onSelect = { AppSettings.doublePage = it },
             )
-            if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
-                PickerRow(
-                    tr("Double Page"), DoublePage.entries, AppSettings.doublePage,
-                    label = { tr(it.title) }, onSelect = { AppSettings.doublePage = it },
-                )
-                if (AppSettings.doublePage != DoublePage.Off) {
-                    ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
-                }
+            if (AppSettings.doublePage != DoublePage.Off) {
+                ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
             }
-            if (AppSettings.readMode.isPaged) {
-                ToggleRow(tr("Auto Crop Margins"), AppSettings.autoCrop, { AppSettings.autoCrop = it })
-            }
-            if (AppSettings.readMode == ReadMode.VerticalGap) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Row {
-                        Txt(tr("Page Gap"), Modifier.weight(1f))
-                        Txt("${AppSettings.pageGap.toInt()} pt", color = AppTheme.colors.secondaryLabel)
-                    }
-                    GlassSlider(
-                        AppSettings.pageGap.toFloat(),
-                        { AppSettings.pageGap = ((it / 2).toInt() * 2).toDouble().coerceIn(2.0, 60.0) },
-                        2f..60f,
-                    )
-                }
-                RowSeparator()
-            }
-            ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
-            ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
-            ToggleRow(tr("Swap Tap Zones"), AppSettings.swapTapZones, { AppSettings.swapTapZones = it })
-            ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it })
-            ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it }, last = true)
         }
-        section(footer = { FooterText(tr("Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.")) }) {
+        if (AppSettings.readMode.isPaged) {
+            ToggleRow(tr("Auto Crop Margins"), AppSettings.autoCrop, { AppSettings.autoCrop = it }, last = true)
+        }
+        if (AppSettings.readMode == ReadMode.VerticalGap) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Row {
-                    Txt(tr("Page Brightness"), Modifier.weight(1f))
-                    Txt("${(AppSettings.readerBrightness * 100).toInt()}%", color = AppTheme.colors.secondaryLabel)
+                    Txt(tr("Page Gap"), Modifier.weight(1f))
+                    Txt("${AppSettings.pageGap.toInt()} pt", color = AppTheme.colors.secondaryLabel)
                 }
                 GlassSlider(
-                    AppSettings.readerBrightness.toFloat(),
-                    { AppSettings.readerBrightness = (Math.round(it * 20) / 20.0).coerceIn(0.2, 1.0) },
-                    0.2f..1f,
-                )
-            }
-            RowSeparator()
-            ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
-            ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
-        }
-        section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Row {
-                    Txt(tr("Hide Controls After"), Modifier.weight(1f))
-                    Txt("${AppSettings.readerControlsDelay.toInt()}" + tr(" s"), color = AppTheme.colors.secondaryLabel)
-                }
-                GlassSlider(
-                    AppSettings.readerControlsDelay.toFloat(),
-                    { AppSettings.readerControlsDelay = Math.round(it).toDouble().coerceIn(3.0, 10.0) },
-                    3f..10f,
+                    AppSettings.pageGap.toFloat(),
+                    { AppSettings.pageGap = ((it / 2).toInt() * 2).toDouble().coerceIn(2.0, 60.0) },
+                    2f..60f,
                 )
             }
         }
-        section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Row {
-                    Txt(tr("Auto Read Interval"), Modifier.weight(1f))
-                    Txt(String.format(java.util.Locale.getDefault(), "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
-                }
-                GlassSlider(
-                    AppSettings.autoReadInterval.toFloat(),
-                    { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
-                    1f..10f,
-                )
+    }
+    section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row {
+                Txt(tr("Auto Read Interval"), Modifier.weight(1f))
+                Txt(String.format(java.util.Locale.getDefault(), "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
             }
-            RowSeparator()
-            ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {
-                Stepper(AppSettings.preloadPages, 1..10) { AppSettings.preloadPages = it }
-            }
+            GlassSlider(
+                AppSettings.autoReadInterval.toFloat(),
+                { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
+                1f..10f,
+            )
         }
+        RowSeparator()
+        ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {
+            Stepper(AppSettings.preloadPages, 1..10) { AppSettings.preloadPages = it }
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
+    section(footer = { FooterText(tr("Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.")) }) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row {
+                Txt(tr("Page Brightness"), Modifier.weight(1f))
+                Txt("${(AppSettings.readerBrightness * 100).toInt()}%", color = AppTheme.colors.secondaryLabel)
+            }
+            GlassSlider(
+                AppSettings.readerBrightness.toFloat(),
+                { AppSettings.readerBrightness = (Math.round(it * 20) / 20.0).coerceIn(0.2, 1.0) },
+                0.2f..1f,
+            )
+        }
+        RowSeparator()
+        ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
+        ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
+    }
+    section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
+        ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it })
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row {
+                Txt(tr("Hide Controls After"), Modifier.weight(1f))
+                Txt("${AppSettings.readerControlsDelay.toInt()}" + tr(" s"), color = AppTheme.colors.secondaryLabel)
+            }
+            GlassSlider(
+                AppSettings.readerControlsDelay.toFloat(),
+                { AppSettings.readerControlsDelay = Math.round(it).toDouble().coerceIn(3.0, 10.0) },
+                3f..10f,
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
+        ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
+        ToggleRow(tr("Swap Tap Zones"), AppSettings.swapTapZones, { AppSettings.swapTapZones = it })
+        ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
+        ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
     }
 }

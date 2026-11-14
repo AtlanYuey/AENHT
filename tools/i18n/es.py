@@ -352,4 +352,9 @@ T = [
     "Toca una cuenta para cambiar a ella.",
     "Añadir cuenta",
     "En uso",
+    "Pantalla",
+    "Controles",
+    "Comentario",
+    "Autor del comentario",
+    "Ajustes",
 ]

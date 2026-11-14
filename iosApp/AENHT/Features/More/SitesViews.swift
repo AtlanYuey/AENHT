@@ -421,6 +421,8 @@ struct FiltersSettingsView: View {
         switch target {
         case "tag": "Tag"
         case "title": "Title"
+        case "comment": "Comment"
+        case "commenter": "Commenter"
         default: "Uploader"
         }
     }
@@ -430,7 +432,7 @@ struct FiltersSettingsView: View {
         Form {
             Section {
                 Picker("Match", selection: $target) {
-                    ForEach(["tag", "title", "uploader"], id: \.self) { Text(title($0)).tag($0) }
+                    ForEach(["tag", "title", "uploader", "comment", "commenter"], id: \.self) { Text(title($0)).tag($0) }
                 }
                 TextField("", text: $pattern)
                     .textInputAutocapitalization(.never)
