@@ -264,21 +264,12 @@ struct ReaderView: View {
                 prefetcher.stopPrefetching()
                 recordPage()
             }
-            .alert("Page Number", isPresented: $askPage) {
-                TextField("1 – \(pageCount)", text: $pageText).keyboardType(.numberPad)
-                Button("Go") {
-                    if let n = Int(pageText), (1...pageCount).contains(n) {
-                        turnFromPanel = true
-                        page = n - 1
-                        position = n - 1
-                        sliderValue = Double(n - 1)
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            }
-            .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
-                Button("OK", role: .cancel) {}
-            }
+            .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
+                turnFromPanel = true
+                page = target
+                position = target
+                sliderValue = Double(target)
+            })
             .sheet(isPresented: $showSettings) {
                 ReaderSettingsSheet()
                     .presentationDetents([.medium, .large])
@@ -1064,5 +1055,28 @@ private struct InvertIf: ViewModifier {
 
     func body(content: Content) -> some View {
         if enabled { content.colorInvert() } else { content }
+    }
+}
+
+/// Go to Page (a number) and the notice after saving a page.
+private struct PageAlerts: ViewModifier {
+    @Binding var askPage: Bool
+    @Binding var pageText: String
+    @Binding var notice: String?
+    let pageCount: Int
+    let go: (Int) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Page Number", isPresented: $askPage) {
+                TextField("1 – \(pageCount)", text: $pageText).keyboardType(.numberPad)
+                Button("Go") {
+                    if let n = Int(pageText), n >= 1, n <= pageCount { go(n - 1) }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
+                Button("OK", role: .cancel) {}
+            }
     }
 }
