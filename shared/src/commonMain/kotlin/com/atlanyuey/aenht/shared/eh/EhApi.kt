@@ -123,7 +123,7 @@ class EhApi internal constructor(
             cookies["ipb_pass_hash"] = credentials.passHash!!
             if (url.startsWith(EX)) credentials.igneous?.takeIf { it.isNotEmpty() && it != "mystery" }?.let { cookies["igneous"] = it }
         }
-        sessionCookies.forEach { (k, v) -> cookies.putIfAbsent(k, v) }
+        sessionCookies.forEach { (k, v) -> if (k !in cookies) cookies[k] = v }
         return cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
     }
 
