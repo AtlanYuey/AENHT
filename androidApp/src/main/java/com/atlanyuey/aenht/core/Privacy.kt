@@ -4,6 +4,9 @@ import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.unit.dp
 
 /**
  * Hides the app's content while it is in the background (Settings ›
@@ -22,6 +25,10 @@ object Privacy {
 
     val blursApp get() = hidden && mode == BackgroundPrivacy.BlurApp
     val covers get() = hidden && mode == BackgroundPrivacy.Cover
-    val blursContent get() = hidden && mode == BackgroundPrivacy.BlurContent
-    val blursImages get() = hidden && mode == BackgroundPrivacy.BlurImages
+    /** Content text (titles, tags, comments) is blurred; buttons, bars and settings aren't. */
+    val blursText get() = hidden && mode == BackgroundPrivacy.BlurContent
+    val blursImages get() = hidden && (mode == BackgroundPrivacy.BlurImages || mode == BackgroundPrivacy.BlurContent)
 }
+
+/** Blurs content text in the background (Blur Pictures and Text). */
+fun Modifier.privacyText(): Modifier = if (Privacy.blursText) this.blur(7.dp) else this

@@ -111,33 +111,29 @@ struct RootView: View {
     /// iOS 26 shrinks it to a small button while a list scrolls down.
     private var phoneTabs: some View {
         TabView(selection: Binding(get: { selection }, set: { tab in
-            // The Home tab tapped again (the system binding is set then too).
-            if tab == .home, selection == .home { AppChrome.shared.homeTabTaps += 1 }
+            // A tab tapped again (the system binding is set then too).
+            if tab == selection { AppChrome.shared.tabReselected(tab) }
             selection = tab
         })) {
             Tab(settings.currentSite.displayName, systemImage: "house", value: AppTab.home) {
                 NavigationStack {
                     HomeView().galleryDestinations()
                 }
-                .privacyContentBlur()
             }
             Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
                 NavigationStack {
                     FavoritesView().galleryDestinations()
                 }
-                .privacyContentBlur()
             }
             Tab("History", systemImage: "clock", value: AppTab.history) {
                 NavigationStack {
                     HistoryView().galleryDestinations()
                 }
-                .privacyContentBlur()
             }
             Tab("Me", systemImage: "person.crop.circle", value: AppTab.more) {
                 NavigationStack {
                     MoreView().galleryDestinations()
                 }
-                .privacyContentBlur()
             }
         }
         .modifier(TabBarMinimize(enabled: settings.hideBarsOnScroll))

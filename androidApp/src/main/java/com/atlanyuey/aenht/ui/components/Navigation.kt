@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -43,6 +45,12 @@ abstract class Screen {
 
     /** Hides the tab bar while this screen is on top (the reader). */
     open val hidesTabBar: Boolean get() = false
+
+    /**
+     * Where this screen zooms out of and back into (window coordinates),
+     * instead of sliding: the reader and the thumbnail of its page.
+     */
+    open fun zoomTarget(): androidx.compose.ui.geometry.Rect? = null
 
     @Composable
     abstract fun Content()
@@ -149,9 +157,12 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
     val inTransition by remember(navigator) { derivedStateOf { navigator.progress.value < 1f } }
 
     CompositionLocalProvider(LocalNavigator provides navigator) {
-        BoxWithConstraints(modifier.fillMaxSize()) {
+        var hostOrigin by remember { mutableStateOf(Offset.Zero) }
+        BoxWithConstraints(modifier.fillMaxSize().onGloballyPositioned { hostOrigin = it.positionInWindow() }) {
             val width = constraints.maxWidth.toFloat()
+            val height = constraints.maxHeight.toFloat()
             val stack = navigator.stack
+            val topScreen = stack.last()
             stack.forEachIndexed { index, screen ->
                 val isTop = index == stack.lastIndex
                 val isUnder = index == stack.lastIndex - 1
@@ -162,9 +173,26 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     val p = navigator.progress.value
-                                    translationX = if (isTop) width * (1f - p) else -width * 0.3f * p
+                                    // A zooming screen (the reader) grows out of and shrinks back
+                                    // into its thumbnail; the one under it stays in place.
+                                    val target = if (p < 1f) topScreen.zoomTarget() else null
+                                    if (target != null) {
+                                        if (isTop) {
+                                            val rect = target.translate(-hostOrigin)
+                                            val scale = maxOf(rect.width / width, rect.height / height)
+                                            val s = scale + (1f - scale) * p
+                                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                                            scaleX = s
+                                            scaleY = s
+                                            translationX = (rect.center.x - width * s / 2f) * (1f - p)
+                                            translationY = (rect.center.y - height * s / 2f) * (1f - p)
+                                            alpha = (p * 2.5f).coerceIn(0f, 1f)
+                                        }
+                                    } else {
+                                        translationX = if (isTop) width * (1f - p) else -width * 0.3f * p
+                                    }
                                 }
-                                .then(if (isTop) Modifier.leadingShadow { navigator.progress.value } else Modifier),
+                                .then(if (isTop && topScreen.zoomTarget() == null) Modifier.leadingShadow { navigator.progress.value } else Modifier),
                         ) {
                             holder.SaveableStateProvider(screen.id) { screen.Content() }
                             if (isUnder) {

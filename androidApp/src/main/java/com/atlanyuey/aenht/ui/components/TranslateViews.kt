@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import com.atlanyuey.aenht.core.privacyText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,7 +29,13 @@ import kotlinx.coroutines.launch
  * its place with who made it. Hidden until a translator is set up.
  */
 @Composable
-fun TranslateLine(text: String, kind: TranslationKind, modifier: Modifier = Modifier) {
+fun TranslateLine(
+    text: String,
+    kind: TranslationKind,
+    modifier: Modifier = Modifier,
+    /** When set, the translation goes here (a title shows it in its own place) and this line shows only who translated it. */
+    onResult: ((Translation) -> Unit)? = null,
+) {
     if (!TranslationService.isAvailable) return
     val scope = rememberCoroutineScope()
     var result by remember(text) { mutableStateOf<Translation?>(null) }
@@ -38,7 +45,9 @@ fun TranslateLine(text: String, kind: TranslationKind, modifier: Modifier = Modi
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         val r = result
         if (r != null) {
-            Txt(r.text, style = if (kind == TranslationKind.TITLE) Type.subheadline.copy(fontWeight = FontWeight.Medium) else Type.subheadline)
+            if (onResult == null) {
+                Txt(r.text, Modifier.privacyText(), style = if (kind == TranslationKind.TITLE) Type.subheadline.copy(fontWeight = FontWeight.Medium) else Type.subheadline)
+            }
             Txt(
                 if (r.fellBack) tr("Translated by %@ (switched)", r.provider) else tr("Translated by %@", r.provider),
                 style = Type.caption2, color = colors.tertiaryLabel,
@@ -50,7 +59,7 @@ fun TranslateLine(text: String, kind: TranslationKind, modifier: Modifier = Modi
                     error = null
                     scope.launch {
                         try {
-                            result = TranslationService.translate(text, kind)
+                            result = TranslationService.translate(text, kind).also { onResult?.invoke(it) }
                         } catch (e: Exception) {
                             error = e.localizedMessage
                         }

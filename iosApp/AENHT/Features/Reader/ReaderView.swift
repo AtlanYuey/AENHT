@@ -238,6 +238,7 @@ struct ReaderView: View {
             .onChange(of: sliderEditing) { scheduleHide() }
             .onChange(of: showSettings) { scheduleHide() }
             .onChange(of: page) { _, new in
+                ReaderProgress.shared.set(new, gallery: source.id)
                 sliderValue = Double(new)
                 if position != new { position = new }
                 prefetch(around: new)
@@ -264,6 +265,7 @@ struct ReaderView: View {
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
                 awake.touched()
+                ReaderProgress.shared.set(page, gallery: source.id)
                 prefetch(around: page)
                 recordPage()
                 scheduleHide()
@@ -325,8 +327,7 @@ struct ReaderView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
-            .gesture(SideSwipe(direction: .left) { handleSwipe($0) })
-            .gesture(SideSwipe(direction: .right) { handleSwipe($0) })
+            .gesture(ReaderPan { handleSwipe($0) })
         }
     }
 
@@ -352,18 +353,21 @@ struct ReaderView: View {
         go(step(forward: forward))
     }
 
-    /// Swipes across the reading direction do what the Controls settings
-    /// say (up and down when pages turn sideways, left and right otherwise).
+    /// Swipes do what the Controls settings say: up and down with the left
+    /// and right tap zones, left and right with the top and bottom ones. A
+    /// swipe along the way the pages move turns or scrolls them instead.
     private func handleSwipe(_ direction: UISwipeGestureRecognizer.Direction) {
-        let sideways = settings.readMode == .leftToRight || settings.readMode == .rightToLeft
+        let vertical = settings.tapZones == .leftRight
+        let pagesMoveVertically = settings.readMode != .leftToRight && settings.readMode != .rightToLeft
+        guard vertical != pagesMoveVertically else { return }
         let gesture: ReaderGesture
-        if sideways, direction == .up {
+        if vertical, direction == .up {
             gesture = settings.swipeUp
-        } else if sideways, direction == .down {
+        } else if vertical, direction == .down {
             gesture = settings.swipeDown
-        } else if !sideways, direction == .left {
+        } else if !vertical, direction == .left {
             gesture = settings.swipeLeft
-        } else if !sideways, direction == .right {
+        } else if !vertical, direction == .right {
             gesture = settings.swipeRight
         } else {
             return
@@ -711,25 +715,27 @@ struct ReadingSettingsSections: View {
 
     @ViewBuilder private var controls: some View {
         Section {
-            Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
+            Toggle("Tap to Turn Pages", isOn: $settings.tapToTurnPages)
             Picker("Tap Zones", selection: $settings.tapZones) {
                 ForEach(TapZones.allCases) { Text($0.title).tag($0) }
             }
-            .disabled(!settings.tapToTurnPages)
-            Toggle("Swap Tap Zones", isOn: $settings.swapTapZones)
             Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
         } footer: {
             Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
         }
         Section {
-            gesturePicker("Swipe Down", $settings.swipeDown)
-            gesturePicker("Swipe Up", $settings.swipeUp)
-            gesturePicker("Swipe Right", $settings.swipeRight)
-            gesturePicker("Swipe Left", $settings.swipeLeft)
+            // Across the tap zones: up and down with left and right zones.
+            if settings.tapZones == .leftRight {
+                gesturePicker("Swipe Down", $settings.swipeDown)
+                gesturePicker("Swipe Up", $settings.swipeUp)
+            } else {
+                gesturePicker("Swipe Right", $settings.swipeRight)
+                gesturePicker("Swipe Left", $settings.swipeLeft)
+            }
         } header: {
             Text("Swipes")
         } footer: {
-            Text("Up and down work in the left-to-right and right-to-left modes; left and right in the top-to-bottom modes. Not while a page is zoomed in.")
+            Text("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")
         }
     }
 
@@ -760,29 +766,40 @@ enum ReaderTapZones {
         case .topBottom:
             if point.y < edge { forward = false } else if point.y > 1 - edge { forward = true } else { return nil }
         }
-        // Swapped tap zones: the zones change places.
-        return forward != settings.swapTapZones
+        return forward
     }
 }
 
-/// A left or right swipe over the continuous reader, alongside its scrolling.
-struct SideSwipe: UIGestureRecognizerRepresentable {
-    let direction: UISwipeGestureRecognizer.Direction
+/// What counts as a reader swipe: long and straight, so a small slip
+/// doesn't close the reader.
+enum ReaderSwipe {
+    static func direction(_ t: CGPoint, in size: CGSize) -> UISwipeGestureRecognizer.Direction? {
+        let ax = abs(t.x)
+        let ay = abs(t.y)
+        if ay >= max(150, size.height * 0.2), ay >= 2.5 * ax { return t.y > 0 ? .down : .up }
+        if ax >= max(150, size.width * 0.35), ax >= 2.5 * ay { return t.x > 0 ? .right : .left }
+        return nil
+    }
+}
+
+/// Swipes over the continuous reader, alongside its scrolling.
+struct ReaderPan: UIGestureRecognizerRepresentable {
     let action: (UISwipeGestureRecognizer.Direction) -> Void
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> SwipeDelegate {
         SwipeDelegate()
     }
 
-    func makeUIGestureRecognizer(context: Context) -> UISwipeGestureRecognizer {
-        let recognizer = UISwipeGestureRecognizer()
-        recognizer.direction = direction
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let recognizer = UIPanGestureRecognizer()
         recognizer.delegate = context.coordinator
         return recognizer
     }
 
-    func handleUIGestureRecognizerAction(_ recognizer: UISwipeGestureRecognizer, context: Context) {
-        if recognizer.state == .ended { action(direction) }
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        guard recognizer.state == .ended, let view = recognizer.view,
+              let direction = ReaderSwipe.direction(recognizer.translation(in: view), in: view.bounds.size) else { return }
+        action(direction)
     }
 }
 
@@ -1074,16 +1091,15 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             guard let self else { return true }
             return zoomScale > minimumZoomScale + 0.01
         }
-        for direction: UISwipeGestureRecognizer.Direction in [.up, .down, .left, .right] {
-            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
-            swipe.direction = direction
-            swipe.delegate = swipeDelegate
-            addGestureRecognizer(swipe)
-        }
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        pan.delegate = swipeDelegate
+        addGestureRecognizer(pan)
     }
 
-    @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
-        onSwipe?(gesture.direction)
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .ended,
+              let direction = ReaderSwipe.direction(gesture.translation(in: self), in: bounds.size) else { return }
+        onSwipe?(direction)
     }
 
     required init?(coder: NSCoder) {
@@ -1321,6 +1337,75 @@ private struct PageAlerts: ViewModifier {
             }
             .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
                 Button("OK", role: .cancel) {}
+            }
+    }
+}
+
+// MARK: - Back to the page's thumbnail
+
+/// A page's thumbnail on a gallery page, as a zoom transition source.
+struct ReaderThumbID: Hashable {
+    let gallery: Int
+    let page: Int
+}
+
+/// The page each open reader is on, so the gallery page behind it keeps its
+/// row of pages on that page and the reader closes into its thumbnail.
+@MainActor
+@Observable
+final class ReaderProgress {
+    static let shared = ReaderProgress()
+    private(set) var pages: [Int: Int] = [:]
+
+    func set(_ page: Int, gallery: Int) {
+        if pages[gallery] != page { pages[gallery] = page }
+    }
+
+    func page(gallery: Int) -> Int? { pages[gallery] }
+}
+
+/// The reader, zooming out of (and back into) the thumbnail of the page it's on.
+struct ReaderDestination: View {
+    let route: ReaderRoute
+    let namespace: Namespace.ID
+    @State private var progress = ReaderProgress.shared
+
+    var body: some View {
+        ReaderView(route: route)
+            .navigationTransition(.zoom(sourceID: ReaderThumbID(gallery: route.source.id,
+                                                                  page: progress.page(gallery: route.source.id) ?? route.page),
+                                        in: namespace))
+    }
+}
+
+extension View {
+    /// Marks a page thumbnail as where the reader zooms from and back to.
+    @ViewBuilder
+    func readerThumbSource(gallery: Int, page: Int, _ namespace: Namespace.ID?) -> some View {
+        if let namespace {
+            matchedTransitionSource(id: ReaderThumbID(gallery: gallery, page: page), in: namespace)
+        } else {
+            self
+        }
+    }
+
+    /// Keeps a row of pages (ids: page indexes) centred on the page the
+    /// reader is on, also while it's open, so it closes into its thumbnail.
+    func followsReader(gallery: Int, position: Binding<Int?>) -> some View {
+        modifier(FollowsReader(gallery: gallery, position: position))
+    }
+}
+
+private struct FollowsReader: ViewModifier {
+    let gallery: Int
+    @Binding var position: Int?
+    @State private var progress = ReaderProgress.shared
+
+    func body(content: Content) -> some View {
+        content
+            .scrollPosition(id: $position, anchor: .center)
+            .onChange(of: progress.page(gallery: gallery)) { _, page in
+                if let page { position = page }
             }
     }
 }

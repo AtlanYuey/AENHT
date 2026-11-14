@@ -90,6 +90,8 @@ struct HistoryView: View {
             }
             .padding(.bottom, 16)
         }
+        // History is on the device: a double tap just goes to the top.
+        .tabTapScrolling(.history) {}
         .environment(\.galleryCoverBadge) { item in
             AnyView(ReadingProgressBar(entry: byID[item.uid]))
         }
@@ -120,6 +122,7 @@ struct HistoryView: View {
             }
         }
         .listStyle(.plain)
+        .tabTapScrolling(.history) {}
     }
 
     private func delete(_ entry: HistoryEntry) {

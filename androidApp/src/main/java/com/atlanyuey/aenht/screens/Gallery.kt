@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.readerThumb
+import com.atlanyuey.aenht.core.privacyText
 import com.atlanyuey.aenht.core.Filters
 import com.atlanyuey.aenht.core.EhPageRef
 import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
@@ -367,7 +369,11 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
         val context = LocalContext.current
         val density = LocalDensity.current
         val collapsed = !titleExpanded && coverHeight > 0
-        val title = detail?.displayTitle ?: preview?.title ?: ""
+        // Translated, the translation takes the title's place; a tap switches
+        // between it and the original.
+        var titleTranslation by remember(detail?.id) { mutableStateOf<com.atlanyuey.aenht.shared.translate.Translation?>(null) }
+        var showsOriginal by remember(detail?.id) { mutableStateOf(false) }
+        val title = titleTranslation?.takeIf { !showsOriginal }?.text ?: detail?.displayTitle ?: preview?.title ?: ""
         val titleStyle = if (wide) Type.title2.copy(fontWeight = FontWeight.SemiBold) else Type.title3
         Column(
             Modifier
@@ -381,7 +387,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                     .combinedClickable(
                         interactionSource = null,
                         indication = null,
-                        onClick = { titleExpanded = !titleExpanded },
+                        onClick = { if (titleTranslation != null) showsOriginal = !showsOriginal else titleExpanded = !titleExpanded },
                         onLongClick = {
                             val text = listOfNotNull(detail?.displayTitle ?: preview?.title, detail?.subtitle).joinToString("\n")
                             context.getSystemService(ClipboardManager::class.java)
@@ -399,15 +405,18 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         } else {
                             Int.MAX_VALUE
                         }
-                        Txt(title, style = titleStyle, maxLines = lines)
+                        Txt(title, Modifier.privacyText(), style = titleStyle, maxLines = lines)
                     }
                 } else {
-                    Txt(title, style = titleStyle)
+                    Txt(title, Modifier.privacyText(), style = titleStyle)
                 }
                 detail?.subtitle?.let {
-                    Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
+                    Txt(it, Modifier.privacyText(), style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
                 }
-                detail?.let { TranslateLine(it.japaneseTitle ?: it.displayTitle, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
+                detail?.let {
+                    TranslateLine(it.japaneseTitle ?: it.displayTitle, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE,
+                        onResult = { t -> titleTranslation = t; showsOriginal = false })
+                }
             }
             detail?.let { d ->
                 val artists = d.tags(TagGroup.Artist) + d.tags(TagGroup.Group)
@@ -563,7 +572,9 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 SectionTitle(tr("Pages")) {
                     if (d.pages.size > 1) TextButton(tr("See All"), { navigator.push(PagesScreen(d)) })
                 }
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+                com.atlanyuey.aenht.ui.components.FollowReader(d.id, rowState, d.pages.size)
+                LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(d.pages, key = { it.number }) { page ->
                         Column(
                             Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(d), page.number - 1)) },
@@ -574,6 +585,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                                 Downloads.localFile(d.id, page.number - 1) ?: page.thumbUrl,
                                 Modifier
                                     .size(width = height * page.aspectRatio.coerceIn(0.5f, 1.5f), height = height)
+                                    .readerThumb(d.id, page.number - 1)
                                     .clip(RoundedCornerShape(8.dp)),
                                 targetWidth = 240.dp,
                             )
@@ -635,7 +647,7 @@ class PagesScreen(private val detail: GalleryDetail) : Screen() {
                     ) {
                         RemoteImage(
                             Downloads.localFile(detail.id, page.number - 1) ?: page.thumbUrl,
-                            Modifier.fillMaxWidth().height(130.dp).clip(RoundedCornerShape(8.dp)),
+                            Modifier.fillMaxWidth().height(130.dp).readerThumb(detail.id, page.number - 1).clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Fit,
                             targetWidth = 240.dp,
                         )
@@ -675,7 +687,7 @@ fun CommentBubble(comment: GalleryComment, maxLines: Int = Int.MAX_VALUE) {
                     maxLines = 1,
                 )
             }
-            Txt(comment.body, style = Type.subheadline, maxLines = maxLines)
+            Txt(comment.body, Modifier.privacyText(), style = Type.subheadline, maxLines = maxLines)
             if (maxLines == Int.MAX_VALUE) TranslateLine(comment.body, com.atlanyuey.aenht.shared.translate.TranslationKind.COMMENT)
         }
     }

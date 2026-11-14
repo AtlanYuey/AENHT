@@ -233,7 +233,7 @@ enum class BackgroundPrivacy(val raw: String, val title: String) {
     BlurImages("blurImages", "Blur Pictures");
 
     companion object {
-        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Off
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: BlurImages
     }
 }
 
@@ -345,7 +345,6 @@ object AppSettings {
         autoCrop = p.getBoolean("autoCrop", false)
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
-        swapTapZones = p.getBoolean("swapTapZones", false)
         tapZones = TapZones.of(p.getString("tapZones", null))
         swipeUp = ReaderGesture.of(p.getString("swipeUp", null), ReaderGesture.None)
         swipeDown = ReaderGesture.of(p.getString("swipeDown", null), ReaderGesture.Exit)
@@ -495,7 +494,7 @@ object AppSettings {
 
     /** Rows pinned above the Home feed, both sites ("nh-popular,eh-popular"). */
     var homeRowsRaw by Pref(DEFAULT_HOME_ROWS) { save("homeRows", it) }
-    private const val DEFAULT_HOME_ROWS = "nh-popular,eh-popular"
+    private const val DEFAULT_HOME_ROWS = "nh-popular,nh-week,eh-day,eh-popular"
 
     /** E-Hentai commenters whose comments are hidden (names, one per line). */
     var blockedCommenters by Pref("") { save("blockedCommenters", it) }
@@ -504,7 +503,6 @@ object AppSettings {
     fun unblockCommenter(name: String) { blockedCommenters = (blockedCommenterSet - name.trim()).joinToString("\n") }
 
     /** Reader: tapping the left edge goes forward (and the right edge back). */
-    var swapTapZones by Pref(false) { save("swapTapZones", it) }
     /** Reader: taps on the left / right edges, or the top / bottom ones, turn pages. */
     var tapZones by Pref(TapZones.LeftRight) { save("tapZones", it.raw) }
     /** Reader swipes the pages don't use: up / down in the left-right modes, left / right in the top-to-bottom ones. */
@@ -526,7 +524,7 @@ object AppSettings {
     /** Ask for the fingerprint / face or the device PIN when the app opens or comes back (kept on this device). */
     var appLock by Pref(false) { save("appLock", it) }
     /** What the app shows in the background / app switcher. */
-    var backgroundPrivacy by Pref(BackgroundPrivacy.Off) { save("backgroundPrivacy", it.raw) }
+    var backgroundPrivacy by Pref(BackgroundPrivacy.BlurImages) { save("backgroundPrivacy", it.raw) }
 
     fun homeRows(site: Site): List<HomeRow> =
         homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)
@@ -655,7 +653,6 @@ object AppSettings {
         "autoCrop" to autoCrop,
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
-        "swapTapZones" to swapTapZones,
         "tapZones" to tapZones.raw,
         "swipeUp" to swipeUp.raw,
         "swipeDown" to swipeDown.raw,
@@ -761,7 +758,6 @@ object AppSettings {
                 "autoCrop" -> bool?.let { autoCrop = it }
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }
-                "swapTapZones" -> bool?.let { swapTapZones = it }
                 "tapZones" -> string?.let { tapZones = TapZones.of(it) }
                 "swipeUp" -> string?.let { swipeUp = ReaderGesture.of(it, swipeUp) }
                 "swipeDown" -> string?.let { swipeDown = ReaderGesture.of(it, swipeDown) }

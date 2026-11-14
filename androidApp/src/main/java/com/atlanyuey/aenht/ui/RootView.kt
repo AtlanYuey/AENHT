@@ -154,8 +154,13 @@ fun RootView(
     fun select(index: Int) {
         if (index == selected) {
             val navigator = tabs.all[index]
-            val home = navigator.stack.first() as? HomeScreen
-            if (home != null && !navigator.canPop) home.tabTapped() else navigator.popToRoot()
+            when {
+                // Me: back one page at a time, to the Me page.
+                navigator === tabs.more -> if (navigator.canPop) navigator.pop()
+                navigator.canPop -> navigator.popToRoot()
+                // Home, Favorites, History: to the top, back, or refresh (TabTaps).
+                else -> (navigator.stack.first() as? com.atlanyuey.aenht.screens.TabRoot)?.tabTapped()
+            }
         } else {
             selected = index
             lastTab = index
@@ -211,9 +216,7 @@ fun RootView(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .layerBackdrop(backdrop)
-                    // In the background: the pages blurred, the tab bar left sharp.
-                    .then(if (com.atlanyuey.aenht.core.Privacy.blursContent) Modifier.blur(36.dp) else Modifier),
+                    .layerBackdrop(backdrop),
             ) {
                 holder.SaveableStateProvider("tab$selected") {
                     NavHost(navigator)

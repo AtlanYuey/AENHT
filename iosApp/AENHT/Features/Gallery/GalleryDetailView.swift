@@ -73,6 +73,9 @@ struct GalleryDetailView: View {
     /// Height of the cover; a collapsed title is cut to fit next to it.
     @State private var coverHeight: CGFloat = 0
     @State private var titleExpanded = false
+    /// The title's translation (Translate), shown in place of the title.
+    @State private var titleTranslation: Translation?
+    @State private var showsOriginalTitle = false
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(UserSession.self) private var session
@@ -174,8 +177,12 @@ struct GalleryDetailView: View {
             // ends with "…". Tapping the title or subtitle shows all of it.
             VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(model.detail?.displayTitle ?? model.preview?.title ?? "")
+                    // Translated, the translation takes the title's place; a
+                    // tap switches between it and the original.
+                    Text(titleTranslation.flatMap { showsOriginalTitle ? nil : $0.text }
+                         ?? model.detail?.displayTitle ?? model.preview?.title ?? "")
                         .font(sizeClass == .regular ? .title2.weight(.semibold) : .title3.weight(.semibold))
+                        .contentTransition(.opacity)
                         .layoutPriority(0)
                     if let subtitle = model.detail?.subtitle {
                         Text(subtitle)
@@ -186,9 +193,15 @@ struct GalleryDetailView: View {
                     }
                 }
                 .textSelection(.enabled)
+                .privacyText()
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.snappy) { titleExpanded.toggle() }
+                    withAnimation(.snappy) {
+                        if titleTranslation != nil { showsOriginalTitle.toggle() } else { titleExpanded.toggle() }
+                    }
+                }
+                if let detail = model.detail {
+                    TranslateLine(text: detail.subtitle ?? detail.displayTitle, kind: .title, output: $titleTranslation)
                 }
                 if let detail = model.detail {
                     let artists = detail.tags(in: .artist) + detail.tags(in: .group)
@@ -529,6 +542,7 @@ private struct TagRow: View {
         ForEach(Array(tags.enumerated()), id: \.offset) { index, tag in
             NavigationLink(value: SearchRoute(query: tag.query, title: tag.name)) {
                 TagChip(name: tagStore.displayName(tag.name, type: tag.type), count: tag.count)
+                    .privacyText()
             }
             .buttonStyle(.plain)
             .matchedGeometryEffect(id: index, in: namespace)
@@ -564,6 +578,9 @@ private struct PreviewSection: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
+    @Environment(\.galleryNamespace) private var namespace
+    /// The page in the middle of the row (the one being read, see followsReader).
+    @State private var centered: Int?
 
     var body: some View {
         let source = ReaderSource(detail: detail)
@@ -583,13 +600,14 @@ private struct PreviewSection: View {
             // A row of every page, swiped sideways (like the previous version).
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 10) {
-                    ForEach(detail.pages) { page in
+                    ForEach(Array(detail.pages.enumerated()), id: \.offset) { index, page in
                         NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
                             VStack(spacing: 6) {
                                 RemoteImage(url: downloads.localURL(gallery: detail.id, page: page.number - 1) ?? page.thumbURL,
                                             contentMode: .fill, targetWidth: 240)
                                     .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .readerThumbSource(gallery: detail.id, page: index, namespace)
                                 Text("\(page.number)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -604,6 +622,7 @@ private struct PreviewSection: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
             .contentMargins(.horizontal, 16, for: .scrollContent)
+            .followsReader(gallery: detail.id, position: $centered)
         }
         .padding(.top, 8)
     }
@@ -614,6 +633,7 @@ struct PageGrid: View {
     var limit: Int? = nil
 
     @Environment(DownloadManager.self) private var downloads
+    @Environment(\.galleryNamespace) private var namespace
 
     var body: some View {
         let source = ReaderSource(detail: detail)
@@ -630,6 +650,7 @@ struct PageGrid: View {
                                             contentMode: .fit, targetWidth: 240)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .readerThumbSource(gallery: detail.id, page: page.number - 1, namespace)
                         Text("\(page.number)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)

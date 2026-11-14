@@ -81,6 +81,8 @@ struct MoreView: View {
             }
         }
         .navigationTitle("Me")
+        // The Me tab button goes back one page at a time (AppChrome.tabReselected).
+        .background(TabNavigationFinder(tab: .more).frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogin) { LoginView() }
     }

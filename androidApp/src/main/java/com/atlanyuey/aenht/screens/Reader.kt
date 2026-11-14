@@ -166,7 +166,7 @@ private fun pageColorEffect(grayscale: Boolean, invert: Boolean): androidx.compo
 /**
  * What a tap at ([fx], [fy]), fractions of the page, does: true turns
  * forward, false back, null nothing (the middle). Left and right edges or
- * top and bottom (Tap Zones); Swap Tap Zones reverses them.
+ * top and bottom (Tap Zones).
  */
 private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
     if (!AppSettings.tapToTurnPages) return null
@@ -182,10 +182,13 @@ private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
             else -> return null
         }
     }
-    return forward != AppSettings.swapTapZones
+    return forward
 }
 
 class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
+    /** Opens out of, and closes into, the thumbnail of the page it's on (when it's on screen). */
+    override fun zoomTarget() = com.atlanyuey.aenht.ui.components.ReaderThumbs.rect(source.id, page)
+
     override val hidesTabBar: Boolean get() = true
 
     private var page by mutableIntStateOf(start.coerceIn(0, maxOf(0, source.pages.size - 1)))
@@ -281,14 +284,22 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** The last touch or volume key (Keep Screen On counts from it). */
     private var lastTouch = 0L
 
+    /**
+     * A long, straight swipe ([min] at least) does what the Controls settings
+     * say: up and down with the left and right tap zones, left and right with
+     * the top and bottom ones. One along the way the pages move turns or
+     * scrolls them instead.
+     */
     private fun swiped(delta: Offset, min: Float) {
+        val vertical = AppSettings.tapZones == com.atlanyuey.aenht.core.TapZones.LeftRight
         val mode = AppSettings.readMode
-        val horizontalPages = mode == ReadMode.LeftToRight || mode == ReadMode.RightToLeft
-        val gesture = if (horizontalPages) {
-            if (kotlin.math.abs(delta.y) < min || kotlin.math.abs(delta.y) < 2 * kotlin.math.abs(delta.x)) return
+        val pagesMoveVertically = mode != ReadMode.LeftToRight && mode != ReadMode.RightToLeft
+        if (vertical == pagesMoveVertically) return
+        val gesture = if (vertical) {
+            if (kotlin.math.abs(delta.y) < min || kotlin.math.abs(delta.y) < 2.5f * kotlin.math.abs(delta.x)) return
             if (delta.y > 0) AppSettings.swipeDown else AppSettings.swipeUp
         } else {
-            if (kotlin.math.abs(delta.x) < min || kotlin.math.abs(delta.x) < 2 * kotlin.math.abs(delta.y)) return
+            if (kotlin.math.abs(delta.x) < min || kotlin.math.abs(delta.x) < 2.5f * kotlin.math.abs(delta.y)) return
             if (delta.x > 0) AppSettings.swipeRight else AppSettings.swipeLeft
         }
         gestureAction?.invoke(gesture)
@@ -406,6 +417,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
         LaunchedEffect(page) { prefetch(context, page) }
+        LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.id, page) }
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
@@ -493,7 +505,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val up = waitForUpOrCancellation(PointerEventPass.Initial) ?: return@awaitEachGesture
             val delta = up.position - down.position
             if (delta.getDistance() > viewConfiguration.touchSlop) {
-                if (!zoomed() && up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, 80.dp.toPx())
+                if (!zoomed() && up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, maxOf(150.dp.toPx(), 0.2f * size.height))
                 return@awaitEachGesture
             }
             if (up.uptimeMillis - down.uptimeMillis > 400) return@awaitEachGesture
@@ -1052,18 +1064,21 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
-        ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
+        ToggleRow(tr("Tap to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
         PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
             label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it })
-        ToggleRow(tr("Swap Tap Zones"), AppSettings.swapTapZones, { AppSettings.swapTapZones = it })
         ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
         ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
     }
-    section("Swipes", footer = { FooterText(tr("Up and down work in the left-to-right and right-to-left modes; left and right in the top-to-bottom modes. Not while a page is zoomed in.")) }) {
+    section("Swipes", footer = { FooterText(tr("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")) }) {
         val g = com.atlanyuey.aenht.core.ReaderGesture.entries
-        PickerRow(tr("Swipe Down"), g, AppSettings.swipeDown, label = { tr(it.title) }, onSelect = { AppSettings.swipeDown = it })
-        PickerRow(tr("Swipe Up"), g, AppSettings.swipeUp, label = { tr(it.title) }, onSelect = { AppSettings.swipeUp = it })
-        PickerRow(tr("Swipe Right"), g, AppSettings.swipeRight, label = { tr(it.title) }, onSelect = { AppSettings.swipeRight = it })
-        PickerRow(tr("Swipe Left"), g, AppSettings.swipeLeft, label = { tr(it.title) }, onSelect = { AppSettings.swipeLeft = it }, last = true)
+        // Across the tap zones: up and down with left and right zones.
+        if (AppSettings.tapZones == com.atlanyuey.aenht.core.TapZones.LeftRight) {
+            PickerRow(tr("Swipe Down"), g, AppSettings.swipeDown, label = { tr(it.title) }, onSelect = { AppSettings.swipeDown = it })
+            PickerRow(tr("Swipe Up"), g, AppSettings.swipeUp, label = { tr(it.title) }, onSelect = { AppSettings.swipeUp = it }, last = true)
+        } else {
+            PickerRow(tr("Swipe Right"), g, AppSettings.swipeRight, label = { tr(it.title) }, onSelect = { AppSettings.swipeRight = it })
+            PickerRow(tr("Swipe Left"), g, AppSettings.swipeLeft, label = { tr(it.title) }, onSelect = { AppSettings.swipeLeft = it }, last = true)
+        }
     }
 }

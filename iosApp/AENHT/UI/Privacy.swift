@@ -13,15 +13,16 @@ extension EnvironmentValues {
     }
 }
 
-/// Blurs a tab's pages in the background (Blur Pictures and Text); the tab bar stays sharp.
-struct PrivacyContentBlur: ViewModifier {
+/// Blurs content text in the background (Blur Pictures and Text): titles,
+/// tags, comments. Buttons, bars and settings stay sharp.
+struct PrivacyTextBlur: ViewModifier {
     @Environment(\.privacyMode) private var mode
 
     func body(content: Content) -> some View {
-        content.blur(radius: mode == .blurContent ? 30 : 0)
+        content.blur(radius: mode == .blurContent ? 7 : 0)
     }
 }
 
 extension View {
-    func privacyContentBlur() -> some View { modifier(PrivacyContentBlur()) }
+    func privacyText() -> some View { modifier(PrivacyTextBlur()) }
 }

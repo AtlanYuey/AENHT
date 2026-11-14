@@ -30,17 +30,6 @@ struct HomeView: View {
 
     private static let space = "homeFeed"
 
-    @State private var scroll = ScrollPosition(edge: .top)
-    /// How far the feed is scrolled (0 at the top).
-    @State private var offset: CGFloat = 0
-    /// Where the feed was when the Home tab took it to the top.
-    @State private var savedOffset: CGFloat?
-    /// A tap on the Home tab at the top, waiting to see if a second follows.
-    @State private var pendingTap: Task<Void, Never>?
-    @State private var lastTopTap = Date.distantPast
-    @State private var visible = false
-    @State private var chrome = AppChrome.shared
-
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -62,15 +51,7 @@ struct HomeView: View {
             }
             .coordinateSpace(.named(Self.space))
         }
-        .scrollPosition($scroll)
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y + geometry.contentInsets.top
-        } action: { _, new in
-            offset = new
-        }
-        .onAppear { visible = true }
-        .onDisappear { visible = false }
-        .onChange(of: chrome.homeTabTaps) { homeTabTapped() }
+        .tabTapScrolling(.home, enabled: !searching) { await reload() }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             // The bar's bottom edge, in the feed's coordinates, is past the header.
             geometry.contentOffset.y + geometry.contentInsets.top > headerBottom - 4
@@ -139,37 +120,6 @@ struct HomeView: View {
         }
         .onChange(of: settings.homeRowsRaw) { Task { await loadRows() } }
         .onChange(of: settings.currentSite) { Task { if !feed.hasLoaded { await reload() } } }
-    }
-
-    /// The Home tab was tapped while Home shows: away from the top, the feed
-    /// goes to the top; at the top, back to where it was; tapped twice
-    /// quickly, Home refreshes.
-    private func homeTabTapped() {
-        guard visible, !searching else { return }
-        let doubleTap: TimeInterval = 0.3
-        if pendingTap != nil || Date().timeIntervalSince(lastTopTap) < doubleTap {
-            pendingTap?.cancel()
-            pendingTap = nil
-            lastTopTap = .distantPast
-            savedOffset = nil
-            withAnimation(.smooth) { scroll.scrollTo(edge: .top) }
-            Task { await reload() }
-            return
-        }
-        if offset > 1 {
-            savedOffset = offset
-            lastTopTap = Date()
-            withAnimation(.smooth) { scroll.scrollTo(edge: .top) }
-            return
-        }
-        pendingTap = Task {
-            try? await Task.sleep(for: .seconds(doubleTap))
-            guard !Task.isCancelled else { return }
-            pendingTap = nil
-            guard let saved = savedOffset else { return }
-            savedOffset = nil
-            withAnimation(.smooth) { scroll.scrollTo(y: saved) }
-        }
     }
 
     private func startSearch() {

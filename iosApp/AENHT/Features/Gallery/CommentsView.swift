@@ -129,7 +129,7 @@ struct CommentBubble: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Text(comment.body)
+                Text(comment.body).privacyText()
                     .font(.subheadline)
                     .lineLimit(lineLimit)
                     .textSelection(.enabled)

@@ -41,7 +41,7 @@ final class TranslationService {
     /// Adds or updates a service; an empty key keeps the saved one.
     func store(_ service: LlmService, key: String) {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { Keychain.write("llm_\(service.id)", trimmed) }
+        if trimmed.isEmpty { Keychain.delete("llm_\(service.id)") } else { Keychain.write("llm_\(service.id)", trimmed) }
         var list = services
         if let i = list.firstIndex(where: { $0.id == service.id }) { list[i] = service } else { list.append(service) }
         save(list)
@@ -101,10 +101,14 @@ final class TranslationService {
     }
 
     /// Translates a sample with the service (its usage counts too).
-    func test(_ service: LlmService, key: String) async throws -> LlmTestResult {
-        let sample = target.hasPrefix("en") ? "今日はいい天気ですね。散歩に行きましょう。" : "It's a nice day today. Let's go for a walk."
+    /// The text a service is tested with (it can be edited before the test).
+    var sampleText: String {
+        target.hasPrefix("en") ? "今日はいい天気ですね。散歩に行きましょう。" : "It's a nice day today. Let's go for a walk."
+    }
+
+    func test(_ service: LlmService, key: String, text: String) async throws -> LlmTestResult {
         do {
-            let result = try await translator.test(service: service, key: key, text: sample, target: target)
+            let result = try await translator.test(service: service, key: key, text: text, target: target)
             saveUsage()
             return result
         } catch {
@@ -178,6 +182,9 @@ final class TranslationService {
 struct TranslateLine: View {
     let text: String
     let kind: TranslationKind
+    /// When set, the translation goes here (a title shows it in place of
+    /// the original) and this line shows only who translated it.
+    var output: Binding<Translation?>? = nil
 
     @State private var result: Translation?
     @State private var error: String?
@@ -190,7 +197,9 @@ struct TranslateLine: View {
         if service.isAvailable {
             VStack(alignment: .leading, spacing: 4) {
                 if let result {
-                    Text(result.text).font(kind == .title ? .subheadline.weight(.medium) : .subheadline)
+                    if output == nil {
+                        Text(result.text).font(kind == .title ? .subheadline.weight(.medium) : .subheadline).privacyText()
+                    }
                     Text(result.fellBack ? "Translated by \(result.provider) (switched)" : "Translated by \(result.provider)")
                         .font(.caption2).foregroundStyle(.tertiary)
                 } else {
@@ -207,6 +216,7 @@ struct TranslateLine: View {
                     if let error { Text(error).font(.caption2).foregroundStyle(.red).lineLimit(2) }
                 }
             }
+            .onChange(of: result?.text) { output?.wrappedValue = result }
             .modifier(DeviceTranslationTask(text: text, target: service.target, request: $deviceRequest) { outcome in
                 switch outcome {
                 case .success(let translated):
@@ -285,7 +295,10 @@ struct TranslationSettingsView: View {
                 Text("Tried from top to bottom: a model that refuses, fails or reaches its monthly spending limit hands over to the next one, then to Microsoft Translator, then to the on-device translation.")
             }
             Section {
-                SecureField("API Key", text: $msKey)
+                TextField("API Key", text: $msKey)
+                    .font(.callout.monospaced())
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                 TextField("Region (optional)", text: $msRegion)
                     .textInputAutocapitalization(.never)
                 Button("Save") {
@@ -411,10 +424,18 @@ struct LlmServiceEditor: View {
     @State private var limit: Double = 1
     @State private var models: [String] = []
     @State private var loadingModels = false
+    @State private var modelsError: String?
     @State private var testing = false
+    @State private var testText = ""
     @State private var testResult: String?
     @State private var error: String?
     @State private var loaded = false
+    // Request parameters; nil: not sent (the service's own default).
+    @State private var temperature: Double?
+    @State private var topP: Double?
+    @State private var maxTokens: Int?
+    @State private var timeout = Int(LlmService.companion.DEFAULT_TIMEOUT)
+    @State private var extraBody = ""
 
     private var draft: LlmService {
         original.with(
@@ -423,18 +444,25 @@ struct LlmServiceEditor: View {
             enabled: original.enabled,
             inputPrice: inputPrice.map { KotlinDouble(value: $0) }, outputPrice: outputPrice.map { KotlinDouble(value: $0) },
             currency: currency, spendLimit: limitOn ? KotlinDouble(value: limit) : nil
+        ).withParameters(
+            temperature: temperature.map { KotlinDouble(value: $0) }, topP: topP.map { KotlinDouble(value: $0) },
+            maxTokens: maxTokens.map { KotlinInt(value: Int32($0)) }, timeoutSeconds: Int32(timeout),
+            extraBody: extraBody.trimmingCharacters(in: .whitespacesAndNewlines)
         )
     }
 
-    private var effectiveKey: String { key.isEmpty ? service.key(original) : key }
-    private var canSave: Bool { !baseURL.isEmpty && !model.isEmpty && !effectiveKey.isEmpty }
+    private var effectiveKey: String { key.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var extraBodyValid: Bool { draft.extraFields() != nil }
+    private var canSave: Bool { !baseURL.isEmpty && !model.isEmpty && !effectiveKey.isEmpty && extraBodyValid }
 
     var body: some View {
         Form {
             Section("Service") {
                 TextField("Name", text: $name)
                 TextField("API Address", text: $baseURL).keyboardType(.URL)
-                SecureField(service.hasKey(original) ? String(localized: "API Key (saved)") : String(localized: "API Key"), text: $key)
+                // Shown as typed, so it's clear which key this is.
+                TextField("API Key", text: $key)
+                    .font(.callout.monospaced())
             }
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -450,21 +478,24 @@ struct LlmServiceEditor: View {
                     }
                     .pickerStyle(.navigationLink)
                 }
-                Button {
-                    Task { await loadModels() }
-                } label: {
+                if loadingModels {
                     HStack {
-                        Text(models.isEmpty ? "Load Model List" : "Reload Model List")
-                        if loadingModels { Spacer(); ProgressView() }
+                        Text("Loading Models…").foregroundStyle(.secondary)
+                        Spacer()
+                        ProgressView()
                     }
+                } else if let modelsError {
+                    Text(modelsError).font(.footnote).foregroundStyle(.secondary)
                 }
-                .disabled(loadingModels || baseURL.isEmpty || effectiveKey.isEmpty)
             } header: {
                 Text("Model")
             } footer: {
-                Text("The model can be typed in, or chosen from the service's own list.")
+                Text("The service's models load by themselves once the address and key are in. The model can also be typed in.")
             }
+            parametersSection
             Section {
+                TextField("Text to Translate", text: $testText, axis: .vertical)
+                    .lineLimit(2...6)
                 Button {
                     Task { await test() }
                 } label: {
@@ -473,8 +504,10 @@ struct LlmServiceEditor: View {
                         if testing { Spacer(); ProgressView() }
                     }
                 }
-                .disabled(testing || !canSave)
-                if let testResult { Text(testResult).font(.callout) }
+                .disabled(testing || !canSave || testText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if let testResult { Text(testResult).font(.callout).textSelection(.enabled) }
+            } header: {
+                Text("Test")
             }
             costSection
             if !isNew {
@@ -498,6 +531,13 @@ struct LlmServiceEditor: View {
             }
         }
         .onAppear(perform: load)
+        // The model list loads by itself (again when the address or key changes).
+        .task(id: "\(baseURL)|\(effectiveKey)") {
+            guard !baseURL.isEmpty, !effectiveKey.isEmpty else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            await loadModels()
+        }
         .onChange(of: model) { _, new in
             guard original.presetKind == .openrouter, !new.isEmpty else { return }
             Task {
@@ -559,6 +599,13 @@ struct LlmServiceEditor: View {
         outputPrice = original.outputPrice?.doubleValue
         limitOn = original.spendLimit != nil
         limit = original.spendLimit?.doubleValue ?? 1
+        key = service.key(original)
+        temperature = original.temperature?.doubleValue
+        topP = original.topP?.doubleValue
+        maxTokens = original.maxTokens.map { Int($0.int32Value) }
+        timeout = Int(original.timeoutSeconds)
+        extraBody = original.extraBody
+        testText = service.sampleText
     }
 
     private func loadModels() async {
@@ -566,9 +613,61 @@ struct LlmServiceEditor: View {
         defer { loadingModels = false }
         do {
             models = try await service.models(baseURL: baseURL.trimmingCharacters(in: .whitespaces), key: effectiveKey)
+            modelsError = nil
             if model.isEmpty, let first = models.first { model = first }
         } catch {
-            self.error = error.localizedDescription
+            models = []
+            modelsError = String(localized: "Couldn't load the model list: \(error.localizedDescription)")
+        }
+    }
+
+    /// Request parameters, like AY Translate: each one is sent only when on.
+    @ViewBuilder private var parametersSection: some View {
+        Section {
+            parameterSlider("Temperature", value: $temperature, range: 0...2, step: 0.1,
+                            fallback: LlmService.companion.DEFAULT_TEMPERATURE)
+            parameterSlider("Top P", value: $topP, range: 0...1, step: 0.05, fallback: 1)
+            Toggle("Max Tokens", isOn: Binding(get: { maxTokens != nil }, set: { maxTokens = $0 ? 1024 : nil }))
+            if let tokens = maxTokens {
+                Stepper(value: Binding(get: { tokens }, set: { maxTokens = $0 }), in: 64...32768, step: 64) {
+                    LabeledContent("Tokens", value: "\(tokens)")
+                }
+            }
+            Stepper(value: $timeout, in: 5...600, step: 5) {
+                LabeledContent("Timeout", value: "\(timeout) s")
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Extra Parameters (JSON)")
+                TextField(text: $extraBody, prompt: Text(verbatim: "{\"reasoning_effort\": \"low\"}"), axis: .vertical) { EmptyView() }
+                    .font(.callout.monospaced())
+                    .lineLimit(1...6)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if !extraBodyValid {
+                    Text("Not a JSON object.").font(.footnote).foregroundStyle(.red)
+                }
+            }
+        } header: {
+            Text("Request Parameters")
+        } footer: {
+            Text("Defaults: temperature 0.2, timeout 30 s; Top P and max tokens aren't sent, so the service uses its own. Extra parameters are added to the request as they are.")
+        }
+    }
+
+    private func parameterSlider(_ title: LocalizedStringKey, value: Binding<Double?>, range: ClosedRange<Double>,
+                                 step: Double, fallback: Double) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: Binding(get: { value.wrappedValue != nil }, set: { value.wrappedValue = $0 ? fallback : nil })) {
+                HStack {
+                    Text(title)
+                    Spacer()
+                    Text(value.wrappedValue.map { String(format: "%.2f", $0) } ?? String(localized: "Service Default"))
+                        .foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+            if let current = value.wrappedValue {
+                Slider(value: Binding(get: { current }, set: { value.wrappedValue = ($0 / step).rounded() * step }), in: range)
+            }
         }
     }
 
@@ -576,7 +675,7 @@ struct LlmServiceEditor: View {
         testing = true
         defer { testing = false }
         do {
-            let r = try await service.test(draft, key: effectiveKey)
+            let r = try await service.test(draft, key: effectiveKey, text: testText)
             testResult = "\(r.text)\n\(String(format: "%.1f", Double(r.millis) / 1000)) s · \(LlmFormat.tokens(r.inputTokens + r.outputTokens))"
         } catch {
             testResult = nil

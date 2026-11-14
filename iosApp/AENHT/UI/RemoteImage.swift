@@ -20,7 +20,7 @@ struct RemoteImage: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
-                    .blur(radius: blur ? 18 : privacy == .blurImages ? 28 : 0, opaque: true)
+                    .blur(radius: blur ? 18 : privacy == .blurImages || privacy == .blurContent ? 28 : 0, opaque: true)
                     .transition(.opacity)
             } else if state.error != nil, let other = fallback?(), other != url {
                 RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur)

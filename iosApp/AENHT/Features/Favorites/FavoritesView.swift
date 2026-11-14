@@ -83,6 +83,7 @@ struct FavoritesView: View {
                     }
                 }
                 .refreshable { await store.sync() }
+                .tabTapScrolling(.favorites) { await store.sync() }
                 .hidesBarsOnScroll()
             } else {
                 let feed = site == .ehentai ? ehFeed : nhFeed
@@ -97,6 +98,7 @@ struct FavoritesView: View {
                     }
                 }
                 .refreshable { await feed.reload() }
+                .tabTapScrolling(.favorites) { await feed.reload() }
                 .hidesBarsOnScroll()
             }
         }

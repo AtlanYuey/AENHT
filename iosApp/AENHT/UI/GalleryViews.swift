@@ -30,10 +30,11 @@ struct GalleryDestinations: ViewModifier {
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: ReaderRoute.self) { route in
-                ReaderView(route: route)
+                ReaderDestination(route: route, namespace: namespace)
             }
             .navigationDestination(for: PagesRoute.self) { route in
                 PagesView(detail: route.detail)
+                    .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: EhGalleryRoute.self) { route in
                 EhGalleryView(route: route)
@@ -46,6 +47,7 @@ struct GalleryDestinations: ViewModifier {
             }
             .navigationDestination(for: EhPagesRoute.self) { route in
                 EhPagesView(route: route)
+                    .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: DownloadsRoute.self) { _ in
                 DownloadsView()
@@ -214,6 +216,7 @@ struct GalleryCard: View {
             .foregroundStyle(.primary)
             .lineLimit(2)
             .multilineTextAlignment(.leading)
+            .privacyText()
     }
 
     /// Tags and title over the bottom of the cover.
@@ -225,6 +228,7 @@ struct GalleryCard: View {
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
+                .privacyText()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
@@ -297,11 +301,17 @@ struct CardTags: View {
     @Environment(TagStore.self) private var tagStore
 
     var body: some View {
-        if item.site == .nhentai {
-            CardTagLine(ids: item.tagIDs, style: style)
-        } else {
-            CardTagChips(names: Array(item.ehTags.prefix(8)), style: style)
+        Group {
+            if item.site == .nhentai {
+                CardTagLine(ids: item.tagIDs, style: style)
+            } else {
+                // Translated like the gallery page's tags (Translate Tags).
+                CardTagChips(names: item.ehTags.prefix(8).map { name in
+                    tagStore.displayName(name, type: tagStore.ehNamespaces(name).first ?? "tag")
+                }, style: style)
+            }
         }
+        .privacyText()
     }
 }
 
@@ -417,6 +427,7 @@ struct GalleryRow: View {
                         .foregroundStyle(.primary)
                         .lineLimit(3)
                         .multilineTextAlignment(.leading)
+                        .privacyText()
                     if let subtitle {
                         Text(subtitle)
                             .font(.footnote)
@@ -441,7 +452,7 @@ struct GalleryRow: View {
                             }
                         }
                         if let uploader = item.uploader {
-                            Text(uploader).font(.footnote).foregroundStyle(.tertiary).lineLimit(1)
+                            Text(uploader).font(.footnote).foregroundStyle(.tertiary).lineLimit(1).privacyText()
                         }
                     }
                 }

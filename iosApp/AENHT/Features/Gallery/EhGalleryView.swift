@@ -79,6 +79,14 @@ struct EhGalleryView: View {
     @State private var alertMessage: String?
     @State private var confirmDeleteDownload = false
     @State private var titleExpanded = false
+    /// The title's translation (Translate), shown in place of the title.
+    @State private var titleTranslation: Translation?
+    @State private var showsOriginalTitle = false
+
+    private var shownTitle: String {
+        if let titleTranslation, !showsOriginalTitle { return titleTranslation.text }
+        return model.detail?.title ?? model.preview?.title ?? ""
+    }
     @State private var editingNote = false
     @State private var note = ""
     @Environment(\.openURL) private var openURL
@@ -87,6 +95,9 @@ struct EhGalleryView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
     @Environment(TagStore.self) private var tagStore
+    @Environment(\.galleryNamespace) private var namespace
+    /// The page in the middle of the row of pages (the one being read).
+    @State private var centeredPage: Int?
 
     init(route: EhGalleryRoute) {
         _model = State(initialValue: EhGalleryModel(route: route))
@@ -207,21 +218,29 @@ struct EhGalleryView: View {
             .frame(width: sizeClass == .regular ? 200 : 132)
             .shadow(color: .black.opacity(0.25), radius: 14, y: 6)
             VStack(alignment: .leading, spacing: 8) {
-                Text(model.detail?.title ?? model.preview?.title ?? "")
+                // Translated, the translation takes the title's place; a tap
+                // switches between it and the original.
+                Text(shownTitle)
                     .font(sizeClass == .regular ? .title2.weight(.semibold) : .title3.weight(.semibold))
                     .lineLimit(titleExpanded ? nil : 5)
-                    .onTapGesture { withAnimation(.smooth) { titleExpanded.toggle() } }
+                    .privacyText()
+                    .contentTransition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.smooth) {
+                            if titleTranslation != nil { showsOriginalTitle.toggle() } else { titleExpanded.toggle() }
+                        }
+                    }
                     .contextMenu {
                         Button("Copy Title", systemImage: "doc.on.doc") {
                             UIPasteboard.general.string = [model.detail?.title, model.detail?.japaneseTitle].compactMap { $0 }.joined(separator: "\n")
                         }
                     }
                 if let japanese = model.detail?.japaneseTitle {
-                    Text(japanese).font(.subheadline).foregroundStyle(.secondary).lineLimit(titleExpanded ? nil : 2)
+                    Text(japanese).font(.subheadline).foregroundStyle(.secondary).lineLimit(titleExpanded ? nil : 2).privacyText()
                 }
                 if let detail = model.detail {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        TranslateLine(text: detail.japaneseTitle ?? detail.title, kind: .title)
+                        TranslateLine(text: detail.japaneseTitle ?? detail.title, kind: .title, output: $titleTranslation)
                         Spacer(minLength: 0)
                         ratingMenu(detail)
                     }
@@ -371,7 +390,7 @@ struct EhGalleryView: View {
                         ForEach(Bridge.shared.tags(detail: detail, namespace: namespace), id: \.full) { tag in
                             let name = tagStore.displayName(tag.name, type: namespace)
                             NavigationLink(value: EhSearchRoute(query: tag.query, title: name)) {
-                                TagChip(name: name)
+                                TagChip(name: name).privacyText()
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
@@ -400,22 +419,26 @@ struct EhGalleryView: View {
             }
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 10) {
-                    ForEach(detail.thumbnails, id: \.page) { thumb in
-                        NavigationLink(value: ReaderRoute(source: ReaderSource(eh: detail, card: card), page: Int(thumb.page) - 1)) {
+                    ForEach(detail.thumbnails.map(IndexedThumb.init)) { item in
+                        let thumb = item.thumb
+                        NavigationLink(value: ReaderRoute(source: ReaderSource(eh: detail, card: card), page: item.id)) {
                             VStack(spacing: 6) {
                                 let ratio = thumb.width > 0 && thumb.height > 0 ? CGFloat(thumb.width) / CGFloat(thumb.height) : 0.7
                                 EhThumbnailView(thumb: thumb)
                                     .frame(width: 160 * min(max(ratio, 0.5), 1.5), height: 160)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .readerThumbSource(gallery: Int(detail.gid), page: item.id, namespace)
                                 Text("\(thumb.page)").font(.caption).foregroundStyle(.secondary)
                             }
                         }
                         .buttonStyle(.plain)
                     }
                 }
+                .scrollTargetLayout()
                 .padding(.horizontal)
             }
             .scrollIndicators(.hidden)
+            .followsReader(gallery: Int(detail.gid), position: $centeredPage)
         }
     }
 
@@ -479,15 +502,22 @@ struct EhCommentBubble: View {
                 }
             }
             Text(comment.posted).font(.caption).foregroundStyle(.secondary)
-            Text(comment.text).font(.subheadline).lineLimit(lineLimit)
+            Text(comment.text).font(.subheadline).lineLimit(lineLimit).privacyText()
             TranslateLine(text: comment.text, kind: .comment)
         }
     }
 }
 
 /// Every page's thumbnail of an E-Hentai gallery; more load while scrolling.
+/// A thumbnail with its page index (0-based), as a row's id.
+struct IndexedThumb: Identifiable {
+    let thumb: EhThumbnail
+    var id: Int { Int(thumb.page) - 1 }
+}
+
 struct EhPagesView: View {
     let route: EhPagesRoute
+    @Environment(\.galleryNamespace) private var namespace
     @State private var thumbs: [EhThumbnail] = []
     @State private var nextPage = 0
     @State private var loading = false
@@ -527,6 +557,7 @@ struct EhPagesView: View {
             EhThumbnailView(thumb: thumb)
                 .frame(height: 130)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .readerThumbSource(gallery: route.gid, page: Int(thumb.page) - 1, namespace)
             Text("\(thumb.page)").font(.caption2).foregroundStyle(.secondary)
         }
     }

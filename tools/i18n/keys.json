@@ -506,5 +506,22 @@
  "Delete High Quality Model",
  "Installing…",
  "Not available on this device.",
- "Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on."
+ "Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on.",
+ "Tap to Turn Pages",
+ "A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.",
+ "Loading Models…",
+ "Couldn't load the model list: %@",
+ "The service's models load by themselves once the address and key are in. The model can also be typed in.",
+ "Text to Translate",
+ "Test",
+ "Request Parameters",
+ "Temperature",
+ "Top P",
+ "Max Tokens",
+ "Tokens",
+ "Timeout",
+ "Extra Parameters (JSON)",
+ "Not a JSON object.",
+ "Service Default",
+ "Defaults: temperature 0.2, timeout 30 s; Top P and max tokens aren't sent, so the service uses its own. Extra parameters are added to the request as they are."
 ]

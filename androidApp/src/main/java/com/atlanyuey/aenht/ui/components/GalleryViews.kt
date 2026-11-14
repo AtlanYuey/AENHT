@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import com.atlanyuey.aenht.core.privacyText
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.shortLabel
 import android.content.ClipData
@@ -257,7 +258,7 @@ fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifie
                 CoverView(item, aspectRatio = 3f / 4f)
                 Txt(
                     GalleryItem.pretty(item.title),
-                    Modifier.fillMaxWidth().heightIn(min = 34.dp),
+                    Modifier.fillMaxWidth().heightIn(min = 34.dp).privacyText(),
                     style = Type.footnote.copy(fontWeight = FontWeight.Medium),
                     maxLines = 2,
                 )
@@ -265,7 +266,7 @@ fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifie
             GalleryListStyle.Compact -> CoverView(item) { m -> CompactOverlay(item, m) }
             else -> {
                 CoverView(item)
-                Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
+                Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
                 CardFooter(item, overlay = false)
             }
         }
@@ -283,7 +284,7 @@ private fun CompactOverlay(item: GallerySummary, modifier: Modifier) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         CardFooter(item, overlay = true)
-        Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.SemiBold), color = Color.White, maxLines = 2)
+        Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.footnote.copy(fontWeight = FontWeight.SemiBold), color = Color.White, maxLines = 2)
     }
 }
 
@@ -322,7 +323,9 @@ fun RatingBadge(rating: Double, overlay: Boolean = false, size: Dp = 11.dp) {
 /** The card's tags: nhentai tag ids or E-Hentai tag names. */
 @Composable
 fun CardTags(item: GallerySummary, overlay: Boolean) {
-    if (item.site == Site.NHENTAI) CardTagLine(item.nhTagIds, overlay) else CardTagNames(item.cardTags.take(8), overlay)
+    if (item.site == Site.NHENTAI) CardTagLine(item.nhTagIds, overlay)
+    // Translated like the gallery page's tags (Translate Tags).
+    else CardTagNames(item.cardTags.take(8).map { TagStore.displayName(it, TagStore.ehNamespaces(it).firstOrNull() ?: "tag") }, overlay)
 }
 
 /** One line of tag chips; chips that don't fit are left out. */
@@ -336,7 +339,7 @@ fun CardTagLine(ids: List<Int>, overlay: Boolean) {
 fun CardTagNames(names: List<String>, overlay: Boolean) {
     if (names.isEmpty()) return
     val colors = AppTheme.colors
-    FittingRow(spacing = 5.dp) {
+    FittingRow(spacing = 5.dp, modifier = Modifier.privacyText()) {
         names.forEach { name ->
             Txt(
                 name,
@@ -354,8 +357,8 @@ fun CardTagNames(names: List<String>, overlay: Boolean) {
 
 /** Lays children out in one row and leaves out the ones that don't fit. */
 @Composable
-fun FittingRow(spacing: Dp, content: @Composable () -> Unit) {
-    Layout(content, Modifier.fillMaxWidth()) { measurables, constraints ->
+fun FittingRow(spacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content, modifier.fillMaxWidth()) { measurables, constraints ->
         val gap = spacing.roundToPx()
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, maxWidth = Int.MAX_VALUE)) }
         var x = 0
@@ -388,7 +391,7 @@ fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: St
     ) {
         CoverView(item, Modifier.width(84.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Txt(GalleryItem.pretty(item.title), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
+            Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
             when {
                 subtitle != null -> Txt(subtitle, style = Type.footnote, color = AppTheme.colors.secondaryLabel)
                 item.pages > 0 -> Txt(tr("%lld pages", item.pages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
@@ -569,7 +572,7 @@ fun TagChip(name: String, count: Int?, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Txt(name, style = Type.subheadline, maxLines = 1)
+        Txt(name, Modifier.privacyText(), style = Type.subheadline, maxLines = 1)
         if (count != null && count > 0) {
             Txt(compactCount(count), style = Type.caption1, color = colors.secondaryLabel, maxLines = 1)
         }

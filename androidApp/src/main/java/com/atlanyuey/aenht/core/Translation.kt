@@ -41,9 +41,9 @@ object TranslationService {
         revision++
     }
 
-    /** Adds or updates a service; an empty key keeps the saved one. */
+    /** Adds or updates a service and its key (an empty key removes it). */
     fun store(service: LlmService, key: String) {
-        if (key.isNotBlank()) secrets[service.id] = key.trim()
+        if (key.isNotBlank()) secrets[service.id] = key.trim() else secrets[service.id] = null
         val list = services.toMutableList()
         val i = list.indexOfFirst { it.id == service.id }
         if (i >= 0) list[i] = service else list += service
@@ -68,11 +68,14 @@ object TranslationService {
 
     suspend fun publishedPrice(baseUrl: String, key: String, model: String): List<Double>? = translator.publishedPrice(baseUrl, key, model)
 
-    /** Translates a sample with the service (its usage counts too). */
-    suspend fun test(service: LlmService, key: String): LlmTestResult {
-        val sample = if (target.startsWith("en")) "今日はいい天気ですね。散歩に行きましょう。" else "It's a nice day today. Let's go for a walk."
+    /** The text a service is tested with (it can be edited before the test). */
+    val sampleText: String
+        get() = if (target.startsWith("en")) "今日はいい天気ですね。散歩に行きましょう。" else "It's a nice day today. Let's go for a walk."
+
+    /** Translates [text] with the service (its usage counts too). */
+    suspend fun test(service: LlmService, key: String, text: String): LlmTestResult {
         return try {
-            translator.test(service, key, sample, target).also { saveUsage() }
+            translator.test(service, key, text, target).also { saveUsage() }
         } catch (e: TranslationException) {
             throw NHException(e.message ?: L10n.string("Couldn't translate."))
         }

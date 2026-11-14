@@ -226,10 +226,55 @@ fun ehHomeSource(list: EhHomeList, language: LanguageFilter): EhListSource {
     }
 }
 
-/** Two taps on the Home tab this close together refresh Home. */
-private const val DOUBLE_TAP_MILLIS = 300L
+/** A tab's root screen: told when its tab button is tapped again (RootView). */
+interface TabRoot {
+    fun tabTapped()
+}
 
-class HomeScreen : Screen() {
+/**
+ * A tab button tapped again while the tab's list shows: away from the top,
+ * the list goes to the top; at the top, back to where it was; tapped twice
+ * quickly, the tab refreshes.
+ */
+class TabTaps(private val scope: kotlinx.coroutines.CoroutineScope) {
+    private var saved: Pair<Int, Int>? = null
+    /** A tap at the top, waiting to see if a second follows. */
+    private var pending: Job? = null
+    private var lastTopTap = 0L
+
+    fun tapped(index: Int, offset: Int, scrollTo: suspend (Int, Int) -> Unit, refresh: () -> Unit) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (pending?.isActive == true || now - lastTopTap < DOUBLE_TAP_MILLIS) {
+            pending?.cancel()
+            pending = null
+            lastTopTap = 0
+            saved = null
+            scope.launch { scrollTo(0, 0) }
+            refresh()
+            return
+        }
+        if (index > 0 || offset > 0) {
+            saved = index to offset
+            lastTopTap = now
+            scope.launch { scrollTo(0, 0) }
+            return
+        }
+        pending = scope.launch {
+            delay(DOUBLE_TAP_MILLIS)
+            pending = null
+            val back = saved ?: return@launch
+            saved = null
+            scrollTo(back.first, back.second)
+        }
+    }
+
+    private companion object {
+        /** Two taps this close together refresh. */
+        const val DOUBLE_TAP_MILLIS = 300L
+    }
+}
+
+class HomeScreen : Screen(), TabRoot {
     private val nhFeedState = GalleryFeed(scope, nhFeed { page ->
         NHClient.galleries(AppSettings.homeLanguage.queryTerm ?: "", AppSettings.homeSort, page)
     })
@@ -246,44 +291,16 @@ class HomeScreen : Screen() {
     private val searchPanel = SearchPanel(search, scope)
     private var searching by mutableStateOf(false)
 
-    /** Where the list was when the Home tab took it to the top. */
-    private var savedPosition: Pair<Int, Int>? = null
-    /** A tap on the Home tab at the top, waiting to see if a second follows. */
-    private var pendingTap: Job? = null
-    private var lastTopTap = 0L
+    private val taps = TabTaps(scope)
 
-    /**
-     * The Home tab was tapped while Home shows: away from the top, the list
-     * goes to the top; at the top, back to where it was; tapped twice
-     * quickly, Home refreshes.
-     */
-    fun tabTapped() {
+    /** The Home tab was tapped while Home shows (see [TabTaps]). */
+    override fun tabTapped() {
         if (searching) return
-        val now = android.os.SystemClock.uptimeMillis()
-        if (pendingTap?.isActive == true || now - lastTopTap < DOUBLE_TAP_MILLIS) {
-            pendingTap?.cancel()
-            pendingTap = null
-            lastTopTap = 0
-            savedPosition = null
-            scope.launch { grid.animateScrollToItem(0) }
-            pulling = true
-            reload()
-            return
-        }
-        val atTop = grid.firstVisibleItemIndex == 0 && grid.firstVisibleItemScrollOffset == 0
-        if (!atTop) {
-            savedPosition = grid.firstVisibleItemIndex to grid.firstVisibleItemScrollOffset
-            lastTopTap = now
-            scope.launch { grid.animateScrollToItem(0) }
-            return
-        }
-        pendingTap = scope.launch {
-            delay(DOUBLE_TAP_MILLIS)
-            pendingTap = null
-            val saved = savedPosition ?: return@launch
-            savedPosition = null
-            grid.animateScrollToItem(saved.first, saved.second)
-        }
+        taps.tapped(
+            grid.firstVisibleItemIndex, grid.firstVisibleItemScrollOffset,
+            scrollTo = { index, offset -> grid.animateScrollToItem(index, offset) },
+            refresh = { pulling = true; reload() },
+        )
     }
 
     private fun reload() {
@@ -605,7 +622,7 @@ private fun DockedSortButton(sortTitle: String, items: () -> List<List<MenuItem>
  * both ("All", from the local copy, newest first, marked NH / EH). The
  * title opens the menu of sites and folders.
  */
-class FavoritesScreen : Screen() {
+class FavoritesScreen : Screen(), TabRoot {
     private var site by mutableStateOf(AppSettings.site(AppSettings.favoritesSite))
     private var ehFolder by mutableStateOf<Int?>(null)
     /** Searching inside the favorites (both sites search their own; All filters the copy). */
@@ -614,6 +631,17 @@ class FavoritesScreen : Screen() {
     private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder, query) }, filtered = false)
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
+    private val taps = TabTaps(scope)
+    /** What a pull does now (set while the list shows). */
+    private var refreshAction: (() -> Unit)? = null
+
+    override fun tabTapped() {
+        taps.tapped(
+            grid.firstVisibleItemIndex, grid.firstVisibleItemScrollOffset,
+            scrollTo = { index, offset -> grid.animateScrollToItem(index, offset) },
+            refresh = { refreshAction?.invoke() },
+        )
+    }
 
     override fun onAppear() {
         // "Same as Home" follows the site the home page is on now.
@@ -674,6 +702,7 @@ class FavoritesScreen : Screen() {
                 pulling = true
                 if (current == null) FavoritesStore.sync() else feed.reload()
             }
+            refreshAction = refresh
             PullToRefresh(pulling, refresh, topInset = padding.calculateTopPadding()) {
                 if (current == null) {
                     val cards = FavoritesStore.cards(null, AppSettings.favoritesAllFolders.takeIf { it.size < 10 })
@@ -793,9 +822,21 @@ class FavoritesScreen : Screen() {
 
 // MARK: - History
 
-class HistoryScreen : Screen() {
+class HistoryScreen : Screen(), TabRoot {
     private val list = LazyListState()
     private val grid = LazyStaggeredGridState()
+    private val taps = TabTaps(scope)
+
+    override fun tabTapped() {
+        val cards = AppSettings.libraryStyle == LibraryStyle.Cards
+        taps.tapped(
+            if (cards) grid.firstVisibleItemIndex else list.firstVisibleItemIndex,
+            if (cards) grid.firstVisibleItemScrollOffset else list.firstVisibleItemScrollOffset,
+            scrollTo = { index, offset -> if (cards) grid.animateScrollToItem(index, offset) else list.animateScrollToItem(index, offset) },
+            // History is on the device: read again from the database.
+            refresh = { scope.launch { HistoryStore.reloadFromDatabase() } },
+        )
+    }
     private var search by mutableStateOf("")
     private var site by mutableStateOf(AppSettings.site(AppSettings.historySite))
 

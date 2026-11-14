@@ -70,6 +70,26 @@ class TranslatorTest {
     }
 
     @Test
+    fun requestParametersAreSent() = runTest {
+        var body = ""
+        val engine = MockEngine { request ->
+            body = (request.body as io.ktor.http.content.TextContent).text
+            respond("""{"choices":[{"message":{"content":"好"},"finish_reason":"stop"}]}""", HttpStatusCode.OK, json)
+        }
+        val service = LlmService("1", "A", "https://a.example/v1", "m")
+            .withParameters(null, 0.9, 256, 20, """{"reasoning_effort":"low"}""")
+        Translator(buildHttpClient(engine)) { 0L }.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(service), mapOf("1" to "k"), null)
+        val sent = kotlinx.serialization.json.Json.parseToJsonElement(body) as kotlinx.serialization.json.JsonObject
+        assertEquals(null, sent["temperature"])
+        assertEquals("0.9", sent["top_p"].toString())
+        assertEquals("256", sent["max_tokens"].toString())
+        assertEquals("\"low\"", sent["reasoning_effort"].toString())
+
+        val broken = service.withParameters(0.2, null, null, 30, "{not json")
+        assertEquals(null, broken.extraFields())
+    }
+
+    @Test
     fun usageIsCountedAndTheSpendingLimitHandsOver() = runTest {
         val engine = MockEngine { request ->
             val url = request.url.toString()

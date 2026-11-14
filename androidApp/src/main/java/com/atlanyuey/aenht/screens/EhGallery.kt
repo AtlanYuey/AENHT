@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.readerThumb
+import com.atlanyuey.aenht.core.privacyText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
@@ -309,12 +311,16 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val title = detail?.title ?: preview?.title ?: ""
+                    // Translated, the translation takes the title's place; a tap
+                    // switches between it and the original.
+                    var titleTranslation by remember(detail?.gid) { mutableStateOf<com.atlanyuey.aenht.shared.translate.Translation?>(null) }
+                    var showsOriginal by remember(detail?.gid) { mutableStateOf(false) }
+                    val title = titleTranslation?.takeIf { !showsOriginal }?.text ?: detail?.title ?: preview?.title ?: ""
                     Txt(
                         title,
-                        Modifier.combinedClickable(
+                        Modifier.privacyText().combinedClickable(
                             interactionSource = null, indication = null,
-                            onClick = { titleExpanded = !titleExpanded },
+                            onClick = { if (titleTranslation != null) showsOriginal = !showsOriginal else titleExpanded = !titleExpanded },
                             onLongClick = {
                                 val text = listOfNotNull(detail?.title, detail?.japaneseTitle).joinToString("\n")
                                 context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("title", text))
@@ -324,11 +330,14 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         maxLines = if (titleExpanded) Int.MAX_VALUE else 5,
                     )
                     detail?.japaneseTitle?.let {
-                        Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
+                        Txt(it, Modifier.privacyText(), style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
                     }
                     detail?.let { d ->
                         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Box(Modifier.weight(1f)) { TranslateLine(d.japaneseTitle ?: d.title, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
+                            Box(Modifier.weight(1f)) {
+                                TranslateLine(d.japaneseTitle ?: d.title, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE,
+                                    onResult = { t -> titleTranslation = t; showsOriginal = false })
+                            }
                             RatingButton(d)
                         }
                     }
@@ -507,7 +516,9 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             SectionTitle(tr("Pages")) {
                 if (d.pages > 1) TextButton(tr("See All"), { navigator.push(EhPagesScreen(d, card)) })
             }
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+            com.atlanyuey.aenht.ui.components.FollowReader(d.gid.toInt(), rowState, d.thumbnails.size)
+            LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(d.thumbnails, key = { it.page }) { thumb ->
                     Column(
                         Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(d, card), thumb.page - 1)) },
@@ -515,7 +526,8 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         val ratio = if (thumb.width > 0 && thumb.height > 0) thumb.width.toFloat() / thumb.height else 0.7f
-                        EhThumbnailImage(thumb, Modifier.size(width = 160.dp * ratio.coerceIn(0.5f, 1.5f), height = 160.dp).clip(RoundedCornerShape(8.dp)))
+                        EhThumbnailImage(thumb, Modifier.size(width = 160.dp * ratio.coerceIn(0.5f, 1.5f), height = 160.dp)
+                            .readerThumb(d.gid.toInt(), thumb.page - 1).clip(RoundedCornerShape(8.dp)))
                         Txt("${thumb.page}", style = Type.caption1, color = AppTheme.colors.secondaryLabel)
                     }
                 }
@@ -566,7 +578,7 @@ fun EhCommentBubble(comment: EhComment, maxLines: Int = Int.MAX_VALUE) {
             }
         }
         Txt(comment.posted, style = Type.caption1, color = AppTheme.colors.secondaryLabel, maxLines = 1)
-        Txt(comment.text, style = Type.subheadline, maxLines = maxLines)
+        Txt(comment.text, Modifier.privacyText(), style = Type.subheadline, maxLines = maxLines)
         if (maxLines == Int.MAX_VALUE) TranslateLine(comment.text, com.atlanyuey.aenht.shared.translate.TranslationKind.COMMENT)
     }
 }
@@ -906,7 +918,7 @@ class EhPagesScreen(private val detail: EhGalleryDetail, private val card: Galle
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).clip(RoundedCornerShape(8.dp)))
+                        EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).readerThumb(detail.gid.toInt(), thumb.page - 1).clip(RoundedCornerShape(8.dp)))
                         Txt("${thumb.page}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
                     }
                 }

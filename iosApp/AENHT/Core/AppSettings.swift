@@ -376,8 +376,6 @@ final class AppSettings {
     var homeRowsRaw: String { didSet { save(homeRowsRaw, "homeRows") } }
     /// E-Hentai commenters whose comments are hidden (names, one per line).
     var blockedCommenters: String { didSet { save(blockedCommenters, "blockedCommenters") } }
-    /// Reader: tapping the left edge goes forward (and the right edge back).
-    var swapTapZones: Bool { didSet { save(swapTapZones, "swapTapZones") } }
     /// Reader: taps on the left / right edges, or the top / bottom ones, turn pages.
     var tapZones: TapZones { didSet { save(tapZones.rawValue, "tapZones") } }
     /// Reader swipes the pages don't use: up / down in the left-right modes, left / right in the top-to-bottom ones.
@@ -512,9 +510,8 @@ final class AppSettings {
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         autoCrop = d.bool(forKey: "autoCrop")
-        homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,eh-popular"
+        homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,nh-week,eh-day,eh-popular"
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
-        swapTapZones = d.bool(forKey: "swapTapZones")
         tapZones = TapZones(rawValue: d.string(forKey: "tapZones") ?? "") ?? .leftRight
         swipeUp = ReaderGesture(rawValue: d.string(forKey: "swipeUp") ?? "") ?? .none
         swipeDown = ReaderGesture(rawValue: d.string(forKey: "swipeDown") ?? "") ?? .exit
@@ -525,7 +522,7 @@ final class AppSettings {
         downloadRetries = min(max(d.object(forKey: "downloadRetries") as? Int ?? 2, 0), 5)
         downloadInterval = min(max(d.double(forKey: "downloadInterval"), 0), 5)
         ehOriginalImages = d.bool(forKey: "ehOriginalImages")
-        backgroundPrivacy = BackgroundPrivacy(rawValue: d.string(forKey: "backgroundPrivacy") ?? "") ?? .off
+        backgroundPrivacy = BackgroundPrivacy(rawValue: d.string(forKey: "backgroundPrivacy") ?? "") ?? .blurImages
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -616,7 +613,6 @@ final class AppSettings {
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
         values["blockedCommenters"] = blockedCommenters
-        values["swapTapZones"] = swapTapZones
         values["tapZones"] = tapZones.rawValue
         values["swipeUp"] = swipeUp.rawValue
         values["swipeDown"] = swipeDown.rawValue
@@ -705,7 +701,6 @@ final class AppSettings {
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)
-        case "swapTapZones": set(\.swapTapZones, number?.boolValue)
         case "tapZones": set(\.tapZones, string.flatMap(TapZones.init(rawValue:)))
         case "swipeUp": set(\.swipeUp, string.flatMap(ReaderGesture.init(rawValue:)))
         case "swipeDown": set(\.swipeDown, string.flatMap(ReaderGesture.init(rawValue:)))

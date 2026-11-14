@@ -3,6 +3,7 @@ package com.atlanyuey.aenht.shared.translate
 import com.atlanyuey.aenht.shared.net.buildHttpClient
 import com.atlanyuey.aenht.shared.net.lenientJson
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -47,6 +48,14 @@ data class LlmService(
     val currency: String = "USD",
     /** Monthly spending limit in [currency]; null: no limit. Past it, the next service takes over. */
     val spendLimit: Double? = null,
+    // Request parameters (like AY Translate); null: not sent, the service's own default.
+    val temperature: Double? = DEFAULT_TEMPERATURE,
+    val topP: Double? = null,
+    val maxTokens: Int? = null,
+    /** Seconds to wait for an answer. */
+    val timeoutSeconds: Int = DEFAULT_TIMEOUT,
+    /** More fields for the request body, as a JSON object (e.g. {"reasoning_effort": "low"}); empty: none. */
+    val extraBody: String = "",
 ) {
     val presetKind: LlmPreset get() = LlmPreset.of(preset)
     val currencySymbol: String get() = if (currency == "CNY") "¥" else "$"
@@ -63,7 +72,19 @@ data class LlmService(
         inputPrice = inputPrice, outputPrice = outputPrice, currency = currency, spendLimit = spendLimit,
     )
 
+    /** A copy with other request parameters (for Swift). */
+    fun withParameters(temperature: Double?, topP: Double?, maxTokens: Int?, timeoutSeconds: Int, extraBody: String): LlmService =
+        copy(temperature = temperature, topP = topP, maxTokens = maxTokens, timeoutSeconds = timeoutSeconds, extraBody = extraBody)
+
+    /** The extra fields, or null when [extraBody] isn't a JSON object. */
+    fun extraFields(): JsonObject? =
+        if (extraBody.isBlank()) JsonObject(emptyMap())
+        else runCatching { lenientJson.parseToJsonElement(extraBody) as? JsonObject }.getOrNull()
+
     companion object {
+        const val DEFAULT_TEMPERATURE = 0.2
+        const val DEFAULT_TIMEOUT = 30
+
         fun create(id: String, preset: LlmPreset): LlmService =
             LlmService(id, preset.displayName, preset.baseUrl, preset.suggestedModel, true, preset.key, currency = preset.defaultCurrency)
     }
@@ -220,9 +241,12 @@ class Translator internal constructor(private val http: HttpClient, private val 
     private suspend fun llm(service: LlmService, key: String, text: String, target: String, kind: TranslationKind): Answer =
         withContext(Dispatchers.IO) {
             val url = service.baseUrl.trimEnd('/') + "/chat/completions"
+            val extra = service.extraFields() ?: throw TranslationException("${service.name}: the extra parameters aren't a JSON object")
             val body = buildJsonObject {
                 put("model", service.model)
-                put("temperature", 0.2)
+                service.temperature?.let { put("temperature", it) }
+                service.topP?.let { put("top_p", it) }
+                service.maxTokens?.let { put("max_tokens", it) }
                 put(
                     "messages",
                     buildJsonArray {
@@ -230,8 +254,10 @@ class Translator internal constructor(private val http: HttpClient, private val 
                         add(buildJsonObject { put("role", "user"); put("content", text) })
                     },
                 )
+                extra.forEach { (name, value) -> put(name, value) }
             }
             val response = http.post(url) {
+                timeout { requestTimeoutMillis = service.timeoutSeconds.coerceIn(5, 600) * 1000L }
                 header(HttpHeaders.Authorization, "Bearer $key")
                 contentType(ContentType.Application.Json)
                 setBody(body.toString())
