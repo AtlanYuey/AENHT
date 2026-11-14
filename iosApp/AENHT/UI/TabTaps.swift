@@ -57,10 +57,10 @@ struct TabNavigationFinder: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: Finder, context: Context) {}
 
     final class Finder: UIViewController {
-        let tab: AppTab
+        let appTab: AppTab
 
         init(tab: AppTab) {
-            self.tab = tab
+            self.appTab = tab
             super.init(nibName: nil, bundle: nil)
             view.isUserInteractionEnabled = false
         }
@@ -69,12 +69,12 @@ struct TabNavigationFinder: UIViewControllerRepresentable {
 
         override func didMove(toParent parent: UIViewController?) {
             super.didMove(toParent: parent)
-            if let navigation = navigationController { TabNavigators.shared.set(navigation, for: tab) }
+            if let navigation = navigationController { TabNavigators.shared.set(navigation, for: appTab) }
         }
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-            if let navigation = navigationController { TabNavigators.shared.set(navigation, for: tab) }
+            if let navigation = navigationController { TabNavigators.shared.set(navigation, for: appTab) }
         }
     }
 }

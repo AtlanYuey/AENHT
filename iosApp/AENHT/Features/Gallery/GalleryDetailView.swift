@@ -1,3 +1,4 @@
+import Shared
 import SwiftData
 import SwiftUI
 
