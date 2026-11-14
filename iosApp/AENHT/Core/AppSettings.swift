@@ -242,6 +242,8 @@ final class AppSettings {
     var searchSite: SiteChoice { didSet { save(searchSite.rawValue, "searchSite") } }
     /// Search runs on both sites at once (twice the requests).
     var searchBothSites: Bool { didSet { save(searchBothSites, "searchBothSites") } }
+    /// The user's language models for translation, in order (JSON; keys are in the Keychain).
+    var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
     var filterRules: String { didSet { save(filterRules, "filterRules") } }
     /// Lists also leave out galleries with tags on the nhentai account's blacklist.
@@ -322,6 +324,7 @@ final class AppSettings {
         searchBothSites = d.bool(forKey: "searchBothSites")
         favoritesAllFolders = (d.array(forKey: "favoritesAllFolders") as? [Int]) ?? Array(0..<10)
         filterRules = d.string(forKey: "filterRules") ?? ""
+        llmServices = d.string(forKey: "llmServices") ?? ""
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -393,6 +396,7 @@ final class AppSettings {
         values["searchSite"] = searchSite.rawValue
         values["searchBothSites"] = searchBothSites
         values["filterRules"] = filterRules
+        values["llmServices"] = llmServices
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -459,6 +463,7 @@ final class AppSettings {
         case "searchSite": set(\.searchSite, string.flatMap(SiteChoice.init(rawValue:)))
         case "searchBothSites": set(\.searchBothSites, number?.boolValue)
         case "filterRules": set(\.filterRules, string)
+        case "llmServices": set(\.llmServices, string)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

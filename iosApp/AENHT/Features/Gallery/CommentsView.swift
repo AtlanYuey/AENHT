@@ -1,3 +1,4 @@
+import Shared
 import SwiftUI
 
 struct CommentsView: View {
@@ -132,6 +133,9 @@ struct CommentBubble: View {
                     .font(.subheadline)
                     .lineLimit(lineLimit)
                     .textSelection(.enabled)
+                if lineLimit == nil {
+                    TranslateLine(text: comment.body, kind: .comment)
+                }
             }
         }
     }

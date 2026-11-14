@@ -50,6 +50,9 @@ struct MoreView: View {
                 NavigationLink { FiltersSettingsView() } label: {
                     SettingsLabel("Filters", systemImage: "eye.slash.fill", color: .gray)
                 }
+                NavigationLink { TranslationSettingsView() } label: {
+                    SettingsLabel("Translation", systemImage: "character.bubble.fill", color: .green)
+                }
                 NavigationLink { AppearanceSettingsView() } label: {
                     SettingsLabel("Appearance", systemImage: "textformat.size", color: .blue)
                 }

@@ -161,6 +161,9 @@ struct EhGalleryView: View {
                 if let japanese = model.detail?.japaneseTitle {
                     Text(japanese).font(.subheadline).foregroundStyle(.secondary).lineLimit(titleExpanded ? nil : 2)
                 }
+                if let detail = model.detail {
+                    TranslateLine(text: detail.japaneseTitle ?? detail.title, kind: .title)
+                }
                 HStack(spacing: 8) {
                     if let category = model.card?.category {
                         Text(category.label)
@@ -401,6 +404,7 @@ struct EhCommentBubble: View {
             }
             Text(comment.posted).font(.caption).foregroundStyle(.secondary)
             Text(comment.text).font(.subheadline).lineLimit(lineLimit)
+            TranslateLine(text: comment.text, kind: .comment)
         }
     }
 }
