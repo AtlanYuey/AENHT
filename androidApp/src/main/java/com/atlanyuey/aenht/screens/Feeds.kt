@@ -476,8 +476,8 @@ private fun DockedSortButton(sortTitle: String, items: () -> List<List<MenuItem>
 class FavoritesScreen : Screen() {
     private var site by mutableStateOf(AppSettings.site(AppSettings.favoritesSite))
     private var ehFolder by mutableStateOf<Int?>(null)
-    private val nhFeedState = GalleryFeed(scope, nhFeed { page -> NHClient.favorites(page) })
-    private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder) })
+    private val nhFeedState = GalleryFeed(scope, nhFeed { page -> NHClient.favorites(page) }, filtered = false)
+    private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder) }, filtered = false)
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 

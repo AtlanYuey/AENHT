@@ -316,3 +316,76 @@ struct SitesSettingsView: View {
         .navigationTitle("Sites")
     }
 }
+
+// MARK: - Filters
+
+/// Me › Filters: rules that hide galleries of both sites from lists.
+struct FiltersSettingsView: View {
+    @Environment(AppSettings.self) private var settings
+    @Environment(UserSession.self) private var session
+    @State private var filters = Filters.shared
+    @State private var pattern = ""
+    @State private var target = "tag"
+    @State private var regex = false
+
+    private func title(_ target: String) -> LocalizedStringKey {
+        switch target {
+        case "tag": "Tag"
+        case "title": "Title"
+        default: "Uploader"
+        }
+    }
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                Picker("Match", selection: $target) {
+                    ForEach(["tag", "title", "uploader"], id: \.self) { Text(title($0)).tag($0) }
+                }
+                TextField("", text: $pattern)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Toggle("Regular Expression", isOn: $regex)
+                Button("Add Rule") {
+                    filters.add(target: target, pattern: pattern, regex: regex)
+                    pattern = ""
+                }
+                .disabled(pattern.trimmingCharacters(in: .whitespaces).isEmpty)
+            } footer: {
+                Text("Galleries that match a rule are left out of Home and search results on both sites. A tag rule matches the tag in any namespace (nhentai's tag: and E-Hentai's female:, male:, …).")
+            }
+            let rules = filters.rules
+            if !rules.isEmpty {
+                Section("Rules") {
+                    ForEach(rules, id: \.id) { rule in
+                        Toggle(isOn: Binding(get: { rule.enabled }, set: { filters.setEnabled(rule, $0) })) {
+                            VStack(alignment: .leading) {
+                                Text(rule.pattern)
+                                Text(title(rule.target)).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .swipeActions {
+                            Button("Delete", systemImage: "trash", role: .destructive) { filters.remove(rule) }
+                        }
+                    }
+                }
+            }
+            if settings.nhentaiEnabled {
+                Section {
+                    Toggle(isOn: $settings.useNhBlacklist) {
+                        VStack(alignment: .leading) {
+                            Text("nhentai Account Blacklist")
+                            Text(session.isLoggedIn ? "\(filters.nhBlacklist.count) tags" : "Not logged in")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                } footer: {
+                    Text("Uses the tag blacklist of your nhentai account (nhentai.net › Settings › Blacklist).")
+                }
+            }
+        }
+        .navigationTitle("Filters")
+        .task { await filters.refreshNhBlacklist(force: true) }
+    }
+}

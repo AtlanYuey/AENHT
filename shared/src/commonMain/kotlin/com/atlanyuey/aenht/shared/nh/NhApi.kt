@@ -96,6 +96,7 @@ class NhApi internal constructor(
         val tagSearch = RateLimit(30)
         val user = RateLimit(30)
         val pow = RateLimit(10)
+        val blacklist = RateLimit(45)
         val refresh = RateLimit(10)
     }
 
@@ -317,6 +318,21 @@ class NhApi internal constructor(
             method = HttpMethod.Post, body = payload, replayAfterRefresh = false,
         )
     }
+
+    /** The account's tag blacklist (tag ids, the same ids as list items' `tag_ids`). */
+    @Throws(NhException::class, CancellationException::class)
+    suspend fun blacklistIds(): List<Int> {
+        if (!isLoggedIn) throw NhException.NotLoggedIn()
+        return send("blacklist/ids", "blacklist", Limits.blacklist).arr()
+            ?.mapNotNull { e -> (e as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull() ?: e.obj()?.int("id") }
+            ?: emptyList()
+    }
+
+    /** A random gallery's id. */
+    @Throws(NhException::class, CancellationException::class)
+    suspend fun randomGalleryId(): Int =
+        send("galleries/random", "random", Limits.galleryAnon).obj()?.let { it.int("id") ?: it["result"].obj()?.int("id") }
+            ?: throw NhException.InvalidResponse()
 
     // MARK: Tags
 

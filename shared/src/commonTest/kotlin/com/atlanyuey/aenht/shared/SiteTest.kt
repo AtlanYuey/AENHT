@@ -49,3 +49,33 @@ class QueryConverterTest {
         assertEquals(listOf("cosplayer:x"), r.dropped)
     }
 }
+
+class ContentFilterTest {
+    private fun card(site: com.atlanyuey.aenht.shared.site.Site, title: String, uploader: String? = null, ids: List<Int> = emptyList()) =
+        com.atlanyuey.aenht.shared.site.GallerySummary(
+            key = com.atlanyuey.aenht.shared.site.GalleryKey(site, 1, null), title = title, thumbnail = null,
+            thumbWidth = 0, thumbHeight = 0, pages = 1, languageBadge = null, uploader = uploader, nhTagIds = ids,
+        )
+
+    @Test
+    fun oneRuleHidesATagOnBothSites() {
+        val f = com.atlanyuey.aenht.shared.site.ContentFilter(
+            listOf(
+                com.atlanyuey.aenht.shared.site.FilterRule("1", "tag", "big eyes"),
+                com.atlanyuey.aenht.shared.site.FilterRule("2", "title", "sample"),
+                com.atlanyuey.aenht.shared.site.FilterRule("3", "uploader", "^bad.*", regex = true),
+                com.atlanyuey.aenht.shared.site.FilterRule("4", "tag", "glasses", enabled = false),
+            ),
+            nhBlacklist = setOf(99),
+        )
+        val eh = com.atlanyuey.aenht.shared.site.Site.EHENTAI
+        val nh = com.atlanyuey.aenht.shared.site.Site.NHENTAI
+        kotlin.test.assertTrue(f.hides(card(eh, "A"), listOf("female:big eyes")))
+        kotlin.test.assertTrue(f.hides(card(nh, "A"), listOf("big eyes")))
+        kotlin.test.assertFalse(f.hides(card(eh, "A"), listOf("glasses")))
+        kotlin.test.assertTrue(f.hides(card(eh, "A Sample Story"), emptyList()))
+        kotlin.test.assertTrue(f.hides(card(eh, "B", uploader = "badguy"), emptyList()))
+        kotlin.test.assertTrue(f.hides(card(nh, "B", ids = listOf(5, 99)), emptyList()))
+        kotlin.test.assertFalse(f.hides(card(nh, "B", ids = listOf(5)), emptyList()))
+    }
+}

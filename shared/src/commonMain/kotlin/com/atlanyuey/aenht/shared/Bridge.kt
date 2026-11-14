@@ -77,6 +77,21 @@ object Bridge {
     fun tags(detail: com.atlanyuey.aenht.shared.eh.EhGalleryDetail, namespace: String): List<com.atlanyuey.aenht.shared.eh.EhTag> =
         detail.tags[namespace].orEmpty()
 
+    // MARK: Filters
+
+    fun filterRules(json: String?): List<com.atlanyuey.aenht.shared.site.FilterRule> = com.atlanyuey.aenht.shared.site.ContentFilter.decode(json)
+    fun encodeFilterRules(rules: List<com.atlanyuey.aenht.shared.site.FilterRule>): String = com.atlanyuey.aenht.shared.site.ContentFilter.encode(rules)
+    fun contentFilter(rules: List<com.atlanyuey.aenht.shared.site.FilterRule>, nhBlacklist: List<Int>): com.atlanyuey.aenht.shared.site.ContentFilter =
+        com.atlanyuey.aenht.shared.site.ContentFilter(rules, nhBlacklist.toSet())
+    /** A card with what the filter looks at. */
+    fun filterCard(site: Site, title: String, uploader: String?, tagIds: List<Int>): GallerySummary = GallerySummary(
+        key = GalleryKey(site, 0, null), title = title, thumbnail = null, thumbWidth = 0, thumbHeight = 0,
+        pages = 0, languageBadge = null, uploader = uploader, nhTagIds = tagIds,
+    )
+
+    fun filterRule(id: String, target: String, pattern: String, regex: Boolean, enabled: Boolean) =
+        com.atlanyuey.aenht.shared.site.FilterRule(id, target, pattern, regex, enabled)
+
     // MARK: Cards
 
     fun favoriteCard(record: FavoriteRecord): GallerySummary = GallerySummary.from(record)

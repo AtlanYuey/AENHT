@@ -755,7 +755,12 @@ fun ehFeed(source: () -> EhListSource): suspend (String?) -> FeedPage = { cursor
 }
 
 /** An endless list of galleries of either site, loaded page by page. */
-class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (String?) -> FeedPage) {
+class GalleryFeed(
+    private val scope: CoroutineScope,
+    var fetch: suspend (String?) -> FeedPage,
+    /** Browsing lists leave out galleries hidden by the filter rules (not favorites). */
+    private val filtered: Boolean = true,
+) {
     val items = mutableStateListOf<GallerySummary>()
     var isLoading by mutableStateOf(false)
         private set
@@ -774,6 +779,7 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (String?
     val canLoadMore: Boolean get() = hasLoaded && next != null
 
     fun reload(): Job {
+        if (filtered) Filters.refreshNhBlacklist()
         generation++
         val current = generation
         job?.cancel()
@@ -824,5 +830,8 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (String?
         }
     }
 
-    private fun unique(list: List<GallerySummary>) = list.filter { seen.add(it.key.storageKey) }
+    private fun unique(list: List<GallerySummary>): List<GallerySummary> {
+        val fresh = list.filter { seen.add(it.key.storageKey) }
+        return if (filtered) Filters.visible(fresh) else fresh
+    }
 }

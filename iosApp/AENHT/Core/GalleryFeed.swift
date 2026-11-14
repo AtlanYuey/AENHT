@@ -20,6 +20,8 @@ final class GalleryFeed {
     @ObservationIgnored private var seen = Set<String>()
     @ObservationIgnored private var generation = 0
     @ObservationIgnored var fetch: Fetch
+    /// Browsing lists leave out galleries hidden by the filter rules (not favorites).
+    @ObservationIgnored var filtered = true
 
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
@@ -47,6 +49,7 @@ final class GalleryFeed {
     var canLoadMore: Bool { hasLoaded && next != nil }
 
     func reload() async {
+        if filtered { await Filters.shared.refreshNhBlacklist() }
         generation += 1
         let current = generation
         isLoading = true
@@ -94,6 +97,7 @@ final class GalleryFeed {
     }
 
     private func unique(_ list: [GalleryItem]) -> [GalleryItem] {
-        list.filter { seen.insert($0.uid).inserted }
+        let fresh = list.filter { seen.insert($0.uid).inserted }
+        return filtered ? Filters.shared.visible(fresh) : fresh
     }
 }

@@ -242,6 +242,10 @@ final class AppSettings {
     var searchSite: SiteChoice { didSet { save(searchSite.rawValue, "searchSite") } }
     /// Search runs on both sites at once (twice the requests).
     var searchBothSites: Bool { didSet { save(searchBothSites, "searchBothSites") } }
+    /// Filter rules for both sites (JSON, see the shared ContentFilter).
+    var filterRules: String { didSet { save(filterRules, "filterRules") } }
+    /// Lists also leave out galleries with tags on the nhentai account's blacklist.
+    var useNhBlacklist: Bool { didSet { save(useNhBlacklist, "useNhBlacklist") } }
     /// E-Hentai favorite folders Favorites › All shows (all ten by default).
     var favoritesAllFolders: [Int] { didSet { save(favoritesAllFolders, "favoritesAllFolders") } }
 
@@ -317,6 +321,8 @@ final class AppSettings {
         searchSite = SiteChoice(rawValue: d.string(forKey: "searchSite") ?? "") ?? .follow
         searchBothSites = d.bool(forKey: "searchBothSites")
         favoritesAllFolders = (d.array(forKey: "favoritesAllFolders") as? [Int]) ?? Array(0..<10)
+        filterRules = d.string(forKey: "filterRules") ?? ""
+        useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
     private func save(_ value: Any, _ key: String) {
@@ -386,6 +392,8 @@ final class AppSettings {
         values["downloadsSite"] = downloadsSite.rawValue
         values["searchSite"] = searchSite.rawValue
         values["searchBothSites"] = searchBothSites
+        values["filterRules"] = filterRules
+        values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
     }
@@ -450,6 +458,8 @@ final class AppSettings {
         case "downloadsSite": set(\.downloadsSite, string.flatMap(SiteChoice.init(rawValue:)))
         case "searchSite": set(\.searchSite, string.flatMap(SiteChoice.init(rawValue:)))
         case "searchBothSites": set(\.searchBothSites, number?.boolValue)
+        case "filterRules": set(\.filterRules, string)
+        case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break

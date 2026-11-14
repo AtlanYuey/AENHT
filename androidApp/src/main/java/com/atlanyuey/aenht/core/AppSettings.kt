@@ -246,6 +246,8 @@ object AppSettings {
         downloadsSite = SiteChoice.of(p.getString("downloadsSite", null), SiteChoice.All)
         searchSite = SiteChoice.of(p.getString("searchSite", null), SiteChoice.Follow)
         searchBothSites = p.getBoolean("searchBothSites", false)
+        filterRules = p.getString("filterRules", "") ?: ""
+        useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
             SiteChoice.Nhentai -> homeSite = Site.NHENTAI
@@ -356,6 +358,11 @@ object AppSettings {
     /** E-Hentai favorite folders that Favorites › All shows (all ten by default). */
     var favoritesAllFolders by Pref((0..9).toSet()) { save("favoritesAllFolders", it.sorted().joinToString(",")) }
 
+    /** Filter rules for both sites (JSON, see ContentFilter). */
+    var filterRules by Pref("") { save("filterRules", it) }
+    /** Lists also leave out galleries with tags on the nhentai account's blacklist. */
+    var useNhBlacklist by Pref(true) { save("useNhBlacklist", it) }
+
     /** Search runs on both sites at once (twice the requests). */
     var searchBothSites by Pref(false) { save("searchBothSites", it) }
 
@@ -454,6 +461,8 @@ object AppSettings {
         "searchSite" to searchSite.raw,
         "searchBothSites" to searchBothSites,
         "favoritesAllFolders" to favoritesAllFolders.sorted().joinToString(","),
+        "filterRules" to filterRules,
+        "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -502,6 +511,8 @@ object AppSettings {
                 "downloadsSite" -> string?.let { downloadsSite = SiteChoice.of(it, downloadsSite) }
                 "searchSite" -> string?.let { searchSite = SiteChoice.of(it, searchSite) }
                 "searchBothSites" -> bool?.let { searchBothSites = it }
+                "filterRules" -> string?.let { filterRules = it }
+                "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }

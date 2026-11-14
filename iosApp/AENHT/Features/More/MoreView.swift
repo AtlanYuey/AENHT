@@ -47,6 +47,9 @@ struct MoreView: View {
                 NavigationLink { SitesSettingsView() } label: {
                     SettingsLabel("Sites", systemImage: "square.stack.3d.up.fill", color: .pink)
                 }
+                NavigationLink { FiltersSettingsView() } label: {
+                    SettingsLabel("Filters", systemImage: "eye.slash.fill", color: .gray)
+                }
                 NavigationLink { AppearanceSettingsView() } label: {
                     SettingsLabel("Appearance", systemImage: "textformat.size", color: .blue)
                 }

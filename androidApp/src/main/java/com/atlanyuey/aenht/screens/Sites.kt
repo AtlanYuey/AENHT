@@ -5,6 +5,7 @@ import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -263,6 +264,74 @@ class SitesScreen : Screen() {
                     ToggleRow(tr("Use ExHentai"), AppSettings.useExHentai && EhSession.hasExHentai, {
                         if (EhSession.hasExHentai) AppSettings.useExHentai = it
                     }, last = true, subtitle = if (EhSession.hasExHentai) null else tr("Needs an account with ExHentai access"))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Filters
+
+/** Me › Filters: rules that hide galleries of both sites from lists. */
+class FiltersScreen : Screen() {
+    private var pattern by mutableStateOf("")
+    private var target by mutableStateOf("tag")
+    private var regex by mutableStateOf(false)
+
+    @Composable
+    override fun Content() {
+        val rules = Filters.rules
+        val targets = listOf("tag", "title", "uploader")
+        val targetTitle: @Composable (String) -> String = { t ->
+            when (t) {
+                "tag" -> tr("Tag")
+                "title" -> tr("Title")
+                else -> tr("Uploader")
+            }
+        }
+        GroupedListScreen(tr("Filters")) {
+            section(footer = { FooterText(tr("Galleries that match a rule are left out of Home and search results on both sites. A tag rule matches the tag in any namespace (nhentai's tag: and E-Hentai's female:, male:, …).")) }) {
+                PickerRow(tr("Match"), targets, target, targetTitle, { target = it })
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    BasicTextField(
+                        pattern, { pattern = it },
+                        singleLine = true,
+                        textStyle = Type.body.copy(color = AppTheme.colors.label),
+                        cursorBrush = SolidColor(AppTheme.tint),
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(AppTheme.colors.tertiaryFill)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                    )
+                }
+                RowSeparator()
+                ToggleRow(tr("Regular Expression"), regex, { regex = it })
+                ButtonRow(tr("Add Rule"), {
+                    Filters.add(target, pattern, regex)
+                    pattern = ""
+                }, enabled = pattern.isNotBlank(), last = true)
+            }
+            if (rules.isNotEmpty()) {
+                section("Rules") {
+                    rules.forEachIndexed { i, rule ->
+                        ListRow(
+                            rule.pattern,
+                            subtitle = targetTitle(rule.target) + if (rule.regex) " · " + tr("Regular Expression") else "",
+                            last = i == rules.lastIndex,
+                            trailing = {
+                                GlassToggle(rule.enabled, { Filters.setEnabled(rule.id, it) })
+                                Box(Modifier.size(36.dp).clickable { Filters.remove(rule.id) }, contentAlignment = Alignment.Center) {
+                                    AppIcon(Icons.Trash, tr("Delete"), tint = AppTheme.colors.red, size = 18.dp)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+            if (AppSettings.nhentaiEnabled) {
+                section(footer = { FooterText(tr("Uses the tag blacklist of your nhentai account (nhentai.net › Settings › Blacklist).")) }) {
+                    ToggleRow(tr("nhentai Account Blacklist"), AppSettings.useNhBlacklist, {
+                        AppSettings.useNhBlacklist = it
+                        Filters.refreshNhBlacklist(force = true)
+                    }, last = true, subtitle = if (Session.isLoggedIn) tr("%lld tags", Filters.nhBlacklistCount) else tr("Not logged in"))
                 }
             }
         }

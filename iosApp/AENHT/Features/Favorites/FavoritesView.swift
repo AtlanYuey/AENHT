@@ -10,9 +10,11 @@ struct FavoritesView: View {
     @Environment(AppSettings.self) private var settings
     @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.favoritesSite)
     @State private var ehFolder: Int?
-    @State private var nhFeed = GalleryFeed.nh { page in
-        try await NHClient.shared.favorites(page: page)
-    }
+    @State private var nhFeed: GalleryFeed = {
+        let feed = GalleryFeed.nh { page in try await NHClient.shared.favorites(page: page) }
+        feed.filtered = false
+        return feed
+    }()
     @State private var ehFeed: GalleryFeed
     @State private var folderBox = FolderBox()
     @State private var showLogin = false
@@ -29,7 +31,9 @@ struct FavoritesView: View {
     init() {
         let box = FolderBox()
         _folderBox = State(initialValue: box)
-        _ehFeed = State(initialValue: GalleryFeed.eh { Bridge.shared.favorites(folder: Int32(box.folder ?? -1), query: "") })
+        let eh = GalleryFeed.eh { Bridge.shared.favorites(folder: Int32(box.folder ?? -1), query: "") }
+        eh.filtered = false
+        _ehFeed = State(initialValue: eh)
     }
 
     private func loggedIn(_ site: SiteKind) -> Bool {
