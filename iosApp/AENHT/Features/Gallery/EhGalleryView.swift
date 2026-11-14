@@ -361,7 +361,19 @@ struct EhGalleryView: View {
 
     private func comments(_ detail: EhGalleryDetail) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            SectionTitle(title: "Comments")
+            HStack(alignment: .firstTextBaseline) {
+                SectionTitle(title: "Comments")
+                if !detail.comments.isEmpty || EhSession.shared.isLoggedIn {
+                    NavigationLink {
+                        EhCommentsView(gid: detail.gid, token: detail.token, initial: detail.comments)
+                    } label: {
+                        if detail.comments.isEmpty { Text("Add a comment…") } else { Text("See All (\(detail.comments.count))") }
+                    }
+                    .font(.subheadline)
+                    .padding(.trailing)
+                    .fixedSize()
+                }
+            }
             if detail.comments.isEmpty {
                 Text("No comments yet").font(.subheadline).foregroundStyle(.secondary).padding(.horizontal, 20)
             } else {
@@ -493,5 +505,88 @@ struct EhListView: View {
         .navigationTitle(route.title)
         .refreshable { await feed.reload() }
         .task { if !feed.hasLoaded { await feed.reload() } }
+    }
+}
+
+/// All comments of an E-Hentai gallery, and a field to add one when logged in.
+struct EhCommentsView: View {
+    let gid: Int64
+    let token: String
+    @State private var comments: [EhComment]
+    @State private var draft = ""
+    @State private var isPosting = false
+    @State private var error: String?
+    @FocusState private var composing: Bool
+
+    init(gid: Int64, token: String, initial: [EhComment]) {
+        self.gid = gid
+        self.token = token
+        _comments = State(initialValue: initial)
+    }
+
+    var body: some View {
+        List {
+            ForEach(comments, id: \.id) { comment in
+                EhCommentBubble(comment: comment, lineLimit: nil)
+                    .padding(.vertical, 4)
+            }
+        }
+        .listStyle(.plain)
+        .overlay {
+            if comments.isEmpty { ContentUnavailableView("No Comments", systemImage: "text.bubble") }
+        }
+        .navigationTitle("Comments")
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable {
+            if let fresh = try? await EhService.shared.gallery(gid: Int(gid), token: token) { comments = fresh.comments }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if EhSession.shared.isLoggedIn { composer }
+        }
+        .alert("Couldn't Post", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
+    }
+
+    private var composer: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            TextField("Add a comment…", text: $draft, axis: .vertical)
+                .lineLimit(1...5)
+                .focused($composing)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            Button {
+                Task { await post() }
+            } label: {
+                if isPosting {
+                    ProgressView().frame(width: 36, height: 36)
+                } else {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 34))
+                        .symbolRenderingMode(.hierarchical)
+                }
+            }
+            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).count < 10 || isPosting)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .modifier(BarBackground())
+    }
+
+    private func post() async {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        isPosting = true
+        defer { isPosting = false }
+        do {
+            comments = try await EhService.shared.postComment(gid: gid, token: token, text: text)
+            draft = ""
+            composing = false
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 }

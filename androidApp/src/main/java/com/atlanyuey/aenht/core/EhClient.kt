@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.atlanyuey.aenht.shared.eh.EhApi
+import com.atlanyuey.aenht.shared.eh.EhComment
 import com.atlanyuey.aenht.shared.eh.EhCredentialStorage
 import com.atlanyuey.aenht.shared.eh.EhException
 import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
@@ -97,5 +98,6 @@ object EhClient {
     suspend fun setFavorite(gid: Long, token: String, folder: Int?, note: String = "") = call { setFavorite(gid, token, folder, note) }
     suspend fun favoriteFolderNames(): List<String> = call { favoriteFolderNames() }
     suspend fun rate(d: EhGalleryDetail, stars: Double): Double = call { rate(d.gid, d.token, d.apiUid, d.apiKey, stars) }
+    suspend fun postComment(gid: Long, token: String, text: String): List<EhComment> = call { postComment(gid, token, text) }
     suspend fun galleryToken(gid: Long, pageToken: String, page: Int): String = call { galleryToken(gid, pageToken, page) }
 }

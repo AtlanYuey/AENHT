@@ -200,6 +200,13 @@ object EhParser {
             }
         }
 
+    /** The comments on a gallery page (the answer to posting one). */
+    fun parseComments(html: String): List<EhComment> = parseComments(Ksoup.parse(html))
+
+    /** The site's message when a comment wasn't accepted (too short, posted too quickly…). */
+    fun commentError(html: String): String? =
+        Ksoup.parse(html).selectFirst("#cdiv p.br, p.br")?.text()?.trim()?.takeIf { it.isNotEmpty() }
+
     private fun parseComments(doc: Document): List<EhComment> =
         doc.select("#cdiv div.c1").mapNotNull { c ->
             val body = c.selectFirst("div.c6") ?: return@mapNotNull null
@@ -273,4 +280,6 @@ sealed class EhException(message: String, val kind: String, val code: Int = 0) :
     /** The image quota is used up (509). */
     class LimitReached : EhException("The image limit has been reached", "limitReached")
     class Parse(what: String) : EhException("Unexpected page from the server ($what)", "parse")
+    /** The site didn't accept what was sent; [message] is its own explanation. */
+    class Rejected(message: String) : EhException(message, "rejected")
 }

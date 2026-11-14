@@ -245,6 +245,33 @@ class EhApi internal constructor(
         return page
     }
 
+    // MARK: Comments
+
+    /** Posts a comment (at least 10 characters, as the site requires) and returns the gallery's comments. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun postComment(gid: Long, token: String, text: String): List<EhComment> {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        val url = galleryUrl(gid, token) + "?hc=1"
+        val html = withContext(Dispatchers.IO) {
+            limiter.acquire("page", Limits.page)
+            val response = try {
+                http.post(url) {
+                    header(HttpHeaders.Cookie, cookieHeader(url))
+                    setBody(FormDataContent(Parameters.build { append("commenttext_new", text) }))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw EhException.Network(e.message ?: e.toString())
+            }
+            remember(response)
+            if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
+            response.bodyAsText()
+        }
+        EhParser.commentError(html)?.let { throw EhException.Rejected(it) }
+        return EhParser.parseComments(html)
+    }
+
     // MARK: Favorites
 
     /** Adds to / moves into [folder] (0–9) with a [note], or removes when [folder] is null. */

@@ -466,7 +466,11 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         val navigator = LocalNavigator.current
         Column {
             SectionTitle(tr("Comments")) {
-                if (d.comments.isNotEmpty()) TextButton(tr("See All (%lld)", d.comments.size), { navigator.push(EhCommentsScreen(d.title, d.comments)) })
+                if (d.comments.isNotEmpty()) {
+                    TextButton(tr("See All (%lld)", d.comments.size), { navigator.push(EhCommentsScreen(d.gid, d.token, d.comments)) })
+                } else if (EhSession.isLoggedIn) {
+                    TextButton(tr("Add a comment…"), { navigator.push(EhCommentsScreen(d.gid, d.token, d.comments)) })
+                }
             }
             if (d.comments.isEmpty()) {
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
@@ -505,14 +509,58 @@ fun EhCommentBubble(comment: EhComment, maxLines: Int = Int.MAX_VALUE) {
 }
 
 /** All comments of an E-Hentai gallery. */
-class EhCommentsScreen(private val title: String, private val comments: List<EhComment>) : Screen() {
+class EhCommentsScreen(private val gid: Long, private val token: String, initial: List<EhComment>) : Screen() {
+    private val comments = mutableStateListOf<EhComment>().apply { addAll(initial) }
+    private var draft by mutableStateOf("")
+    private var posting by mutableStateOf(false)
+    private var pulling by mutableStateOf(false)
+
+    private suspend fun load() {
+        runCatching { EhClient.gallery(gid, token).comments }.getOrNull()?.let {
+            comments.clear()
+            comments.addAll(it)
+        }
+        pulling = false
+    }
+
     @Composable
     override fun Content() {
-        ScreenScaffold(title = tr("Comments")) { padding ->
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(comments, key = { it.id }) { comment ->
-                    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppTheme.colors.quaternaryFill).padding(14.dp)) {
-                        EhCommentBubble(comment)
+        val overlays = LocalOverlays.current
+        val errorTitle = tr("Couldn't Post")
+        ScreenScaffold(
+            title = tr("Comments"),
+            overlay = {
+                if (EhSession.isLoggedIn) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                        CommentComposer(draft, { draft = it }, posting) { text ->
+                            posting = true
+                            scope.launch {
+                                try {
+                                    val updated = EhClient.postComment(gid, token, text)
+                                    comments.clear()
+                                    comments.addAll(updated)
+                                    draft = ""
+                                } catch (e: Exception) {
+                                    overlays.alert(errorTitle, e.localizedMessage)
+                                }
+                                posting = false
+                            }
+                        }
+                    }
+                }
+            },
+        ) { padding ->
+            PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (comments.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
+                    items(comments, key = { it.id }) { comment ->
+                        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppTheme.colors.quaternaryFill).padding(14.dp)) {
+                            EhCommentBubble(comment)
+                        }
                     }
                 }
             }

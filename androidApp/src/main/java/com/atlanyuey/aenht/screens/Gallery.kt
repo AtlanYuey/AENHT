@@ -704,7 +704,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
             overlay = {
                 if (Session.isLoggedIn) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                        Composer { text ->
+                        CommentComposer(draft, { draft = it }, posting) { text ->
                             posting = true
                             scope.launch {
                                 try {
@@ -736,47 +736,48 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
             }
         }
     }
+}
 
-    @Composable
-    private fun Composer(post: (String) -> Unit) {
-        val colors = AppTheme.colors
-        val ready = draft.trim().length >= 10 && !posting
-        Row(
+/** The comment field at the bottom of a comments screen (both sites ask for at least 10 characters). */
+@Composable
+internal fun CommentComposer(draft: String, onDraft: (String) -> Unit, posting: Boolean, post: (String) -> Unit) {
+    val colors = AppTheme.colors
+    val ready = draft.trim().length >= 10 && !posting
+    Row(
+        Modifier
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
             Modifier
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .weight(1f)
+                .heightIn(min = 46.dp)
+                .glass(RoundedCornerShape(23.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 46.dp)
-                    .glass(RoundedCornerShape(23.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                if (draft.isEmpty()) Txt(tr("Add a comment…"), style = Type.body, color = colors.secondaryLabel)
-                BasicTextField(
-                    draft, { draft = it },
-                    textStyle = Type.body.copy(color = colors.label),
-                    cursorBrush = SolidColor(AppTheme.tint),
-                    maxLines = 5,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            if (posting) {
-                Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
-            } else {
-                GlassCircleButton(
-                    Icons.ArrowUp, tr("Done"),
-                    onClick = { post(draft.trim()) },
-                    size = 46.dp,
-                    tint = if (ready) AppTheme.tint else Color.Unspecified,
-                    enabled = ready,
-                )
-            }
+            if (draft.isEmpty()) Txt(tr("Add a comment…"), style = Type.body, color = colors.secondaryLabel)
+            BasicTextField(
+                draft, onDraft,
+                textStyle = Type.body.copy(color = colors.label),
+                cursorBrush = SolidColor(AppTheme.tint),
+                maxLines = 5,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (posting) {
+            Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
+        } else {
+            GlassCircleButton(
+                Icons.ArrowUp, tr("Done"),
+                onClick = { post(draft.trim()) },
+                size = 46.dp,
+                tint = if (ready) AppTheme.tint else Color.Unspecified,
+                enabled = ready,
+            )
         }
     }
 }

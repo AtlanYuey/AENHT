@@ -196,7 +196,7 @@ final class EhService: @unchecked Sendable {
         case "notLoggedIn": String(localized: "Log in to your E-Hentai account first.")
         case "limitReached": String(localized: "The image limit of this account has been reached. Try again later.")
         case "http": String(localized: "Request failed (\(Int(exception.code)))")
-        case "network": exception.message ?? String(localized: "Unexpected response from the server")
+        case "network", "rejected": exception.message ?? String(localized: "Unexpected response from the server")
         default: String(localized: "Unexpected response from the server")
         }
         return EhError.failed(message)
@@ -225,6 +225,10 @@ final class EhService: @unchecked Sendable {
 
     func setFavorite(gid: Int, token: String, folder: Int?) async throws {
         try await call { try await $0.setFavorite(gid: Int64(gid), token: token, folder: folder.map { KotlinInt(int: Int32($0)) }, note: "") }
+    }
+
+    func postComment(gid: Int64, token: String, text: String) async throws -> [EhComment] {
+        try await call { try await $0.postComment(gid: gid, token: token, text: text) }
     }
 
     func rate(_ detail: EhGalleryDetail, stars: Double) async throws -> Double {
