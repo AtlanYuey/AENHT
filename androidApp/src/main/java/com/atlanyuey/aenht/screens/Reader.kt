@@ -109,6 +109,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.ZoomSpec
+import me.saket.telephoto.zoomable.zoomable
+import com.atlanyuey.aenht.shared.reader.Spreads
+import com.atlanyuey.aenht.core.DoublePage
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.SideEffect
 import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import me.saket.telephoto.zoomable.rememberZoomableState
@@ -158,7 +163,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var chromeActivity by mutableIntStateOf(0)
     /** A finger is on the screen (dragging the slider, holding a button…). */
     private var touching by mutableStateOf(false)
-    private val pager = PagerState(currentPage = page) { source.pages.size }
+    /** Pages side by side (double page), or null for one page at a time. */
+    private var spreads by mutableStateOf<Spreads?>(null)
+    private val pager = PagerState(currentPage = page) { spreads?.count ?: source.pages.size }
     private val list = LazyListState(firstVisibleItemIndex = page)
     private val count get() = source.pages.size
 
@@ -173,6 +180,14 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var fadeCover by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
     private val fadeAlpha = androidx.compose.animation.core.Animatable(0f)
     private var fadeJob: Job? = null
+
+    /** The pager's page (a spread in double page) showing [page]. */
+    private fun slot(page: Int) = spreads?.slotOf(page) ?: page
+    private fun pageOfSlot(slot: Int) = spreads?.firstPage(slot) ?: slot
+
+    /** The page one turn away from [base] (-1 past the ends). */
+    private fun step(base: Int, forward: Boolean): Int =
+        spreads?.step(base, if (forward) 1 else -1) ?: (if (forward) base + 1 else base - 1)
 
     private fun record() {
         HistoryStore.record(source.summary, page)
@@ -190,7 +205,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             uiScope.launch {
                 if (paged) {
                     // A later turn takes over from wherever this one has got to.
-                    pager.animateScrollToPage(target)
+                    pager.animateScrollToPage(slot(target))
                 } else {
                     if (animate) list.animateScrollToItem(target) else list.scrollToItem(target)
                 }
@@ -202,7 +217,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** Shows [target] in place: the page shown now fades out over it (no motion). */
     private suspend fun fadeTo(target: Int) {
         val cover = runCatching { pagesLayer?.toImageBitmap() }.getOrNull()
-        pager.scrollToPage(target)
+        pager.scrollToPage(slot(target))
         if (cover == null) return
         fadeCover = cover
         try {
@@ -216,8 +231,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** The page a turn starts from (the target while a turn is running). */
     private val turnBase: Int get() = when {
         fadeJob?.isActive == true -> page
-        pager.isScrollInProgress -> pager.targetPage
-        else -> pager.currentPage
+        pager.isScrollInProgress -> pageOfSlot(pager.targetPage)
+        else -> if (slot(page) == pager.currentPage) page else pageOfSlot(pager.currentPage)
     }
 
     private fun turn(fraction: Float) {
@@ -225,7 +240,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         chromeVisible = false
         val forward = if (fraction < 0.5f) isRtl else !isRtl
         val base = if (AppSettings.readMode.isPaged) turnBase else page
-        go(if (forward) base + 1 else base - 1)
+        go(step(base, forward))
     }
 
     @Composable
@@ -259,7 +274,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         DisposableEffect(Unit) {
             ReaderKeys.handler = { forward ->
                 val base = if (AppSettings.readMode.isPaged) turnBase else page
-                go(if (forward) base + 1 else base - 1)
+                go(step(base, forward))
             }
             onDispose { ReaderKeys.handler = null }
         }
@@ -278,11 +293,22 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             delay(700)
             record()
         }
+        // Double page: in the left-to-right / right-to-left modes, always or in landscape.
+        val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+        val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+        val double = (mode == ReadMode.LeftToRight || mode == ReadMode.RightToLeft) &&
+            (AppSettings.doublePage == DoublePage.Always || (AppSettings.doublePage == DoublePage.Landscape && landscape))
+        val cover = AppSettings.doublePageCover
+        val newSpreads = remember(double, cover, count) {
+            if (double) Spreads(count, cover, source.pages.withIndex().filter { it.value.aspectRatio > 1.05f }.map { it.index }.toSet()) else null
+        }
+        SideEffect { if (spreads !== newSpreads) spreads = newSpreads }
         // Follow the pager / list to the page shown.
-        LaunchedEffect(mode) {
+        LaunchedEffect(mode, newSpreads) {
             if (mode.isPaged) {
-                if (pager.currentPage != page) pager.scrollToPage(page)
-                snapshotFlow { pager.currentPage }.collect { page = it }
+                if (spreads !== newSpreads) spreads = newSpreads
+                if (pager.currentPage != slot(page)) pager.scrollToPage(slot(page))
+                snapshotFlow { pager.currentPage }.collect { if (slot(page) != it) page = pageOfSlot(it) }
             } else {
                 list.scrollToItem(page)
                 snapshotFlow { list.firstVisibleItemIndex }.collect { page = it }
@@ -307,11 +333,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             chromeVisible = false
             while (true) {
                 delay((AppSettings.autoReadInterval * 1000).toLong())
-                if (page + 1 >= count) {
+                val next = if (AppSettings.readMode.isPaged) step(page, true) else page + 1
+                if (next !in 0 until count) {
                     autoRead = false
                     break
                 }
-                go(page + 1)
+                go(next)
             }
         }
 
@@ -395,7 +422,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     @Composable
     private fun Paged(mode: ReadMode) {
-        val content: @Composable (Int) -> Unit = { index -> ZoomPage(index) }
+        val content: @Composable (Int) -> Unit = { index -> if (spreads != null) SpreadPage(index) else ZoomPage(index) }
         val layer = androidx.compose.ui.graphics.rememberGraphicsLayer()
         pagesLayer = layer
         Box(Modifier.fillMaxSize()) {
@@ -425,6 +452,39 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Modifier.fillMaxSize().graphicsLayer { alpha = fadeAlpha.value },
                     contentScale = ContentScale.FillBounds,
                 )
+            }
+        }
+    }
+
+    /** Two pages side by side, zoomed together; the seam in the middle. */
+    @Composable
+    private fun SpreadPage(slot: Int) {
+        val pages = spreads?.pages(slot).orEmpty()
+        if (pages.size < 2) {
+            ZoomPage(pages.firstOrNull() ?: slot)
+            return
+        }
+        val zoomState = rememberZoomableState(ZoomSpec(maxZoomFactor = 4f))
+        val ordered = if (isRtl) pages.reversed() else pages
+        Box(
+            Modifier
+                .fillMaxSize()
+                .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true)
+                .zoomable(zoomState),
+        ) {
+            Row(Modifier.fillMaxSize()) {
+                ordered.forEachIndexed { i, p ->
+                    val align = if (i == 0) Alignment.CenterEnd else Alignment.CenterStart
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
+                        coil3.compose.AsyncImage(
+                            model = source.pages[p].url,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            alignment = align,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
         }
     }
@@ -565,7 +625,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                     if (target != page) {
                                         page = target
                                         uiScope.launch {
-                                            if (AppSettings.readMode.isPaged) pager.scrollToPage(target) else list.scrollToItem(target)
+                                            if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target)
                                         }
                                     }
                                 },
@@ -577,7 +637,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Txt("$count", style = Type.footnote, maxLines = 1)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PanelButton(Icons.ChevronBack, null) { go(if (isRtl) page + 1 else page - 1) }
+                    PanelButton(Icons.ChevronBack, null) { go(step(page, forward = isRtl)) }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         PanelButton(if (autoRead) Icons.Pause else Icons.Play, if (autoRead) tr("Stop Auto Read") else tr("Auto Read")) {
                             autoRead = !autoRead
@@ -586,7 +646,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         PanelButton(Icons.Sliders, null) { openSettings(overlays) }
                     }
-                    PanelButton(Icons.ChevronForward, null) { go(if (isRtl) page - 1 else page + 1) }
+                    PanelButton(Icons.ChevronForward, null) { go(step(page, forward = !isRtl)) }
                 }
             }
         }
@@ -615,6 +675,15 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
                 tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
                 label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
             )
+            if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
+                PickerRow(
+                    tr("Double Page"), DoublePage.entries, AppSettings.doublePage,
+                    label = { tr(it.title) }, onSelect = { AppSettings.doublePage = it },
+                )
+                if (AppSettings.doublePage != DoublePage.Off) {
+                    ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
+                }
+            }
             if (AppSettings.readMode == ReadMode.VerticalGap) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                     Row {

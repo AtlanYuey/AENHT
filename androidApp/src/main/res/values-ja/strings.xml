@@ -338,9 +338,14 @@
     <string name="l_335">設定、閲覧履歴、お気に入りのコピーを他の端末（Android または iPhone）と同期します。自動同期：アプリを開いたときとバックグラウンドに移ったとき。</string>
     <string name="l_336">サーバがユーザ名またはパスワードを拒否しました。</string>
     <string name="l_337">サーバに接続できませんでした。</string>
-    <string name="l_338">設定のバックアップ</string>
-    <string name="l_339">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_340">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_341">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_342">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_338">見開き</string>
+    <string name="l_339">横向き時</string>
+    <string name="l_340">常に</string>
+    <string name="l_341">オフ</string>
+    <string name="l_342">表紙は単独で表示</string>
+    <string name="l_343">設定のバックアップ</string>
+    <string name="l_344">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_345">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_346">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_347">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

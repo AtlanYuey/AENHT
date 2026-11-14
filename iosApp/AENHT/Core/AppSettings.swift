@@ -135,6 +135,21 @@ enum FollowSpeed: String, CaseIterable, Identifiable {
     }
 }
 
+/// Two pages side by side in the left-to-right / right-to-left modes.
+enum DoublePage: String, CaseIterable, Identifiable {
+    case off, landscape, always
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: String(localized: "Off")
+        case .landscape: String(localized: "In Landscape")
+        case .always: String(localized: "Always")
+        }
+    }
+}
+
 enum ReadMode: String, CaseIterable, Identifiable {
     case leftToRight, rightToLeft, verticalPaged
     /// Continuous vertical scroll (webtoon style).
@@ -248,6 +263,10 @@ final class AppSettings {
     var readerInvert: Bool { didSet { save(readerInvert, "readerInvert") } }
     /// Translation: Apple's on-device translation is the last fallback (or the only one).
     var deviceTranslation: Bool { didSet { save(deviceTranslation, "deviceTranslation") } }
+    /// Reader: two pages side by side (left-to-right / right-to-left modes).
+    var doublePage: DoublePage { didSet { save(doublePage.rawValue, "doublePage") } }
+    /// Reader, double page: the first page (the cover) stays alone.
+    var doublePageCover: Bool { didSet { save(doublePageCover, "doublePageCover") } }
     /// The user's language models for translation, in order (JSON; keys are in the Keychain).
     var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
@@ -335,6 +354,8 @@ final class AppSettings {
         readerGrayscale = d.bool(forKey: "readerGrayscale")
         readerInvert = d.bool(forKey: "readerInvert")
         deviceTranslation = d.object(forKey: "deviceTranslation") as? Bool ?? true
+        doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
+        doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -419,6 +440,8 @@ final class AppSettings {
         values["readerGrayscale"] = readerGrayscale
         values["readerInvert"] = readerInvert
         values["deviceTranslation"] = deviceTranslation
+        values["doublePage"] = doublePage.rawValue
+        values["doublePageCover"] = doublePageCover
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -490,6 +513,8 @@ final class AppSettings {
         case "readerGrayscale": set(\.readerGrayscale, number?.boolValue)
         case "readerInvert": set(\.readerInvert, number?.boolValue)
         case "deviceTranslation": set(\.deviceTranslation, number?.boolValue)
+        case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
+        case "doublePageCover": set(\.doublePageCover, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

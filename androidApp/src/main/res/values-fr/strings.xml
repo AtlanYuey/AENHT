@@ -338,9 +338,14 @@
     <string name="l_335">Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.</string>
     <string name="l_336">The server refused the user name or password.</string>
     <string name="l_337">Couldn\'t connect to the server.</string>
-    <string name="l_338">Sauvegarde des réglages</string>
-    <string name="l_339">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_340">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_341">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_342">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_338">Double Page</string>
+    <string name="l_339">In Landscape</string>
+    <string name="l_340">Always</string>
+    <string name="l_341">Off</string>
+    <string name="l_342">Cover Page Alone</string>
+    <string name="l_343">Sauvegarde des réglages</string>
+    <string name="l_344">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_345">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_346">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_347">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

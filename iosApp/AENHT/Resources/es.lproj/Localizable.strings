@@ -337,3 +337,8 @@
 "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background." = "Sincroniza los ajustes, el historial de lectura y la copia de favoritos con tus otros dispositivos, Android o iPhone. Automáticamente: al abrir la app y al pasar a segundo plano.";
 "The server refused the user name or password." = "El servidor rechazó el usuario o la contraseña.";
 "Couldn't connect to the server." = "No se pudo conectar con el servidor.";
+"Double Page" = "Doble página";
+"In Landscape" = "En horizontal";
+"Always" = "Siempre";
+"Off" = "Desactivado";
+"Cover Page Alone" = "Portada sola";

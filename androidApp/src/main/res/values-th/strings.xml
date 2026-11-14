@@ -338,9 +338,14 @@
     <string name="l_335">Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.</string>
     <string name="l_336">The server refused the user name or password.</string>
     <string name="l_337">Couldn\'t connect to the server.</string>
-    <string name="l_338">สำรองการตั้งค่า</string>
-    <string name="l_339">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
-    <string name="l_340">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
-    <string name="l_341">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
-    <string name="l_342">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
+    <string name="l_338">Double Page</string>
+    <string name="l_339">In Landscape</string>
+    <string name="l_340">Always</string>
+    <string name="l_341">Off</string>
+    <string name="l_342">Cover Page Alone</string>
+    <string name="l_343">สำรองการตั้งค่า</string>
+    <string name="l_344">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
+    <string name="l_345">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
+    <string name="l_346">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
+    <string name="l_347">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
 </resources>

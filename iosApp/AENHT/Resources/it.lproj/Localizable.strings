@@ -337,3 +337,8 @@
 "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background." = "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.";
 "The server refused the user name or password." = "The server refused the user name or password.";
 "Couldn't connect to the server." = "Couldn't connect to the server.";
+"Double Page" = "Double Page";
+"In Landscape" = "In Landscape";
+"Always" = "Always";
+"Off" = "Off";
+"Cover Page Alone" = "Cover Page Alone";

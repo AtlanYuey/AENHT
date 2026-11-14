@@ -338,9 +338,14 @@
     <string name="l_335">Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.</string>
     <string name="l_336">The server refused the user name or password.</string>
     <string name="l_337">Couldn\'t connect to the server.</string>
-    <string name="l_338">Резервная копия настроек</string>
-    <string name="l_339">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_340">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_341">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_342">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_338">Double Page</string>
+    <string name="l_339">In Landscape</string>
+    <string name="l_340">Always</string>
+    <string name="l_341">Off</string>
+    <string name="l_342">Cover Page Alone</string>
+    <string name="l_343">Резервная копия настроек</string>
+    <string name="l_344">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_345">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_346">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_347">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>

@@ -337,3 +337,8 @@
 "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background." = "設定、閲覧履歴、お気に入りのコピーを他の端末（Android または iPhone）と同期します。自動同期：アプリを開いたときとバックグラウンドに移ったとき。";
 "The server refused the user name or password." = "サーバがユーザ名またはパスワードを拒否しました。";
 "Couldn't connect to the server." = "サーバに接続できませんでした。";
+"Double Page" = "見開き";
+"In Landscape" = "横向き時";
+"Always" = "常に";
+"Off" = "オフ";
+"Cover Page Alone" = "表紙は単独で表示";

@@ -338,9 +338,14 @@
     <string name="l_335">与你的其他设备（Android 或 iPhone）同步设置、阅读历史和收藏副本。自动同步：打开应用时以及应用转入后台时。</string>
     <string name="l_336">服务器拒绝了用户名或密码。</string>
     <string name="l_337">无法连接到服务器。</string>
-    <string name="l_338">设置备份</string>
-    <string name="l_339">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_340">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_341">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_342">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_338">双页</string>
+    <string name="l_339">横屏时</string>
+    <string name="l_340">始终</string>
+    <string name="l_341">关闭</string>
+    <string name="l_342">封面单独显示</string>
+    <string name="l_343">设置备份</string>
+    <string name="l_344">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_345">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_346">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_347">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

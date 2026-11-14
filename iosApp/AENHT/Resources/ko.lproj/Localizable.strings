@@ -337,3 +337,8 @@
 "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background." = "설정, 읽기 기록, 즐겨찾기 사본을 다른 기기(Android 또는 iPhone)와 동기화합니다. 자동 동기화: 앱을 열 때와 백그라운드로 전환될 때.";
 "The server refused the user name or password." = "서버가 사용자 이름 또는 암호를 거부했습니다.";
 "Couldn't connect to the server." = "서버에 연결할 수 없습니다.";
+"Double Page" = "두 페이지 보기";
+"In Landscape" = "가로 모드에서";
+"Always" = "항상";
+"Off" = "끔";
+"Cover Page Alone" = "표지는 단독 표시";

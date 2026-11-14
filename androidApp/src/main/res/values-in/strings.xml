@@ -338,9 +338,14 @@
     <string name="l_335">Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.</string>
     <string name="l_336">The server refused the user name or password.</string>
     <string name="l_337">Couldn\'t connect to the server.</string>
-    <string name="l_338">Cadangan Pengaturan</string>
-    <string name="l_339">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_340">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_341">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_342">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_338">Double Page</string>
+    <string name="l_339">In Landscape</string>
+    <string name="l_340">Always</string>
+    <string name="l_341">Off</string>
+    <string name="l_342">Cover Page Alone</string>
+    <string name="l_343">Cadangan Pengaturan</string>
+    <string name="l_344">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_345">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_346">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_347">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

@@ -231,4 +231,9 @@ T = [
     "Sincroniza los ajustes, el historial de lectura y la copia de favoritos con tus otros dispositivos, Android o iPhone. Automáticamente: al abrir la app y al pasar a segundo plano.",
     "El servidor rechazó el usuario o la contraseña.",
     "No se pudo conectar con el servidor.",
+    "Doble página",
+    "En horizontal",
+    "Siempre",
+    "Desactivado",
+    "Portada sola",
 ]

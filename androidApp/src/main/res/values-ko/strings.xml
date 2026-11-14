@@ -338,9 +338,14 @@
     <string name="l_335">설정, 읽기 기록, 즐겨찾기 사본을 다른 기기(Android 또는 iPhone)와 동기화합니다. 자동 동기화: 앱을 열 때와 백그라운드로 전환될 때.</string>
     <string name="l_336">서버가 사용자 이름 또는 암호를 거부했습니다.</string>
     <string name="l_337">서버에 연결할 수 없습니다.</string>
-    <string name="l_338">설정 백업</string>
-    <string name="l_339">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_340">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_341">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_342">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_338">두 페이지 보기</string>
+    <string name="l_339">가로 모드에서</string>
+    <string name="l_340">항상</string>
+    <string name="l_341">끔</string>
+    <string name="l_342">표지는 단독 표시</string>
+    <string name="l_343">설정 백업</string>
+    <string name="l_344">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_345">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_346">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_347">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

@@ -336,5 +336,10 @@
  "Disconnect",
  "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.",
  "The server refused the user name or password.",
- "Couldn't connect to the server."
+ "Couldn't connect to the server.",
+ "Double Page",
+ "In Landscape",
+ "Always",
+ "Off",
+ "Cover Page Alone"
 ]

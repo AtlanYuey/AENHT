@@ -96,6 +96,7 @@ struct ReaderView: View {
     @State private var hider = ChromeHider()
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
+    @State private var isLandscape = false
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -113,6 +114,31 @@ struct ReaderView: View {
     }
 
     private var pageCount: Int { source.pages.count }
+
+    /// Double page: pages side by side, or nil for one at a time.
+    private var spreads: Spreads? {
+        let mode = settings.readMode
+        guard mode == .leftToRight || mode == .rightToLeft else { return nil }
+        guard settings.doublePage == .always || (settings.doublePage == .landscape && isLandscape) else { return nil }
+        let wide = Set(source.pages.enumerated().filter { $0.element.aspectRatio > 1.05 }.map { KotlinInt(int: Int32($0.offset)) })
+        return Spreads(pageCount: Int32(pageCount), cover: settings.doublePageCover, widePages: wide)
+    }
+
+    /// What the paged reader turns: spreads of one or two pages.
+    private func units(_ spreads: Spreads?) -> [[ReaderPage]] {
+        guard let spreads else { return source.pages.map { [$0] } }
+        return (0..<Int(spreads.count)).map { slot in
+            spreads.pages(slot: Int32(slot)).map { source.pages[Int($0.int32Value)] }
+        }
+    }
+
+    /// The page one turn away (-1 past the ends).
+    private func step(forward: Bool) -> Int {
+        if settings.readMode.isPaged, let spreads {
+            return Int(spreads.step(page: Int32(page), delta: forward ? 1 : -1))
+        }
+        return forward ? page + 1 : page - 1
+    }
     private var isRTL: Bool { settings.readMode == .rightToLeft }
 
     var body: some View {
@@ -124,6 +150,7 @@ struct ReaderView: View {
                 Color.black.opacity(min(0.8, 1 - settings.readerBrightness)).allowsHitTesting(false)
             }
             .background(Color.black)
+            .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscape = $0 }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -237,10 +264,17 @@ struct ReaderView: View {
     @ViewBuilder
     private var content: some View {
         if settings.readMode.isPaged {
-            PagedReader(pages: source.pages, mode: settings.readMode, page: $page) { fraction in
+            let spreads = spreads
+            PagedReader(units: units(spreads), mode: settings.readMode, page: Binding(
+                get: { spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page },
+                set: { slot in
+                    let first = spreads.map { Int($0.firstPage(slot: Int32(slot))) } ?? slot
+                    if (spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page) != slot { page = first }
+                }
+            )) { fraction in
                 handleTap(at: fraction)
             }
-            .id(settings.readMode)
+            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)")
         } else {
             ScrollView(.vertical) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
@@ -283,11 +317,7 @@ struct ReaderView: View {
             chromeVisible.toggle()
             return
         }
-        if fraction < 0.5 {
-            go(isRTL ? page + 1 : page - 1)
-        } else {
-            go(isRTL ? page - 1 : page + 1)
-        }
+        go(step(forward: fraction < 0.5 ? isRTL : !isRTL))
     }
 
     private func recordPage() {
@@ -328,11 +358,12 @@ struct ReaderView: View {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(settings.autoReadInterval))
             guard !Task.isCancelled else { return }
-            if page + 1 >= pageCount {
+            let next = step(forward: true)
+            guard (0..<pageCount).contains(next) else {
                 autoRead = false
                 return
             }
-            go(page + 1)
+            go(next)
         }
     }
 
@@ -360,7 +391,7 @@ struct ReaderView: View {
             }
             HStack {
                 Button {
-                    goFromPanel(isRTL ? page + 1 : page - 1)
+                    goFromPanel(step(forward: isRTL))
                 } label: {
                     Image(systemName: "chevron.left")
                 }
@@ -379,7 +410,7 @@ struct ReaderView: View {
                 }
                 Spacer()
                 Button {
-                    goFromPanel(isRTL ? page - 1 : page + 1)
+                    goFromPanel(step(forward: !isRTL))
                 } label: {
                     Image(systemName: "chevron.right")
                 }
@@ -459,6 +490,14 @@ struct ReadingSettingsSections: View {
             Picker("Reading Direction", selection: $settings.readMode) {
                 ForEach(ReadMode.allCases) { mode in
                     Label(mode.title, systemImage: mode.systemImage).tag(mode)
+                }
+            }
+            if settings.readMode == .leftToRight || settings.readMode == .rightToLeft {
+                Picker("Double Page", selection: $settings.doublePage) {
+                    ForEach(DoublePage.allCases) { Text($0.title).tag($0) }
+                }
+                if settings.doublePage != .off {
+                    Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
                 }
             }
             if settings.readMode == .verticalGap {
@@ -559,7 +598,8 @@ enum PageTurn {
 /// UIPageViewController keeps the neighbouring pages alive, so turning a
 /// page shows an already decoded image instead of a blank one.
 struct PagedReader: UIViewControllerRepresentable {
-    let pages: [ReaderPage]
+    /// One or two pages (double page) per turn.
+    let units: [[ReaderPage]]
     let mode: ReadMode
     @Binding var page: Int
     let onTap: (CGFloat) -> Void
@@ -610,9 +650,9 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         func controller(for index: Int) -> PageController? {
-            guard parent.pages.indices.contains(index) else { return nil }
+            guard parent.units.indices.contains(index) else { return nil }
             if let cached = cache[index] { return cached }
-            let controller = PageController(index: index, url: parent.pages[index].url)
+            let controller = PageController(index: index, urls: parent.units[index].map(\.url), rightToLeft: parent.mode == .rightToLeft)
             controller.onTap = { [weak self] fraction in self?.parent.onTap(fraction) }
             cache[index] = controller
             let current = parent.page
@@ -716,13 +756,16 @@ struct PagedReader: UIViewControllerRepresentable {
 
 final class PageController: UIViewController {
     let index: Int
-    let url: URL?
+    /// One page, or two shown side by side.
+    let urls: [URL?]
+    let rightToLeft: Bool
     var onTap: ((CGFloat) -> Void)?
     private let zoomView = ZoomableImageView()
 
-    init(index: Int, url: URL?) {
+    init(index: Int, urls: [URL?], rightToLeft: Bool) {
         self.index = index
-        self.url = url
+        self.urls = urls
+        self.rightToLeft = rightToLeft
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -737,7 +780,11 @@ final class PageController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         zoomView.onTap = { [weak self] fraction in self?.onTap?(fraction) }
-        zoomView.load(url)
+        if urls.count > 1 {
+            zoomView.loadSpread(urls, rightToLeft: rightToLeft)
+        } else {
+            zoomView.load(urls.first ?? nil)
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -757,6 +804,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private let imageView = UIImageView()
     private let spinner = UIActivityIndicatorView(style: .large)
     private var task: ImageTask?
+    private var spreadTask: Task<Void, Never>?
     private var currentURL: URL?
     private var pendingTap: DispatchWorkItem?
     private var lastTapTime: CFTimeInterval = 0
@@ -794,6 +842,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     deinit {
         task?.cancel()
+        spreadTask?.cancel()
         pendingTap?.cancel()
     }
 
@@ -817,6 +866,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     func load(_ url: URL?) {
         guard url != currentURL else { return }
         task?.cancel()
+        spreadTask?.cancel()
         currentURL = url
         imageView.image = nil
         resetZoom()
@@ -835,6 +885,44 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
                     self.imageView.image = response.image
                 }
             }
+        }
+    }
+
+    /// Two pages joined into one image (the first on the left, or on the
+    /// right when reading right to left), zoomed as one.
+    func loadSpread(_ urls: [URL?], rightToLeft: Bool) {
+        let key = urls.compactMap { $0 }
+        guard key.count == 2 else { load(urls.first ?? nil); return }
+        task?.cancel()
+        spreadTask?.cancel()
+        currentURL = nil
+        imageView.image = nil
+        resetZoom()
+        spinner.startAnimating()
+        spreadTask = Task { [weak self] in
+            async let a = ImagePipeline.shared.image(for: ImageRequest(url: key[0]))
+            async let b = ImagePipeline.shared.image(for: ImageRequest(url: key[1]))
+            guard let first = try? await a, let second = try? await b, !Task.isCancelled, let self else { return }
+            let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second)
+            self.spinner.stopAnimating()
+            UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
+                self.imageView.image = image
+            }
+        }
+    }
+
+    private static func join(_ left: UIImage, _ right: UIImage) -> UIImage {
+        let height = max(left.size.height, right.size.height)
+        let leftWidth = left.size.width * height / max(1, left.size.height)
+        let rightWidth = right.size.width * height / max(1, right.size.height)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        // Keeps the joined image a sensible size for memory.
+        let scale = min(1, 4096 / max(1, leftWidth + rightWidth))
+        let size = CGSize(width: (leftWidth + rightWidth) * scale, height: height * scale)
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            left.draw(in: CGRect(x: 0, y: 0, width: leftWidth * scale, height: size.height))
+            right.draw(in: CGRect(x: leftWidth * scale, y: 0, width: rightWidth * scale, height: size.height))
         }
     }
 

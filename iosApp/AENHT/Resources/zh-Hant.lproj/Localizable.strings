@@ -337,3 +337,8 @@
 "Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background." = "與你的其他裝置（Android 或 iPhone）同步設定、閱讀紀錄和收藏副本。自動同步：開啟 App 時以及 App 轉入背景時。";
 "The server refused the user name or password." = "伺服器拒絕了使用者名稱或密碼。";
 "Couldn't connect to the server." = "無法連線到伺服器。";
+"Double Page" = "雙頁";
+"In Landscape" = "橫向時";
+"Always" = "一律";
+"Off" = "關閉";
+"Cover Page Alone" = "封面單獨顯示";

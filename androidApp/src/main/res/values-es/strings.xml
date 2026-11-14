@@ -338,9 +338,14 @@
     <string name="l_335">Sincroniza los ajustes, el historial de lectura y la copia de favoritos con tus otros dispositivos, Android o iPhone. Automáticamente: al abrir la app y al pasar a segundo plano.</string>
     <string name="l_336">El servidor rechazó el usuario o la contraseña.</string>
     <string name="l_337">No se pudo conectar con el servidor.</string>
-    <string name="l_338">Copia de los ajustes</string>
-    <string name="l_339">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_340">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_341">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_342">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_338">Doble página</string>
+    <string name="l_339">En horizontal</string>
+    <string name="l_340">Siempre</string>
+    <string name="l_341">Desactivado</string>
+    <string name="l_342">Portada sola</string>
+    <string name="l_343">Copia de los ajustes</string>
+    <string name="l_344">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_345">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_346">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_347">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

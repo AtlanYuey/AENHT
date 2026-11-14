@@ -338,9 +338,14 @@
     <string name="l_335">Syncs the settings, the reading history and the favorites copy with your other devices, Android or iPhone. Automatically: when the app opens and when it goes to the background.</string>
     <string name="l_336">The server refused the user name or password.</string>
     <string name="l_337">Couldn\'t connect to the server.</string>
-    <string name="l_338">Einstellungen sichern</string>
-    <string name="l_339">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_340">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_341">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_342">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_338">Double Page</string>
+    <string name="l_339">In Landscape</string>
+    <string name="l_340">Always</string>
+    <string name="l_341">Off</string>
+    <string name="l_342">Cover Page Alone</string>
+    <string name="l_343">Einstellungen sichern</string>
+    <string name="l_344">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_345">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_346">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_347">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>
