@@ -144,6 +144,7 @@ import com.atlanyuey.aenht.ui.components.pickerItems
 import com.atlanyuey.aenht.ui.theme.AppTheme
 import com.atlanyuey.aenht.ui.theme.Icons
 import com.atlanyuey.aenht.ui.theme.Type
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -225,6 +226,9 @@ fun ehHomeSource(list: EhHomeList, language: LanguageFilter): EhListSource {
     }
 }
 
+/** Two taps on the Home tab this close together refresh Home. */
+private const val DOUBLE_TAP_MILLIS = 300L
+
 class HomeScreen : Screen() {
     private val nhFeedState = GalleryFeed(scope, nhFeed { page ->
         NHClient.galleries(AppSettings.homeLanguage.queryTerm ?: "", AppSettings.homeSort, page)
@@ -241,6 +245,46 @@ class HomeScreen : Screen() {
     private val search = SearchState()
     private val searchPanel = SearchPanel(search, scope)
     private var searching by mutableStateOf(false)
+
+    /** Where the list was when the Home tab took it to the top. */
+    private var savedPosition: Pair<Int, Int>? = null
+    /** A tap on the Home tab at the top, waiting to see if a second follows. */
+    private var pendingTap: Job? = null
+    private var lastTopTap = 0L
+
+    /**
+     * The Home tab was tapped while Home shows: away from the top, the list
+     * goes to the top; at the top, back to where it was; tapped twice
+     * quickly, Home refreshes.
+     */
+    fun tabTapped() {
+        if (searching) return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (pendingTap?.isActive == true || now - lastTopTap < DOUBLE_TAP_MILLIS) {
+            pendingTap?.cancel()
+            pendingTap = null
+            lastTopTap = 0
+            savedPosition = null
+            scope.launch { grid.animateScrollToItem(0) }
+            pulling = true
+            reload()
+            return
+        }
+        val atTop = grid.firstVisibleItemIndex == 0 && grid.firstVisibleItemScrollOffset == 0
+        if (!atTop) {
+            savedPosition = grid.firstVisibleItemIndex to grid.firstVisibleItemScrollOffset
+            lastTopTap = now
+            scope.launch { grid.animateScrollToItem(0) }
+            return
+        }
+        pendingTap = scope.launch {
+            delay(DOUBLE_TAP_MILLIS)
+            pendingTap = null
+            val saved = savedPosition ?: return@launch
+            savedPosition = null
+            grid.animateScrollToItem(saved.first, saved.second)
+        }
+    }
 
     private fun reload() {
         val job = feed.reload()

@@ -153,7 +153,9 @@ fun RootView(
 
     fun select(index: Int) {
         if (index == selected) {
-            tabs.all[index].popToRoot()
+            val navigator = tabs.all[index]
+            val home = navigator.stack.first() as? HomeScreen
+            if (home != null && !navigator.canPop) home.tabTapped() else navigator.popToRoot()
         } else {
             selected = index
             lastTab = index

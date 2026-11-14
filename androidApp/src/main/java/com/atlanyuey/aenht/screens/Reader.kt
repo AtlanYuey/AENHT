@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.LocalNavigator
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import com.atlanyuey.aenht.ui.components.prompt
@@ -157,7 +158,27 @@ private fun pageColorEffect(grayscale: Boolean, invert: Boolean): androidx.compo
 }
 
 /** Which taps turn the page: the outer 30 % on each side, when enabled. */
-private fun turnsPage(fraction: Float) = AppSettings.tapToTurnPages && (fraction < 0.3f || fraction > 0.7f)
+/**
+ * What a tap at ([fx], [fy]), fractions of the page, does: true turns
+ * forward, false back, null nothing (the middle). Left and right edges or
+ * top and bottom (Tap Zones); Swap Tap Zones reverses them.
+ */
+private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
+    if (!AppSettings.tapToTurnPages) return null
+    val forward = when (AppSettings.tapZones) {
+        com.atlanyuey.aenht.core.TapZones.LeftRight -> when {
+            fx < 0.3f -> rtl
+            fx > 0.7f -> !rtl
+            else -> return null
+        }
+        com.atlanyuey.aenht.core.TapZones.TopBottom -> when {
+            fy < 0.3f -> false
+            fy > 0.7f -> true
+            else -> return null
+        }
+    }
+    return forward != AppSettings.swapTapZones
+}
 
 class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     override val hidesTabBar: Boolean get() = true
@@ -241,13 +262,31 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         else -> if (slot(page) == pager.currentPage) page else pageOfSlot(pager.currentPage)
     }
 
-    private fun turn(fraction: Float) {
+    private fun turn(forward: Boolean) {
         // Turning pages from the edges hides the controls.
         chromeVisible = false
-        // Swapped tap zones: the left edge goes forward.
-        val forward = (if (fraction < 0.5f) isRtl else !isRtl) != AppSettings.swapTapZones
         val base = if (AppSettings.readMode.isPaged) turnBase else page
         go(step(base, forward))
+    }
+
+    /** What the swipes the pages don't use do (Reading settings › Controls). */
+    private var gestureAction: ((com.atlanyuey.aenht.core.ReaderGesture) -> Unit)? = null
+
+    /** A swipe of [delta]: up / down in the left-right modes, left / right in the top-to-bottom ones. */
+    /** The last touch or volume key (Keep Screen On counts from it). */
+    private var lastTouch = 0L
+
+    private fun swiped(delta: Offset, min: Float) {
+        val mode = AppSettings.readMode
+        val horizontalPages = mode == ReadMode.LeftToRight || mode == ReadMode.RightToLeft
+        val gesture = if (horizontalPages) {
+            if (kotlin.math.abs(delta.y) < min || kotlin.math.abs(delta.y) < 2 * kotlin.math.abs(delta.x)) return
+            if (delta.y > 0) AppSettings.swipeDown else AppSettings.swipeUp
+        } else {
+            if (kotlin.math.abs(delta.x) < min || kotlin.math.abs(delta.x) < 2 * kotlin.math.abs(delta.y)) return
+            if (delta.x > 0) AppSettings.swipeRight else AppSettings.swipeLeft
+        }
+        gestureAction?.invoke(gesture)
     }
 
     @Composable
@@ -278,15 +317,55 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
             onDispose {}
         }
+        run {
+            val navigator = LocalNavigator.current
+            val gestureOverlays = LocalOverlays.current
+            val pageTitle = tr("Page Number")
+            val goLabel = tr("Go")
+            val cancelLabel = tr("Cancel")
+            gestureAction = { gesture ->
+                when (gesture) {
+                    com.atlanyuey.aenht.core.ReaderGesture.None -> {}
+                    com.atlanyuey.aenht.core.ReaderGesture.Exit -> navigator.pop()
+                    com.atlanyuey.aenht.core.ReaderGesture.Controls -> chromeVisible = !chromeVisible
+                    com.atlanyuey.aenht.core.ReaderGesture.AutoRead -> autoRead = !autoRead
+                    com.atlanyuey.aenht.core.ReaderGesture.GoToPage ->
+                        gestureOverlays.prompt(pageTitle, "1 – $count", "${page + 1}", goLabel, cancelLabel, number = true) { text ->
+                            val target = (text.toIntOrNull() ?: return@prompt) - 1
+                            if (target in 0 until count) {
+                                page = target
+                                uiScope.launch { if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target) }
+                            }
+                        }
+                }
+            }
+        }
         DisposableEffect(Unit) {
             ReaderKeys.handler = { forward ->
+                lastTouch = android.os.SystemClock.uptimeMillis()
                 val base = if (AppSettings.readMode.isPaged) turnBase else page
                 go(step(base, forward))
             }
             onDispose { ReaderKeys.handler = null }
         }
+        // Keep Screen On: held on until that long after the last touch, then
+        // left to the system's own screen timeout (never turned off sooner).
+        LaunchedEffect(AppSettings.screenOn) {
+            val setting = AppSettings.screenOn
+            lastTouch = android.os.SystemClock.uptimeMillis()
+            if (setting.minutes == 0) {
+                view.keepScreenOn = setting == com.atlanyuey.aenht.core.ScreenOn.Always
+                return@LaunchedEffect
+            }
+            val limit = setting.minutes * 60_000L
+            while (true) {
+                val idle = android.os.SystemClock.uptimeMillis() - lastTouch
+                view.keepScreenOn = idle < limit
+                // Until the time is up; after it, a touch soon turns it back on.
+                kotlinx.coroutines.delay(if (idle < limit) limit - idle else 1_000L)
+            }
+        }
         DisposableEffect(Unit) {
-            view.keepScreenOn = AppSettings.keepScreenOn
             onDispose {
                 view.keepScreenOn = false
                 (context as? Activity)?.window?.let { window ->
@@ -358,7 +437,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
                             touching = event.changes.any { it.pressed }
-                            if (event.type == PointerEventType.Press) chromeActivity++
+                            if (event.type == PointerEventType.Press) {
+                                chromeActivity++
+                                lastTouch = android.os.SystemClock.uptimeMillis()
+                            }
                         }
                     }
                 },
@@ -404,13 +486,17 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val up = waitForUpOrCancellation(PointerEventPass.Initial) ?: return@awaitEachGesture
-            if ((up.position - down.position).getDistance() > viewConfiguration.touchSlop) return@awaitEachGesture
+            val delta = up.position - down.position
+            if (delta.getDistance() > viewConfiguration.touchSlop) {
+                if (!zoomed() && up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, 80.dp.toPx())
+                return@awaitEachGesture
+            }
             if (up.uptimeMillis - down.uptimeMillis > 400) return@awaitEachGesture
-            val fraction = up.position.x / size.width
-            if (paged && !zoomed() && turnsPage(fraction)) {
+            val forward = if (paged && !zoomed()) tapTurn(up.position.x / size.width, up.position.y / size.height, isRtl) else null
+            if (forward != null) {
                 pendingTap?.cancel()
                 pendingTap = null
-                turn(fraction)
+                turn(forward)
                 return@awaitEachGesture
             }
             val now = up.uptimeMillis
@@ -873,8 +959,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
         ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
         ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
     }
+    section(footer = { FooterText(tr("The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).")) }) {
+        PickerRow(tr("Keep Screen On"), com.atlanyuey.aenht.core.ScreenOn.entries, AppSettings.screenOn,
+            label = { tr(it.title) }, onSelect = { AppSettings.screenOn = it }, last = true)
+    }
     section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
-        ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it })
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row {
                 Txt(tr("Hide Controls After"), Modifier.weight(1f))
@@ -892,8 +981,17 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
         ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
+        PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
+            label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it })
         ToggleRow(tr("Swap Tap Zones"), AppSettings.swapTapZones, { AppSettings.swapTapZones = it })
         ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
         ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
+    }
+    section("Swipes", footer = { FooterText(tr("Up and down work in the left-to-right and right-to-left modes; left and right in the top-to-bottom modes. Not while a page is zoomed in.")) }) {
+        val g = com.atlanyuey.aenht.core.ReaderGesture.entries
+        PickerRow(tr("Swipe Down"), g, AppSettings.swipeDown, label = { tr(it.title) }, onSelect = { AppSettings.swipeDown = it })
+        PickerRow(tr("Swipe Up"), g, AppSettings.swipeUp, label = { tr(it.title) }, onSelect = { AppSettings.swipeUp = it })
+        PickerRow(tr("Swipe Right"), g, AppSettings.swipeRight, label = { tr(it.title) }, onSelect = { AppSettings.swipeRight = it })
+        PickerRow(tr("Swipe Left"), g, AppSettings.swipeLeft, label = { tr(it.title) }, onSelect = { AppSettings.swipeLeft = it }, last = true)
     }
 }

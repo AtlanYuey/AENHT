@@ -94,6 +94,7 @@ struct ReaderView: View {
     @State private var sliderEditing = false
     /// Hides the controls a while after the last touch.
     @State private var hider = ChromeHider()
+    @State private var awake = ScreenAwake()
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
     @State private var isLandscape = false
@@ -104,6 +105,7 @@ struct ReaderView: View {
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     @State private var prefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
@@ -217,6 +219,7 @@ struct ReaderView: View {
                 // No view state changes here: one while the Options menu is
                 // open rebuilds the toolbar and closes the menu under the
                 // finger, before its item acts.
+                awake.touched()
                 guard chromeVisible else { return }
                 if touch.onOverlay || touch.location.y < touch.safeArea.top + 64 {
                     // A menu, a sheet, or the top bar (its menu may be
@@ -227,6 +230,7 @@ struct ReaderView: View {
                 }
             })
             .onChange(of: chromeVisible) { scheduleHide() }
+            .onChange(of: settings.screenOn) { awake.touched() }
             .onChange(of: sliderEditing) { scheduleHide() }
             .onChange(of: showSettings) { scheduleHide() }
             .onChange(of: page) { _, new in
@@ -255,14 +259,14 @@ struct ReaderView: View {
             .onAppear { AppChrome.shared.readersOpen += 1 }
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
-                UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
+                awake.touched()
                 prefetch(around: page)
                 recordPage()
                 scheduleHide()
             }
             .onDisappear {
                 hider.cancel()
-                UIApplication.shared.isIdleTimerDisabled = false
+                awake.stop()
                 prefetcher.stopPrefetching()
                 recordPage()
             }
@@ -290,9 +294,11 @@ struct ReaderView: View {
                     let first = spreads.map { Int($0.firstPage(slot: Int32(slot))) } ?? slot
                     if (spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page) != slot { page = first }
                 }
-            )) { fraction in
-                handleTap(at: fraction)
-            }
+            ), onTap: { point in
+                handleTap(at: point)
+            }, onSwipe: { direction in
+                handleSwipe(direction)
+            })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)")
         } else {
             ScrollView(.vertical) {
@@ -315,6 +321,8 @@ struct ReaderView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
+            .gesture(SideSwipe(direction: .left) { handleSwipe($0) })
+            .gesture(SideSwipe(direction: .right) { handleSwipe($0) })
         }
     }
 
@@ -331,13 +339,40 @@ struct ReaderView: View {
         }
     }
 
-    private func handleTap(at fraction: CGFloat) {
-        guard ReaderTapZones.turnsPage(at: fraction) else {
+    /// A tap at [point] (fractions of the page's width and height).
+    private func handleTap(at point: CGPoint) {
+        guard let forward = ReaderTapZones.forward(at: point, rightToLeft: isRTL) else {
             chromeVisible.toggle()
             return
         }
-        // Swapped tap zones: the left edge goes forward.
-        go(step(forward: (fraction < 0.5 ? isRTL : !isRTL) != settings.swapTapZones))
+        go(step(forward: forward))
+    }
+
+    /// Swipes across the reading direction do what the Controls settings
+    /// say (up and down when pages turn sideways, left and right otherwise).
+    private func handleSwipe(_ direction: UISwipeGestureRecognizer.Direction) {
+        let sideways = settings.readMode == .leftToRight || settings.readMode == .rightToLeft
+        let gesture: ReaderGesture
+        if sideways, direction == .up {
+            gesture = settings.swipeUp
+        } else if sideways, direction == .down {
+            gesture = settings.swipeDown
+        } else if !sideways, direction == .left {
+            gesture = settings.swipeLeft
+        } else if !sideways, direction == .right {
+            gesture = settings.swipeRight
+        } else {
+            return
+        }
+        switch gesture {
+        case .none: break
+        case .exit: dismiss()
+        case .controls: chromeVisible.toggle()
+        case .goToPage:
+            pageText = "\(page + 1)"
+            askPage = true
+        case .autoRead: autoRead.toggle()
+        }
     }
 
     /// The page shown, as decoded (from the image cache when it's there).
@@ -476,6 +511,31 @@ struct ReaderView: View {
 /// Runs [hide] a while after the last [schedule]. It holds no view state,
 /// so a touch changes nothing on screen until the controls actually hide.
 @MainActor
+/// Keeps the screen on while reading, until the Keep Screen On time has
+/// passed without a touch (Reading settings). It then only stops holding
+/// the screen on: the system's auto-lock decides, never sooner than usual.
+@MainActor
+private final class ScreenAwake {
+    private var timer: Task<Void, Never>?
+
+    func touched() {
+        timer?.cancel()
+        let mode = AppSettings.shared.screenOn
+        UIApplication.shared.isIdleTimerDisabled = mode != .off
+        guard let minutes = mode.minutes else { return }
+        timer = Task {
+            try? await Task.sleep(for: .seconds(minutes * 60))
+            guard !Task.isCancelled else { return }
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+    }
+
+    func stop() {
+        timer?.cancel()
+        UIApplication.shared.isIdleTimerDisabled = false
+    }
+}
+
 private final class ChromeHider {
     private var task: Task<Void, Never>?
 
@@ -619,7 +679,13 @@ struct ReadingSettingsSections: View {
             Text("Brightness, grayscale and inverted colors apply only to the pages.")
         }
         Section {
-            Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
+            Picker("Keep Screen On", selection: $settings.screenOn) {
+                ForEach(ScreenOn.allCases) { Text($0.title).tag($0) }
+            }
+        } footer: {
+            Text("The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).")
+        }
+        Section {
             VStack(alignment: .leading) {
                 LabeledContent("Hide Controls After") {
                     Text(settings.readerControlsDelay, format: .number.precision(.fractionLength(0)))
@@ -641,22 +707,93 @@ struct ReadingSettingsSections: View {
     @ViewBuilder private var controls: some View {
         Section {
             Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
+            Picker("Tap Zones", selection: $settings.tapZones) {
+                ForEach(TapZones.allCases) { Text($0.title).tag($0) }
+            }
+            .disabled(!settings.tapToTurnPages)
             Toggle("Swap Tap Zones", isOn: $settings.swapTapZones)
             Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
         } footer: {
             Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
+        }
+        Section {
+            gesturePicker("Swipe Down", $settings.swipeDown)
+            gesturePicker("Swipe Up", $settings.swipeUp)
+            gesturePicker("Swipe Right", $settings.swipeRight)
+            gesturePicker("Swipe Left", $settings.swipeLeft)
+        } header: {
+            Text("Swipes")
+        } footer: {
+            Text("Up and down work in the left-to-right and right-to-left modes; left and right in the top-to-bottom modes. Not while a page is zoomed in.")
+        }
+    }
+
+    private func gesturePicker(_ title: LocalizedStringKey, _ value: Binding<ReaderGesture>) -> some View {
+        Picker(title, selection: value) {
+            ForEach(ReaderGesture.allCases) { Text($0.title).tag($0) }
         }
     }
 }
 
 // MARK: - Tap zones
 
-/// Which taps turn the page: the outer 30 % on each side, when enabled.
+/// Which taps turn the page, when enabled: the outer 30 % on the left and
+/// right, or at the top and bottom (Reading › Tap Zones).
 enum ReaderTapZones {
     static let edge: CGFloat = 0.3
 
-    static func turnsPage(at fraction: CGFloat) -> Bool {
-        AppSettings.shared.tapToTurnPages && (fraction < edge || fraction > 1 - edge)
+    /// Whether a tap at [point] (fractions of the page) turns forward,
+    /// back, or isn't a turn (nil).
+    @MainActor
+    static func forward(at point: CGPoint, rightToLeft: Bool) -> Bool? {
+        let settings = AppSettings.shared
+        guard settings.tapToTurnPages else { return nil }
+        let forward: Bool
+        switch settings.tapZones {
+        case .leftRight:
+            if point.x < edge { forward = rightToLeft } else if point.x > 1 - edge { forward = !rightToLeft } else { return nil }
+        case .topBottom:
+            if point.y < edge { forward = false } else if point.y > 1 - edge { forward = true } else { return nil }
+        }
+        // Swapped tap zones: the zones change places.
+        return forward != settings.swapTapZones
+    }
+}
+
+/// A left or right swipe over the continuous reader, alongside its scrolling.
+struct SideSwipe: UIGestureRecognizerRepresentable {
+    let direction: UISwipeGestureRecognizer.Direction
+    let action: (UISwipeGestureRecognizer.Direction) -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> SwipeDelegate {
+        SwipeDelegate()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UISwipeGestureRecognizer {
+        let recognizer = UISwipeGestureRecognizer()
+        recognizer.direction = direction
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UISwipeGestureRecognizer, context: Context) {
+        if recognizer.state == .ended { action(direction) }
+    }
+}
+
+/// Lets the reader's swipes work alongside the page's own gestures, and
+/// not on a zoomed-in page.
+@MainActor
+final class SwipeDelegate: NSObject, UIGestureRecognizerDelegate {
+    var isBlocked: @MainActor () -> Bool = { false }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        !isBlocked()
     }
 }
 
@@ -680,7 +817,8 @@ struct PagedReader: UIViewControllerRepresentable {
     let units: [[ReaderPage]]
     let mode: ReadMode
     @Binding var page: Int
-    let onTap: (CGFloat) -> Void
+    let onTap: (CGPoint) -> Void
+    let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -731,7 +869,8 @@ struct PagedReader: UIViewControllerRepresentable {
             guard parent.units.indices.contains(index) else { return nil }
             if let cached = cache[index] { return cached }
             let controller = PageController(index: index, urls: parent.units[index].map(\.url), rightToLeft: parent.mode == .rightToLeft)
-            controller.onTap = { [weak self] fraction in self?.parent.onTap(fraction) }
+            controller.onTap = { [weak self] point in self?.parent.onTap(point) }
+            controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             cache[index] = controller
             let current = parent.page
             cache = cache.filter { abs($0.key - current) <= 3 || $0.key == index }
@@ -837,7 +976,8 @@ final class PageController: UIViewController {
     /// One page, or two shown side by side.
     let urls: [URL?]
     let rightToLeft: Bool
-    var onTap: ((CGFloat) -> Void)?
+    var onTap: ((CGPoint) -> Void)?
+    var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
     private let zoomView = ZoomableImageView()
 
     init(index: Int, urls: [URL?], rightToLeft: Bool) {
@@ -857,7 +997,8 @@ final class PageController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        zoomView.onTap = { [weak self] fraction in self?.onTap?(fraction) }
+        zoomView.onTap = { [weak self] point in self?.onTap?(point) }
+        zoomView.onSwipe = { [weak self] direction in self?.onSwipe?(direction) }
         if urls.count > 1 {
             zoomView.loadSpread(urls, rightToLeft: rightToLeft)
         } else {
@@ -887,7 +1028,12 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private var pendingTap: DispatchWorkItem?
     private var lastTapTime: CFTimeInterval = 0
     private var lastTapPoint: CGPoint = .zero
-    var onTap: ((CGFloat) -> Void)?
+    /// Its own delegate: a scroll view is the delegate of its own pan and
+    /// pinch, which overriding the delegate methods here would change.
+    private let swipeDelegate = SwipeDelegate()
+    /// The tap's position in fractions of the page's width and height.
+    var onTap: ((CGPoint) -> Void)?
+    var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
 
     private static let doubleTapInterval: CFTimeInterval = 0.28
 
@@ -912,6 +1058,20 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         addSubview(spinner)
 
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap(_:))))
+        swipeDelegate.isBlocked = { [weak self] in
+            guard let self else { return true }
+            return zoomScale > minimumZoomScale + 0.01
+        }
+        for direction: UISwipeGestureRecognizer.Direction in [.up, .down, .left, .right] {
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
+            swipe.direction = direction
+            swipe.delegate = swipeDelegate
+            addGestureRecognizer(swipe)
+        }
+    }
+
+    @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
+        onSwipe?(gesture.direction)
     }
 
     required init?(coder: NSCoder) {
@@ -1020,10 +1180,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         let location = gesture.location(in: self)
         // Position on screen (the scroll view's bounds move when zoomed).
         let point = CGPoint(x: location.x - bounds.minX, y: location.y - bounds.minY)
-        let fraction = point.x / bounds.width
+        let fraction = CGPoint(x: point.x / bounds.width, y: point.y / max(bounds.height, 1))
         let zoomed = zoomScale > minimumZoomScale + 0.01
 
-        if !zoomed, ReaderTapZones.turnsPage(at: fraction) {
+        if !zoomed, ReaderTapZones.forward(at: fraction, rightToLeft: false) != nil {
             pendingTap?.cancel()
             pendingTap = nil
             onTap?(fraction)
@@ -1045,7 +1205,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         lastTapPoint = point
         let work = DispatchWorkItem { [weak self] in
             self?.pendingTap = nil
-            self?.onTap?(0.5)
+            self?.onTap?(CGPoint(x: 0.5, y: 0.5))
         }
         pendingTap = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.doubleTapInterval, execute: work)

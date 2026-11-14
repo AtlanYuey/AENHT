@@ -15,6 +15,10 @@ final class AppChrome {
 
     /// A list was scrolled down: the tab bar slides away (keeping its space).
     var barsHidden = false
+
+    /// Counts taps on the Home tab while it's selected (Home scrolls to the
+    /// top, back, or refreshes).
+    var homeTabTaps = 0
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s
@@ -326,6 +330,7 @@ struct PadTabBar: View {
     }
 
     private func select(_ tab: AppTab) {
+        if tab == .home, selection == .home { AppChrome.shared.homeTabTaps += 1 }
         withAnimation(.spring(duration: 0.35, bounce: 0.25)) {
             selection = tab
         }

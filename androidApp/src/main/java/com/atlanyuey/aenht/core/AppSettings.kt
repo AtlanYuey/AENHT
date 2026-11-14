@@ -186,6 +186,44 @@ enum class SiteChoice(val raw: String, val title: String) {
 }
 
 /** What the E-Hentai home page lists. */
+/**
+ * How long the reader keeps the screen on after the last touch (so a reader
+ * who falls asleep doesn't leave it on all night). [minutes] 0: no limit.
+ */
+enum class ScreenOn(val raw: String, val title: String, val minutes: Int) {
+    Off("off", "Off", 0),
+    FiveMinutes("fiveMinutes", "5 Minutes", 5),
+    TenMinutes("tenMinutes", "10 Minutes", 10),
+    Always("always", "Always", 0);
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: FiveMinutes
+    }
+}
+
+/** Where taps turn pages in the reader. */
+enum class TapZones(val raw: String, val title: String) {
+    LeftRight("leftRight", "Left and Right"),
+    TopBottom("topBottom", "Top and Bottom");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: LeftRight
+    }
+}
+
+/** What a swipe does in the reader (one way the pages don't turn). */
+enum class ReaderGesture(val raw: String, val title: String) {
+    None("none", "Nothing"),
+    Exit("exit", "Exit Reader"),
+    Controls("controls", "Show or Hide Controls"),
+    GoToPage("goToPage", "Go to Page…"),
+    AutoRead("autoRead", "Start or Stop Auto Read");
+
+    companion object {
+        fun of(raw: String?, default: ReaderGesture) = entries.firstOrNull { it.raw == raw } ?: default
+    }
+}
+
 /** What the app shows when it is in the background (the app switcher's picture). */
 enum class BackgroundPrivacy(val raw: String, val title: String) {
     Off("off", "Off"),
@@ -273,7 +311,7 @@ object AppSettings {
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
         pageGap = p.getFloat("pageGap", 6f).toDouble()
-        keepScreenOn = p.getBoolean("keepScreenOn", true)
+        screenOn = ScreenOn.of(p.getString("screenOn", null))
         detectClipboard = p.getBoolean("detectClipboard", true)
         tabBarPosition = TabBarPosition.of(p.getString("tabBarPosition", null))
         followHand = p.getBoolean("followHand", false)
@@ -306,6 +344,11 @@ object AppSettings {
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
         swapTapZones = p.getBoolean("swapTapZones", false)
+        tapZones = TapZones.of(p.getString("tapZones", null))
+        swipeUp = ReaderGesture.of(p.getString("swipeUp", null), ReaderGesture.None)
+        swipeDown = ReaderGesture.of(p.getString("swipeDown", null), ReaderGesture.Exit)
+        swipeLeft = ReaderGesture.of(p.getString("swipeLeft", null), ReaderGesture.None)
+        swipeRight = ReaderGesture.of(p.getString("swipeRight", null), ReaderGesture.Exit)
         downloadGalleries = p.getInt("downloadGalleries", 2).coerceIn(1, 5)
         downloadPages = p.getInt("downloadPages", 3).coerceIn(1, 6)
         downloadRetries = p.getInt("downloadRetries", 2).coerceIn(0, 5)
@@ -390,7 +433,7 @@ object AppSettings {
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
     /** Gap between pages in the "Continuous with Gaps" mode, in dp. */
     var pageGap by Pref(6.0) { save("pageGap", it) }
-    var keepScreenOn by Pref(true) { save("keepScreenOn", it) }
+    var screenOn by Pref(ScreenOn.FiveMinutes) { save("screenOn", it.raw) }
     var detectClipboard by Pref(true) { save("detectClipboard", it) }
     var tabBarPosition by Pref(TabBarPosition.Center) { save("tabBarPosition", it.raw) }
     /** Tablets: the tab bar moves to the side of the hand in use. */
@@ -458,6 +501,13 @@ object AppSettings {
 
     /** Reader: tapping the left edge goes forward (and the right edge back). */
     var swapTapZones by Pref(false) { save("swapTapZones", it) }
+    /** Reader: taps on the left / right edges, or the top / bottom ones, turn pages. */
+    var tapZones by Pref(TapZones.LeftRight) { save("tapZones", it.raw) }
+    /** Reader swipes the pages don't use: up / down in the left-right modes, left / right in the top-to-bottom ones. */
+    var swipeUp by Pref(ReaderGesture.None) { save("swipeUp", it.raw) }
+    var swipeDown by Pref(ReaderGesture.Exit) { save("swipeDown", it.raw) }
+    var swipeLeft by Pref(ReaderGesture.None) { save("swipeLeft", it.raw) }
+    var swipeRight by Pref(ReaderGesture.Exit) { save("swipeRight", it.raw) }
 
     /** Downloads: galleries downloading at once (the rest wait their turn). */
     var downloadGalleries by Pref(2) { save("downloadGalleries", it) }
@@ -569,7 +619,7 @@ object AppSettings {
         "tapToTurnPages" to tapToTurnPages,
         "animatePageTurns" to animatePageTurns,
         "pageGap" to pageGap,
-        "keepScreenOn" to keepScreenOn,
+        "screenOn" to screenOn.raw,
         "detectClipboard" to detectClipboard,
         "tabBarPosition" to tabBarPosition.raw,
         "followHand" to followHand,
@@ -601,6 +651,11 @@ object AppSettings {
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
         "swapTapZones" to swapTapZones,
+        "tapZones" to tapZones.raw,
+        "swipeUp" to swipeUp.raw,
+        "swipeDown" to swipeDown.raw,
+        "swipeLeft" to swipeLeft.raw,
+        "swipeRight" to swipeRight.raw,
         "downloadGalleries" to downloadGalleries,
         "downloadPages" to downloadPages,
         "downloadRetries" to downloadRetries,
@@ -670,7 +725,7 @@ object AppSettings {
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
                 "animatePageTurns" -> bool?.let { animatePageTurns = it }
                 "pageGap" -> number?.let { pageGap = it.toDouble().coerceIn(2.0, 60.0) }
-                "keepScreenOn" -> bool?.let { keepScreenOn = it }
+                "screenOn" -> string?.let { screenOn = ScreenOn.of(it) }
                 "detectClipboard" -> bool?.let { detectClipboard = it }
                 "tabBarPosition" -> string?.let { tabBarPosition = TabBarPosition.of(it) }
                 "followHand" -> bool?.let { followHand = it }
@@ -701,6 +756,11 @@ object AppSettings {
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }
                 "swapTapZones" -> bool?.let { swapTapZones = it }
+                "tapZones" -> string?.let { tapZones = TapZones.of(it) }
+                "swipeUp" -> string?.let { swipeUp = ReaderGesture.of(it, swipeUp) }
+                "swipeDown" -> string?.let { swipeDown = ReaderGesture.of(it, swipeDown) }
+                "swipeLeft" -> string?.let { swipeLeft = ReaderGesture.of(it, swipeLeft) }
+                "swipeRight" -> string?.let { swipeRight = ReaderGesture.of(it, swipeRight) }
                 "downloadGalleries" -> number?.let { downloadGalleries = it.toInt().coerceIn(1, 5) }
                 "downloadPages" -> number?.let { downloadPages = it.toInt().coerceIn(1, 6) }
                 "downloadRetries" -> number?.let { downloadRetries = it.toInt().coerceIn(0, 5) }

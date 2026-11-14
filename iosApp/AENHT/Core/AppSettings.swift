@@ -135,6 +135,60 @@ enum FollowSpeed: String, CaseIterable, Identifiable {
     }
 }
 
+/// How long the reader keeps the screen on after the last touch (so a
+/// reader who falls asleep doesn't leave it on all night).
+enum ScreenOn: String, CaseIterable, Identifiable {
+    case off, fiveMinutes, tenMinutes, always
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .off: String(localized: "Off")
+        case .fiveMinutes: String(localized: "5 Minutes")
+        case .tenMinutes: String(localized: "10 Minutes")
+        case .always: String(localized: "Always")
+        }
+    }
+
+    /// nil: no time limit.
+    var minutes: Int? {
+        switch self {
+        case .fiveMinutes: 5
+        case .tenMinutes: 10
+        default: nil
+        }
+    }
+}
+
+/// Where taps turn pages in the reader.
+enum TapZones: String, CaseIterable, Identifiable {
+    case leftRight, topBottom
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .leftRight: String(localized: "Left and Right")
+        case .topBottom: String(localized: "Top and Bottom")
+        }
+    }
+}
+
+/// What a swipe does in the reader (one way the pages don't turn).
+enum ReaderGesture: String, CaseIterable, Identifiable {
+    case none, exit, controls, goToPage, autoRead
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .none: String(localized: "Nothing")
+        case .exit: String(localized: "Exit Reader")
+        case .controls: String(localized: "Show or Hide Controls")
+        case .goToPage: String(localized: "Go to Page…")
+        case .autoRead: String(localized: "Start or Stop Auto Read")
+        }
+    }
+}
+
 /// What the app shows when it is in the background (the app switcher's picture).
 enum BackgroundPrivacy: String, CaseIterable, Identifiable {
     case off, blurApp, cover, blurContent, blurImages
@@ -272,7 +326,7 @@ final class AppSettings {
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
     /// Gap between pages in the "Continuous with Gaps" mode, in points.
     var pageGap: Double { didSet { save(pageGap, "pageGap") } }
-    var keepScreenOn: Bool { didSet { save(keepScreenOn, "keepScreenOn") } }
+    var screenOn: ScreenOn { didSet { save(screenOn.rawValue, "screenOn") } }
     var detectClipboard: Bool { didSet { save(detectClipboard, "detectClipboard") } }
     var tabBarPosition: TabBarPosition { didSet { save(tabBarPosition.rawValue, "tabBarPosition") } }
     /// iPad: the tab bar moves to the side of the hand in use.
@@ -322,6 +376,13 @@ final class AppSettings {
     var blockedCommenters: String { didSet { save(blockedCommenters, "blockedCommenters") } }
     /// Reader: tapping the left edge goes forward (and the right edge back).
     var swapTapZones: Bool { didSet { save(swapTapZones, "swapTapZones") } }
+    /// Reader: taps on the left / right edges, or the top / bottom ones, turn pages.
+    var tapZones: TapZones { didSet { save(tapZones.rawValue, "tapZones") } }
+    /// Reader swipes the pages don't use: up / down in the left-right modes, left / right in the top-to-bottom ones.
+    var swipeUp: ReaderGesture { didSet { save(swipeUp.rawValue, "swipeUp") } }
+    var swipeDown: ReaderGesture { didSet { save(swipeDown.rawValue, "swipeDown") } }
+    var swipeLeft: ReaderGesture { didSet { save(swipeLeft.rawValue, "swipeLeft") } }
+    var swipeRight: ReaderGesture { didSet { save(swipeRight.rawValue, "swipeRight") } }
     /// Downloads: galleries downloading at once (the rest wait their turn).
     var downloadGalleries: Int { didSet { save(downloadGalleries, "downloadGalleries") } }
     /// Downloads: pages of one gallery at once (E-Hentai uses at most 3).
@@ -413,7 +474,7 @@ final class AppSettings {
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
         pageGap = d.object(forKey: "pageGap") as? Double ?? 6
-        keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
+        screenOn = ScreenOn(rawValue: d.string(forKey: "screenOn") ?? "") ?? .fiveMinutes
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? true
         tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .center
@@ -450,6 +511,11 @@ final class AppSettings {
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,eh-popular"
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
         swapTapZones = d.bool(forKey: "swapTapZones")
+        tapZones = TapZones(rawValue: d.string(forKey: "tapZones") ?? "") ?? .leftRight
+        swipeUp = ReaderGesture(rawValue: d.string(forKey: "swipeUp") ?? "") ?? .none
+        swipeDown = ReaderGesture(rawValue: d.string(forKey: "swipeDown") ?? "") ?? .exit
+        swipeLeft = ReaderGesture(rawValue: d.string(forKey: "swipeLeft") ?? "") ?? .none
+        swipeRight = ReaderGesture(rawValue: d.string(forKey: "swipeRight") ?? "") ?? .exit
         downloadGalleries = min(max(d.object(forKey: "downloadGalleries") as? Int ?? 2, 1), 5)
         downloadPages = min(max(d.object(forKey: "downloadPages") as? Int ?? 3, 1), 6)
         downloadRetries = min(max(d.object(forKey: "downloadRetries") as? Int ?? 2, 0), 5)
@@ -515,7 +581,7 @@ final class AppSettings {
         values["tapToTurnPages"] = tapToTurnPages
         values["animatePageTurns"] = animatePageTurns
         values["pageGap"] = pageGap
-        values["keepScreenOn"] = keepScreenOn
+        values["screenOn"] = screenOn.rawValue
         values["detectClipboard"] = detectClipboard
         values["tabBarPosition"] = tabBarPosition.rawValue
         values["followHand"] = followHand
@@ -546,6 +612,11 @@ final class AppSettings {
         values["homeRows"] = homeRowsRaw
         values["blockedCommenters"] = blockedCommenters
         values["swapTapZones"] = swapTapZones
+        values["tapZones"] = tapZones.rawValue
+        values["swipeUp"] = swipeUp.rawValue
+        values["swipeDown"] = swipeDown.rawValue
+        values["swipeLeft"] = swipeLeft.rawValue
+        values["swipeRight"] = swipeRight.rawValue
         values["downloadGalleries"] = downloadGalleries
         values["downloadPages"] = downloadPages
         values["downloadRetries"] = downloadRetries
@@ -599,7 +670,7 @@ final class AppSettings {
         case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
         case "animatePageTurns": set(\.animatePageTurns, number?.boolValue)
         case "pageGap": set(\.pageGap, number.map { min(max($0.doubleValue, 2), 60) })
-        case "keepScreenOn": set(\.keepScreenOn, number?.boolValue)
+        case "screenOn": set(\.screenOn, string.flatMap(ScreenOn.init(rawValue:)))
         case "detectClipboard": set(\.detectClipboard, number?.boolValue)
         case "tabBarPosition": set(\.tabBarPosition, string.flatMap(TabBarPosition.init(rawValue:)))
         case "followHand": set(\.followHand, number?.boolValue)
@@ -629,6 +700,11 @@ final class AppSettings {
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)
         case "swapTapZones": set(\.swapTapZones, number?.boolValue)
+        case "tapZones": set(\.tapZones, string.flatMap(TapZones.init(rawValue:)))
+        case "swipeUp": set(\.swipeUp, string.flatMap(ReaderGesture.init(rawValue:)))
+        case "swipeDown": set(\.swipeDown, string.flatMap(ReaderGesture.init(rawValue:)))
+        case "swipeLeft": set(\.swipeLeft, string.flatMap(ReaderGesture.init(rawValue:)))
+        case "swipeRight": set(\.swipeRight, string.flatMap(ReaderGesture.init(rawValue:)))
         case "downloadGalleries": set(\.downloadGalleries, number.map { min(max($0.intValue, 1), 5) })
         case "downloadPages": set(\.downloadPages, number.map { min(max($0.intValue, 1), 6) })
         case "downloadRetries": set(\.downloadRetries, number.map { min(max($0.intValue, 0), 5) })

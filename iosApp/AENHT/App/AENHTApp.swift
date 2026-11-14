@@ -110,7 +110,11 @@ struct RootView: View {
     /// iPhone: the system tab bar. With Hide Tab Bar When Scrolling on,
     /// iOS 26 shrinks it to a small button while a list scrolls down.
     private var phoneTabs: some View {
-        TabView(selection: $selection) {
+        TabView(selection: Binding(get: { selection }, set: { tab in
+            // The Home tab tapped again (the system binding is set then too).
+            if tab == .home, selection == .home { AppChrome.shared.homeTabTaps += 1 }
+            selection = tab
+        })) {
             Tab(settings.currentSite.displayName, systemImage: "house", value: AppTab.home) {
                 NavigationStack {
                     HomeView().galleryDestinations()
