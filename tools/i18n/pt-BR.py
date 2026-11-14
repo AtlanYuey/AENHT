@@ -237,4 +237,7 @@ T = [
     "Off",
     "Cover Page Alone",
     "Auto Crop Margins",
+    "Select",
+    "Select All",
+    "Downloading",
 ]

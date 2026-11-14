@@ -344,9 +344,12 @@
     <string name="l_341">关闭</string>
     <string name="l_342">封面单独显示</string>
     <string name="l_343">自动裁切白边</string>
-    <string name="l_344">设置备份</string>
-    <string name="l_345">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_346">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_347">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_348">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_344">选择</string>
+    <string name="l_345">全选</string>
+    <string name="l_346">下载中</string>
+    <string name="l_347">设置备份</string>
+    <string name="l_348">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_349">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_350">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_351">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

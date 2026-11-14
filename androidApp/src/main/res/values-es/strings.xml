@@ -344,9 +344,12 @@
     <string name="l_341">Desactivado</string>
     <string name="l_342">Portada sola</string>
     <string name="l_343">Recortar márgenes automáticamente</string>
-    <string name="l_344">Copia de los ajustes</string>
-    <string name="l_345">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_346">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_347">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_348">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_344">Seleccionar</string>
+    <string name="l_345">Seleccionar todo</string>
+    <string name="l_346">Descargando</string>
+    <string name="l_347">Copia de los ajustes</string>
+    <string name="l_348">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_349">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_350">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_351">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

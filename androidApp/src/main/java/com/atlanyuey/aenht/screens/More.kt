@@ -24,6 +24,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.runtime.mutableStateListOf
+import com.atlanyuey.aenht.ui.components.glass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -312,6 +316,9 @@ class LoginScreen : Screen() {
 class DownloadsScreen : Screen() {
     private val grid = LazyStaggeredGridState()
     private var site by mutableStateOf(AppSettings.site(AppSettings.downloadsSite))
+    /** List style: choosing several downloads (storage keys). */
+    private var selecting by mutableStateOf(false)
+    private val selected = mutableStateListOf<String>()
 
     @Composable
     override fun Content() {
@@ -325,7 +332,18 @@ class DownloadsScreen : Screen() {
             title = tr("Downloads"),
             trailing = {
                 if (usage > 0) Txt(Formatter.formatShortFileSize(context, usage), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                if (AppSettings.libraryStyle != LibraryStyle.Cards && records.isNotEmpty()) {
+                    com.atlanyuey.aenht.ui.components.TextButton(if (selecting) tr("Done") else tr("Select"), {
+                        selecting = !selecting
+                        selected.clear()
+                    })
+                }
                 SiteFilterButton(site, { site = it })
+            },
+            overlay = {
+                if (selecting && AppSettings.libraryStyle != LibraryStyle.Cards) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { SelectionBar(records) }
+                }
             },
         ) { padding ->
             if (AppSettings.libraryStyle == LibraryStyle.Cards) {
@@ -344,6 +362,34 @@ class DownloadsScreen : Screen() {
             } else {
                 Rows(padding, records, menu)
             }
+        }
+    }
+
+    @Composable
+    private fun SelectionBar(records: List<DownloadRecord>) {
+        val chosen = records.filter { it.key.storageKey in selected }
+        val running = chosen.filter { it.state == DownloadRecord.DOWNLOADING || it.state == DownloadRecord.QUEUED }
+        val stopped = chosen.filter { it.state == DownloadRecord.PAUSED || it.state == DownloadRecord.FAILED }
+        Row(
+            Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
+                .glass(RoundedCornerShape(26.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            com.atlanyuey.aenht.ui.components.TextButton(tr("Select All"), {
+                selected.clear(); selected.addAll(records.map { it.key.storageKey })
+            })
+            Spacer(Modifier.weight(1f))
+            com.atlanyuey.aenht.ui.components.TextButton(tr("Pause"), { running.forEach { Downloads.pause(it.key) } }, enabled = running.isNotEmpty())
+            com.atlanyuey.aenht.ui.components.TextButton(tr("Resume"), { stopped.forEach { Downloads.resume(it.key) } }, enabled = stopped.isNotEmpty())
+            com.atlanyuey.aenht.ui.components.TextButton(tr("Delete"), {
+                chosen.forEach { Downloads.delete(it.key) }
+                selected.clear()
+            }, enabled = chosen.isNotEmpty(), bold = true)
         }
     }
 
@@ -384,12 +430,32 @@ class DownloadsScreen : Screen() {
         val navigator = LocalNavigator.current
         val overlays = LocalOverlays.current
         val showSite = site == null && AppSettings.enabledSites.size > 1
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
+        val groups = listOf(
+            tr("Downloading") to records.filter { it.state != DownloadRecord.FINISHED },
+            tr("Downloaded") to records.filter { it.state == DownloadRecord.FINISHED },
+        ).filter { it.second.isNotEmpty() }
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = padding.calculateTopPadding(),
+                bottom = padding.calculateBottomPadding() + if (selecting) 72.dp else 0.dp,
+            ),
+        ) {
             if (records.isEmpty()) {
                 item { NoDownloads() }
             }
-            items(records, key = { it.key.storageKey }) { record ->
+            groups.forEach { (title, group) ->
+            item(key = "header-$title") {
+                Txt(
+                    title,
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 4.dp),
+                    style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                    color = AppTheme.colors.secondaryLabel,
+                )
+            }
+            items(group, key = { it.key.storageKey }) { record ->
                 val anchor = rememberAnchor()
+                val storageKey = record.key.storageKey
                 SwipeToDelete(onDelete = { Downloads.delete(record.key) }) {
                     Row(
                         Modifier
@@ -397,13 +463,30 @@ class DownloadsScreen : Screen() {
                             .background(AppTheme.colors.background)
                             .anchor(anchor)
                             .combinedClickable(
-                                onClick = { navigator.push(galleryScreen(record.summary)) },
-                                onLongClick = { overlays.menu(anchor.bounds, listOf(menu(record.key))) },
+                                onClick = {
+                                    if (selecting) {
+                                        if (storageKey in selected) selected.remove(storageKey) else selected.add(storageKey)
+                                    } else {
+                                        navigator.push(galleryScreen(record.summary))
+                                    }
+                                },
+                                onLongClick = { if (!selecting) overlays.menu(anchor.bounds, listOf(menu(record.key))) },
                             )
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (selecting) {
+                            val on = storageKey in selected
+                            Box(
+                                Modifier.size(24.dp).clip(CircleShape)
+                                    .background(if (on) AppTheme.tint else Color.Transparent)
+                                    .border(1.5.dp, if (on) AppTheme.tint else AppTheme.colors.tertiaryLabel, CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (on) AppIcon(Icons.CheckCircle, null, tint = Color.White, size = 22.dp)
+                            }
+                        }
                         CompositionLocalProvider(LocalShowsSiteBadge provides showSite) {
                             CoverView(record.summary, Modifier.width(72.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
                         }
@@ -426,6 +509,7 @@ class DownloadsScreen : Screen() {
                         }
                     }
                 }
+            }
             }
         }
     }

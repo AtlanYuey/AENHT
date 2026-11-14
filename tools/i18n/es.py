@@ -237,4 +237,7 @@ T = [
     "Desactivado",
     "Portada sola",
     "Recortar márgenes automáticamente",
+    "Seleccionar",
+    "Seleccionar todo",
+    "Descargando",
 ]

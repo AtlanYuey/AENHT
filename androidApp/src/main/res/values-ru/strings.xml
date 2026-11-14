@@ -344,9 +344,12 @@
     <string name="l_341">Off</string>
     <string name="l_342">Cover Page Alone</string>
     <string name="l_343">Auto Crop Margins</string>
-    <string name="l_344">Резервная копия настроек</string>
-    <string name="l_345">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_346">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_347">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_348">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_344">Select</string>
+    <string name="l_345">Select All</string>
+    <string name="l_346">Downloading</string>
+    <string name="l_347">Резервная копия настроек</string>
+    <string name="l_348">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_349">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_350">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_351">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>

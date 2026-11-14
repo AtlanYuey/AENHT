@@ -344,9 +344,12 @@
     <string name="l_341">Off</string>
     <string name="l_342">Cover Page Alone</string>
     <string name="l_343">Auto Crop Margins</string>
-    <string name="l_344">Cadangan Pengaturan</string>
-    <string name="l_345">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_346">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_347">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_348">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_344">Select</string>
+    <string name="l_345">Select All</string>
+    <string name="l_346">Downloading</string>
+    <string name="l_347">Cadangan Pengaturan</string>
+    <string name="l_348">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_349">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_350">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_351">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

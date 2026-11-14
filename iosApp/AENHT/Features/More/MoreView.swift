@@ -157,6 +157,8 @@ struct DownloadsView: View {
     @Environment(AppSettings.self) private var settings
     @State private var usage: Int64?
     @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.downloadsSite)
+    @State private var selection = Set<String>()
+    @State private var editMode: EditMode = .inactive
 
     private var records: [DownloadRecord] {
         guard let site else { return downloads.records }
@@ -182,6 +184,16 @@ struct DownloadsView: View {
         .environment(\.showsSiteBadge, site == nil && settings.enabledSites.count > 1)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
+            if settings.libraryStyle != .cards, !records.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(editMode.isEditing ? "Done" : "Select") {
+                        withAnimation {
+                            editMode = editMode.isEditing ? .inactive : .active
+                            selection.removeAll()
+                        }
+                    }
+                }
+            }
             if let usage, usage > 0 {
                 ToolbarItem(placement: .topBarTrailing) {
                     Text(usage, format: .byteCount(style: .file))
@@ -211,21 +223,64 @@ struct DownloadsView: View {
         }
     }
 
+    /// In the list style: unfinished downloads first, then finished ones; Select for several at once.
     private var list: some View {
-        List {
-            ForEach(records, id: \.uid) { record in
-                DownloadRow(record: record)
-                    .swipeActions(edge: .trailing) {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            downloads.delete(uid: record.uid)
-                        }
-                    }
-                    .contextMenu {
-                        DownloadMenuItems(uid: record.uid)
-                    }
+        let active = records.filter { $0.state != .finished }
+        let finished = records.filter { $0.state == .finished }
+        return List(selection: $selection) {
+            if !active.isEmpty {
+                Section("Downloading") { rows(active) }
+            }
+            if !finished.isEmpty {
+                Section("Downloaded") { rows(finished) }
             }
         }
         .listStyle(.plain)
+        .environment(\.editMode, $editMode)
+        .safeAreaInset(edge: .bottom) {
+            if editMode.isEditing { selectionBar }
+        }
+    }
+
+    private func rows(_ records: [DownloadRecord]) -> some View {
+        ForEach(records, id: \.uid) { record in
+            DownloadRow(record: record)
+                .tag(record.uid)
+                .swipeActions(edge: .trailing) {
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        downloads.delete(uid: record.uid)
+                    }
+                }
+                .contextMenu {
+                    DownloadMenuItems(uid: record.uid)
+                }
+        }
+    }
+
+    private var selectionBar: some View {
+        let chosen = records.filter { selection.contains($0.uid) }
+        return HStack {
+            Button("Select All") { selection = Set(records.map(\.uid)) }
+            Spacer()
+            Button("Pause", systemImage: "pause") {
+                chosen.filter { $0.state == .downloading || $0.state == .queued }.forEach { downloads.pause(uid: $0.uid) }
+            }
+            .disabled(!chosen.contains { $0.state == .downloading || $0.state == .queued })
+            Button("Resume", systemImage: "arrow.clockwise") {
+                chosen.filter { $0.state == .paused || $0.state == .failed }.forEach { downloads.resume(uid: $0.uid) }
+            }
+            .disabled(!chosen.contains { $0.state == .paused || $0.state == .failed })
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                chosen.forEach { downloads.delete(uid: $0.uid) }
+                selection.removeAll()
+            }
+            .disabled(chosen.isEmpty)
+        }
+        .labelStyle(.iconOnly)
+        .font(.body.weight(.medium))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .modifier(BarBackground())
     }
 }
 

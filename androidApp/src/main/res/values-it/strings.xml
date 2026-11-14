@@ -344,9 +344,12 @@
     <string name="l_341">Off</string>
     <string name="l_342">Cover Page Alone</string>
     <string name="l_343">Auto Crop Margins</string>
-    <string name="l_344">Backup impostazioni</string>
-    <string name="l_345">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_346">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_347">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_348">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_344">Select</string>
+    <string name="l_345">Select All</string>
+    <string name="l_346">Downloading</string>
+    <string name="l_347">Backup impostazioni</string>
+    <string name="l_348">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_349">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_350">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_351">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

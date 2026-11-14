@@ -344,9 +344,12 @@
     <string name="l_341">オフ</string>
     <string name="l_342">表紙は単独で表示</string>
     <string name="l_343">余白を自動カット</string>
-    <string name="l_344">設定のバックアップ</string>
-    <string name="l_345">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_346">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_347">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_348">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_344">選択</string>
+    <string name="l_345">すべて選択</string>
+    <string name="l_346">ダウンロード中</string>
+    <string name="l_347">設定のバックアップ</string>
+    <string name="l_348">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_349">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_350">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_351">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>
