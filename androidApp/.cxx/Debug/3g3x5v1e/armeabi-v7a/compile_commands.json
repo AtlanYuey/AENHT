@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/user/aenht/androidApp/.cxx/Debug/3g3x5v1e/armeabi-v7a",
-  "command": "/opt/android-sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi26 --sysroot=/opt/android-sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Daenhtsr_EXPORTS -isystem /home/user/aenht/androidApp/build/ncnn/ncnn-20261020-android-vulkan-shared/armeabi-v7a/include/ncnn -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -fvisibility=hidden -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -pthread -o CMakeFiles/aenhtsr.dir/sr.cpp.o -c /home/user/aenht/androidApp/src/main/cpp/sr.cpp",
-  "file": "/home/user/aenht/androidApp/src/main/cpp/sr.cpp"
-}
-]

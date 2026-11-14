@@ -26,3 +26,6 @@ DerivedData/
 
 # Logs
 *.log
+
+# Native (CMake) build files
+.cxx/
