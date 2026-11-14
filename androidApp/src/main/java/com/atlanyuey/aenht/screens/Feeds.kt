@@ -1,5 +1,27 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.shared.site.GallerySummary
+import com.atlanyuey.aenht.shared.site.Site
+import com.atlanyuey.aenht.shared.site.SiteLinks
+import com.atlanyuey.aenht.shared.site.GalleryLink
+import com.atlanyuey.aenht.shared.site.QueryConverter
+import com.atlanyuey.aenht.shared.eh.EhListSource
+import com.atlanyuey.aenht.shared.eh.EhToplistPeriod
+import com.atlanyuey.aenht.core.EhClient
+import com.atlanyuey.aenht.core.EhHomeList
+import com.atlanyuey.aenht.core.EhSession
+import com.atlanyuey.aenht.core.FeedPage
+import com.atlanyuey.aenht.core.SiteChoice
+import com.atlanyuey.aenht.core.ehFeed
+import com.atlanyuey.aenht.core.nhFeed
+import com.atlanyuey.aenht.core.FavoritesStore
+import com.atlanyuey.aenht.core.TagStore
+import com.atlanyuey.aenht.ui.components.ToggleRow
+import com.atlanyuey.aenht.ui.components.SiteFilterButton
+import com.atlanyuey.aenht.ui.components.LocalShowsSiteBadge
+import com.atlanyuey.aenht.ui.components.CoverBadge
+import com.atlanyuey.aenht.ui.components.galleryScreen
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -152,7 +174,7 @@ fun Modifier.bleed(horizontal: androidx.compose.ui.unit.Dp) = layout { measurabl
 
 /** Horizontally scrolling row of covers. */
 @Composable
-fun PopularRow(items: List<GalleryItem>) {
+fun PopularRow(items: List<GallerySummary>) {
     val state = rememberLazyListState()
     BoxWithConstraints(Modifier.fillMaxWidth().bleed(16.dp)) {
         val cardWidth = if (maxWidth > 600.dp) 170.dp else 132.dp
@@ -162,7 +184,7 @@ fun PopularRow(items: List<GalleryItem>) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             flingBehavior = rememberSnapFlingBehavior(state),
         ) {
-            items(items, key = { it.id }) { item ->
+            items(items, key = { it.key.storageKey }) { item ->
                 GalleryCard(item, GalleryListStyle.Grid, Modifier.width(cardWidth))
             }
         }
@@ -182,11 +204,27 @@ private fun LazyStaggeredGridState.pastTitle() = firstVisibleItemIndex > 0 || fi
 
 // MARK: - Home
 
-class HomeScreen : Screen() {
-    private val feed = GalleryFeed(scope) { page ->
-        NHClient.galleries(AppSettings.homeLanguage.queryTerm ?: "", AppSettings.homeSort, page)
+/** The E-Hentai list the home page shows for [list] (language narrows Latest and Watched). */
+fun ehHomeSource(list: EhHomeList, language: LanguageFilter): EhListSource {
+    val lang = language.queryTerm.orEmpty()
+    return when (list) {
+        EhHomeList.Latest -> EhListSource.Search(lang)
+        EhHomeList.Popular -> EhListSource.Popular
+        EhHomeList.Watched -> EhListSource.Watched(lang)
+        EhHomeList.ToplistDay -> EhListSource.Toplist(EhToplistPeriod.YESTERDAY)
+        EhHomeList.ToplistMonth -> EhListSource.Toplist(EhToplistPeriod.PAST_MONTH)
+        EhHomeList.ToplistYear -> EhListSource.Toplist(EhToplistPeriod.PAST_YEAR)
+        EhHomeList.ToplistAll -> EhListSource.Toplist(EhToplistPeriod.ALL_TIME)
     }
-    private var popular by mutableStateOf(emptyList<GalleryItem>())
+}
+
+class HomeScreen : Screen() {
+    private val nhFeedState = GalleryFeed(scope, nhFeed { page ->
+        NHClient.galleries(AppSettings.homeLanguage.queryTerm ?: "", AppSettings.homeSort, page)
+    })
+    private val ehFeedState = GalleryFeed(scope, ehFeed { ehHomeSource(AppSettings.ehHomeList, AppSettings.homeLanguage) })
+    private val feed: GalleryFeed get() = if (AppSettings.currentSite == Site.EHENTAI) ehFeedState else nhFeedState
+    private var popular by mutableStateOf(emptyList<GallerySummary>())
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 
@@ -199,7 +237,9 @@ class HomeScreen : Screen() {
     private fun reload() {
         val job = feed.reload()
         scope.launch {
-            popular = runCatching { NHClient.popular() }.getOrDefault(popular)
+            if (AppSettings.currentSite == Site.NHENTAI) {
+                popular = runCatching { NHClient.popular().map(GallerySummary::from) }.getOrDefault(popular)
+            }
             job.join()
             pulling = false
         }
@@ -207,12 +247,17 @@ class HomeScreen : Screen() {
 
     @Composable
     override fun Content() {
+        val site = AppSettings.currentSite
         LaunchedEffect(Unit) {
-            if (!feed.hasLoaded) reload()
-            snapshotFlow { AppSettings.homeLanguage to AppSettings.homeSort }.drop(1).collect { feed.reload() }
+            snapshotFlow { AppSettings.currentSite }.collect { if (!feed.hasLoaded) reload() }
+        }
+        LaunchedEffect(Unit) {
+            snapshotFlow { AppSettings.homeLanguage to AppSettings.homeSort }.drop(1).collect { nhFeedState.reload() }
+        }
+        LaunchedEffect(Unit) {
+            snapshotFlow { Triple(AppSettings.ehHomeList, AppSettings.homeLanguage, AppSettings.useExHentai) }.drop(1).collect { ehFeedState.reload() }
         }
         val language = AppSettings.homeLanguage
-        val sort = AppSettings.homeSort
         val focusManager = LocalFocusManager.current
         val density = LocalDensity.current
         val screenWidth = LocalConfiguration.current.screenWidthDp.dp
@@ -225,11 +270,12 @@ class HomeScreen : Screen() {
             searchPanel.Effects()
             BackHandler { endSearch() }
         }
-        // The feed's header (sort, language, search) has scrolled under the
+        val showsPopular = site == Site.NHENTAI && popular.isNotEmpty()
+        // The feed's header (site, sort, language, search) has scrolled under the
         // navigation bar: its buttons show in the bar instead.
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val barBottom = with(density) { (statusTop + NAV_BAR_HEIGHT.dp).roundToPx() }
-        val headerIndex = if (popular.isNotEmpty()) 3 else 1
+        val headerIndex = if (showsPopular) 3 else 1
         val docked by remember(headerIndex, barBottom) {
             derivedStateOf {
                 val info = grid.layoutInfo
@@ -241,11 +287,25 @@ class HomeScreen : Screen() {
                 }
             }
         }
+        val sortTitle = if (site == Site.EHENTAI) tr(AppSettings.ehHomeList.title) else tr(AppSettings.homeSort.title)
         val sortItems = {
-            listOf(pickerItems(SearchSort.entries, AppSettings.homeSort, { L10n.string(it.title) }) { AppSettings.homeSort = it })
+            if (site == Site.EHENTAI) {
+                val lists = EhHomeList.entries
+                listOf(
+                    pickerItems(lists.take(3), AppSettings.ehHomeList, { L10n.string(it.title) }) { AppSettings.ehHomeList = it },
+                    pickerItems(lists.drop(3), AppSettings.ehHomeList, { L10n.string(it.title) }) { AppSettings.ehHomeList = it },
+                )
+            } else {
+                listOf(pickerItems(SearchSort.entries, AppSettings.homeSort, { L10n.string(it.title) }) { AppSettings.homeSort = it })
+            }
         }
         val languageItems = {
             listOf(pickerItems(LanguageFilter.entries, AppSettings.homeLanguage, { L10n.string(it.title) }) { AppSettings.homeLanguage = it })
+        }
+        val siteItems: (() -> List<List<MenuItem>>)? = if (AppSettings.enabledSites.size > 1) {
+            { listOf(AppSettings.enabledSites.map { s -> MenuItem(s.displayName, checked = s == site) { AppSettings.homeSite = s } }) }
+        } else {
+            null
         }
         ScreenScaffold(
             title = tr("Home"),
@@ -253,7 +313,10 @@ class HomeScreen : Screen() {
             leading = if (searching) null else {
                 {
                     AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
-                        DockedSortButton(sort, sortItems)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            siteItems?.let { SiteBadgeButton(site, it) }
+                            DockedSortButton(sortTitle, sortItems)
+                        }
                     }
                 }
             },
@@ -272,6 +335,7 @@ class HomeScreen : Screen() {
                         onSubmit = { search.submit(search.text) },
                         modifier = Modifier.width(minOf(340.dp, room)).height(44.dp),
                         focusRequester = focus,
+                        leading = { SiteSearchIcon(search.site) },
                     )
                     LaunchedEffect(Unit) { focus.requestFocus() }
                     GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
@@ -279,7 +343,7 @@ class HomeScreen : Screen() {
                     AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
-                            GlassCircleButton(Icons.Search, tr("Search"), { searching = true })
+                            GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
                         }
                     }
                 }
@@ -289,25 +353,59 @@ class HomeScreen : Screen() {
                 searchPanel.Body(padding, largeTitle = null)
                 return@ScreenScaffold
             }
+            val current = feed
             PullToRefresh(pulling, { pulling = true; reload() }, topInset = padding.calculateTopPadding()) {
                 GalleryGrid(
-                    feed.items, grid, padding,
-                    onItemShown = { feed.loadMoreIfNeeded(it) },
+                    current.items, grid, padding,
+                    onItemShown = { current.loadMoreIfNeeded(it) },
                     header = {
                         fullLine("title") { LargeTitle(tr("Home"), inset = 4.dp) }
-                        if (popular.isNotEmpty()) {
+                        if (showsPopular) {
                             fullLine("popularTitle") { FeedTitle(tr("Popular Now"), null) }
                             fullLine("popular") { PopularRow(popular) }
                         }
                         fullLine("feedTitle") {
-                            FeedHeader(sort, language, sortItems, languageItems) { searching = true }
+                            FeedHeader(site, siteItems, sortTitle, language, sortItems, languageItems) {
+                                search.site = AppSettings.searchStartSite()
+                                searching = true
+                            }
                         }
                     },
-                    footer = { feedFooter(feed, L10n.string("No Galleries") to Icons.Photo) },
+                    footer = { feedFooter(current, L10n.string("No Galleries") to Icons.Photo) },
                 )
             }
         }
     }
+}
+
+/** NH / EH as a small capsule with the menu of sites (home page header and bar). */
+@Composable
+fun SiteBadgeButton(site: Site, items: () -> List<List<MenuItem>>) {
+    val overlays = LocalOverlays.current
+    val anchor = rememberAnchor()
+    val title = tr("Site")
+    GlassCapsuleButton(
+        onClick = { overlays.menu(anchor.bounds, items(), title) },
+        modifier = Modifier.anchor(anchor),
+        horizontalPadding = 12.dp,
+    ) {
+        Txt(site.badge, style = Type.subheadline.copy(fontWeight = FontWeight.Bold), maxLines = 1)
+        AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 12.dp)
+    }
+}
+
+/** The site a search runs on, at the start of the search field. */
+@Composable
+fun SiteSearchIcon(site: Site) {
+    Txt(
+        site.badge,
+        Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (site == Site.EHENTAI) Color(0xFF9E2720) else AppTheme.tint)
+            .padding(horizontal = 5.dp, vertical = 1.dp),
+        style = Type.caption2.copy(fontWeight = FontWeight.Bold),
+        color = Color.White,
+    )
 }
 
 /**
@@ -317,7 +415,9 @@ class HomeScreen : Screen() {
  */
 @Composable
 private fun FeedHeader(
-    sort: SearchSort,
+    site: Site,
+    siteItems: (() -> List<List<MenuItem>>)?,
+    sortTitle: String,
     language: LanguageFilter,
     sortItems: () -> List<List<MenuItem>>,
     languageItems: () -> List<List<MenuItem>>,
@@ -325,21 +425,22 @@ private fun FeedHeader(
 ) {
     val overlays = LocalOverlays.current
     val anchor = rememberAnchor()
-    val sortTitle = tr("Sort")
+    val sortLabel = tr("Sort")
     Row(
         Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp, start = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        siteItems?.let { SiteBadgeButton(site, it) }
         Column(
             Modifier
                 .weight(1f)
                 .anchor(anchor)
-                .clickable(interactionSource = null, indication = null) { overlays.menu(anchor.bounds, sortItems(), sortTitle) }
-                .semantics { contentDescription = sortTitle },
+                .clickable(interactionSource = null, indication = null) { overlays.menu(anchor.bounds, sortItems(), sortLabel) }
+                .semantics { contentDescription = sortLabel },
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Txt(tr(sort.title), style = Type.title2, maxLines = 1)
+                Txt(sortTitle, style = Type.title2, maxLines = 1)
                 AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 16.dp)
             }
             Txt(tr(language.title), style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = 1)
@@ -351,7 +452,7 @@ private fun FeedHeader(
 
 /** The sort, as a small glass button in the navigation bar (header docked). */
 @Composable
-private fun DockedSortButton(sort: SearchSort, items: () -> List<List<MenuItem>>) {
+private fun DockedSortButton(sortTitle: String, items: () -> List<List<MenuItem>>) {
     val overlays = LocalOverlays.current
     val anchor = rememberAnchor()
     val title = tr("Sort")
@@ -360,46 +461,177 @@ private fun DockedSortButton(sort: SearchSort, items: () -> List<List<MenuItem>>
         modifier = Modifier.anchor(anchor).widthIn(max = 160.dp),
         horizontalPadding = 14.dp,
     ) {
-        Txt(tr(sort.title), Modifier.weight(1f, fill = false), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+        Txt(sortTitle, Modifier.weight(1f, fill = false), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
         AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 12.dp)
     }
 }
 
 // MARK: - Favorites
 
+/**
+ * Favorites of one site (live from the site, E-Hentai by folder), or of
+ * both ("All", from the local copy, newest first, marked NH / EH). The
+ * title opens the menu of sites and folders.
+ */
 class FavoritesScreen : Screen() {
-    private val feed = GalleryFeed(scope) { page -> NHClient.favorites(page) }
+    private var site by mutableStateOf(AppSettings.site(AppSettings.favoritesSite))
+    private var ehFolder by mutableStateOf<Int?>(null)
+    private val nhFeedState = GalleryFeed(scope, nhFeed { page -> NHClient.favorites(page) })
+    private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder) })
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
+
+    override fun onAppear() {
+        // "Same as Home" follows the site the home page is on now.
+        if (AppSettings.favoritesSite == SiteChoice.Follow) site = AppSettings.site(SiteChoice.Follow)
+    }
+
+    private fun loggedIn(s: Site) = if (s == Site.NHENTAI) Session.isLoggedIn else EhSession.isLoggedIn
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val loggedIn = Session.isLoggedIn
-        LaunchedEffect(loggedIn) {
-            if (loggedIn) feed.reload()
+        val current = site
+        val feed = if (current == Site.EHENTAI) ehFeedState else nhFeedState
+        LaunchedEffect(current, Session.isLoggedIn, EhSession.isLoggedIn, ehFolder) {
+            when {
+                current == null -> FavoritesStore.syncIfStale()
+                loggedIn(current) && !feed.hasLoaded -> feed.reload()
+            }
         }
-        LaunchedEffect(feed.isLoading) { if (!feed.isLoading) pulling = false }
-        ScreenScaffold(title = tr("Favorites"), showTitle = { !loggedIn || grid.pastTitle() }) { padding ->
-            if (!loggedIn) {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    EmptyState(
-                        icon = Icons.Heart,
-                        title = tr("Favorites"),
-                        message = tr("Log in to your nhentai account to see your favorites."),
-                        action = tr("Log In") to { navigator.push(LoginScreen()) },
-                    )
+        LaunchedEffect(Unit) { snapshotFlow { ehFolder }.drop(1).collect { ehFeedState.reload() } }
+        LaunchedEffect(feed.isLoading, FavoritesStore.syncing) { if (!feed.isLoading && FavoritesStore.syncing == null) pulling = false }
+        val needsLogin = current != null && !loggedIn(current)
+        ScreenScaffold(
+            title = tr("Favorites"),
+            showTitle = { needsLogin || grid.pastTitle() },
+            trailing = { if (current == null) SyncIndicator() },
+        ) { padding ->
+            if (needsLogin) {
+                Column(Modifier.fillMaxSize().padding(padding)) {
+                    FavoritesTitle()
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        EmptyState(
+                            icon = Icons.Heart,
+                            title = tr("Favorites"),
+                            message = if (current == Site.EHENTAI) tr("Log in to your E-Hentai account to see your favorites.")
+                            else tr("Log in to your nhentai account to see your favorites."),
+                            action = tr("Log In") to { navigator.push(if (current == Site.EHENTAI) EhLoginScreen() else LoginScreen()) },
+                        )
+                    }
                 }
-            } else {
-                PullToRefresh(pulling, { pulling = true; feed.reload() }, topInset = padding.calculateTopPadding()) {
+                return@ScreenScaffold
+            }
+            val refresh: () -> Unit = {
+                pulling = true
+                if (current == null) FavoritesStore.sync() else feed.reload()
+            }
+            PullToRefresh(pulling, refresh, topInset = padding.calculateTopPadding()) {
+                if (current == null) {
+                    val cards = FavoritesStore.cards(null, AppSettings.favoritesAllFolders.takeIf { it.size < 10 })
+                    CompositionLocalProvider(LocalShowsSiteBadge provides true) {
+                        GalleryGrid(
+                            cards, grid, padding,
+                            header = {
+                                fullLine("title") { FavoritesTitle() }
+                                if (cards.isEmpty()) fullLine("empty") {
+                                    if (FavoritesStore.syncing != null) {
+                                        Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) { ActivityIndicator(size = 30.dp) }
+                                    } else {
+                                        EmptyState(Icons.Heart, tr("No Favorites"), FavoritesStore.error ?: tr("Log in to a site to see its favorites here."))
+                                    }
+                                }
+                            },
+                        )
+                    }
+                } else {
                     GalleryGrid(
                         feed.items, grid, padding,
                         onItemShown = { feed.loadMoreIfNeeded(it) },
-                        header = { fullLine("title") { LargeTitle(tr("Favorites"), inset = 4.dp) } },
+                        header = { fullLine("title") { FavoritesTitle() } },
                         footer = { feedFooter(feed, L10n.string("No Favorites") to Icons.Heart) },
                     )
                 }
             }
+        }
+    }
+
+    /** "Favorites ▾ · All": tap for the sites and E-Hentai's folders. */
+    @Composable
+    private fun FavoritesTitle() {
+        val overlays = LocalOverlays.current
+        val anchor = rememberAnchor()
+        val sites = AppSettings.enabledSites
+        val menuTitle = tr("Favorites")
+        val allLabel = tr("All")
+        val allFolders = tr("All Folders")
+        val shownFolders = tr("E-Hentai Folders Shown in All")
+        val subtitle = when (site) {
+            null -> allLabel
+            Site.NHENTAI -> "nhentai"
+            Site.EHENTAI -> "E-Hentai · " + (ehFolder?.let { EhFolders.names.getOrNull(it) } ?: allFolders)
+        }
+        LaunchedEffect(site) { if (site != Site.NHENTAI) EhFolders.load() }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 6.dp)
+                .anchor(anchor)
+                .clickable(interactionSource = null, indication = null) {
+                    val siteItems = buildList<MenuItem> {
+                        if (sites.size > 1) add(MenuItem(allLabel, checked = site == null) { site = null })
+                        sites.forEach { s -> add(MenuItem(s.displayName, checked = site == s && (s != Site.EHENTAI || ehFolder == null)) { site = s; ehFolder = null }) }
+                    }
+                    val folderItems = if (site == Site.EHENTAI && EhSession.isLoggedIn) {
+                        EhFolders.names.mapIndexed { i, name ->
+                            MenuItem(name, Icons.Folder, checked = ehFolder == i) { ehFolder = i }
+                        }
+                    } else {
+                        emptyList()
+                    }
+                    val allItems = if (site == null && sites.contains(Site.EHENTAI)) {
+                        listOf(MenuItem(shownFolders, Icons.Folder) { overlays.sheet { dismiss -> FolderPicker(dismiss) } })
+                    } else {
+                        emptyList()
+                    }
+                    overlays.menu(anchor.bounds, listOf(siteItems, folderItems, allItems).filter { it.isNotEmpty() }, menuTitle)
+                },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Txt(tr("Favorites"), style = Type.largeTitle)
+                    AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
+                }
+                Txt(subtitle, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = 1)
+            }
+        }
+    }
+
+    /** Which E-Hentai folders "All" shows (all by default). */
+    @Composable
+    private fun FolderPicker(dismiss: () -> Unit) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Txt(tr("E-Hentai Folders Shown in All"), Modifier.weight(1f), style = Type.headline)
+                TextButton(tr("Done"), dismiss, bold = true)
+            }
+            EhFolders.names.forEachIndexed { i, name ->
+                val shown = i in AppSettings.favoritesAllFolders
+                ToggleRow(name, shown, { on ->
+                    AppSettings.favoritesAllFolders = if (on) AppSettings.favoritesAllFolders + i else AppSettings.favoritesAllFolders - i
+                }, last = i == 9)
+            }
+        }
+    }
+
+    @Composable
+    private fun SyncIndicator() {
+        val syncing = FavoritesStore.syncing ?: return
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            ActivityIndicator(size = 16.dp)
+            Txt("${syncing.badge} ${FavoritesStore.syncedCount}", style = Type.caption1, color = AppTheme.colors.secondaryLabel)
         }
     }
 }
@@ -410,11 +642,16 @@ class HistoryScreen : Screen() {
     private val list = LazyListState()
     private val grid = LazyStaggeredGridState()
     private var search by mutableStateOf("")
+    private var site by mutableStateOf(AppSettings.site(AppSettings.historySite))
+
+    override fun onAppear() {
+        if (AppSettings.historySite == SiteChoice.Follow) site = AppSettings.site(SiteChoice.Follow)
+    }
 
     @Composable
     override fun Content() {
         val overlays = LocalOverlays.current
-        val entries = HistoryStore.entries
+        val entries = HistoryStore.entries.filter { e -> site == null || e.site == site?.key }
         val text = search.trim()
         val filtered = if (text.isEmpty()) entries.toList() else entries.filter {
             it.title.contains(text, ignoreCase = true) || "${it.gid}" == text
@@ -429,6 +666,7 @@ class HistoryScreen : Screen() {
                 if (cards) grid.pastTitle() else list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60
             },
             trailing = {
+                SiteFilterButton(site, { site = it })
                 GlassCircleButton(
                     Icons.Trash, tr("Clear"),
                     onClick = {
@@ -454,13 +692,14 @@ class HistoryScreen : Screen() {
     /** Cards like Favorites (in the list style), by day. */
     @Composable
     private fun Cards(padding: PaddingValues, empty: Boolean, filtered: List<HistoryEntry>, sections: Map<Long, List<HistoryEntry>>) {
-        val byId = filtered.associateBy { it.gid }
+        val byKey = filtered.associateBy { it.key }
         val deleteLabel = tr("Delete")
         CompositionLocalProvider(
-            LocalCoverBadge provides { item -> ReadingProgress(byId[item.id]) },
+            LocalCoverBadge provides { item -> ReadingProgress(byKey[item.key]) },
             LocalGalleryMenuItems provides { item ->
-                listOf(MenuItem(deleteLabel, Icons.Trash, destructive = true) { HistoryStore.delete(item.id) })
+                listOf(MenuItem(deleteLabel, Icons.Trash, destructive = true) { HistoryStore.delete(item.key) })
             },
+            LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1),
         ) {
             GalleryLayout(grid, padding) { style ->
                 fullLine("title") { LargeTitle(tr("History"), inset = 4.dp) }
@@ -471,7 +710,7 @@ class HistoryScreen : Screen() {
                 }
                 sections.forEach { (day, dayEntries) ->
                     fullLine("day$day") { DayHeader(day, inset = 4.dp) }
-                    galleryItems(dayEntries.map { it.item }, style)
+                    galleryItems(dayEntries.map { it.summary }, style)
                 }
             }
         }
@@ -498,13 +737,15 @@ class HistoryScreen : Screen() {
             }
             sections.forEach { (day, dayEntries) ->
                 item("day$day") { DayHeader(day) }
-                items(dayEntries, key = { it.gid }) { entry ->
-                    SwipeToDelete(onDelete = { HistoryStore.delete(entry.gid) }) {
+                items(dayEntries, key = { it.key.storageKey }) { entry ->
+                    SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) {
+                        CompositionLocalProvider(LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1)) {
                         GalleryRow(
-                            entry.item,
+                            entry.summary,
                             Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
                             subtitle = historySubtitle(entry),
                         )
+                        }
                     }
                 }
             }
@@ -608,6 +849,8 @@ private fun Modifier.matchParentSize() = this.then(Modifier.fillMaxWidth().heigh
 
 /** A search field's text and the search it started. */
 class SearchState {
+    /** The site searched (shown in the field; switched under the field with the results). */
+    var site by mutableStateOf(AppSettings.searchStartSite())
     var text by mutableStateOf("")
     var query by mutableStateOf("")
     val suggestions = mutableStateListOf<TagSuggestion>()
@@ -634,7 +877,7 @@ class SearchState {
     fun complete(tag: TagSuggestion) {
         val parts = text.split(" ").toMutableList()
         if (parts.isNotEmpty()) parts.removeAt(parts.lastIndex)
-        parts.add(tag.query)
+        parts.add(if (site == Site.EHENTAI) com.atlanyuey.aenht.shared.eh.EhTag(tag.type, tag.name).query else tag.query)
         text = parts.joinToString(" ") + " "
         suggestions.clear()
     }
@@ -649,7 +892,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
     fun results(): SearchResults? {
         val query = state.query
         if (query.isEmpty()) return null
-        return results?.takeIf { it.query == query } ?: SearchResults(query, scope).also { results = it }
+        return results?.takeIf { it.query == query } ?: SearchResults(query, scope, state.site, state).also { results = it }
     }
 
     /** Tag suggestions while typing; recent searches on submit. */
@@ -663,7 +906,11 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                 return@LaunchedEffect
             }
             delay(250)
-            val found = runCatching { NHClient.suggestTags(word) }.getOrDefault(emptyList())
+            val found = if (state.site == Site.EHENTAI) {
+                TagStore.suggestEh(word).map { (ns, name) -> TagSuggestion(0, ns, name, null) }
+            } else {
+                runCatching { NHClient.suggestTags(word) }.getOrDefault(emptyList())
+            }
             state.suggestions.clear()
             state.suggestions.addAll(found)
         }
@@ -688,7 +935,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
     @Composable
     private fun Suggestions(padding: PaddingValues) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
-            items(state.suggestions, key = { it.id }) { tag ->
+            items(state.suggestions, key = { "${it.type}:${it.name}:${it.id}" }) { tag ->
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -698,7 +945,10 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     AppIcon(Icons.Tag, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
-                    Txt(tag.name, Modifier.weight(1f), maxLines = 1)
+                    Column(Modifier.weight(1f)) {
+                        Txt(tag.name, maxLines = 1)
+                        TagStore.translate(tag.name, tag.type)?.let { Txt(it, style = Type.footnote, color = AppTheme.colors.secondaryLabel, maxLines = 1) }
+                    }
                     Txt(tag.type.replaceFirstChar { it.uppercase() }, style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
                 }
             }
@@ -716,8 +966,9 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                 item {
                     EmptyState(
                         Icons.Search,
-                        tr("Search nhentai"),
-                        tr("Search by title or use tags like artist:name, or enter a gallery number."),
+                        if (state.site == Site.EHENTAI) tr("Search E-Hentai") else tr("Search nhentai"),
+                        if (state.site == Site.EHENTAI) tr("Search by title or use tags like artist:name$, or paste a gallery link.")
+                        else tr("Search by title or use tags like artist:name, or enter a gallery number."),
                     )
                 }
             } else {
@@ -754,47 +1005,118 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
     }
 }
 
-/** Search results for a query (search tab and tag searches). */
-class SearchResults(val query: String, scope: kotlinx.coroutines.CoroutineScope) {
-    val feed = GalleryFeed(scope) { page ->
-        val full = listOfNotNull(query, AppSettings.searchLanguage.queryTerm).joinToString(" ")
-        NHClient.galleries(full, AppSettings.searchSort, page)
+/**
+ * Search results for a query on both sites: the site it was typed for
+ * first; switching site under the field converts the query to the other
+ * site's syntax. A gallery number (nhentai) or a gallery link shows that
+ * gallery above the results.
+ */
+class SearchResults(
+    val query: String,
+    private val scope: kotlinx.coroutines.CoroutineScope,
+    startSite: Site,
+    private val state: SearchState? = null,
+) {
+    var site by mutableStateOf(startSite)
+        private set
+    private val nhQuery: String
+    private val ehQuery: String
+    private val ehCategories: Set<com.atlanyuey.aenht.shared.eh.EhCategory>
+    /** Terms of the query that the other site has no counterpart for. */
+    private val dropped: Map<Site, List<String>>
+
+    init {
+        if (startSite == Site.EHENTAI) {
+            val converted = QueryConverter.ehToNh(query)
+            ehQuery = query
+            ehCategories = emptySet()
+            nhQuery = converted.query
+            dropped = mapOf(Site.NHENTAI to converted.dropped)
+        } else {
+            val converted = QueryConverter.nhToEh(query) { TagStore.ehNamespaces(it) }
+            nhQuery = query
+            ehQuery = converted.query
+            ehCategories = converted.categories
+            dropped = mapOf(Site.EHENTAI to converted.dropped)
+        }
     }
+
+    private val link: GalleryLink? = SiteLinks.fromSearchText(query)
+    /** A pasted link is opened, not searched for. */
+    private val searches = link == null || link is GalleryLink.Nh
+
+    val nhFeedState = GalleryFeed(scope, nhFeed { page ->
+        val full = listOfNotNull(nhQuery, AppSettings.searchLanguage.queryTerm).joinToString(" ")
+        NHClient.galleries(full, AppSettings.searchSort, page)
+    })
+    val ehFeedState = GalleryFeed(scope, ehFeed {
+        val full = listOfNotNull(ehQuery, AppSettings.searchLanguage.queryTerm).joinToString(" ")
+        EhListSource.Search(full, ehCategories)
+    })
+    val feed: GalleryFeed get() = if (site == Site.EHENTAI) ehFeedState else nhFeedState
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 
-    /** A gallery number shows that gallery first, above the results of searching for the number. */
-    private val galleryId = query.trim().toIntOrNull()?.takeIf { it > 0 }
-    private var match by mutableStateOf<GalleryItem?>(null)
+    private var match by mutableStateOf<GallerySummary?>(null)
     private var matchFailed by mutableStateOf(false)
 
     init {
-        galleryId?.let { id ->
+        link?.let { l ->
             scope.launch {
-                match = runCatching { NHClient.gallery(id).asItem }.getOrNull()
+                match = runCatching {
+                    when (l) {
+                        is GalleryLink.Nh -> GallerySummary.from(NHClient.gallery(l.id).asItem)
+                        is GalleryLink.Eh -> EhClient.api.galleryData(listOf(l.gid to l.token)).firstOrNull()?.let(GallerySummary::from)
+                        is GalleryLink.EhPage -> {
+                            val token = EhClient.galleryToken(l.gid, l.pageToken, l.page)
+                            EhClient.api.galleryData(listOf(l.gid to token)).firstOrNull()?.let(GallerySummary::from)
+                        }
+                    }
+                }.getOrNull()
                 matchFailed = match == null
             }
         }
     }
 
+    fun switchTo(target: Site) {
+        if (target == site) return
+        site = target
+        state?.site = target
+        if (searches && !feed.hasLoaded) feed.reload()
+    }
+
     @Composable
     fun Content(padding: PaddingValues) {
         LaunchedEffect(Unit) {
-            if (!feed.hasLoaded) feed.reload()
-            snapshotFlow { AppSettings.searchLanguage to AppSettings.searchSort }.drop(1).collect { feed.reload() }
+            if (searches) {
+                if (!feed.hasLoaded) feed.reload()
+                // Both sites at once when the setting says so (twice the requests).
+                if (AppSettings.searchBothSites && AppSettings.enabledSites.size > 1) {
+                    val other = if (site == Site.EHENTAI) nhFeedState else ehFeedState
+                    if (!other.hasLoaded) other.reload()
+                }
+            }
+            snapshotFlow { AppSettings.searchLanguage to AppSettings.searchSort }.drop(1).collect { if (searches) feed.reload() }
         }
-        LaunchedEffect(feed.isLoading) { if (!feed.isLoading) pulling = false }
-        PullToRefresh(pulling, { pulling = true; feed.reload() }, topInset = padding.calculateTopPadding()) {
+        val current = feed
+        LaunchedEffect(current.isLoading) { if (!current.isLoading) pulling = false }
+        PullToRefresh(pulling, { pulling = true; current.reload() }, topInset = padding.calculateTopPadding()) {
             GalleryGrid(
-                feed.items, grid, padding,
-                onItemShown = { feed.loadMoreIfNeeded(it) },
+                if (searches) current.items else emptyList(), grid, padding,
+                onItemShown = { current.loadMoreIfNeeded(it) },
                 header = {
                     // These lines are there from the start (the gallery with a
                     // placeholder while it loads): a lazy grid keeps its first
                     // visible item in place, so lines added above it later
                     // would open the results scrolled down.
-                    if (galleryId != null && !matchFailed) {
-                        fullLine("matchTitle") { FeedTitle(tr("Gallery #%lld", galleryId), null) }
+                    if (link != null && !matchFailed) {
+                        fullLine("matchTitle") {
+                            val title = when (link) {
+                                is GalleryLink.Nh -> tr("Gallery #%lld", link.id)
+                                else -> tr("E-Hentai Gallery")
+                            }
+                            FeedTitle(title, link.site.displayName)
+                        }
                         fullLine("match") {
                             val item = match
                             if (item != null) {
@@ -804,29 +1126,66 @@ class SearchResults(val query: String, scope: kotlinx.coroutines.CoroutineScope)
                             }
                         }
                     }
-                    fullLine("total") {
-                        val total = feed.total
-                        Box(Modifier.fillMaxWidth().heightIn(min = 36.dp), contentAlignment = Alignment.CenterStart) {
-                            if (total != null && feed.hasLoaded) {
-                                Txt(
-                                    tr("%lld results", total),
-                                    Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-                                    style = Type.subheadline,
-                                    color = AppTheme.colors.secondaryLabel,
-                                )
+                    if (searches && AppSettings.enabledSites.size > 1) {
+                        fullLine("sites") { SiteSwitch() }
+                    }
+                    if (searches) {
+                        fullLine("total") {
+                            val total = current.total
+                            Column(Modifier.fillMaxWidth().heightIn(min = 36.dp), verticalArrangement = Arrangement.Center) {
+                                dropped[site]?.takeIf { it.isNotEmpty() }?.let { terms ->
+                                    Txt(
+                                        tr("Not available on %@: %@", site.displayName, terms.joinToString(" ")),
+                                        Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                                        style = Type.footnote,
+                                        color = AppTheme.colors.orange,
+                                    )
+                                }
+                                if (total != null && current.hasLoaded) {
+                                    Txt(
+                                        tr("%lld results", total),
+                                        Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                                        style = Type.subheadline,
+                                        color = AppTheme.colors.secondaryLabel,
+                                    )
+                                }
                             }
                         }
                     }
                 },
-                footer = { feedFooter(feed, L10n.string("No Results") to Icons.Search) },
+                footer = { if (searches) feedFooter(current, L10n.string("No Results") to Icons.Search) },
             )
+        }
+    }
+
+    /** nhentai | E-Hentai, under the search field and above the results. */
+    @Composable
+    private fun SiteSwitch() {
+        val colors = AppTheme.colors
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp).clip(RoundedCornerShape(10.dp)).background(colors.tertiaryFill).padding(3.dp),
+        ) {
+            AppSettings.enabledSites.forEach { s ->
+                val selected = s == site
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (selected) colors.background else Color.Transparent)
+                        .clickable { switchTo(s) }
+                        .padding(vertical = 7.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Txt(s.displayName, style = Type.subheadline.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal), maxLines = 1)
+                }
+            }
         }
     }
 }
 
 /** Results of a tag / artist search, pushed from a gallery. */
-class SearchResultsScreen(private val query: String, private val title: String?) : Screen() {
-    private val results = SearchResults(query, scope)
+class SearchResultsScreen(private val query: String, private val title: String?, site: Site = Site.NHENTAI) : Screen() {
+    private val results = SearchResults(query, scope, site)
 
     @Composable
     override fun Content() {

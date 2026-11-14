@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.core
 
+import com.atlanyuey.aenht.shared.site.Site
+
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.runtime.mutableStateListOf
@@ -157,6 +159,33 @@ enum class LanguageFilter(val raw: String, val title: String) {
 }
 
 /** A setting kept in Compose state and saved to SharedPreferences. */
+/** Which site a screen shows: a fixed one, both, or the one the home page is on. */
+enum class SiteChoice(val raw: String, val title: String) {
+    Follow("follow", "Same as Home"),
+    Nhentai("nh", "nhentai"),
+    Ehentai("eh", "E-Hentai"),
+    All("all", "All");
+
+    companion object {
+        fun of(raw: String?, default: SiteChoice) = entries.firstOrNull { it.raw == raw } ?: default
+    }
+}
+
+/** What the E-Hentai home page lists. */
+enum class EhHomeList(val raw: String, val title: String) {
+    Latest("latest", "Latest"),
+    Popular("popular", "Popular Now"),
+    Watched("watched", "Watched"),
+    ToplistDay("top-day", "Top Galleries Yesterday"),
+    ToplistMonth("top-month", "Top Galleries This Month"),
+    ToplistYear("top-year", "Top Galleries This Year"),
+    ToplistAll("top-all", "Top Galleries of All Time");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Latest
+    }
+}
+
 private class Pref<T>(initial: T, private val onSet: (T) -> Unit) : ReadWriteProperty<Any?, T> {
     private val state = mutableStateOf(initial)
     override fun getValue(thisRef: Any?, property: KProperty<*>): T = state.value
@@ -206,6 +235,23 @@ object AppSettings {
         hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", false)
         readerControlsDelay = p.getFloat("readerControlsDelay", 3f).toDouble().coerceIn(3.0, 10.0)
         libraryStyle = LibraryStyle.of(p.getString("libraryStyle", null))
+        nhentaiEnabled = p.getBoolean("nhentaiEnabled", true)
+        ehentaiEnabled = p.getBoolean("ehentaiEnabled", true)
+        homeSite = p.getString("homeSite", null)?.let { Site.fromKey(it) } ?: Site.NHENTAI
+        homeSiteDefault = SiteChoice.of(p.getString("homeSiteDefault", null), SiteChoice.Follow)
+        useExHentai = p.getBoolean("useExHentai", false)
+        ehHomeList = EhHomeList.of(p.getString("ehHomeList", null))
+        favoritesSite = SiteChoice.of(p.getString("favoritesSite", null), SiteChoice.Follow)
+        historySite = SiteChoice.of(p.getString("historySite", null), SiteChoice.All)
+        downloadsSite = SiteChoice.of(p.getString("downloadsSite", null), SiteChoice.All)
+        searchSite = SiteChoice.of(p.getString("searchSite", null), SiteChoice.Follow)
+        searchBothSites = p.getBoolean("searchBothSites", false)
+        favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
+        when (homeSiteDefault) {
+            SiteChoice.Nhentai -> homeSite = Site.NHENTAI
+            SiteChoice.Ehentai -> homeSite = Site.EHENTAI
+            else -> {}
+        }
         recentSearches.clear()
         p.getString("recentSearches", null)?.let { text ->
             runCatching { recentSearches.addAll(json.decodeFromString(ListSerializer(String.serializer()), text)) }
@@ -282,6 +328,54 @@ object AppSettings {
     var readerControlsDelay by Pref(3.0) { save("readerControlsDelay", it) }
     var libraryStyle by Pref(LibraryStyle.Cards) { save("libraryStyle", it.raw) }
 
+    // MARK: Sites
+
+    var nhentaiEnabled by Pref(true) { save("nhentaiEnabled", it) }
+    var ehentaiEnabled by Pref(true) { save("ehentaiEnabled", it) }
+
+    /** The sites in use (at least one). */
+    val enabledSites: List<Site>
+        get() = buildList {
+            if (nhentaiEnabled) add(Site.NHENTAI)
+            if (ehentaiEnabled) add(Site.EHENTAI)
+        }.ifEmpty { listOf(Site.NHENTAI) }
+
+    /** The site the home page is on now (remembered). */
+    var homeSite by Pref(Site.NHENTAI) { save("homeSite", it.key) }
+    /** Which site the home page opens on: the last one, or a fixed one. */
+    var homeSiteDefault by Pref(SiteChoice.Follow) { save("homeSiteDefault", it.raw) }
+    /** E-Hentai requests go to exhentai.org (applied by [EhClient] on each request). */
+    var useExHentai by Pref(false) { save("useExHentai", it) }
+    var ehHomeList by Pref(EhHomeList.Latest) { save("ehHomeList", it.raw) }
+
+    /** Which site Favorites / History / Downloads / Search show when opened. */
+    var favoritesSite by Pref(SiteChoice.Follow) { save("favoritesSite", it.raw) }
+    var historySite by Pref(SiteChoice.All) { save("historySite", it.raw) }
+    var downloadsSite by Pref(SiteChoice.All) { save("downloadsSite", it.raw) }
+    var searchSite by Pref(SiteChoice.Follow) { save("searchSite", it.raw) }
+    /** E-Hentai favorite folders that Favorites › All shows (all ten by default). */
+    var favoritesAllFolders by Pref((0..9).toSet()) { save("favoritesAllFolders", it.sorted().joinToString(",")) }
+
+    /** Search runs on both sites at once (twice the requests). */
+    var searchBothSites by Pref(false) { save("searchBothSites", it) }
+
+    /** The home page's site, if it is still enabled. */
+    val currentSite: Site get() = homeSite.takeIf { it in enabledSites } ?: enabledSites.first()
+
+    /** The site a new search starts on. */
+    fun searchStartSite(): Site = site(searchSite) ?: currentSite
+
+    /** The site a screen opens on for [choice]; null means both. */
+    fun site(choice: SiteChoice): Site? {
+        if (enabledSites.size == 1) return enabledSites.first()
+        return when (choice) {
+            SiteChoice.Follow -> currentSite
+            SiteChoice.Nhentai -> Site.NHENTAI
+            SiteChoice.Ehentai -> Site.EHENTAI
+            SiteChoice.All -> null
+        }
+    }
+
     /** Recent search terms, newest first. */
     val recentSearches = mutableStateListOf<String>()
     private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
@@ -350,6 +444,15 @@ object AppSettings {
         "hideBarsOnScroll" to hideBarsOnScroll,
         "readerControlsDelay" to readerControlsDelay,
         "libraryStyle" to libraryStyle.raw,
+        "nhentaiEnabled" to nhentaiEnabled,
+        "ehentaiEnabled" to ehentaiEnabled,
+        "homeSiteDefault" to homeSiteDefault.raw,
+        "useExHentai" to useExHentai,
+        "favoritesSite" to favoritesSite.raw,
+        "historySite" to historySite.raw,
+        "downloadsSite" to downloadsSite.raw,
+        "searchSite" to searchSite.raw,
+        "searchBothSites" to searchBothSites,
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -389,6 +492,15 @@ object AppSettings {
                 "hideBarsOnScroll" -> bool?.let { hideBarsOnScroll = it }
                 "readerControlsDelay" -> number?.let { readerControlsDelay = it.toDouble().coerceIn(3.0, 10.0) }
                 "libraryStyle" -> string?.let { libraryStyle = LibraryStyle.of(it) }
+                "nhentaiEnabled" -> bool?.let { nhentaiEnabled = it }
+                "ehentaiEnabled" -> bool?.let { ehentaiEnabled = it }
+                "homeSiteDefault" -> string?.let { homeSiteDefault = SiteChoice.of(it, homeSiteDefault) }
+                "useExHentai" -> bool?.let { useExHentai = it }
+                "favoritesSite" -> string?.let { favoritesSite = SiteChoice.of(it, favoritesSite) }
+                "historySite" -> string?.let { historySite = SiteChoice.of(it, historySite) }
+                "downloadsSite" -> string?.let { downloadsSite = SiteChoice.of(it, downloadsSite) }
+                "searchSite" -> string?.let { searchSite = SiteChoice.of(it, searchSite) }
+                "searchBothSites" -> bool?.let { searchBothSites = it }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }

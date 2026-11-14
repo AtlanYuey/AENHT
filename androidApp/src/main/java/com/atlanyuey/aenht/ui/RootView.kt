@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.ui
 
+import kotlinx.coroutines.launch
+
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.BiasAlignment
@@ -95,7 +97,7 @@ class Tabs {
 /** Tabs with the iOS 26 floating glass tab bar. Search is on the Home page. */
 @Composable
 fun RootView(
-    linkedGallery: androidx.compose.runtime.MutableState<Int?>,
+    linkedGallery: androidx.compose.runtime.MutableState<com.atlanyuey.aenht.shared.site.GalleryLink?>,
     tabs: Tabs = remember { Tabs() },
     initialTab: Int = 0,
     overlays: OverlayController = remember { OverlayController() },
@@ -152,18 +154,32 @@ fun RootView(
         } else {
             selected = index
             lastTab = index
+            tabs.all[index].stack.first().onAppear()
         }
     }
 
-    // Links opened from outside (nhentai.net/g/<id>).
+    // Links opened from outside or copied (nhentai, E-Hentai, ExHentai).
+    val linkScope = androidx.compose.runtime.rememberCoroutineScope()
+    val openLink: (com.atlanyuey.aenht.shared.site.GalleryLink) -> Unit = { link ->
+        when (link) {
+            is com.atlanyuey.aenht.shared.site.GalleryLink.Nh -> tabs.all[selected].push(GalleryScreen(link.id, null))
+            is com.atlanyuey.aenht.shared.site.GalleryLink.Eh ->
+                tabs.all[selected].push(com.atlanyuey.aenht.screens.EhGalleryScreen(link.gid, link.token, null))
+            is com.atlanyuey.aenht.shared.site.GalleryLink.EhPage -> linkScope.launch {
+                runCatching { com.atlanyuey.aenht.core.EhClient.galleryToken(link.gid, link.pageToken, link.page) }.getOrNull()?.let { token ->
+                    tabs.all[selected].push(com.atlanyuey.aenht.screens.EhGalleryScreen(link.gid, token, null))
+                }
+            }
+        }
+    }
     val linked = linkedGallery.value
     LaunchedEffect(linked) {
         if (linked != null) {
-            tabs.all[selected].push(GalleryScreen(linked, null))
+            openLink(linked)
             linkedGallery.value = null
         }
     }
-    ClipboardLinks(overlays) { id -> tabs.all[selected].push(GalleryScreen(id, null)) }
+    ClipboardLinks(overlays, openLink)
 
     CompositionLocalProvider(
         LocalOverlays provides overlays,
@@ -225,28 +241,35 @@ fun RootView(
     }
 }
 
-/** Offers to open a gallery link found on the clipboard (once per link). */
+/** Offers to open a gallery link (nhentai, E-Hentai, ExHentai) found on the clipboard, once per link. */
 @Composable
-private fun ClipboardLinks(overlays: OverlayController, open: (Int) -> Unit) {
+private fun ClipboardLinks(overlays: OverlayController, open: (com.atlanyuey.aenht.shared.site.GalleryLink) -> Unit) {
     val context = LocalContext.current
     val title = tr("Open Gallery?")
     val openLabel = tr("Open")
     val cancel = tr("Cancel")
-    val messageFormat = "The clipboard contains a link to gallery #%lld."
-    val message = { id: Int -> com.atlanyuey.aenht.core.L10n.string(messageFormat, id) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (!AppSettings.detectClipboard) return@LifecycleEventEffect
         val clipboard = context.getSystemService(ClipboardManager::class.java)
         val text = clipboard.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString() ?: return@LifecycleEventEffect
-        if (!text.contains("nhentai.net/g/")) return@LifecycleEventEffect
-        val id = Regex("/g/(\\d+)").find(text)?.groupValues?.get(1)?.toIntOrNull() ?: return@LifecycleEventEffect
+        val link = com.atlanyuey.aenht.shared.site.SiteLinks.find(text) ?: return@LifecycleEventEffect
+        if (link.site !in AppSettings.enabledSites) return@LifecycleEventEffect
+        val id = com.atlanyuey.aenht.shared.site.SiteLinks.url(link)
         val prefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
-        if (prefs.getInt("lastClipboardGallery", 0) == id) return@LifecycleEventEffect
-        prefs.edit().putInt("lastClipboardGallery", id).apply()
+        if (prefs.getString("lastClipboardLink", null) == id) return@LifecycleEventEffect
+        prefs.edit().putString("lastClipboardLink", id).apply()
+        val message = when (link) {
+            is com.atlanyuey.aenht.shared.site.GalleryLink.Nh ->
+                com.atlanyuey.aenht.core.L10n.string("The clipboard contains a link to gallery #%lld.", link.id)
+            is com.atlanyuey.aenht.shared.site.GalleryLink.Eh ->
+                com.atlanyuey.aenht.core.L10n.string("The clipboard contains a link to an E-Hentai gallery (%lld).", link.gid)
+            is com.atlanyuey.aenht.shared.site.GalleryLink.EhPage ->
+                com.atlanyuey.aenht.core.L10n.string("The clipboard contains a link to an E-Hentai gallery (%lld).", link.gid)
+        }
         overlays.alert(
             title,
-            message(id),
-            listOf(DialogButton(cancel, ButtonRole.Cancel), DialogButton(openLabel, ButtonRole.Preferred) { open(id) }),
+            message,
+            listOf(DialogButton(cancel, ButtonRole.Cancel), DialogButton(openLabel, ButtonRole.Preferred) { open(link) }),
         )
     }
 }

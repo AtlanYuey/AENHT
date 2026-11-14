@@ -47,6 +47,9 @@ abstract class Screen {
     @Composable
     abstract fun Content()
 
+    /** The screen's tab was selected (Favorites / History follow the home page's site). */
+    open fun onAppear() {}
+
     open fun onRemoved() {
         scope.cancel()
     }
@@ -85,6 +88,15 @@ class Navigator(root: Screen) {
             return
         }
         scope.launch { finishPop() }
+    }
+
+    /** Pops screens above the nearest one that matches [predicate] (or to the root). */
+    fun popTo(predicate: (Screen) -> Boolean) {
+        val target = stack.indexOfLast(predicate).takeIf { it >= 0 } ?: 0
+        while (stack.size > target + 2) {
+            stack.removeAt(stack.size - 2).onRemoved()
+        }
+        pop()
     }
 
     fun popToRoot() {

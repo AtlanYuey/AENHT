@@ -30,7 +30,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="nhentai.net" android:pathPrefix="/g/" />
+                <data android:scheme="https" />
+                <data android:host="nhentai.net" />
+                <data android:host="e-hentai.org" />
+                <data android:host="exhentai.org" />
+                <data android:pathPrefix="/g/" />
+                <data android:pathPrefix="/s/" />
             </intent-filter>
         </activity>
     </application>

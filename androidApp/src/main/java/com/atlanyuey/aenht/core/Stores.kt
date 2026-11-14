@@ -35,6 +35,11 @@ import com.atlanyuey.aenht.shared.db.HistoryRepository
 import com.atlanyuey.aenht.shared.db.openDatabase
 import com.atlanyuey.aenht.shared.site.GalleryKey
 import com.atlanyuey.aenht.shared.site.Site
+import com.atlanyuey.aenht.shared.site.GallerySummary
+import com.atlanyuey.aenht.shared.eh.EhListSource
+import com.atlanyuey.aenht.shared.eh.EhCategory
+import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
+import com.atlanyuey.aenht.shared.eh.EhThumbnail
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -43,7 +48,7 @@ val AppScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
 // MARK: - History
 
-/** A gallery the user opened, with the last page read. */
+/** A gallery the user opened (either site), with the last page read. */
 @Serializable
 data class HistoryEntry(
     val gid: Int,
@@ -55,9 +60,13 @@ data class HistoryEntry(
     val numPages: Int,
     val lastPage: Int,
     val lastRead: Long,
-    /** For the language badge and tags on cards (empty for entries from before 2.1.0). */
+    /** For the language badge and tags on cards (nhentai). */
     val tagIds: List<Int> = emptyList(),
+    val site: String = Site.NHENTAI.key,
+    val token: String? = null,
 ) {
+    val key: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, gid.toLong(), token)
+
     val item: GalleryItem
         get() = GalleryItem(
             id = gid, mediaId = mediaId, englishTitle = title, thumbnail = thumbnail,
@@ -65,12 +74,18 @@ data class HistoryEntry(
             tagIds = tagIds,
         )
 
+    val summary: GallerySummary
+        get() = if (site == Site.NHENTAI.key) GallerySummary.from(item) else GallerySummary(
+            key = key, title = title, thumbnail = thumbnail, thumbWidth = thumbWidth, thumbHeight = thumbHeight,
+            pages = numPages, languageBadge = null,
+        )
+
     companion object {
         fun from(record: HistoryRecord) = HistoryEntry(
             gid = record.galleryId.toInt(), mediaId = record.mediaId, title = record.title,
             thumbnail = record.thumbnail, thumbWidth = record.thumbWidth, thumbHeight = record.thumbHeight,
             numPages = record.numPages, lastPage = record.lastPage, lastRead = record.readAt,
-            tagIds = record.tagIdList,
+            tagIds = record.tagIdList, site = record.site, token = record.token,
         )
     }
 }
@@ -86,51 +101,59 @@ object HistoryStore {
     private val writes = Mutex()
 
     fun init(context: Context) {
-        repo = HistoryRepository(openDatabase(context))
+        repo = HistoryRepository(AppDb.get(context))
         AppScope.launch {
-            val loaded = runCatching { repo.all() }.getOrDefault(emptyList())
-                .filter { it.site == Site.NHENTAI.key }
-                .map { HistoryEntry.from(it) }
-            val known = entries.map { it.gid }.toSet()
-            entries.addAll(loaded.filter { it.gid !in known })
+            val loaded = runCatching { repo.all() }.getOrDefault(emptyList()).map { HistoryEntry.from(it) }
+            val known = entries.map { it.key }.toSet()
+            entries.addAll(loaded.filter { it.key !in known })
             entries.sortByDescending { it.lastRead }
         }
     }
 
-    fun record(item: GalleryItem, title: String, numPages: Int, page: Int? = null) {
-        val index = entries.indexOfFirst { it.gid == item.id }
+    /** Records that a gallery of either site was opened (or read up to [page]). */
+    fun record(item: GallerySummary, page: Int? = null) {
+        val key = item.key
+        val index = entries.indexOfFirst { it.key == key }
         val previous = entries.getOrNull(index)
         val entry = HistoryEntry(
-            gid = item.id,
+            gid = key.id.toInt(),
             mediaId = item.mediaId.ifEmpty { previous?.mediaId ?: "" },
-            title = title,
+            title = item.title.ifEmpty { previous?.title ?: "" },
             thumbnail = item.thumbnail ?: previous?.thumbnail,
-            thumbWidth = if (item.thumbnailWidth > 0) item.thumbnailWidth else previous?.thumbWidth ?: 0,
-            thumbHeight = if (item.thumbnailHeight > 0) item.thumbnailHeight else previous?.thumbHeight ?: 0,
-            numPages = if (numPages > 0) numPages else previous?.numPages ?: 0,
+            thumbWidth = if (item.thumbWidth > 0) item.thumbWidth else previous?.thumbWidth ?: 0,
+            thumbHeight = if (item.thumbHeight > 0) item.thumbHeight else previous?.thumbHeight ?: 0,
+            numPages = if (item.pages > 0) item.pages else previous?.numPages ?: 0,
             lastPage = page ?: previous?.lastPage ?: 0,
             lastRead = System.currentTimeMillis(),
-            tagIds = item.tagIds.ifEmpty { previous?.tagIds ?: emptyList() },
+            tagIds = item.nhTagIds.ifEmpty { previous?.tagIds ?: emptyList() },
+            site = key.site.key,
+            token = key.token ?: previous?.token,
         )
         if (index >= 0) entries.removeAt(index)
         entries.add(0, entry)
         write {
             repo.record(
-                GalleryKey.nh(entry.gid), entry.title, entry.mediaId, entry.thumbnail,
+                entry.key, entry.title, entry.mediaId, entry.thumbnail,
                 entry.thumbWidth, entry.thumbHeight, entry.numPages, entry.lastPage, entry.tagIds,
             )
         }
     }
 
+    fun record(item: GalleryItem, title: String, numPages: Int, page: Int? = null) =
+        record(GallerySummary.from(item).copy(title = title, pages = numPages), page)
+
     fun record(detail: GalleryDetail, page: Int? = null) =
         record(detail.asItem, detail.displayTitle, detail.numPages, page)
 
-    fun lastReadPage(gid: Int): Int? = entries.firstOrNull { it.gid == gid }?.lastPage
+    fun lastReadPage(key: GalleryKey): Int? = entries.firstOrNull { it.key == key }?.lastPage
+    fun lastReadPage(gid: Int): Int? = lastReadPage(GalleryKey.nh(gid))
 
-    fun delete(gid: Int) {
-        entries.removeAll { it.gid == gid }
-        write { repo.delete(GalleryKey.nh(gid)) }
+    fun delete(key: GalleryKey) {
+        entries.removeAll { it.key == key }
+        write { repo.delete(key) }
     }
+
+    fun delete(gid: Int) = delete(GalleryKey.nh(gid))
 
     fun clear() {
         entries.clear()
@@ -149,6 +172,7 @@ object HistoryStore {
 @Serializable
 data class DownloadPage(
     val number: Int,
+    /** nhentai: the image URL. E-Hentai: the page link (`/s/…`), resolved when downloading. */
     val remote: String,
     val file: String,
     val width: Int,
@@ -169,8 +193,19 @@ data class DownloadRecord(
     val added: Long,
     /** For the language badge and tags on cards (null for downloads from before 2.1.0). */
     val tagIds: List<Int>? = null,
+    /** "nh" or "eh". */
+    val site: String = Site.NHENTAI.key,
+    /** E-Hentai gallery token. */
+    val token: String? = null,
+    /** E-Hentai: total pages (the page links are filled in while downloading). */
+    val pageCount: Int = 0,
+    val category: String? = null,
+    val language: String? = null,
 ) {
-    val progress: Float get() = if (pages.isEmpty()) 0f else completed.toFloat() / pages.size
+    val key: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, id.toLong(), token)
+    val isEh: Boolean get() = site == Site.EHENTAI.key
+    val totalPages: Int get() = maxOf(pages.size, pageCount)
+    val progress: Float get() = if (totalPages == 0) 0f else completed.toFloat() / totalPages
 
     val item: GalleryItem
         get() = GalleryItem(
@@ -178,6 +213,17 @@ data class DownloadRecord(
             thumbnailWidth = thumbWidth, thumbnailHeight = thumbHeight, numPages = pages.size,
             tagIds = tagIds ?: emptyList(),
         )
+
+    val summary: GallerySummary
+        get() = if (isEh) {
+            GallerySummary(
+                key = key, title = title, thumbnail = thumbnail, thumbWidth = thumbWidth, thumbHeight = thumbHeight,
+                pages = totalPages, languageBadge = GallerySummary.ehLanguageBadge(language),
+                category = category?.let(EhCategory::fromLabel),
+            )
+        } else {
+            GallerySummary.from(item)
+        }
 
     companion object {
         const val QUEUED = "queued"
@@ -188,11 +234,11 @@ data class DownloadRecord(
     }
 }
 
-/** Downloads gallery pages for offline reading (three at a time). */
+/** Downloads gallery pages of both sites for offline reading (three at a time). */
 object Downloads {
     private lateinit var root: File
     val records = mutableStateListOf<DownloadRecord>()
-    private val jobs = mutableMapOf<Int, Job>()
+    private val jobs = mutableMapOf<String, Job>()
     private var lastSave = 0L
 
     fun init(context: Context) {
@@ -212,18 +258,24 @@ object Downloads {
         })
     }
 
-    fun record(id: Int): DownloadRecord? = records.firstOrNull { it.id == id }
+    fun record(key: GalleryKey): DownloadRecord? =
+        records.firstOrNull { it.site == key.site.key && it.id.toLong() == key.id }
 
-    fun folder(id: Int) = File(root, "$id")
+    fun record(id: Int): DownloadRecord? = record(GalleryKey.nh(id))
+
+    fun folder(key: GalleryKey) = File(root, if (key.site == Site.EHENTAI) "eh-${key.id}" else "${key.id}")
+    fun folder(id: Int) = folder(GalleryKey.nh(id))
 
     /** Local file of a page if it has been downloaded. */
-    fun localFile(galleryId: Int, index: Int): File? {
-        val record = record(galleryId) ?: return null
+    fun localFile(key: GalleryKey, index: Int): File? {
+        val record = record(key) ?: return null
         val page = record.pages.getOrNull(index) ?: return null
-        return File(folder(galleryId), page.file).takeIf { it.exists() }
+        return File(folder(key), page.file).takeIf { it.exists() }
     }
 
-    private fun detailFile(id: Int) = File(folder(id), "gallery.json")
+    fun localFile(galleryId: Int, index: Int): File? = localFile(GalleryKey.nh(galleryId), index)
+
+    private fun detailFile(key: GalleryKey) = File(folder(key), "gallery.json")
 
     /**
      * The page of a downloaded gallery without the network: the gallery's
@@ -232,23 +284,32 @@ object Downloads {
     fun offlineDetail(id: Int): GalleryDetail? {
         val record = record(id) ?: return null
         val saved = runCatching {
-            Net.json.parseToJsonElement(detailFile(id).readText()).obj()?.let(GalleryDetail::parse)
+            Net.json.parseToJsonElement(detailFile(GalleryKey.nh(id)).readText()).obj()?.let(GalleryDetail::parse)
         }.getOrNull()
         return saved ?: galleryDetailFrom(record)
     }
+
+    /** The saved page of a downloaded E-Hentai gallery (offline). */
+    fun offlineEhDetail(key: GalleryKey): EhGalleryDetail? = runCatching {
+        Net.json.decodeFromString(EhGalleryDetail.serializer(), detailFile(key).readText())
+    }.getOrNull()
 
     /** Keeps the gallery's [json] (as the API sent it) with its download, for its page offline. */
     fun saveDetail(json: JsonObject, detail: GalleryDetail) {
         val record = record(detail.id) ?: return
         if (record.tagIds == null) {
-            update(detail.id) { it.copy(tagIds = detail.tags.map { tag -> tag.id }) }
+            update(record.key) { it.copy(tagIds = detail.tags.map { tag -> tag.id }) }
             saveIndex()
         }
-        val file = detailFile(detail.id)
+        writeDetail(GalleryKey.nh(detail.id), json.toString())
+    }
+
+    private fun writeDetail(key: GalleryKey, text: String) {
+        val file = detailFile(key)
         AppScope.launch(Dispatchers.IO) {
             runCatching {
                 file.parentFile?.mkdirs()
-                file.writeText(json.toString())
+                file.writeText(text)
             }
         }
     }
@@ -280,64 +341,149 @@ object Downloads {
             saveIndex()
         }
         json?.let { saveDetail(it, detail) }
-        resume(detail.id)
+        resume(GalleryKey.nh(detail.id))
     }
 
-    fun resume(id: Int) {
-        val record = record(id) ?: return
-        if (jobs[id] != null || record.state == DownloadRecord.FINISHED) return
-        update(id) { it.copy(state = DownloadRecord.DOWNLOADING) }
+    /** Downloads an E-Hentai gallery; its page is kept for offline use. */
+    fun start(detail: EhGalleryDetail, summary: GallerySummary?) {
+        val key = detail.key
+        if (record(key) == null) {
+            records.add(
+                0,
+                DownloadRecord(
+                    id = detail.gid.toInt(), mediaId = "", title = detail.title,
+                    thumbnail = summary?.thumbnail ?: detail.cover,
+                    thumbWidth = summary?.thumbWidth ?: 0, thumbHeight = summary?.thumbHeight ?: 0,
+                    pages = ehPages(detail.thumbnails), completed = 0,
+                    state = DownloadRecord.QUEUED, added = System.currentTimeMillis(),
+                    site = Site.EHENTAI.key, token = detail.token, pageCount = detail.pages,
+                    category = detail.category?.label, language = detail.language?.lowercase()?.substringBefore(' '),
+                ),
+            )
+            saveIndex()
+        }
+        writeDetail(key, Net.json.encodeToString(EhGalleryDetail.serializer(), detail))
+        resume(key)
+    }
+
+    private fun ehPages(thumbs: List<EhThumbnail>) = thumbs.map { t ->
+        DownloadPage(t.page, t.pageUrl, String.format(java.util.Locale.ROOT, "%04d.img", t.page), 0, 0)
+    }
+
+    fun resume(key: GalleryKey) {
+        val record = record(key) ?: return
+        if (jobs[key.storageKey] != null || record.state == DownloadRecord.FINISHED) return
+        update(key) { it.copy(state = DownloadRecord.DOWNLOADING) }
         saveIndex()
-        jobs[id] = AppScope.launch { run(id) }
+        jobs[key.storageKey] = AppScope.launch { run(key) }
     }
 
-    fun pause(id: Int) {
-        jobs.remove(id)?.cancel()
-        update(id) { it.copy(state = DownloadRecord.PAUSED) }
+    fun resume(id: Int) = resume(GalleryKey.nh(id))
+
+    fun pause(key: GalleryKey) {
+        jobs.remove(key.storageKey)?.cancel()
+        update(key) { it.copy(state = DownloadRecord.PAUSED) }
         saveIndex()
     }
 
-    fun delete(id: Int) {
-        jobs.remove(id)?.cancel()
-        records.removeAll { it.id == id }
-        AppScope.launch(Dispatchers.IO) { folder(id).deleteRecursively() }
+    fun pause(id: Int) = pause(GalleryKey.nh(id))
+
+    fun delete(key: GalleryKey) {
+        jobs.remove(key.storageKey)?.cancel()
+        records.removeAll { it.site == key.site.key && it.id.toLong() == key.id }
+        val folder = folder(key)
+        AppScope.launch(Dispatchers.IO) { folder.deleteRecursively() }
         saveIndex()
     }
 
-    private suspend fun run(id: Int) {
-        val record = record(id) ?: return
-        val folder = folder(id)
+    fun delete(id: Int) = delete(GalleryKey.nh(id))
+
+    private suspend fun run(key: GalleryKey) {
+        if (record(key)?.isEh == true && !completeEhPages(key)) {
+            jobs.remove(key.storageKey)
+            update(key) { it.copy(state = DownloadRecord.FAILED) }
+            saveIndex()
+            return
+        }
+        val record = record(key) ?: return
+        val folder = folder(key)
         val pending = withContext(Dispatchers.IO) {
             folder.mkdirs()
             record.pages.filter { !File(folder, it.file).exists() }
         }
-        update(id) { it.copy(completed = it.pages.size - pending.size) }
+        update(key) { it.copy(completed = it.pages.size - pending.size) }
         var failures = 0
-        val semaphore = Semaphore(3)
+        // E-Hentai: fewer at a time (each page also loads its page link).
+        val semaphore = Semaphore(if (record.isEh) 2 else 3)
         coroutineScope {
             pending.map { page ->
                 async {
-                    val ok = semaphore.withPermit { fetch(page, File(folder, page.file)) }
-                    if (ok) update(id) { it.copy(completed = it.completed + 1) } else failures++
+                    val ok = semaphore.withPermit {
+                        if (record.isEh) fetchEh(page, File(folder, page.file)) else fetch(page.remote, File(folder, page.file))
+                    }
+                    if (ok) update(key) { it.copy(completed = it.completed + 1) } else failures++
                     if (System.currentTimeMillis() - lastSave > 2000) saveIndex()
                 }
             }.awaitAll()
         }
-        jobs.remove(id)
-        update(id) {
+        jobs.remove(key.storageKey)
+        update(key) {
             it.copy(
-                state = if (failures == 0 && it.completed >= it.pages.size) DownloadRecord.FINISHED
+                state = if (failures == 0 && it.completed >= it.totalPages) DownloadRecord.FINISHED
                 else DownloadRecord.FAILED,
             )
         }
         saveIndex()
     }
 
-    private suspend fun fetch(page: DownloadPage, file: File): Boolean = withContext(Dispatchers.IO) {
+    /** Fills in the page links of an E-Hentai download from its thumbnail pages. */
+    private suspend fun completeEhPages(key: GalleryKey): Boolean {
+        var record = record(key) ?: return false
+        if (record.pages.size >= record.pageCount) return true
+        val token = record.token ?: return false
+        var thumbPage = 1
+        while (record.pages.size < record.pageCount) {
+            val thumbs = try {
+                EhClient.thumbnails(key.id, token, thumbPage)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return false
+            }
+            val known = record.pages.map { it.number }.toSet()
+            val added = ehPages(thumbs.filter { it.page !in known })
+            if (thumbs.isEmpty()) break
+            update(key) { it.copy(pages = (it.pages + added).sortedBy { p -> p.number }) }
+            record = record(key) ?: return false
+            thumbPage++
+        }
+        saveIndex()
+        return record.pages.size >= record.pageCount
+    }
+
+    /** An E-Hentai page: its image link first, then the image (another node when it fails). */
+    private suspend fun fetchEh(page: DownloadPage, file: File): Boolean {
+        var reloadKey: String? = null
         repeat(3) { attempt ->
+            val image = try {
+                EhClient.imagePage(page.remote, reloadKey)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                delay(2000L * (attempt + 1))
+                return@repeat
+            }
+            if (fetch(image.imageUrl, file, attempts = 1)) return true
+            reloadKey = image.reloadKey
+        }
+        return false
+    }
+
+    private suspend fun fetch(url: String, file: File, attempts: Int = 3): Boolean = withContext(Dispatchers.IO) {
+        repeat(attempts) { attempt ->
             if (!isActive) return@withContext false
             try {
-                val request = Request.Builder().url(page.remote).build()
+                val request = Request.Builder().url(url).build()
                 val ok = Net.client.newCall(request).execute().use { response ->
                     if (response.code != 200) return@use false
                     val temp = File(file.parentFile, file.name + ".part")
@@ -347,13 +493,13 @@ object Downloads {
                 if (ok) return@withContext true
             } catch (_: Exception) {
             }
-            delay(1000L * (attempt + 1))
+            if (attempt < attempts - 1) delay(1000L * (attempt + 1))
         }
         false
     }
 
-    private fun update(id: Int, change: (DownloadRecord) -> DownloadRecord) {
-        val index = records.indexOfFirst { it.id == id }
+    private fun update(key: GalleryKey, change: (DownloadRecord) -> DownloadRecord) {
+        val index = records.indexOfFirst { it.site == key.site.key && it.id.toLong() == key.id }
         if (index >= 0) records[index] = change(records[index])
     }
 
@@ -440,6 +586,36 @@ object TagStore {
             translations[namespace]?.get(name)?.takeIf { it.isNotEmpty() }?.let { return it }
         }
         return null
+    }
+
+    /** E-Hentai namespaces that have a tag called [name] (search syntax conversion). */
+    fun ehNamespaces(name: String): List<String> {
+        revision
+        return translations.filter { (_, names) -> names.containsKey(name) }.keys.toList()
+    }
+
+    /**
+     * E-Hentai tag suggestions for a typed word: tag names that start with
+     * it, or whose translation contains it, as (namespace, name).
+     */
+    fun suggestEh(word: String, limit: Int = 12): List<Pair<String, String>> {
+        revision
+        val w = word.lowercase()
+        if (w.length < 2) return emptyList()
+        val skip = setOf("rows", "reclass")
+        val starts = mutableListOf<Pair<String, String>>()
+        val contains = mutableListOf<Pair<String, String>>()
+        for ((ns, names) in translations) {
+            if (ns in skip) continue
+            for ((name, translated) in names) {
+                when {
+                    name.startsWith(w) -> starts += ns to name
+                    translated.contains(word, ignoreCase = true) || name.contains(w) -> contains += ns to name
+                }
+                if (starts.size >= limit) break
+            }
+        }
+        return (starts.sortedBy { it.second.length } + contains.sortedBy { it.second.length }).distinct().take(limit)
     }
 
     /** Tags shown on a card: languages first, then content tags. */
@@ -551,8 +727,36 @@ object TagStore {
 // MARK: - Feeds
 
 /** A paginated list of galleries with refresh and infinite scroll. */
-class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (Int) -> PageResponse<GalleryItem>) {
-    val items = mutableStateListOf<GalleryItem>()
+/** One page of a feed; [next] is the cursor of the next page (null: no more). */
+class FeedPage(val items: List<GallerySummary>, val next: String?, val total: Int? = null)
+
+/** A feed of nhentai pages (page numbers as cursors); blacklisted galleries are left out. */
+fun nhFeed(fetch: suspend (Int) -> PageResponse<GalleryItem>): suspend (String?) -> FeedPage = { cursor ->
+    val page = cursor?.toIntOrNull() ?: 1
+    val r = fetch(page)
+    FeedPage(
+        r.result.filter { !it.blacklisted }.map(GallerySummary::from),
+        if (page < r.numPages) "${page + 1}" else null,
+        r.total,
+    )
+}
+
+/** A feed of an E-Hentai list (gallery-id cursors, or page numbers for toplists). */
+fun ehFeed(source: () -> EhListSource): suspend (String?) -> FeedPage = { cursor ->
+    val s = source()
+    val r = EhClient.list(s, cursor)
+    val next = if (s is EhListSource.Toplist) {
+        val page = cursor?.toIntOrNull() ?: 0
+        if (r.galleries.isNotEmpty() && (r.pageCount == null || page + 1 < r.pageCount!!)) "${page + 1}" else null
+    } else {
+        r.nextCursor
+    }
+    FeedPage(r.galleries.map(GallerySummary::from), next)
+}
+
+/** An endless list of galleries of either site, loaded page by page. */
+class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (String?) -> FeedPage) {
+    val items = mutableStateListOf<GallerySummary>()
     var isLoading by mutableStateOf(false)
         private set
     var error by mutableStateOf<String?>(null)
@@ -562,13 +766,12 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (Int) ->
     var total by mutableStateOf<Int?>(null)
         private set
 
-    private var page = 0
-    private var pageCount = 1
-    private val seen = HashSet<Int>()
+    private var next: String? = null
+    private val seen = HashSet<String>()
     private var generation = 0
     private var job: Job? = null
 
-    val canLoadMore: Boolean get() = hasLoaded && page < pageCount
+    val canLoadMore: Boolean get() = hasLoaded && next != null
 
     fun reload(): Job {
         generation++
@@ -578,14 +781,13 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (Int) ->
         error = null
         return scope.launch {
             try {
-                val response = fetch(1)
+                val response = fetch(null)
                 if (current != generation) return@launch
-                page = 1
-                pageCount = maxOf(1, response.numPages)
+                next = response.next
                 total = response.total
                 seen.clear()
                 items.clear()
-                items.addAll(unique(response.result))
+                items.addAll(unique(response.items))
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -603,16 +805,16 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (Int) ->
     }
 
     fun loadMore() {
-        if (!canLoadMore || isLoading) return
+        val cursor = next
+        if (!canLoadMore || isLoading || cursor == null) return
         val current = generation
         isLoading = true
         job = scope.launch {
             try {
-                val response = fetch(page + 1)
+                val response = fetch(cursor)
                 if (current != generation) return@launch
-                page++
-                pageCount = maxOf(page, response.numPages)
-                items.addAll(unique(response.result))
+                next = response.next
+                items.addAll(unique(response.items))
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -622,5 +824,5 @@ class GalleryFeed(private val scope: CoroutineScope, var fetch: suspend (Int) ->
         }
     }
 
-    private fun unique(list: List<GalleryItem>) = list.filter { !it.blacklisted && seen.add(it.id) }
+    private fun unique(list: List<GallerySummary>) = list.filter { seen.add(it.key.storageKey) }
 }

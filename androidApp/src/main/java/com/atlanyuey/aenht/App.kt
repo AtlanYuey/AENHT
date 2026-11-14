@@ -32,11 +32,19 @@ class App : Application(), SingletonImageLoader.Factory {
         HistoryStore.init(this)
         Downloads.init(this)
         TagStore.init(this)
+        com.atlanyuey.aenht.core.EhAuth.init(this)
+        com.atlanyuey.aenht.core.EhSession.refresh()
+        com.atlanyuey.aenht.core.EhPages.init(this)
+        com.atlanyuey.aenht.core.FavoritesStore.init(this)
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
-            .components { add(OkHttpNetworkFetcherFactory(callFactory = { Net.client })) }
+            .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = { Net.client }))
+                add(com.atlanyuey.aenht.core.EhPageFetcher.Factory())
+                add(com.atlanyuey.aenht.core.EhPageKeyer())
+            }
             .memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.25).build() }
             .diskCache {
                 DiskCache.Builder()

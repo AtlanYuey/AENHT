@@ -1,5 +1,10 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.core.EhPageRef
+import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
+import com.atlanyuey.aenht.shared.site.GallerySummary
+import com.atlanyuey.aenht.ui.components.galleryLink
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import androidx.compose.animation.animateContentSize
@@ -136,8 +141,8 @@ class ReaderSource(
     val title: String,
     val pages: List<ReaderPage>,
     val shareUrl: String,
-    val item: GalleryItem,
-    val numPages: Int,
+    /** The gallery as a card (history). */
+    val summary: GallerySummary,
 ) {
     companion object {
         fun from(detail: GalleryDetail) = ReaderSource(
@@ -147,20 +152,31 @@ class ReaderSource(
                 ReaderPage(index, Downloads.localFile(detail.id, index) ?: page.imageUrl, page.aspectRatio)
             },
             shareUrl = detail.url,
-            item = detail.asItem,
-            numPages = detail.numPages,
+            summary = GallerySummary.from(detail.asItem).copy(title = detail.displayTitle, pages = detail.numPages),
+        )
+
+        /** An E-Hentai gallery: page images are looked up as the reader gets to them. */
+        fun from(detail: EhGalleryDetail, summary: GallerySummary) = ReaderSource(
+            id = detail.gid.toInt(),
+            title = detail.title,
+            pages = (1..detail.pages).map { number ->
+                ReaderPage(number - 1, Downloads.localFile(detail.key, number - 1) ?: EhPageRef(detail.gid, detail.token, number), 0.7f)
+            },
+            shareUrl = galleryLink(summary),
+            summary = summary.copy(pages = detail.pages),
         )
 
         fun from(record: DownloadRecord) = ReaderSource(
             id = record.id,
             title = record.title,
-            pages = record.pages.mapIndexed { index, page ->
-                val ratio = if (page.width > 0 && page.height > 0) page.width.toFloat() / page.height else 0.7f
-                ReaderPage(index, Downloads.localFile(record.id, index) ?: page.remote, ratio)
+            pages = (0 until record.totalPages).map { index ->
+                val page = record.pages.getOrNull(index)
+                val ratio = if (page != null && page.width > 0 && page.height > 0) page.width.toFloat() / page.height else 0.7f
+                val remote: Any? = if (record.isEh) EhPageRef(record.id.toLong(), record.token.orEmpty(), index + 1) else page?.remote
+                ReaderPage(index, Downloads.localFile(record.key, index) ?: remote, ratio)
             },
-            shareUrl = com.atlanyuey.aenht.core.NHHost.gallery(record.id),
-            item = record.item,
-            numPages = record.pages.size,
+            shareUrl = galleryLink(record.summary),
+            summary = record.summary,
         )
     }
 }
@@ -226,6 +242,9 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 val result = NHClient.setFavorite(galleryId, target)
                 isFavorited = result.favorited ?: target
                 numFavorites = result.numFavorites ?: numFavorites
+                val card = item?.let { GallerySummary.from(it) }
+                if (isFavorited) card?.let { com.atlanyuey.aenht.core.FavoritesStore.added(it) }
+                else com.atlanyuey.aenht.core.FavoritesStore.removed(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId))
             } catch (e: Exception) {
                 isFavorited = !target
                 onError(e.localizedMessage ?: "")
@@ -262,7 +281,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         item("pages") { PreviewSection(d) }
                         if (d.related.isNotEmpty()) {
                             item("relatedTitle") { SectionTitle(tr("More Like This")) }
-                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(d.related) } }
+                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(d.related.map(GallerySummary::from)) } }
                         }
                         item("comments") { CommentsPreview(d) }
                     } else if (error != null) {
@@ -324,7 +343,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 ) {
                     val cover = item
                     if (cover != null) {
-                        CoverView(cover, cornerRadius = 14.dp, targetWidth = 500.dp)
+                        CoverView(GallerySummary.from(cover), cornerRadius = 14.dp, targetWidth = 500.dp)
                     } else {
                         Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(AppTheme.colors.quaternaryFill))
                     }
@@ -524,7 +543,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
                         color = AppTheme.colors.secondaryLabel,
                     )
-                    TagRow(d.tags(group).map { it to TagStore.displayName(it.name, it.type) }) { tag ->
+                    TagRow(d.tags(group).map { it to TagStore.displayName(it.name, it.type) }, count = { it.count }) { tag ->
                         navigator.push(SearchResultsScreen(tag.query, tag.name))
                     }
                 }
@@ -764,7 +783,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
  * the end of the line shows them all, wrapped onto as many lines as needed.
  */
 @Composable
-private fun TagRow(tags: List<Pair<GalleryTag, String>>, onTag: (GalleryTag) -> Unit) {
+internal fun <T> TagRow(tags: List<Pair<T, String>>, count: (T) -> Int? = { null }, onTag: (T) -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     // Width of the tags on one line, measured without the button so that
     // showing it can't change the answer.
@@ -775,7 +794,7 @@ private fun TagRow(tags: List<Pair<GalleryTag, String>>, onTag: (GalleryTag) -> 
     val fade = 18.dp
     val buttonSpace = margin + buttonSize + 8.dp
     val chips: @Composable () -> Unit = {
-        tags.forEach { (tag, name) -> TagChip(name, tag.count) { onTag(tag) } }
+        tags.forEach { (tag, name) -> TagChip(name, count(tag)) { onTag(tag) } }
     }
     BoxWithConstraints(Modifier.fillMaxWidth().animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))) {
         val overflows = tagsWidth > 0 && with(density) { tagsWidth.toDp() } + margin * 2 > maxWidth + 0.5.dp

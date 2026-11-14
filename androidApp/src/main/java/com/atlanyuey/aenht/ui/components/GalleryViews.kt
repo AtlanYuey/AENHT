@@ -40,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,6 +63,12 @@ import com.atlanyuey.aenht.core.AppSettings
 import com.atlanyuey.aenht.core.Downloads
 import com.atlanyuey.aenht.core.GalleryFeed
 import com.atlanyuey.aenht.core.GalleryItem
+import com.atlanyuey.aenht.shared.site.GallerySummary
+import com.atlanyuey.aenht.core.EhClient
+import com.atlanyuey.aenht.screens.EhGalleryScreen
+import com.atlanyuey.aenht.shared.site.Site
+import com.atlanyuey.aenht.shared.site.SiteLinks
+import com.atlanyuey.aenht.shared.site.GalleryLink
 import com.atlanyuey.aenht.core.GalleryLanguage
 import com.atlanyuey.aenht.core.GalleryListStyle
 import com.atlanyuey.aenht.core.NHHost
@@ -109,12 +117,16 @@ fun RemoteImage(
 }
 
 @Composable
-fun LanguageBadge(language: GalleryLanguage, modifier: Modifier = Modifier) {
+fun LanguageBadge(language: GalleryLanguage, modifier: Modifier = Modifier) = CoverBadge(language.badge, modifier)
+
+/** A small label on a cover (language, site); [tint] colors it (E-Hentai category). */
+@Composable
+fun CoverBadge(text: String, modifier: Modifier = Modifier, tint: Color? = null) {
     Txt(
-        language.badge,
+        text,
         modifier
             .clip(Capsule())
-            .background(Color.Black.copy(alpha = 0.45f))
+            .background(tint?.copy(alpha = 0.85f) ?: Color.Black.copy(alpha = 0.45f))
             .padding(horizontal = 6.dp, vertical = 2.dp),
         style = Type.caption2.copy(fontWeight = FontWeight.Bold),
         color = Color.White,
@@ -124,7 +136,7 @@ fun LanguageBadge(language: GalleryLanguage, modifier: Modifier = Modifier) {
 /** A gallery cover with rounded corners and the language badge. */
 @Composable
 fun CoverView(
-    item: GalleryItem,
+    item: GallerySummary,
     modifier: Modifier = Modifier,
     aspectRatio: Float? = null,
     cornerRadius: Dp = 12.dp,
@@ -139,25 +151,56 @@ fun CoverView(
             .clip(shape)
             .border(0.5.dp, AppTheme.colors.label.copy(alpha = 0.08f), shape),
     ) {
-        RemoteImage(item.thumbUrl, Modifier.fillMaxSize(), targetWidth = targetWidth, blur = AppSettings.blurCovers) {
+        RemoteImage(item.thumbnail, Modifier.fillMaxSize(), targetWidth = targetWidth, blur = AppSettings.blurCovers) {
             // Without the network, a downloaded gallery shows its first page.
-            Downloads.localFile(item.id, 0)
+            Downloads.localFile(item.key, 0)
         }
-        item.language?.let { LanguageBadge(it, Modifier.padding(6.dp).align(Alignment.TopStart)) }
+        val categoryTint = item.category?.let { Color(it.color) }
+        val language = item.languageBadge ?: item.category?.let { "" }
+        if (!language.isNullOrEmpty()) {
+            CoverBadge(language, Modifier.padding(6.dp).align(Alignment.TopStart), tint = categoryTint)
+        } else if (categoryTint != null) {
+            Box(Modifier.padding(8.dp).align(Alignment.TopStart).size(10.dp).clip(Capsule()).background(categoryTint))
+        }
+        if (LocalShowsSiteBadge.current) {
+            CoverBadge(item.site.badge, Modifier.padding(6.dp).align(Alignment.TopEnd))
+        }
         overlay(Modifier.align(Alignment.BottomCenter))
         LocalCoverBadge.current?.invoke(this, item)
     }
 }
 
 /** Drawn over a gallery's cover in cards and rows (download or reading progress). */
-val LocalCoverBadge = compositionLocalOf<(@Composable BoxScope.(GalleryItem) -> Unit)?> { null }
+val LocalCoverBadge = compositionLocalOf<(@Composable BoxScope.(GallerySummary) -> Unit)?> { null }
+
+/** Lists that mix both sites mark each cover with NH / EH (top right). */
+val LocalShowsSiteBadge = compositionLocalOf { false }
 
 /** More items for a gallery's long-press menu (Delete in History and Downloads). */
-val LocalGalleryMenuItems = compositionLocalOf<((GalleryItem) -> List<MenuItem>)?> { null }
+val LocalGalleryMenuItems = compositionLocalOf<((GallerySummary) -> List<MenuItem>)?> { null }
 
 // MARK: - Cards
 
 fun galleryLink(id: Int) = NHHost.gallery(id)
+
+/** The web address of a gallery of either site. */
+fun galleryLink(item: GallerySummary): String = when (item.site) {
+    Site.NHENTAI -> NHHost.gallery(item.key.id.toInt())
+    Site.EHENTAI -> SiteLinks.url(GalleryLink.Eh(item.key.id, item.key.token.orEmpty(), EhClient.api.isExHentai))
+}
+
+/** nhentai list item for a card (the nhentai gallery screen's preview). */
+fun GallerySummary.nhItem() = GalleryItem(
+    id = key.id.toInt(), mediaId = mediaId, englishTitle = title,
+    thumbnail = thumbnail, thumbnailWidth = thumbWidth, thumbnailHeight = thumbHeight,
+    numPages = pages, tagIds = nhTagIds,
+)
+
+/** Opens a gallery of either site. */
+fun galleryScreen(item: GallerySummary): Screen = when (item.site) {
+    Site.NHENTAI -> GalleryScreen(item.key.id.toInt(), item.nhItem())
+    Site.EHENTAI -> EhGalleryScreen(item.key.id, item.key.token.orEmpty(), item)
+}
 
 fun Context.shareLink(url: String, title: String? = null) {
     val intent = Intent(Intent.ACTION_SEND).apply {
@@ -174,17 +217,17 @@ fun Context.copyText(text: String) {
 }
 
 /** Share / Copy Link, shown when a gallery is long-pressed. */
-fun galleryMenu(context: Context, item: GalleryItem, share: String, copy: String) = listOf(
+fun galleryMenu(context: Context, item: GallerySummary, share: String, copy: String) = listOf(
     listOf(
-        MenuItem(share, Icons.Share) { context.shareLink(galleryLink(item.id), item.title) },
-        MenuItem(copy, Icons.Link) { context.copyText(galleryLink(item.id)) },
+        MenuItem(share, Icons.Share) { context.shareLink(galleryLink(item), item.title) },
+        MenuItem(copy, Icons.Link) { context.copyText(galleryLink(item)) },
     ),
 )
 
 /** Tapping opens the gallery; a long press shows the gallery menu. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Modifier.galleryClick(item: GalleryItem): Modifier {
+fun Modifier.galleryClick(item: GallerySummary): Modifier {
     val navigator = LocalNavigator.current
     val overlays = LocalOverlays.current
     val context = LocalContext.current
@@ -195,7 +238,7 @@ fun Modifier.galleryClick(item: GalleryItem): Modifier {
     return this
         .anchor(anchor)
         .combinedClickable(
-            onClick = { navigator.push(GalleryScreen(item.id, item)) },
+            onClick = { navigator.push(galleryScreen(item)) },
             onLongClick = {
                 val more = extra?.invoke(item)?.takeIf { it.isNotEmpty() }?.let { listOf(it) } ?: emptyList()
                 overlays.menu(anchor.bounds, more + galleryMenu(context, item, share, copy))
@@ -205,13 +248,13 @@ fun Modifier.galleryClick(item: GalleryItem): Modifier {
 
 /** Card used by the grid / waterfall styles. */
 @Composable
-fun GalleryCard(item: GalleryItem, style: GalleryListStyle, modifier: Modifier = Modifier) {
+fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifier = Modifier) {
     Column(modifier.galleryClick(item), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (style) {
             GalleryListStyle.Grid -> {
                 CoverView(item, aspectRatio = 3f / 4f)
                 Txt(
-                    item.prettyTitle,
+                    GalleryItem.pretty(item.title),
                     Modifier.fillMaxWidth().heightIn(min = 34.dp),
                     style = Type.footnote.copy(fontWeight = FontWeight.Medium),
                     maxLines = 2,
@@ -220,8 +263,8 @@ fun GalleryCard(item: GalleryItem, style: GalleryListStyle, modifier: Modifier =
             GalleryListStyle.Compact -> CoverView(item) { m -> CompactOverlay(item, m) }
             else -> {
                 CoverView(item)
-                Txt(item.prettyTitle, style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
-                if (AppSettings.showTags) CardTagLine(item.tagIds, overlay = false)
+                Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
+                if (AppSettings.showTags) CardTags(item, overlay = false)
             }
         }
     }
@@ -229,7 +272,7 @@ fun GalleryCard(item: GalleryItem, style: GalleryListStyle, modifier: Modifier =
 
 /** Tags and title over the bottom of the cover (compact waterfall). */
 @Composable
-private fun CompactOverlay(item: GalleryItem, modifier: Modifier) {
+private fun CompactOverlay(item: GallerySummary, modifier: Modifier) {
     Column(
         modifier
             .fillMaxWidth()
@@ -237,21 +280,32 @@ private fun CompactOverlay(item: GalleryItem, modifier: Modifier) {
             .padding(start = 10.dp, end = 10.dp, top = 36.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        if (AppSettings.showTags) CardTagLine(item.tagIds, overlay = true)
-        Txt(item.prettyTitle, style = Type.footnote.copy(fontWeight = FontWeight.SemiBold), color = Color.White, maxLines = 2)
+        if (AppSettings.showTags) CardTags(item, overlay = true)
+        Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.SemiBold), color = Color.White, maxLines = 2)
     }
+}
+
+/** The card's tags: nhentai tag ids or E-Hentai tag names. */
+@Composable
+fun CardTags(item: GallerySummary, overlay: Boolean) {
+    if (item.site == Site.NHENTAI) CardTagLine(item.nhTagIds, overlay) else CardTagNames(item.cardTags.take(8), overlay)
 }
 
 /** One line of tag chips; chips that don't fit are left out. */
 @Composable
 fun CardTagLine(ids: List<Int>, overlay: Boolean) {
     val tags: List<TagName> = TagStore.cardTags(ids)
-    if (tags.isEmpty()) return
+    CardTagNames(tags.map { TagStore.displayName(it.name, it.type) }, overlay)
+}
+
+@Composable
+fun CardTagNames(names: List<String>, overlay: Boolean) {
+    if (names.isEmpty()) return
     val colors = AppTheme.colors
     FittingRow(spacing = 5.dp) {
-        tags.forEach { tag ->
+        names.forEach { name ->
             Txt(
-                TagStore.displayName(tag.name, tag.type),
+                name,
                 Modifier
                     .clip(Capsule())
                     .background(if (overlay) Color.White.copy(alpha = 0.2f) else colors.tertiaryFill)
@@ -293,17 +347,27 @@ fun FittingRow(spacing: Dp, content: @Composable () -> Unit) {
 
 /** Row used by the list style and history. */
 @Composable
-fun GalleryRow(item: GalleryItem, modifier: Modifier = Modifier, subtitle: String? = null) {
+fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: String? = null) {
     Row(
         modifier.fillMaxWidth().galleryClick(item).padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         CoverView(item, Modifier.width(84.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Txt(item.prettyTitle, style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
+            Txt(GalleryItem.pretty(item.title), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
             when {
                 subtitle != null -> Txt(subtitle, style = Type.footnote, color = AppTheme.colors.secondaryLabel)
-                item.numPages > 0 -> Txt(tr("%lld pages", item.numPages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                item.pages > 0 -> Txt(tr("%lld pages", item.pages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+            }
+            if (item.site == Site.EHENTAI) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item.category?.let { c ->
+                        Txt(c.label, Modifier.clip(Capsule()).background(Color(c.color)).padding(horizontal = 7.dp, vertical = 2.dp),
+                            style = Type.caption2.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+                    }
+                    item.rating?.takeIf { it > 0 }?.let { RatingStars(it, size = 12.dp) }
+                }
+                item.uploader?.let { Txt(it, style = Type.footnote, color = AppTheme.colors.tertiaryLabel, maxLines = 1) }
             }
         }
     }
@@ -336,7 +400,7 @@ fun galleryColumns(width: Dp, style: GalleryListStyle = AppSettings.listStyle, s
  */
 @Composable
 fun GalleryGrid(
-    items: List<GalleryItem>,
+    items: List<GallerySummary>,
     state: LazyStaggeredGridState,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
@@ -386,9 +450,9 @@ fun GalleryLayout(
 }
 
 /** Galleries in a [GalleryLayout]: cards, or rows in the list style. */
-fun LazyStaggeredGridScope.galleryItems(items: List<GalleryItem>, style: GalleryListStyle, onItemShown: (Int) -> Unit = {}) {
-    itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-        androidx.compose.runtime.LaunchedEffect(item.id) { onItemShown(index) }
+fun LazyStaggeredGridScope.galleryItems(items: List<GallerySummary>, style: GalleryListStyle, onItemShown: (Int) -> Unit = {}) {
+    itemsIndexed(items, key = { _, item -> item.key.storageKey }) { index, item ->
+        androidx.compose.runtime.LaunchedEffect(item.key) { onItemShown(index) }
         if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
     }
 }
@@ -485,4 +549,22 @@ fun compactCount(value: Int): String {
         android.icu.text.CompactDecimalFormat.CompactStyle.SHORT,
     )
     return formatter.format(value.toLong())
+}
+
+/** 0–5 stars (half steps), E-Hentai's rating. */
+@Composable
+fun RatingStars(rating: Double, size: Dp = 14.dp, color: Color = Color(0xFFFFB400)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+        for (i in 1..5) {
+            val fill = (rating - (i - 1)).coerceIn(0.0, 1.0)
+            Box(Modifier.size(size)) {
+                AppIcon(Icons.Star, null, tint = color.copy(alpha = 0.25f), size = size)
+                if (fill > 0) {
+                    Box(Modifier.fillMaxSize().drawWithContent {
+                        clipRect(right = this.size.width * fill.toFloat()) { this@drawWithContent.drawContent() }
+                    }) { AppIcon(Icons.Star, null, tint = color, size = size) }
+                }
+            }
+        }
+    }
 }

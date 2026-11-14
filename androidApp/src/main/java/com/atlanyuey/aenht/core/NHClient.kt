@@ -85,41 +85,33 @@ object NHClient {
 }
 
 /**
- * The API tokens, encrypted with a key that never leaves the Android
- * Keystore (app-private, excluded from backups).
+ * Small secrets (tokens, login cookies) encrypted with a key that never
+ * leaves the Android Keystore; app-private and excluded from backups.
  */
-object Auth : TokenStorage {
-    private const val KEY_ALIAS = "aenht.tokens"
+class SecureStore(private val keyAlias: String) {
     private lateinit var prefs: SharedPreferences
 
-    fun init(context: Context) {
-        prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+    fun init(context: Context, name: String) {
+        prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
     }
 
-    override val accessToken: String? get() = read("access")
-    override val refreshToken: String? get() = read("refresh")
-    val isLoggedIn: Boolean get() = accessToken != null
+    operator fun get(name: String): String? =
+        prefs.getString(name, null)?.let { decrypt(it) }?.takeIf { it.isNotEmpty() }
 
-    override fun save(access: String, refresh: String?) {
-        prefs.edit().apply {
-            putString("access", encrypt(access))
-            if (!refresh.isNullOrEmpty()) putString("refresh", encrypt(refresh))
-        }.apply()
+    operator fun set(name: String, value: String?) {
+        prefs.edit().apply { if (value.isNullOrEmpty()) remove(name) else putString(name, encrypt(value)) }.apply()
     }
 
-    override fun clear() {
+    fun clear() {
         prefs.edit().clear().apply()
     }
 
-    private fun read(name: String): String? =
-        prefs.getString(name, null)?.let { decrypt(it) }?.takeIf { it.isNotEmpty() }
-
     private fun key(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (store.getKey(keyAlias, null) as? SecretKey)?.let { return it }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").apply {
             init(
-                KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                KeyGenParameterSpec.Builder(keyAlias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build(),
@@ -143,6 +135,24 @@ object Auth : TokenStorage {
     } catch (_: Exception) {
         null
     }
+}
+
+/** The nhentai API tokens. */
+object Auth : TokenStorage {
+    private val store = SecureStore("aenht.tokens")
+
+    fun init(context: Context) = store.init(context, "auth")
+
+    override val accessToken: String? get() = store["access"]
+    override val refreshToken: String? get() = store["refresh"]
+    val isLoggedIn: Boolean get() = accessToken != null
+
+    override fun save(access: String, refresh: String?) {
+        store["access"] = access
+        if (!refresh.isNullOrEmpty()) store["refresh"] = refresh
+    }
+
+    override fun clear() = store.clear()
 }
 
 /** The signed-in user, observed by the UI. */

@@ -290,6 +290,8 @@ fun SearchField(
     focusRequester: FocusRequester = remember { FocusRequester() },
     onFocus: (Boolean) -> Unit = {},
     filled: Boolean = false,
+    /** Next to the magnifier (the site being searched). */
+    leading: (@Composable () -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
     Row(
@@ -301,6 +303,7 @@ fun SearchField(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AppIcon(Icons.Search, null, tint = colors.secondaryLabel, size = 18.dp)
+        leading?.invoke()
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (text.isEmpty()) Txt(placeholder, style = Type.body, color = colors.secondaryLabel, maxLines = 1)
             BasicTextField(

@@ -16,8 +16,8 @@ import com.atlanyuey.aenht.ui.RootView
 import com.atlanyuey.aenht.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
-    /** A gallery id from an opened nhentai link. */
-    val linkedGallery = mutableStateOf<Int?>(null)
+    /** A gallery link (either site) the app was opened with. */
+    val linkedGallery = mutableStateOf<com.atlanyuey.aenht.shared.site.GalleryLink?>(null)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLanguage.wrap(newBase))
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handle(intent: Intent?) {
-        val path = intent?.data?.path ?: return
-        Regex("/g/(\\d+)").find(path)?.groupValues?.get(1)?.toIntOrNull()?.let { linkedGallery.value = it }
+        val url = intent?.data?.toString() ?: return
+        com.atlanyuey.aenht.shared.site.SiteLinks.find(url)?.let { linkedGallery.value = it }
     }
 }

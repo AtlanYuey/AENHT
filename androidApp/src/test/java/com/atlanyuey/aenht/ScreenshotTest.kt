@@ -65,6 +65,51 @@ class ScreenshotTest {
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(context).components { add(FakeImages) }.build())
         AppSettings.theme = ThemeMode.Light
         AppSettings.listStyle = GalleryListStyle.Waterfall
+        AppSettings.homeSite = com.atlanyuey.aenht.shared.site.Site.NHENTAI
+        AppSettings.nhentaiEnabled = true
+        AppSettings.ehentaiEnabled = true
+    }
+
+    // MARK: Two sites
+
+    @Test fun ehHome() {
+        AppSettings.homeSite = com.atlanyuey.aenht.shared.site.Site.EHENTAI
+        shoot("40_eh_home", settle = 2500)
+    }
+
+    @Test fun ehHomeList() {
+        AppSettings.homeSite = com.atlanyuey.aenht.shared.site.Site.EHENTAI
+        AppSettings.listStyle = GalleryListStyle.List
+        shoot("41_eh_home_list", settle = 2500)
+    }
+
+    @Test fun ehGallery() {
+        val tabs = Tabs()
+        tabs.home.push(com.atlanyuey.aenht.screens.EhGalleryScreen(4321, "1a2b3c4d5e", null))
+        shoot("42_eh_gallery", tabs, settle = 2500)
+    }
+
+    @Test fun mixedHistory() {
+        com.atlanyuey.aenht.core.HistoryStore.clear()
+        com.atlanyuey.aenht.core.HistoryStore.record(com.atlanyuey.aenht.shared.site.GallerySummary.from(
+            com.atlanyuey.aenht.shared.eh.EhGallerySummary(4321, "1a2b3c4d5e", "[Circle] An E-Hentai Gallery", com.atlanyuey.aenht.shared.eh.EhCategory.MANGA,
+                "https://ehgt.org/w/01/a.webp", 250, 350, "2026-11-13 21:58", 30, "someone", 4.5, emptyList()),
+        ), page = 8)
+        com.atlanyuey.aenht.core.HistoryStore.record(com.atlanyuey.aenht.core.GalleryItem(500003, mediaId = "103", englishTitle = "Rainy Day Café", thumbnail = "galleries/103/thumb.jpg", thumbnailWidth = 350, thumbnailHeight = 500, numPages = 20, tagIds = listOf(6346)), "Rainy Day Café", 20, 3)
+        AppSettings.historySite = com.atlanyuey.aenht.core.SiteChoice.All
+        shoot("43_history_mixed", Tabs(), tab = 2)
+    }
+
+    @Test fun sites() {
+        val tabs = Tabs()
+        tabs.more.push(com.atlanyuey.aenht.screens.SitesScreen())
+        shoot("44_sites", tabs, tab = 3)
+    }
+
+    @Test fun accounts() {
+        val tabs = Tabs()
+        tabs.more.push(com.atlanyuey.aenht.screens.AccountsScreen())
+        shoot("45_accounts", tabs, tab = 3)
     }
 
     private fun shoot(
@@ -104,7 +149,7 @@ class ScreenshotTest {
         val tabs = Tabs()
         val source = ReaderSource(
             500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
-            "https://nhentai.net/g/500001/", com.atlanyuey.aenht.core.GalleryItem(500001), 24,
+            "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
         )
         tabs.home.push(ReaderScreen(source, 3))
         shoot("05_reader", tabs, settle = 500)
@@ -121,7 +166,7 @@ class ScreenshotTest {
             val tabs = Tabs()
             val source = ReaderSource(
                 500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
-                "https://nhentai.net/g/500001/", com.atlanyuey.aenht.core.GalleryItem(500001), 24,
+                "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
             )
             tabs.home.push(ReaderScreen(source, 3))
             shoot("35_reader_fade_before", tabs, settle = 500)
@@ -439,9 +484,46 @@ private object FakeApi : okhttp3.Interceptor {
         """{"id":$it,"poster":{"id":$it,"username":"reader$it","avatar_url":""},"post_date":1762300000,"body":"Great work! Comment number $it with some text to show how bubbles wrap across lines."}"""
     } + """],"num_pages":1}"""
 
+    private fun ehRow(i: Int): String {
+        val cats = listOf("Manga" to "ct3", "Doujinshi" to "ct2", "Artist CG" to "ct4", "Western" to "cta", "Non-H" to "ct9", "Cosplay" to "ct7")
+        val (cat, cls) = cats[i % cats.size]
+        val h = listOf(350, 330, 360, 300, 340)[i % 5]
+        val stars = listOf("0px -1px", "-16px -21px", "-16px -1px", "-32px -1px")[i % 4]
+        val lang = listOf("", "<div class=\"gt\" title=\"language:chinese\">chinese</div>", "<div class=\"gt\" title=\"language:english\">english</div>")[i % 3]
+        return """<tr><td class="gl1c glcat"><div class="cn $cls">$cat</div></td><td class="gl2c"><div class="glthumb"><div><img style="height:${h}px;width:250px" src="https://ehgt.org/w/0$i/t.webp" /></div></div><div><div id="posted_${4300 + i}">2026-11-1${i % 10} 12:00</div><div class="ir" style="background-position:$stars;opacity:1"></div></div></td><td class="gl3c glname"><a href="https://e-hentai.org/g/${4300 + i}/1a2b3c4d5e/"><div class="glink">${titles[i % titles.size]}</div><div>$lang<div class="gt" title="female:glasses">f:glasses</div><div class="gt" title="other:full color">full color</div></div></a></td><td class="gl4c glhide"><div><a href="https://e-hentai.org/uploader/uploader$i">uploader$i</a></div><div>${20 + i} pages</div></td></tr>"""
+    }
+
+    private val ehList = """<html><body><table class="itg gltc"><tr><th></th></tr>${(0 until 12).joinToString("") { ehRow(it) }}</table><a id="unext" href="https://e-hentai.org/?next=4288">Next</a></body></html>"""
+
+    private val ehGallery = """<html><head><script>var gid = 4321;
+var token = "1a2b3c4d5e";
+var apiuid = -1;
+var apikey = "0123456789abcdef";
+var average_rating = 4.37;</script></head><body>
+<div id="gd1"><div style="width:250px; height:350px; background:transparent url(https://ehgt.org/w/02/cover.webp) 0 0 no-repeat"></div></div>
+<div id="gd2"><h1 id="gn">[Sample Circle (Artist)] A Long Summer Vacation Story [English]</h1><h1 id="gj">[サンプルサークル] 夏休みの物語</h1></div>
+<div id="gdc"><div class="cs ct3">Manga</div></div><div id="gdn"><a href="https://e-hentai.org/uploader/someone">someone</a></div>
+<div id="gdd"><table><tr><td class="gdt1">Posted:</td><td class="gdt2">2026-11-13 21:56</td></tr><tr><td class="gdt1">Parent:</td><td class="gdt2">None</td></tr><tr><td class="gdt1">Language:</td><td class="gdt2">English &nbsp;</td></tr><tr><td class="gdt1">File Size:</td><td class="gdt2">84.2 MiB</td></tr><tr><td class="gdt1">Length:</td><td class="gdt2">30 pages</td></tr><tr><td class="gdt1">Favorited:</td><td class="gdt2" id="favcount">1,234 times</td></tr></table></div>
+<div id="gdr"><div id="rating_image" class="ir" style="background-position:-16px -21px"></div><span id="rating_count">256</span></div>
+<div id="taglist"><table><tr><td class="tc">language:</td><td><div id="td_language:english" class="gt"><a>english</a></div><div id="td_language:translated" class="gt"><a>translated</a></div></td></tr><tr><td class="tc">parody:</td><td><div id="td_parody:original" class="gt"><a>original</a></div></td></tr><tr><td class="tc">artist:</td><td><div id="td_artist:artist" class="gt"><a>artist</a></div></td></tr><tr><td class="tc">female:</td><td><div id="td_female:glasses" class="gt"><a>glasses</a></div><div id="td_female:school_uniform" class="gt"><a>school uniform</a></div><div id="td_female:twintails" class="gtl"><a>twintails</a></div></td></tr><tr><td class="tc">other:</td><td><div id="td_other:full_color" class="gt"><a>full color</a></div></td></tr></table></div>
+<div id="gd5"><p class="g2"><a href="#">Torrent Download (2)</a></p></div>
+<table class="ptt"><tr><td><a href="https://e-hentai.org/g/4321/1a2b3c4d5e/">1</a></td><td><a href="https://e-hentai.org/g/4321/1a2b3c4d5e/?p=1">2</a></td></tr></table>
+<div id="gdt">${(1..20).joinToString("") { """<a href="https://e-hentai.org/s/0123456789/4321-$it"><div style="width:100px;height:142px;background:transparent url(https://ehgt.org/s/sprite${(it - 1) / 10}.webp) -${((it - 1) % 10) * 100}px 0 no-repeat"></div></a>""" }}</div>
+<div id="cdiv"><div class="c1"><div class="c3">Posted on 13 November 2026, 22:10 by: &nbsp; <a href="#">someone</a></div><div class="c6" id="comment_0">Thanks for reading!</div></div><div class="c1"><div class="c3">Posted on 14 November 2026, 01:02 by: &nbsp; <a href="#">reader</a></div><div class="c5 nosel">Score <span>+12</span></div><div class="c6" id="comment_55">Great art and a fun story.</div></div></div>
+</body></html>"""
+
     override fun intercept(chain: okhttp3.Interceptor.Chain): Response {
         val url = chain.request().url
         val path = url.encodedPath
+        if (url.host == "e-hentai.org" || url.host == "exhentai.org") {
+            val html = when {
+                path.startsWith("/g/") -> ehGallery
+                path.startsWith("/s/") -> "<html><body><img id=\"img\" src=\"https://ehgt.org/i/${path.hashCode()}.jpg\" style=\"width:1280px;height:1810px\" /></body></html>"
+                else -> ehList
+            }
+            return Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(html.toResponseBody("text/html; charset=UTF-8".toMediaType())).build()
+        }
         val body = when {
             path.endsWith("/galleries/popular") -> "[${list(8, 4)}]"
             path.contains("/comments") -> comments

@@ -151,7 +151,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var fadeJob: Job? = null
 
     private fun record() {
-        HistoryStore.record(source.item, source.title, source.numPages, page)
+        HistoryStore.record(source.summary, page)
     }
 
     private fun go(target: Int) {
@@ -422,7 +422,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             verticalArrangement = Arrangement.spacedBy(gap),
         ) {
             items(source.pages, key = { it.index }) { readerPage ->
-                Box(Modifier.fillMaxWidth().aspectRatio(readerPage.aspectRatio.coerceIn(0.2f, 5f)), contentAlignment = Alignment.Center) {
+                val ratio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
+                    ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] } ?: readerPage.aspectRatio
+                Box(Modifier.fillMaxWidth().aspectRatio(ratio.coerceIn(0.2f, 5f)), contentAlignment = Alignment.Center) {
                     ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
                     coil3.compose.AsyncImage(
                         model = readerPage.url,
@@ -440,8 +442,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val upper = minOf(count, index + 1 + AppSettings.preloadPages)
         val lower = maxOf(0, index - 2)
         for (i in lower until upper) {
-            val url = source.pages[i].url as? String ?: continue
-            loader.enqueue(ImageRequest.Builder(context).data(url).build())
+            val data = source.pages[i].url ?: continue
+            if (data !is String && data !is com.atlanyuey.aenht.core.EhPageRef) continue
+            loader.enqueue(ImageRequest.Builder(context).data(data).build())
         }
     }
 
