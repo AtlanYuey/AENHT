@@ -33,7 +33,9 @@ object AppDb {
  * time they were seen.
  */
 object FavoritesStore {
-    private lateinit var mirror: FavoritesMirror
+    private lateinit var appContext: Context
+    // Created on first use: the API clients must not be built during app start-up.
+    private val mirror: FavoritesMirror by lazy { FavoritesMirror(AppDb.get(appContext), NHClient.api, EhClient.api) }
     val records = mutableStateListOf<FavoriteRecord>()
     var syncing by mutableStateOf<Site?>(null)
         private set
@@ -45,8 +47,7 @@ object FavoritesStore {
     private val lastSync = mutableMapOf<Site, Long>()
 
     fun init(context: Context) {
-        mirror = FavoritesMirror(AppDb.get(context), NHClient.api, EhClient.api)
-        AppScope.launch { reload() }
+        appContext = context.applicationContext
     }
 
     private suspend fun reload() {
@@ -54,6 +55,8 @@ object FavoritesStore {
         records.clear()
         records.addAll(all)
     }
+
+    private var loaded = false
 
     fun cards(site: Site?, ehFolders: Set<Int>?): List<GallerySummary> = records
         .filter { site == null || it.site == site.key }
@@ -77,6 +80,10 @@ object FavoritesStore {
 
     /** Syncs when the last sync of a logged-in site is older than [maxAge]. */
     fun syncIfStale(maxAge: Long = 15 * 60 * 1000L) {
+        if (!loaded) {
+            loaded = true
+            AppScope.launch { reload() }
+        }
         val now = System.currentTimeMillis()
         val due = AppSettings.enabledSites.filter { loggedIn(it) && now - (lastSync[it] ?: 0) > maxAge }
         if (due.isNotEmpty()) sync(due)
