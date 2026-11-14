@@ -7,11 +7,19 @@ struct HistoryView: View {
     @Environment(AppSettings.self) private var settings
     @State private var searchText = ""
     @State private var confirmClear = false
+    @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.historySite)
+
+    private var siteEntries: [HistoryEntry] {
+        guard let site else { return entries }
+        return entries.filter { $0.siteKind == site }
+    }
+
+    private var showsSites: Bool { site == nil && settings.enabledSites.count > 1 }
 
     private var filtered: [HistoryEntry] {
         let text = searchText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return entries }
-        return entries.filter {
+        guard !text.isEmpty else { return siteEntries }
+        return siteEntries.filter {
             $0.title.localizedCaseInsensitiveContains(text) || "\($0.gid)" == text
         }
     }
@@ -49,9 +57,16 @@ struct HistoryView: View {
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search History")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                SiteFilterMenu(site: $site)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button("Clear", systemImage: "trash") { confirmClear = true }
                     .disabled(entries.isEmpty)
             }
+        }
+        .environment(\.showsSiteBadge, showsSites)
+        .onAppear {
+            if settings.historySite == .follow { site = settings.site(.follow) }
         }
         .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear History", role: .destructive) {
@@ -63,7 +78,7 @@ struct HistoryView: View {
 
     /// Cards like Favorites (in the list style), by day.
     private var cards: some View {
-        let byID = Dictionary(filtered.map { ($0.gid, $0) }, uniquingKeysWith: { first, _ in first })
+        let byID = Dictionary(filtered.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(sections) { section in
@@ -74,11 +89,11 @@ struct HistoryView: View {
             .padding(.bottom, 16)
         }
         .environment(\.galleryCoverBadge) { item in
-            AnyView(ReadingProgressBar(entry: byID[item.id]))
+            AnyView(ReadingProgressBar(entry: byID[item.uid]))
         }
         .environment(\.galleryMenuItems) { item in
             AnyView(Button("Delete", systemImage: "trash", role: .destructive) {
-                if let entry = byID[item.id] { delete(entry) }
+                if let entry = byID[item.uid] { delete(entry) }
             })
         }
     }

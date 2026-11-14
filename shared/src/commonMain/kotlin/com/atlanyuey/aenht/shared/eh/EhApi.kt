@@ -362,6 +362,10 @@ class EhApi internal constructor(
         }
     }
 
+    /** Basic data of one gallery (a pasted link), or null. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun galleryInfo(gid: Long, token: String): EhGallerySummary? = galleryData(listOf(gid to token)).firstOrNull()
+
     /** The gallery token for an image page link (`/s/<pagetoken>/<gid>-<page>`). */
     @Throws(EhException::class, CancellationException::class)
     suspend fun galleryToken(gid: Long, pageToken: String, page: Int): String {

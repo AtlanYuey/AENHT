@@ -16,7 +16,7 @@ import com.atlanyuey.aenht.shared.site.SiteLinks
  * Plain functions for the iOS app: Swift sees Kotlin's sealed classes,
  * default arguments and nested types awkwardly, so it builds them here.
  */
-object Swift {
+object Bridge {
     // MARK: E-Hentai lists
 
     /** Front page / search; [categoriesShown] are EhCategory bits to show (0 = all). */
@@ -69,10 +69,18 @@ object Swift {
     /** E-Hentai category bits of a conversion's categories (0 = all). */
     fun categoryBits(result: QueryConverter.Result): Int = result.categories.sumOf { it.bit }
 
+    // MARK: Gallery pages
+
+    /** A gallery's tag namespaces in page order (Swift dictionaries have none). */
+    fun tagNamespaces(detail: com.atlanyuey.aenht.shared.eh.EhGalleryDetail): List<String> = detail.tags.keys.toList()
+
+    fun tags(detail: com.atlanyuey.aenht.shared.eh.EhGalleryDetail, namespace: String): List<com.atlanyuey.aenht.shared.eh.EhTag> =
+        detail.tags[namespace].orEmpty()
+
     // MARK: Cards
 
-    fun card(record: FavoriteRecord): GallerySummary = GallerySummary.from(record)
-    fun card(record: HistoryRecord): GallerySummary = GallerySummary.from(record)
+    fun favoriteCard(record: FavoriteRecord): GallerySummary = GallerySummary.from(record)
+    fun historyCard(record: HistoryRecord): GallerySummary = GallerySummary.from(record)
 
     fun summary(
         site: Site, id: Long, token: String?, title: String, thumbnail: String?, thumbWidth: Int, thumbHeight: Int,

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import UIKit
+import Shared
 
 /// A downloaded (or downloading) gallery, stored under
 /// Application Support/Downloads/<id>/.
@@ -29,15 +30,34 @@ struct DownloadRecord: Codable, Identifiable, Hashable {
     var added: Date
     /// For the language badge and tags on cards (nil for downloads from before 2.1.0).
     var tagIDs: [Int]? = nil
+    /// nil: nhentai.
+    var site: SiteKind? = nil
+    /// E-Hentai gallery token.
+    var token: String? = nil
+    /// E-Hentai: all pages (their links are filled in while downloading).
+    var pageCount: Int? = nil
+    var categoryLabel: String? = nil
+    var language: String? = nil
+
+    var siteKind: SiteKind { site ?? .nhentai }
+    var uid: String { siteKind == .nhentai ? "nh:\(id)" : "eh:\(id):\(token ?? "")" }
+    var totalPages: Int { max(pages.count, pageCount ?? 0) }
 
     var progress: Double {
-        pages.isEmpty ? 0 : Double(completed) / Double(pages.count)
+        totalPages == 0 ? 0 : Double(completed) / Double(totalPages)
     }
 
     var item: GalleryItem {
-        GalleryItem(id: id, mediaID: mediaID, title: title, thumbnail: thumbnail,
-                    thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight,
-                    numPages: pages.count, tagIDs: tagIDs ?? [])
+        var item = GalleryItem(id: id, mediaID: mediaID, title: title, thumbnail: siteKind == .nhentai ? thumbnail : nil,
+                               thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight,
+                               numPages: totalPages, tagIDs: tagIDs ?? [])
+        if siteKind == .ehentai {
+            item.site = .ehentai
+            item.token = token
+            item.absoluteThumb = thumbnail
+            item.ehLanguage = language
+        }
+        return item
     }
 }
 
@@ -48,7 +68,7 @@ final class DownloadManager {
     static let shared = DownloadManager()
 
     private(set) var records: [DownloadRecord] = []
-    @ObservationIgnored private var tasks: [Int: Task<Void, Never>] = [:]
+    @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var lastSave = Date.distantPast
 
     private init() {
@@ -62,13 +82,27 @@ final class DownloadManager {
     // MARK: Queries
 
     func record(_ id: Int) -> DownloadRecord? {
-        records.first { $0.id == id }
+        records.first { $0.siteKind == .nhentai && $0.id == id }
+    }
+
+    func record(uid: String) -> DownloadRecord? {
+        records.first { $0.uid == uid }
     }
 
     /// Local file of a page if it has been downloaded.
     func localURL(gallery id: Int, page index: Int) -> URL? {
-        guard let record = record(id), record.pages.indices.contains(index) else { return nil }
-        let url = Self.folder(id).appendingPathComponent(record.pages[index].file)
+        guard let record = record(id) else { return nil }
+        return localURL(record, index)
+    }
+
+    func localURL(item: GalleryItem, page index: Int) -> URL? {
+        guard let record = record(uid: item.uid) else { return nil }
+        return localURL(record, index)
+    }
+
+    private func localURL(_ record: DownloadRecord, _ index: Int) -> URL? {
+        guard record.pages.indices.contains(index) else { return nil }
+        let url = Self.folder(record).appendingPathComponent(record.pages[index].file)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
@@ -127,59 +161,96 @@ final class DownloadManager {
         resume(detail.id)
     }
 
-    func resume(_ id: Int) {
-        guard tasks[id] == nil, let index = records.firstIndex(where: { $0.id == id }),
+    /// Downloads an E-Hentai gallery ([card] gives its cover).
+    func start(eh detail: EhGalleryDetail, card: GalleryItem) {
+        let uid = "eh:\(detail.gid):\(detail.token)"
+        if record(uid: uid) == nil {
+            records.insert(DownloadRecord(
+                id: Int(detail.gid), mediaID: "", title: detail.title,
+                thumbnail: card.absoluteThumb ?? detail.cover, thumbWidth: card.thumbnailWidth,
+                thumbHeight: card.thumbnailHeight, pages: Self.ehPages(detail.thumbnails), completed: 0,
+                state: .queued, added: Date(), site: .ehentai, token: detail.token,
+                pageCount: Int(detail.pages), categoryLabel: detail.category?.label,
+                language: detail.language?.split(separator: " ").first.map { $0.lowercased() }
+            ), at: 0)
+            saveIndex()
+        }
+        resume(uid: uid)
+    }
+
+    nonisolated private static func ehPages(_ thumbs: [EhThumbnail]) -> [DownloadRecord.Page] {
+        thumbs.map { DownloadRecord.Page(number: Int($0.page), remote: $0.pageUrl,
+                                         file: String(format: "%04d.img", Int($0.page)), width: 0, height: 0) }
+    }
+
+    func resume(_ id: Int) { resume(uid: "nh:\(id)") }
+    func pause(_ id: Int) { pause(uid: "nh:\(id)") }
+    func delete(_ id: Int) { delete(uid: "nh:\(id)") }
+
+    func resume(uid: String) {
+        guard tasks[uid] == nil, let index = records.firstIndex(where: { $0.uid == uid }),
               records[index].state != .finished else { return }
         records[index].state = .downloading
         saveIndex()
-        tasks[id] = Task { [weak self] in
-            await self?.run(id)
+        tasks[uid] = Task { [weak self] in
+            await self?.run(uid)
         }
     }
 
-    func pause(_ id: Int) {
-        tasks[id]?.cancel()
-        tasks[id] = nil
-        update(id) { $0.state = .paused }
+    func pause(uid: String) {
+        tasks[uid]?.cancel()
+        tasks[uid] = nil
+        update(uid) { $0.state = .paused }
         saveIndex()
     }
 
-    func delete(_ id: Int) {
-        tasks[id]?.cancel()
-        tasks[id] = nil
-        records.removeAll { $0.id == id }
-        try? FileManager.default.removeItem(at: Self.folder(id))
+    func delete(uid: String) {
+        tasks[uid]?.cancel()
+        tasks[uid] = nil
+        if let record = record(uid: uid) {
+            try? FileManager.default.removeItem(at: Self.folder(record))
+        }
+        records.removeAll { $0.uid == uid }
         saveIndex()
     }
 
     // MARK: Worker
 
-    private func run(_ id: Int) async {
-        guard let record = record(id) else { return }
-        let folder = Self.folder(id)
+    private func run(_ uid: String) async {
+        if record(uid: uid)?.siteKind == .ehentai, !(await completeEhPages(uid)) {
+            tasks[uid] = nil
+            update(uid) { $0.state = .failed }
+            saveIndex()
+            return
+        }
+        guard let record = record(uid: uid) else { return }
+        let folder = Self.folder(record)
+        let isEh = record.siteKind == .ehentai
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var failures = 0
         let pending = record.pages.filter {
             !FileManager.default.fileExists(atPath: folder.appendingPathComponent($0.file).path)
         }
-        update(id) { $0.completed = $0.pages.count - pending.count }
+        update(uid) { $0.completed = $0.pages.count - pending.count }
 
         await withTaskGroup(of: Bool.self) { group in
             var iterator = pending.makeIterator()
             func addNext() -> Bool {
                 guard let page = iterator.next() else { return false }
                 group.addTask {
-                    await Self.fetch(page, to: folder.appendingPathComponent(page.file))
+                    let file = folder.appendingPathComponent(page.file)
+                    return isEh ? await Self.fetchEh(page, to: file) : await Self.fetch(page.remote, to: file)
                 }
                 return true
             }
-            for _ in 0..<3 {
+            // E-Hentai: fewer at a time (each page also loads its page link).
+            for _ in 0..<(isEh ? 2 : 3) {
                 if !addNext() { break }
             }
             for await ok in group {
                 if Task.isCancelled { group.cancelAll(); break }
                 if ok {
-                    update(id) { $0.completed += 1 }
+                    update(uid) { $0.completed += 1 }
                 } else {
                     failures += 1
                 }
@@ -188,17 +259,50 @@ final class DownloadManager {
             }
         }
 
-        tasks[id] = nil
+        tasks[uid] = nil
         guard !Task.isCancelled else { return }
-        update(id) { record in
-            record.state = failures == 0 && record.completed >= record.pages.count ? .finished : .failed
+        update(uid) { record in
+            record.state = failures == 0 && record.completed >= record.totalPages ? .finished : .failed
         }
         saveIndex()
     }
 
-    nonisolated private static func fetch(_ page: DownloadRecord.Page, to file: URL) async -> Bool {
-        guard let url = URL(string: page.remote) else { return false }
+    /// Fills in the page links of an E-Hentai download from its thumbnail pages.
+    private func completeEhPages(_ uid: String) async -> Bool {
+        guard var record = record(uid: uid), let token = record.token else { return false }
+        var thumbPage = 1
+        while record.pages.count < record.totalPages {
+            guard let thumbs = try? await EhService.shared.thumbnails(gid: record.id, token: token, page: thumbPage),
+                  !thumbs.isEmpty else { break }
+            let known = Set(record.pages.map(\.number))
+            let added = Self.ehPages(thumbs.filter { !known.contains(Int($0.page)) })
+            update(uid) { $0.pages = ($0.pages + added).sorted { $0.number < $1.number } }
+            guard let updated = self.record(uid: uid) else { return false }
+            record = updated
+            thumbPage += 1
+        }
+        saveIndex()
+        return record.pages.count >= record.totalPages
+    }
+
+    /// An E-Hentai page: its image link first, then the image (another node when it fails).
+    nonisolated private static func fetchEh(_ page: DownloadRecord.Page, to file: URL) async -> Bool {
+        var reloadKey: String?
         for attempt in 0..<3 {
+            if Task.isCancelled { return false }
+            guard let info = try? await EhService.shared.call({ try await $0.imagePage(pageUrl: page.remote, reloadKey: reloadKey) }) else {
+                try? await Task.sleep(for: .seconds(Double(2 * (attempt + 1))))
+                continue
+            }
+            if await fetch(info.imageUrl, to: file, attempts: 1) { return true }
+            reloadKey = info.reloadKey
+        }
+        return false
+    }
+
+    nonisolated private static func fetch(_ remote: String, to file: URL, attempts: Int = 3) async -> Bool {
+        guard let url = URL(string: remote) else { return false }
+        for attempt in 0..<attempts {
             if Task.isCancelled { return false }
             do {
                 let (data, response) = try await URLSession.shared.data(from: url)
@@ -208,14 +312,18 @@ final class DownloadManager {
                 try data.write(to: file, options: .atomic)
                 return true
             } catch {
-                try? await Task.sleep(for: .seconds(Double(attempt + 1)))
+                if attempt < attempts - 1 { try? await Task.sleep(for: .seconds(Double(attempt + 1))) }
             }
         }
         return false
     }
 
     private func update(_ id: Int, _ change: (inout DownloadRecord) -> Void) {
-        guard let index = records.firstIndex(where: { $0.id == id }) else { return }
+        update("nh:\(id)", change)
+    }
+
+    private func update(_ uid: String, _ change: (inout DownloadRecord) -> Void) {
+        guard let index = records.firstIndex(where: { $0.uid == uid }) else { return }
         change(&records[index])
     }
 
@@ -228,6 +336,10 @@ final class DownloadManager {
 
     nonisolated static func folder(_ id: Int) -> URL {
         root.appendingPathComponent("\(id)", isDirectory: true)
+    }
+
+    nonisolated static func folder(_ record: DownloadRecord) -> URL {
+        record.siteKind == .ehentai ? root.appendingPathComponent("eh-\(record.id)", isDirectory: true) : folder(record.id)
     }
 
     nonisolated private static func detailURL(_ id: Int) -> URL {

@@ -64,6 +64,31 @@ final class TagStore {
         return nil
     }
 
+    /// E-Hentai namespaces that have a tag called [name] (search syntax conversion).
+    func ehNamespaces(_ name: String) -> [String] {
+        translations.filter { $0.value[name] != nil }.map(\.key)
+    }
+
+    /// E-Hentai tag suggestions for a typed word: names that start with it,
+    /// or whose translation contains it, as (namespace, name).
+    func suggestEh(_ word: String, limit: Int = 12) -> [(String, String)] {
+        let w = word.lowercased()
+        guard w.count >= 2 else { return [] }
+        var starts: [(String, String)] = []
+        var contains: [(String, String)] = []
+        for (ns, names) in translations where ns != "rows" && ns != "reclass" {
+            for (name, translated) in names {
+                if name.hasPrefix(w) {
+                    starts.append((ns, name))
+                } else if name.contains(w) || translated.localizedCaseInsensitiveContains(word) {
+                    contains.append((ns, name))
+                }
+            }
+        }
+        let sorted = starts.sorted { $0.1.count < $1.1.count } + contains.sorted { $0.1.count < $1.1.count }
+        return Array(sorted.prefix(limit))
+    }
+
     /// Tags shown on a card: languages first, then content tags.
     func cardTags(for ids: [Int], limit: Int = 8) -> [TagName] {
         _ = revision

@@ -1,3 +1,4 @@
+import Shared
 import SwiftUI
 
 /// In-place search on the Home page: a search field at the top with tag
@@ -7,9 +8,12 @@ struct InlineSearch: View {
     @Binding var isActive: Bool
 
     @Environment(AppSettings.self) private var settings
+    @Environment(TagStore.self) private var tagStore
     @State private var text = ""
     @State private var query = ""
     @State private var suggestions: [TagSuggestion] = []
+    /// The site searched; switched under the field with the results.
+    @State private var site: SiteKind = AppSettings.shared.searchStartSite
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -34,6 +38,19 @@ struct InlineSearch: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
+                    .overlay(alignment: .bottomTrailing) {
+                        // The site being searched, on the magnifier.
+                        if settings.enabledSites.count > 1 {
+                            Text(site.badge)
+                                .font(.system(size: 7, weight: .heavy))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 2)
+                                .background(site == .ehentai ? Color(red: 0.62, green: 0.15, blue: 0.13) : .accentColor,
+                                            in: RoundedRectangle(cornerRadius: 3))
+                                .offset(x: 8, y: 6)
+                        }
+                    }
+                    .padding(.trailing, settings.enabledSites.count > 1 ? 6 : 0)
                 TextField("Titles, tags, artists, IDs", text: $text)
                     .focused($focused)
                     .submitLabel(.search)
@@ -67,7 +84,7 @@ struct InlineSearch: View {
         } else if query.isEmpty {
             recentList
         } else {
-            SearchResults(query: query)
+            SearchResults(query: query, site: $site)
                 .id(query)
         }
     }
@@ -80,8 +97,13 @@ struct InlineSearch: View {
             } label: {
                 Label {
                     HStack {
-                        Text(tag.name)
-                            .foregroundStyle(.primary)
+                        VStack(alignment: .leading) {
+                            Text(tag.name)
+                                .foregroundStyle(.primary)
+                            if let translated = tagStore.translate(tag.name, type: tag.type) {
+                                Text(translated).font(.footnote).foregroundStyle(.secondary)
+                            }
+                        }
                         Spacer()
                         Text(tag.type.capitalized)
                             .foregroundStyle(.secondary)
@@ -98,9 +120,10 @@ struct InlineSearch: View {
         List {
             if !settings.saveSearchHistory || settings.recentSearches.isEmpty {
                 ContentUnavailableView(
-                    "Search nhentai",
+                    site == .ehentai ? "Search E-Hentai" : "Search nhentai",
                     systemImage: "magnifyingglass",
-                    description: Text("Search by title or use tags like artist:name, or enter a gallery number.")
+                    description: Text(site == .ehentai ? "Search by title or use tags like artist:name$, or paste a gallery link."
+                                                       : "Search by title or use tags like artist:name, or enter a gallery number.")
                 )
                 .listRowBackground(Color.clear)
             } else {
@@ -142,7 +165,12 @@ struct InlineSearch: View {
     private func completion(for tag: TagSuggestion) -> String {
         var parts = text.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
         if !parts.isEmpty { parts.removeLast() }
-        parts.append(tag.query)
+        if site == .ehentai {
+            let value = tag.name.contains(" ") ? "\"\(tag.name)$\"" : "\(tag.name)$"
+            parts.append("\(tag.type):\(value)")
+        } else {
+            parts.append(tag.query)
+        }
         return parts.joined(separator: " ") + " "
     }
 
@@ -163,82 +191,139 @@ struct InlineSearch: View {
         }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
-        suggestions = (try? await NHClient.shared.suggestTags(word)) ?? []
+        if site == .ehentai {
+            suggestions = tagStore.suggestEh(word).map { TagSuggestion(type: $0.0, name: $0.1) }
+        } else {
+            suggestions = (try? await NHClient.shared.suggestTags(word)) ?? []
+        }
     }
 }
 
 /// Search results for a query (also pushed from tags).
 struct SearchResultsView: View {
     let route: SearchRoute
+    @State private var site: SiteKind = .nhentai
 
     var body: some View {
-        SearchResults(query: route.query)
+        SearchResults(query: route.query, site: $site)
             .navigationTitle(route.title ?? route.query)
             .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-/// Results for a query. A gallery number shows that gallery first, above
-/// the results of searching for the number.
+/// Results for a query on both sites: the site it was typed for first;
+/// switching site under the field converts the query to the other site's
+/// syntax. A gallery number (nhentai) or a gallery link shows that gallery
+/// above the results.
 struct SearchResults: View {
     let query: String
+    @Binding var site: SiteKind
     /// Language and sort menus in the toolbar (the iPad Home page has its own).
     let showsMenus: Bool
 
     @Environment(AppSettings.self) private var settings
-    @State private var feed: GalleryFeed
+    @State private var nhFeed: GalleryFeed
+    @State private var ehFeed: GalleryFeed
     @State private var match: GalleryItem?
+    private let dropped: [SiteKind: [String]]
+    private let link: String?
 
-    init(query: String, showsMenus: Bool = true) {
+    init(query: String, site: Binding<SiteKind>, showsMenus: Bool = true) {
         self.query = query
+        _site = site
         self.showsMenus = showsMenus
-        _feed = State(initialValue: GalleryFeed { page in
+        let nhQuery: String
+        let ehQuery: String
+        var ehCategories: Int32 = 0
+        if site.wrappedValue == .ehentai {
+            let converted = Bridge.shared.ehToNh(query: query)
+            nhQuery = converted.query
+            ehQuery = query
+            dropped = [.nhentai: converted.dropped]
+        } else {
+            let words = query.split(separator: " ").map { $0.split(separator: ":").last.map(String.init) ?? "" }
+            var namespaces: [String: [String]] = [:]
+            for word in words {
+                let name = word.trimmingCharacters(in: CharacterSet(charactersIn: "\"$"))
+                namespaces[name] = TagStore.shared.ehNamespaces(name)
+            }
+            let converted = Bridge.shared.nhToEh(query: query, namespaces: namespaces)
+            nhQuery = query
+            ehQuery = converted.query
+            ehCategories = Bridge.shared.categoryBits(result: converted)
+            dropped = [.ehentai: converted.dropped]
+        }
+        link = Bridge.shared.searchLink(text: query)
+        _nhFeed = State(initialValue: GalleryFeed.nh { page in
             let settings = AppSettings.shared
-            let full = [query, settings.searchLanguage.queryTerm].compactMap { $0 }.joined(separator: " ")
+            let full = [nhQuery, settings.searchLanguage.queryTerm].compactMap { $0 }.joined(separator: " ")
             return try await NHClient.shared.galleries(query: full, sort: settings.searchSort, page: page)
+        })
+        _ehFeed = State(initialValue: GalleryFeed.eh {
+            let full = [ehQuery, AppSettings.shared.searchLanguage.queryTerm].compactMap { $0 }.joined(separator: " ")
+            return Bridge.shared.search(query: full, categoriesShown: ehCategories)
         })
     }
 
-    private var galleryID: Int? {
-        Int(query.trimmingCharacters(in: .whitespaces)).flatMap { $0 > 0 ? $0 : nil }
-    }
+    /// A pasted E-Hentai link is opened, not searched for.
+    private var searches: Bool { link == nil || link!.hasPrefix("nh:") }
+    private var feed: GalleryFeed { site == .ehentai ? ehFeed : nhFeed }
 
     var body: some View {
         @Bindable var settings = settings
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if let match {
-                    SectionTitle(title: "Gallery #\(match.id)")
+                    SectionTitle(title: match.site == .ehentai ? "E-Hentai Gallery" : "Gallery #\(match.id)")
                     GalleryRow(item: match)
                         .padding(.horizontal)
                         .padding(.bottom, 8)
                 }
-                if let total = feed.total, feed.hasLoaded {
-                    Text("\(total) results")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
+                if searches, settings.enabledSites.count > 1 {
+                    Picker("Site", selection: $site) {
+                        ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
                 }
-                GalleryCollection(items: feed.items) { item in
-                    Task { await feed.loadMoreIfNeeded(after: item) }
+                if searches {
+                    if let terms = dropped[site], !terms.isEmpty {
+                        Text("Not available on \(site.displayName): \(terms.joined(separator: " "))")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal)
+                            .padding(.top, 4)
+                    }
+                    if let total = feed.total, feed.hasLoaded {
+                        Text("\(total) results")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                    }
+                    GalleryCollection(items: feed.items) { item in
+                        Task { await feed.loadMoreIfNeeded(after: item) }
+                    }
+                    if match == nil {
+                        FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
+                    }
+                    FeedFooter(feed: feed)
                 }
-                if match == nil {
-                    FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
-                }
-                FeedFooter(feed: feed)
             }
         }
         .refreshable { await feed.reload() }
         .hidesBarsOnScroll()
-        .task {
+        .task(id: site) {
+            guard searches else { return }
             if !feed.hasLoaded { await feed.reload() }
-        }
-        .task {
-            if let id = galleryID, match == nil {
-                match = try? await NHClient.shared.gallery(id).asItem
+            // Both sites at once when the setting says so (twice the requests).
+            if settings.searchBothSites, settings.enabledSites.count > 1 {
+                let other = site == .ehentai ? nhFeed : ehFeed
+                if !other.hasLoaded { await other.reload() }
             }
         }
+        .task { await loadMatch() }
         .toolbar {
             if showsMenus {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -261,5 +346,23 @@ struct SearchResults: View {
         }
         .onChange(of: settings.searchLanguage) { Task { await feed.reload() } }
         .onChange(of: settings.searchSort) { Task { await feed.reload() } }
+    }
+
+    /// The gallery a number or a link points to.
+    private func loadMatch() async {
+        guard match == nil, let link else { return }
+        let parts = link.split(separator: ":").map(String.init)
+        switch parts.first {
+        case "nh":
+            if let id = Int(parts[1]) { match = try? await NHClient.shared.gallery(id).asItem }
+        case "eh":
+            if parts.count == 3, let gid = Int(parts[1]) { match = try? await EhService.shared.info(gid: gid, token: parts[2]) }
+        case "ehpage":
+            if parts.count == 4, let gid = Int(parts[1]), let page = Int(parts[3]),
+               let token = try? await EhService.shared.token(gid: gid, pageToken: parts[2], page: page) {
+                match = try? await EhService.shared.info(gid: gid, token: token)
+            }
+        default: break
+        }
     }
 }

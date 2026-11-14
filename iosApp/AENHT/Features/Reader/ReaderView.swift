@@ -1,4 +1,5 @@
 import Nuke
+import Shared
 import SwiftData
 import SwiftUI
 import UIKit
@@ -40,15 +41,35 @@ struct ReaderSource: Hashable {
     init(record: DownloadRecord) {
         id = record.id
         title = record.title
-        shareURL = NHHost.gallery(record.id)
         item = record.item
-        numPages = record.pages.count
+        shareURL = item.webURL
+        numPages = record.totalPages
         let downloads = DownloadManager.shared
-        pages = record.pages.enumerated().map { offset, page in
-            let ratio = page.width > 0 && page.height > 0 ? CGFloat(page.width) / CGFloat(page.height) : 0.7
-            return ReaderPage(index: offset,
-                              url: downloads.localURL(gallery: record.id, page: offset) ?? URL(string: page.remote),
-                              aspectRatio: ratio)
+        let card = item
+        pages = (0..<record.totalPages).map { offset in
+            let page = record.pages.indices.contains(offset) ? record.pages[offset] : nil
+            let ratio = page.map { $0.width > 0 && $0.height > 0 ? CGFloat($0.width) / CGFloat($0.height) : 0.7 } ?? 0.7
+            let remote: URL? = record.siteKind == .ehentai
+                ? EhPageDataLoader.url(gid: record.id, token: record.token ?? "", page: offset + 1)
+                : page.flatMap { URL(string: $0.remote) }
+            return ReaderPage(index: offset, url: downloads.localURL(item: card, page: offset) ?? remote, aspectRatio: ratio)
+        }
+    }
+
+    /// An E-Hentai gallery: each page's image is looked up as the reader gets to it.
+    @MainActor
+    init(eh detail: EhGalleryDetail, card: GalleryItem) {
+        id = Int(detail.gid)
+        title = detail.title
+        item = card
+        shareURL = card.webURL
+        numPages = Int(detail.pages)
+        let downloads = DownloadManager.shared
+        pages = (0..<Int(detail.pages)).map { offset in
+            ReaderPage(index: offset,
+                       url: downloads.localURL(item: card, page: offset)
+                           ?? EhPageDataLoader.url(gid: Int(detail.gid), token: detail.token, page: offset + 1),
+                       aspectRatio: 0.7)
         }
     }
 }

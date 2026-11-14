@@ -3,7 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
     @State private var popular: [GalleryItem] = []
-    @State private var feed = GalleryFeed { page in
+    @State private var nhFeed = GalleryFeed.nh { page in
         let settings = AppSettings.shared
         return try await NHClient.shared.galleries(
             query: settings.homeLanguage.queryTerm ?? "",
@@ -11,6 +11,11 @@ struct HomeView: View {
             page: page
         )
     }
+    @State private var ehFeed = GalleryFeed.eh {
+        AppSettings.shared.ehHomeList.source(language: AppSettings.shared.homeLanguage)
+    }
+
+    private var feed: GalleryFeed { settings.currentSite == .ehentai ? ehFeed : nhFeed }
     /// The search shows over the feed.
     @State private var searching = false
     /// The feed's header (sort, language, search) has scrolled under the
@@ -24,7 +29,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                if !popular.isEmpty {
+                if settings.currentSite == .nhentai, !popular.isEmpty {
                     SectionTitle(title: "Popular Now")
                     PopularRow(items: popular)
                 }
@@ -51,7 +56,10 @@ struct HomeView: View {
         .toolbar {
             if docked, !searching {
                 ToolbarItem(placement: .topBarLeading) {
-                    SortMenu(compact: true)
+                    HStack(spacing: 8) {
+                        SiteMenu(compact: true)
+                        SortMenu(compact: true)
+                    }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     LanguageMenu(compact: true)
@@ -74,7 +82,10 @@ struct HomeView: View {
             if !feed.hasLoaded { await reload() }
         }
         .onChange(of: settings.homeLanguage) { Task { await feed.reload() } }
-        .onChange(of: settings.homeSort) { Task { await feed.reload() } }
+        .onChange(of: settings.homeSort) { Task { await nhFeed.reload() } }
+        .onChange(of: settings.ehHomeList) { Task { await ehFeed.reload() } }
+        .onChange(of: settings.useExHentai) { Task { await ehFeed.reload() } }
+        .onChange(of: settings.currentSite) { Task { if !feed.hasLoaded { await reload() } } }
     }
 
     private func startSearch() {
@@ -82,9 +93,12 @@ struct HomeView: View {
     }
 
     private func reload() async {
-        async let list: Void = feed.reload()
-        let popular = (try? await NHClient.shared.popular()) ?? self.popular
-        self.popular = popular
+        let current = feed
+        async let list: Void = current.reload()
+        if settings.currentSite == .nhentai {
+            let popular = (try? await NHClient.shared.popular()) ?? self.popular
+            self.popular = popular
+        }
         await list
     }
 }
@@ -97,6 +111,7 @@ private struct FeedHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
+            SiteMenu(compact: false)
             SortMenu(compact: false)
             Spacer(minLength: 0)
             LanguageMenu(compact: false)
@@ -117,14 +132,24 @@ private struct SortMenu: View {
 
     var body: some View {
         @Bindable var settings = settings
+        let title = settings.currentSite == .ehentai ? settings.ehHomeList.title : settings.homeSort.title
         Menu {
-            Picker("Sort", selection: $settings.homeSort) {
-                ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+            if settings.currentSite == .ehentai {
+                Picker("Lists", selection: $settings.ehHomeList) {
+                    ForEach(EhHomeList.allCases.prefix(3)) { Text($0.title).tag($0) }
+                }
+                Picker("Toplists", selection: $settings.ehHomeList) {
+                    ForEach(EhHomeList.allCases.dropFirst(3)) { Text($0.title).tag($0) }
+                }
+            } else {
+                Picker("Sort", selection: $settings.homeSort) {
+                    ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                }
             }
         } label: {
             if compact {
                 HStack(spacing: 4) {
-                    Text(settings.homeSort.title)
+                    Text(title)
                         .font(.subheadline.weight(.semibold))
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.bold))
@@ -132,7 +157,7 @@ private struct SortMenu: View {
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(settings.homeSort.title)
+                        Text(title)
                             .font(.title2.bold())
                             .foregroundStyle(.primary)
                         Image(systemName: "chevron.down")
@@ -148,6 +173,53 @@ private struct SortMenu: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Sort"))
+    }
+}
+
+/// NH / EH: switches the site the home page is on (hidden with one site).
+private struct SiteMenu: View {
+    let compact: Bool
+
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        if settings.enabledSites.count > 1 {
+            Menu {
+                ForEach(settings.enabledSites) { site in
+                    Button {
+                        settings.homeSite = site
+                    } label: {
+                        if site == settings.currentSite { Label(site.displayName, systemImage: "checkmark") } else { Text(site.displayName) }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(settings.currentSite.badge).font(compact ? .subheadline.weight(.bold) : .headline)
+                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.primary)
+                .padding(.horizontal, compact ? 0 : 12)
+                .frame(height: compact ? nil : 44)
+            }
+            .accessibilityLabel(Text("Site"))
+            .modifier(CapsuleGlass(enabled: !compact))
+        }
+    }
+}
+
+private struct CapsuleGlass: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            if #available(iOS 26.0, *) {
+                content.glassEffect(.regular.interactive(), in: Capsule())
+            } else {
+                content.background(.regularMaterial, in: Capsule())
+            }
+        } else {
+            content
+        }
     }
 }
 

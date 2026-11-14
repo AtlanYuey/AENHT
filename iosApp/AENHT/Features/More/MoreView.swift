@@ -3,45 +3,36 @@ import UIKit
 
 struct MoreView: View {
     @Environment(UserSession.self) private var session
+    @Environment(EhSession.self) private var ehSession
+    @Environment(AppSettings.self) private var settings
     @Environment(DownloadManager.self) private var downloads
     @State private var showLogin = false
+
+    private var accountsSummary: String {
+        var parts: [String] = []
+        if settings.nhentaiEnabled, session.isLoggedIn { parts.append("nhentai") }
+        if settings.ehentaiEnabled, ehSession.isLoggedIn { parts.append(ehSession.hasExHentai ? "E-Hentai · ExHentai" : "E-Hentai") }
+        return parts.isEmpty ? String(localized: "Not logged in") : parts.joined(separator: " · ")
+    }
 
     var body: some View {
         List {
             Section {
-                if session.isLoggedIn {
-                    NavigationLink {
-                        AccountView()
-                    } label: {
-                        HStack(spacing: 14) {
-                            AvatarView(url: session.user?.avatar, size: 56)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(session.user?.username ?? String(localized: "Logged In"))
-                                    .font(.title3.weight(.semibold))
-                                Text("nhentai account")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                // Both sites' accounts are one row; the next screen has a section per site.
+                NavigationLink {
+                    AccountsView()
+                } label: {
+                    HStack(spacing: 14) {
+                        AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 56)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Accounts")
+                                .font(.title3.weight(.semibold))
+                            Text(accountsSummary)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 4)
                     }
-                } else {
-                    Button {
-                        showLogin = true
-                    } label: {
-                        HStack(spacing: 14) {
-                            AvatarView(url: nil, size: 56)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Log In")
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                Text("Sync favorites and post comments")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
+                    .padding(.vertical, 4)
                 }
             }
 
@@ -53,6 +44,9 @@ struct MoreView: View {
             }
 
             Section {
+                NavigationLink { SitesSettingsView() } label: {
+                    SettingsLabel("Sites", systemImage: "square.stack.3d.up.fill", color: .pink)
+                }
                 NavigationLink { AppearanceSettingsView() } label: {
                     SettingsLabel("Appearance", systemImage: "textformat.size", color: .blue)
                 }
@@ -153,6 +147,12 @@ struct DownloadsView: View {
     @Environment(DownloadManager.self) private var downloads
     @Environment(AppSettings.self) private var settings
     @State private var usage: Int64?
+    @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.downloadsSite)
+
+    private var records: [DownloadRecord] {
+        guard let site else { return downloads.records }
+        return downloads.records.filter { $0.siteKind == site }
+    }
 
     var body: some View {
         Group {
@@ -163,14 +163,16 @@ struct DownloadsView: View {
             }
         }
         .overlay {
-            if downloads.records.isEmpty {
+            if records.isEmpty {
                 ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle",
                                        description: Text("Download a gallery from its page to read it offline."))
             }
         }
         .navigationTitle("Downloads")
         .navigationBarTitleDisplayMode(.inline)
+        .environment(\.showsSiteBadge, site == nil && settings.enabledSites.count > 1)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
             if let usage, usage > 0 {
                 ToolbarItem(placement: .topBarTrailing) {
                     Text(usage, format: .byteCount(style: .file))
@@ -187,30 +189,30 @@ struct DownloadsView: View {
     private var cards: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                GalleryCollection(items: downloads.records.map(\.item))
+                GalleryCollection(items: records.map(\.item))
                     .padding(.top, 8)
             }
             .padding(.bottom, 16)
         }
         .environment(\.galleryCoverBadge) { item in
-            AnyView(DownloadBadge(id: item.id))
+            AnyView(DownloadBadge(uid: item.uid))
         }
         .environment(\.galleryMenuItems) { item in
-            AnyView(DownloadMenuItems(id: item.id))
+            AnyView(DownloadMenuItems(uid: item.uid))
         }
     }
 
     private var list: some View {
         List {
-            ForEach(downloads.records) { record in
+            ForEach(records, id: \.uid) { record in
                 DownloadRow(record: record)
                     .swipeActions(edge: .trailing) {
                         Button("Delete", systemImage: "trash", role: .destructive) {
-                            downloads.delete(record.id)
+                            downloads.delete(uid: record.uid)
                         }
                     }
                     .contextMenu {
-                        DownloadMenuItems(id: record.id)
+                        DownloadMenuItems(uid: record.uid)
                     }
             }
         }
@@ -220,12 +222,12 @@ struct DownloadsView: View {
 
 /// Read, pause / resume and delete for a download.
 private struct DownloadMenuItems: View {
-    let id: Int
+    let uid: String
 
     @Environment(DownloadManager.self) private var downloads
 
     var body: some View {
-        if let record = downloads.record(id) {
+        if let record = downloads.record(uid: uid) {
             if record.completed > 0 {
                 NavigationLink(value: ReaderRoute(source: ReaderSource(record: record), page: 0)) {
                     Label("Read", systemImage: "book")
@@ -233,27 +235,27 @@ private struct DownloadMenuItems: View {
             }
             switch record.state {
             case .downloading, .queued:
-                Button("Pause", systemImage: "pause") { downloads.pause(id) }
+                Button("Pause", systemImage: "pause") { downloads.pause(uid: uid) }
             case .paused:
-                Button("Resume", systemImage: "arrow.clockwise") { downloads.resume(id) }
+                Button("Resume", systemImage: "arrow.clockwise") { downloads.resume(uid: uid) }
             case .failed:
-                Button("Retry", systemImage: "arrow.clockwise") { downloads.resume(id) }
+                Button("Retry", systemImage: "arrow.clockwise") { downloads.resume(uid: uid) }
             case .finished:
                 EmptyView()
             }
-            Button("Delete", systemImage: "trash", role: .destructive) { downloads.delete(id) }
+            Button("Delete", systemImage: "trash", role: .destructive) { downloads.delete(uid: uid) }
         }
     }
 }
 
 /// A download's progress over its cover until it has finished.
 private struct DownloadBadge: View {
-    let id: Int
+    let uid: String
 
     @Environment(DownloadManager.self) private var downloads
 
     var body: some View {
-        if let record = downloads.record(id), record.state != .finished {
+        if let record = downloads.record(uid: uid), record.state != .finished {
             ZStack {
                 Circle().fill(.black.opacity(0.55))
                 Circle()
@@ -270,10 +272,10 @@ private struct DownloadBadge: View {
             }
             .frame(width: 34, height: 34)
             .padding(6)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .animation(.smooth, value: record.progress)
             .accessibilityElement()
-            .accessibilityLabel(Text("\(record.completed) / \(record.pages.count)"))
+            .accessibilityLabel(Text("\(record.completed) / \(record.totalPages)"))
         }
     }
 
@@ -294,7 +296,7 @@ private struct DownloadRow: View {
     @Environment(DownloadManager.self) private var downloads
 
     var body: some View {
-        NavigationLink(value: GalleryRoute(id: record.id, preview: record.item)) {
+        GalleryLinkButton(item: record.item) {
             HStack(spacing: 14) {
                 CoverView(item: record.item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
                     .frame(width: 72)
@@ -304,13 +306,13 @@ private struct DownloadRow: View {
                         .lineLimit(2)
                     switch record.state {
                     case .finished:
-                        Label("\(record.pages.count) pages", systemImage: "checkmark.circle.fill")
+                        Label("\(record.totalPages) pages", systemImage: "checkmark.circle.fill")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     default:
                         ProgressView(value: record.progress)
                         HStack {
-                            Text("\(record.completed) / \(record.pages.count)")
+                            Text("\(record.completed) / \(record.totalPages)")
                                 .monospacedDigit()
                             Spacer()
                             stateButton
@@ -328,13 +330,13 @@ private struct DownloadRow: View {
     private var stateButton: some View {
         switch record.state {
         case .downloading, .queued:
-            Button("Pause") { downloads.pause(record.id) }
+            Button("Pause") { downloads.pause(uid: record.uid) }
                 .buttonStyle(.borderless)
         case .paused:
-            Button("Resume") { downloads.resume(record.id) }
+            Button("Resume") { downloads.resume(uid: record.uid) }
                 .buttonStyle(.borderless)
         case .failed:
-            Button("Retry") { downloads.resume(record.id) }
+            Button("Retry") { downloads.resume(uid: record.uid) }
                 .buttonStyle(.borderless)
         case .finished:
             EmptyView()

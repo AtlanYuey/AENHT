@@ -51,10 +51,13 @@ struct RemoteImage: View {
 enum ImageSetup {
     /// Disk-cached pipeline for covers and pages.
     static func configure() {
-        ImagePipeline.shared = ImagePipeline(configuration: .withDataCache(
+        var configuration = ImagePipeline.Configuration.withDataCache(
             name: "com.atlanyuey.aenht.images",
             sizeLimit: 600 * 1024 * 1024
-        ))
+        )
+        // E-Hentai reader pages (ehpage://) are looked up before loading.
+        configuration.dataLoader = EhPageDataLoader()
+        ImagePipeline.shared = ImagePipeline(configuration: configuration)
     }
 
     static func clearCache() {

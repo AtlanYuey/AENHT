@@ -90,6 +90,21 @@ struct GalleryItem: Decodable, Identifiable, Hashable {
     let tagIDs: [Int]
     let blacklisted: Bool
 
+    // E-Hentai (and the site of the gallery).
+    var site: SiteKind = .nhentai
+    var token: String?
+    /// Absolute thumbnail URL (E-Hentai).
+    var absoluteThumb: String?
+    var category: CategoryInfo?
+    var rating: Double?
+    var uploader: String?
+    var ehTags: [String] = []
+    var ehLanguage: String?
+    var favoriteFolder: Int?
+
+    /// Unique across both sites ("nh:123", "eh:123:token").
+    var uid: String { site == .nhentai ? "nh:\(id)" : "eh:\(id):\(token ?? "")" }
+
     enum CodingKeys: String, CodingKey {
         case id
         case mediaID = "media_id"
@@ -139,7 +154,29 @@ struct GalleryItem: Decodable, Identifiable, Hashable {
     /// The title without the leading [circle] / (event) parts.
     var prettyTitle: String { Self.pretty(title) }
 
-    var thumbURL: URL? { NHHost.thumb(thumbnail) }
+    var thumbURL: URL? {
+        if site == .ehentai { return absoluteThumb.flatMap(URL.init(string:)) }
+        return absoluteThumb.flatMap(URL.init(string:)) ?? NHHost.thumb(thumbnail)
+    }
+
+    /// The text of the cover's language badge ("JP", "ZH", "EN"…).
+    var languageBadge: String? {
+        if site == .nhentai { return language?.badge }
+        guard let ehLanguage else { return nil }
+        let known = ["japanese": "JP", "chinese": "ZH", "english": "EN", "korean": "KO", "spanish": "ES",
+                     "french": "FR", "german": "DE", "italian": "IT", "portuguese": "PT", "russian": "RU",
+                     "vietnamese": "VI", "thai": "TH", "indonesian": "ID", "polish": "PL"]
+        return known[ehLanguage] ?? String(ehLanguage.prefix(2)).uppercased()
+    }
+
+    /// The gallery's web address on its site.
+    var webURL: URL {
+        if site == .ehentai {
+            let host = AppSettings.shared.useExHentai ? "exhentai.org" : "e-hentai.org"
+            return URL(string: "https://\(host)/g/\(id)/\(token ?? "")/")!
+        }
+        return NHHost.gallery(id)
+    }
 
     /// Width / height of the cover thumbnail.
     var aspectRatio: CGFloat {
@@ -472,6 +509,27 @@ struct GalleryRoute: Hashable {
     var preview: GalleryItem?
 }
 
+/// Opens an E-Hentai gallery's page.
+struct EhGalleryRoute: Hashable {
+    let gid: Int
+    let token: String
+    var preview: GalleryItem?
+}
+
+/// An E-Hentai list opened from a gallery (tag, uploader).
+struct EhSearchRoute: Hashable {
+    let query: String
+    var title: String
+}
+
+/// Every page of an E-Hentai gallery.
+struct EhPagesRoute: Hashable {
+    let gid: Int
+    let token: String
+    let pages: Int
+    let card: GalleryItem
+}
+
 /// Opens a search for [query] (e.g. from a tag).
 struct SearchRoute: Hashable {
     let query: String
@@ -486,3 +544,10 @@ struct PagesRoute: Hashable {
 /// The downloaded galleries. Pushed by value like the galleries it opens:
 /// a value pushed from a view-destination link would show under it.
 struct DownloadsRoute: Hashable {}
+
+extension TagSuggestion {
+    /// A suggestion from the local E-Hentai tag data ([type] is the namespace).
+    init(type: String, name: String) {
+        self.init(id: "\(type):\(name)".hashValue, type: type, name: name, count: nil)
+    }
+}

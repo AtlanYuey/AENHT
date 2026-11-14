@@ -73,7 +73,7 @@ enum LanguageFilter: String, CaseIterable, Identifiable, Codable {
 final class NHClient: @unchecked Sendable {
     static let shared = NHClient()
 
-    private let api: NhApi
+    let api: NhApi
     private let decoder = JSONDecoder()
 
     private init() {

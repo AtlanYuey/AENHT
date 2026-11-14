@@ -8,6 +8,8 @@ extension EnvironmentValues {
     @Entry var galleryCoverBadge: ((GalleryItem) -> AnyView)? = nil
     /// More items for a gallery's context menu (Delete in History and Downloads).
     @Entry var galleryMenuItems: ((GalleryItem) -> AnyView)? = nil
+    /// Lists that mix both sites mark each cover with NH / EH (top right).
+    @Entry var showsSiteBadge: Bool = false
 }
 
 /// Registers the gallery / search destinations of a navigation stack and
@@ -32,6 +34,18 @@ struct GalleryDestinations: ViewModifier {
             }
             .navigationDestination(for: PagesRoute.self) { route in
                 PagesView(detail: route.detail)
+            }
+            .navigationDestination(for: EhGalleryRoute.self) { route in
+                EhGalleryView(route: route)
+                    .environment(\.galleryNamespace, namespace)
+                    .navigationTransition(.zoom(sourceID: route.gid, in: namespace))
+            }
+            .navigationDestination(for: EhSearchRoute.self) { route in
+                EhListView(route: route)
+                    .environment(\.galleryNamespace, namespace)
+            }
+            .navigationDestination(for: EhPagesRoute.self) { route in
+                EhPagesView(route: route)
             }
             .navigationDestination(for: DownloadsRoute.self) { _ in
                 DownloadsView()
@@ -58,15 +72,57 @@ extension View {
 
 /// Language badge shown on covers.
 struct LanguageBadge: View {
-    let language: GalleryLanguage
+    let text: String
+    var tint: Color? = nil
+
+    init(language: GalleryLanguage) {
+        text = language.badge
+    }
+
+    init(text: String, tint: Color? = nil) {
+        self.text = text
+        self.tint = tint
+    }
 
     var body: some View {
-        Text(language.badge)
+        Text(text)
             .font(.caption2.weight(.bold))
             .foregroundStyle(.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
-            .background(.black.opacity(0.45), in: Capsule())
+            .background(tint.map { AnyShapeStyle($0.opacity(0.85)) } ?? AnyShapeStyle(.black.opacity(0.45)), in: Capsule())
+    }
+}
+
+/// Opens a gallery of either site.
+struct GalleryLinkButton<Label: View>: View {
+    let item: GalleryItem
+    @ViewBuilder let label: () -> Label
+
+    var body: some View {
+        if item.site == .ehentai {
+            NavigationLink(value: EhGalleryRoute(gid: item.id, token: item.token ?? "", preview: item), label: label)
+        } else {
+            NavigationLink(value: GalleryRoute(id: item.id, preview: item), label: label)
+        }
+    }
+}
+
+/// 0–5 stars in half steps (E-Hentai ratings).
+struct RatingStars: View {
+    let rating: Double
+    var size: CGFloat = 12
+
+    var body: some View {
+        HStack(spacing: 1) {
+            ForEach(0..<5, id: \.self) { i in
+                let fill = min(max(rating - Double(i), 0), 1)
+                Image(systemName: fill >= 0.75 ? "star.fill" : fill >= 0.25 ? "star.leadinghalf.filled" : "star")
+                    .font(.system(size: size))
+                    .foregroundStyle(.orange)
+            }
+        }
+        .accessibilityLabel(Text(String(format: "%.1f", rating)))
     }
 }
 
@@ -78,6 +134,7 @@ struct CoverView: View {
     var targetWidth: CGFloat = 360
 
     @Environment(AppSettings.self) private var settings
+    @Environment(\.showsSiteBadge) private var showsSiteBadge
 
     var body: some View {
         Color.clear
@@ -85,12 +142,19 @@ struct CoverView: View {
             .overlay {
                 RemoteImage(url: item.thumbURL, targetWidth: targetWidth, blur: settings.blurCovers) {
                     // Without the network, a downloaded gallery shows its first page.
-                    DownloadManager.shared.localURL(gallery: item.id, page: 0)
+                    DownloadManager.shared.localURL(item: item, page: 0)
                 }
             }
             .overlay(alignment: .topLeading) {
-                if let language = item.language {
-                    LanguageBadge(language: language).padding(6)
+                if let badge = item.languageBadge {
+                    LanguageBadge(text: badge, tint: item.category?.swiftColor).padding(6)
+                } else if let category = item.category {
+                    Circle().fill(category.swiftColor).frame(width: 10, height: 10).padding(8)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if showsSiteBadge {
+                    LanguageBadge(text: item.site.badge).padding(6)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -111,7 +175,7 @@ struct GalleryCard: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        NavigationLink(value: GalleryRoute(id: item.id, preview: item)) {
+        GalleryLinkButton(item: item) {
             VStack(alignment: .leading, spacing: 6) {
                 switch style {
                 case .grid:
@@ -131,7 +195,7 @@ struct GalleryCard: View {
                         .galleryTransitionSource(item.id, namespace)
                     title
                     if settings.showTags {
-                        CardTagLine(ids: item.tagIDs, style: .plain)
+                        CardTags(item: item, style: .plain)
                     }
                 }
             }
@@ -158,7 +222,7 @@ struct GalleryCard: View {
     private var compactOverlay: some View {
         VStack(alignment: .leading, spacing: 6) {
             if settings.showTags {
-                CardTagLine(ids: item.tagIDs, style: .overlay)
+                CardTags(item: item, style: .overlay)
             }
             Text(item.prettyTitle)
                 .font(.footnote.weight(.semibold))
@@ -174,6 +238,48 @@ struct GalleryCard: View {
             LinearGradient(colors: [.clear, .black.opacity(0.55), .black.opacity(0.8)],
                            startPoint: .top, endPoint: .bottom)
         )
+    }
+}
+
+/// The card's tags: nhentai tag ids or E-Hentai tag names.
+struct CardTags: View {
+    let item: GalleryItem
+    let style: CardTagLine.Style
+
+    @Environment(TagStore.self) private var tagStore
+
+    var body: some View {
+        if item.site == .nhentai {
+            CardTagLine(ids: item.tagIDs, style: style)
+        } else {
+            CardTagChips(names: Array(item.ehTags.prefix(8)), style: style)
+        }
+    }
+}
+
+/// One line of chips from names.
+struct CardTagChips: View {
+    let names: [String]
+    let style: CardTagLine.Style
+
+    var body: some View {
+        if !names.isEmpty {
+            FittingRow(spacing: 5) {
+                ForEach(names, id: \.self) { name in
+                    Text(name)
+                        .font(.caption2.weight(.medium))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .foregroundStyle(style == .overlay ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                        .background(
+                            style == .overlay ? AnyShapeStyle(.white.opacity(0.2)) : AnyShapeStyle(.fill.tertiary),
+                            in: Capsule()
+                        )
+                }
+            }
+        }
     }
 }
 
@@ -251,7 +357,7 @@ struct GalleryRow: View {
     @Environment(\.galleryCoverBadge) private var badge
 
     var body: some View {
-        NavigationLink(value: GalleryRoute(id: item.id, preview: item)) {
+        GalleryLinkButton(item: item) {
             HStack(alignment: .top, spacing: 14) {
                 CoverView(item: item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
                     .overlay { badge?(item) }
@@ -271,6 +377,24 @@ struct GalleryRow: View {
                         Label("\(item.numPages) pages", systemImage: "doc.on.doc")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                    }
+                    if item.site == .ehentai {
+                        HStack(spacing: 8) {
+                            if let category = item.category {
+                                Text(category.label)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(category.swiftColor, in: Capsule())
+                            }
+                            if let rating = item.rating, rating > 0 {
+                                RatingStars(rating: rating)
+                            }
+                        }
+                        if let uploader = item.uploader {
+                            Text(uploader).font(.footnote).foregroundStyle(.tertiary).lineLimit(1)
+                        }
                     }
                 }
                 Spacer(minLength: 0)
@@ -293,11 +417,11 @@ struct GalleryContextMenu: View {
             extraItems(item)
             Divider()
         }
-        ShareLink(item: NHHost.gallery(item.id)) {
+        ShareLink(item: item.webURL) {
             Label("Share", systemImage: "square.and.arrow.up")
         }
         Button {
-            UIPasteboard.general.url = NHHost.gallery(item.id)
+            UIPasteboard.general.url = item.webURL
         } label: {
             Label("Copy Link", systemImage: "link")
         }
@@ -321,7 +445,7 @@ struct GalleryCollection: View {
             switch settings.listStyle {
             case .list:
                 LazyVStack(spacing: 0) {
-                    ForEach(items) { item in
+                    ForEach(items, id: \.uid) { item in
                         GalleryRow(item: item)
                             .padding(.horizontal)
                             .onAppear { onItemAppear(item) }
@@ -330,7 +454,7 @@ struct GalleryCollection: View {
                 }
             case .grid:
                 LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 18) {
-                    ForEach(items) { item in
+                    ForEach(items, id: \.uid) { item in
                         GalleryCard(item: item, style: .grid)
                             .onAppear { onItemAppear(item) }
                     }
@@ -391,7 +515,7 @@ private struct Masonry: View {
         HStack(alignment: .top, spacing: spacing) {
             ForEach(Array(distributed.enumerated()), id: \.offset) { _, column in
                 LazyVStack(spacing: style == .compact ? spacing : 16) {
-                    ForEach(column) { item in
+                    ForEach(column, id: \.uid) { item in
                         GalleryCard(item: item, style: style)
                             .onAppear { onItemAppear(item) }
                     }

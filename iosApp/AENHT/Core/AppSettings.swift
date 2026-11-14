@@ -225,6 +225,49 @@ final class AppSettings {
     /// Recent search terms, newest first; synced with the settings.
     var recentSearches: [String] { didSet { save(recentSearches, "recentSearches") } }
 
+    // MARK: Sites
+
+    var nhentaiEnabled: Bool { didSet { save(nhentaiEnabled, "nhentaiEnabled") } }
+    var ehentaiEnabled: Bool { didSet { save(ehentaiEnabled, "ehentaiEnabled") } }
+    /// The site the home page is on (this device only).
+    var homeSite: SiteKind { didSet { defaults.set(homeSite.rawValue, forKey: "homeSite") } }
+    /// Which site the home page opens on: the last one, or a fixed one.
+    var homeSiteDefault: SiteChoice { didSet { save(homeSiteDefault.rawValue, "homeSiteDefault") } }
+    /// E-Hentai requests go to exhentai.org.
+    var useExHentai: Bool { didSet { save(useExHentai, "useExHentai") } }
+    var ehHomeList: EhHomeList { didSet { defaults.set(ehHomeList.rawValue, forKey: "ehHomeList") } }
+    var favoritesSite: SiteChoice { didSet { save(favoritesSite.rawValue, "favoritesSite") } }
+    var historySite: SiteChoice { didSet { save(historySite.rawValue, "historySite") } }
+    var downloadsSite: SiteChoice { didSet { save(downloadsSite.rawValue, "downloadsSite") } }
+    var searchSite: SiteChoice { didSet { save(searchSite.rawValue, "searchSite") } }
+    /// Search runs on both sites at once (twice the requests).
+    var searchBothSites: Bool { didSet { save(searchBothSites, "searchBothSites") } }
+    /// E-Hentai favorite folders Favorites › All shows (all ten by default).
+    var favoritesAllFolders: [Int] { didSet { save(favoritesAllFolders, "favoritesAllFolders") } }
+
+    /// The sites in use (at least one).
+    var enabledSites: [SiteKind] {
+        let sites = SiteKind.allCases.filter { $0 == .nhentai ? nhentaiEnabled : ehentaiEnabled }
+        return sites.isEmpty ? [.nhentai] : sites
+    }
+
+    /// The home page's site, if it is still in use.
+    var currentSite: SiteKind { enabledSites.contains(homeSite) ? homeSite : enabledSites[0] }
+
+    /// The site a screen opens on for [choice]; nil means both.
+    func site(_ choice: SiteChoice) -> SiteKind? {
+        if enabledSites.count == 1 { return enabledSites[0] }
+        switch choice {
+        case .follow: return currentSite
+        case .nh: return .nhentai
+        case .eh: return .ehentai
+        case .all: return nil
+        }
+    }
+
+    /// The site a new search starts on.
+    var searchStartSite: SiteKind { site(searchSite) ?? currentSite }
+
     private init() {
         let d = UserDefaults.standard
         theme = ThemeMode(rawValue: d.string(forKey: "theme") ?? "") ?? .system
@@ -260,6 +303,19 @@ final class AppSettings {
         readerControlsDelay = min(max(d.object(forKey: "readerControlsDelay") as? Double ?? 3, 3), 10)
         libraryStyle = LibraryStyle(rawValue: d.string(forKey: "libraryStyle") ?? "") ?? .cards
         recentSearches = d.stringArray(forKey: "recentSearches") ?? []
+        nhentaiEnabled = d.object(forKey: "nhentaiEnabled") as? Bool ?? true
+        ehentaiEnabled = d.object(forKey: "ehentaiEnabled") as? Bool ?? true
+        homeSiteDefault = SiteChoice(rawValue: d.string(forKey: "homeSiteDefault") ?? "") ?? .follow
+        let lastSite = SiteKind(rawValue: d.string(forKey: "homeSite") ?? "") ?? .nhentai
+        homeSite = homeSiteDefault == .nh ? .nhentai : homeSiteDefault == .eh ? .ehentai : lastSite
+        useExHentai = d.bool(forKey: "useExHentai")
+        ehHomeList = EhHomeList(rawValue: d.string(forKey: "ehHomeList") ?? "") ?? .latest
+        favoritesSite = SiteChoice(rawValue: d.string(forKey: "favoritesSite") ?? "") ?? .follow
+        historySite = SiteChoice(rawValue: d.string(forKey: "historySite") ?? "") ?? .all
+        downloadsSite = SiteChoice(rawValue: d.string(forKey: "downloadsSite") ?? "") ?? .all
+        searchSite = SiteChoice(rawValue: d.string(forKey: "searchSite") ?? "") ?? .follow
+        searchBothSites = d.bool(forKey: "searchBothSites")
+        favoritesAllFolders = (d.array(forKey: "favoritesAllFolders") as? [Int]) ?? Array(0..<10)
     }
 
     private func save(_ value: Any, _ key: String) {
@@ -320,6 +376,16 @@ final class AppSettings {
         values["readerControlsDelay"] = readerControlsDelay
         values["libraryStyle"] = libraryStyle.rawValue
         values["recentSearches"] = recentSearches
+        values["nhentaiEnabled"] = nhentaiEnabled
+        values["ehentaiEnabled"] = ehentaiEnabled
+        values["homeSiteDefault"] = homeSiteDefault.rawValue
+        values["useExHentai"] = useExHentai
+        values["favoritesSite"] = favoritesSite.rawValue
+        values["historySite"] = historySite.rawValue
+        values["downloadsSite"] = downloadsSite.rawValue
+        values["searchSite"] = searchSite.rawValue
+        values["searchBothSites"] = searchBothSites
+        values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
     }
 
@@ -374,6 +440,16 @@ final class AppSettings {
         case "hideBarsOnScroll": set(\.hideBarsOnScroll, number?.boolValue)
         case "readerControlsDelay": set(\.readerControlsDelay, number.map { min(max($0.doubleValue, 3), 10) })
         case "libraryStyle": set(\.libraryStyle, string.flatMap(LibraryStyle.init(rawValue:)))
+        case "nhentaiEnabled": set(\.nhentaiEnabled, number?.boolValue)
+        case "ehentaiEnabled": set(\.ehentaiEnabled, number?.boolValue)
+        case "homeSiteDefault": set(\.homeSiteDefault, string.flatMap(SiteChoice.init(rawValue:)))
+        case "useExHentai": set(\.useExHentai, number?.boolValue)
+        case "favoritesSite": set(\.favoritesSite, string.flatMap(SiteChoice.init(rawValue:)))
+        case "historySite": set(\.historySite, string.flatMap(SiteChoice.init(rawValue:)))
+        case "downloadsSite": set(\.downloadsSite, string.flatMap(SiteChoice.init(rawValue:)))
+        case "searchSite": set(\.searchSite, string.flatMap(SiteChoice.init(rawValue:)))
+        case "searchBothSites": set(\.searchBothSites, number?.boolValue)
+        case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break
         }

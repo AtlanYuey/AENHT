@@ -25,12 +25,14 @@ fun interface SyncProgress {
  * galleries favorited in the app, or first seen by a later sync, get the
  * time they were seen.
  */
-class FavoritesMirror(
+class FavoritesMirror internal constructor(
     private val db: AenhtDatabase,
     private val nh: NhApi,
     private val eh: EhApi,
-    private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
+    private val now: () -> Long,
 ) {
+    constructor(db: AenhtDatabase, nh: NhApi, eh: EhApi) : this(db, nh, eh, { Clock.System.now().toEpochMilliseconds() })
+
     private val lock = Mutex()
 
     @Throws(CancellationException::class)

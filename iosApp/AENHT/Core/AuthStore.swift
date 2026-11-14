@@ -28,7 +28,7 @@ final class AuthStore: NSObject, TokenStorage, @unchecked Sendable {
     }
 }
 
-private enum Keychain {
+enum Keychain {
     static let service = "com.atlanyuey.aenht"
 
     static func read(_ key: String) -> String? {

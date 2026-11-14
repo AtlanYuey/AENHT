@@ -453,6 +453,7 @@ object AppSettings {
         "downloadsSite" to downloadsSite.raw,
         "searchSite" to searchSite.raw,
         "searchBothSites" to searchBothSites,
+        "favoritesAllFolders" to favoritesAllFolders.sorted().joinToString(","),
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -501,6 +502,7 @@ object AppSettings {
                 "downloadsSite" -> string?.let { downloadsSite = SiteChoice.of(it, downloadsSite) }
                 "searchSite" -> string?.let { searchSite = SiteChoice.of(it, searchSite) }
                 "searchBothSites" -> bool?.let { searchBothSites = it }
+                "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }

@@ -54,6 +54,9 @@ final class GalleryModel {
             let result = try await NHClient.shared.setFavorite(id, target)
             isFavorited = result.favorited ?? target
             numFavorites = result.numFavorites ?? numFavorites
+            if let card = preview ?? detail?.asItem {
+                if isFavorited { await FavoritesStore.shared.added(card, folder: 0) } else { await FavoritesStore.shared.removed(card) }
+            }
         } catch {
             isFavorited = !target
             actionError = error.localizedDescription
@@ -343,7 +346,7 @@ struct SecondaryButtonStyle: ViewModifier {
 /// The blurred cover behind the top of the gallery page. It belongs to the
 /// page, so it scrolls away with the header; its top edge stays on the top
 /// of the screen (under the bars, and when pulling down) by growing upwards.
-private struct Backdrop: View {
+struct Backdrop: View {
     let url: URL?
     /// Height below the top of the page content.
     let height: CGFloat
