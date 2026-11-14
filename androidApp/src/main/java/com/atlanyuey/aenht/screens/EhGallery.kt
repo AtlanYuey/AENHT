@@ -276,7 +276,12 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     detail?.japaneseTitle?.let {
                         Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
                     }
-                    detail?.let { TranslateLine(it.japaneseTitle ?: it.title, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
+                    detail?.let { d ->
+                        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) { TranslateLine(d.japaneseTitle ?: d.title, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
+                            RatingButton(d)
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         (detail?.category ?: preview?.category)?.let { c ->
                             Txt(
@@ -363,21 +368,19 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         }
     }
 
+    /** The rating under the title; tap to rate. */
     @Composable
-    private fun Info(d: EhGalleryDetail) {
+    private fun RatingButton(d: EhGalleryDetail) {
         val overlays = LocalOverlays.current
         val anchor = rememberAnchor()
         val rateTitle = tr("Rate")
         val errorTitle = tr("Couldn't Update")
         val loginNeeded = tr("Log in to your E-Hentai account first.")
-        val colors = AppTheme.colors
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
-            // The rating is the most useful number on E-Hentai: shown large; tap to rate.
-            Row(
+        val countTitle = tr("%lld ratings", d.ratingCount)
+        Row(
                 Modifier
-                    .fillMaxWidth()
                     .anchor(anchor)
+                    .clip(Capsule())
                     .clickable {
                         if (!EhSession.isLoggedIn) {
                             overlays.alert(rateTitle, loginNeeded)
@@ -386,17 +389,26 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         val stars = (1..10).map { it / 2.0 }.reversed()
                         overlays.menu(anchor.bounds, listOf(stars.map { v ->
                             MenuItem(if (v % 1.0 == 0.0) "★ ${v.toInt()}" else "★ $v") { rate(v) { overlays.alert(errorTitle, it) } }
-                        }), rateTitle)
+                        }), "$rateTitle · $countTitle")
                     }
-                    .padding(vertical = 4.dp),
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Txt(String.format(java.util.Locale.ROOT, "%.2f", rating), style = Type.title2.copy(fontWeight = FontWeight.Bold))
-                RatingStars(rating, size = 18.dp)
-                Txt(tr("%lld ratings", d.ratingCount), Modifier.weight(1f), style = Type.footnote, color = colors.secondaryLabel)
-                if (d.ratedByUser) AppIcon(Icons.CheckCircle, tr("Rated"), tint = AppTheme.tint, size = 16.dp)
+                RatingStars(rating, size = 11.dp)
+                Txt(
+                    String.format(java.util.Locale.ROOT, "%.2f", rating),
+                    style = Type.footnote.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (d.ratedByUser) AppTheme.tint else Color.Unspecified,
+                    maxLines = 1,
+                )
             }
+    }
+
+    @Composable
+    private fun Info(d: EhGalleryDetail) {
+        val colors = AppTheme.colors
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 InfoCell(tr("Pages"), "${d.pages}")

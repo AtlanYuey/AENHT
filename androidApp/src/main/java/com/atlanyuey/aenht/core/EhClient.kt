@@ -101,3 +101,14 @@ object EhClient {
     suspend fun postComment(gid: Long, token: String, text: String): List<EhComment> = call { postComment(gid, token, text) }
     suspend fun galleryToken(gid: Long, pageToken: String, page: Int): String = call { galleryToken(gid, pageToken, page) }
 }
+
+/** ExHentai is in use: E-Hentai shows under ExHentai's name everywhere. */
+val exHentaiActive: Boolean get() = AppSettings.useExHentai && EhSession.hasExHentai
+
+/** The site's name as shown ("ExHentai" while it is in use). */
+val com.atlanyuey.aenht.shared.site.Site.label: String
+    get() = if (this == com.atlanyuey.aenht.shared.site.Site.EHENTAI && exHentaiActive) "ExHentai" else displayName
+
+/** The site's short name on badges ("ExH" while ExHentai is in use). */
+val com.atlanyuey.aenht.shared.site.Site.shortLabel: String
+    get() = if (this == com.atlanyuey.aenht.shared.site.Site.EHENTAI && exHentaiActive) "ExH" else badge

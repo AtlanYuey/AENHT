@@ -68,4 +68,39 @@ class TranslatorTest {
         assertEquals("zh-Hant", Translator.translatorCode("zh-Hant-TW"))
         assertEquals("pt", Translator.translatorCode("pt-BR"))
     }
+
+    @Test
+    fun usageIsCountedAndTheSpendingLimitHandsOver() = runTest {
+        val engine = MockEngine { request ->
+            val url = request.url.toString()
+            when {
+                url.endsWith("/models") -> respond("""{"data":[{"id":"b-model","pricing":{"prompt":"0.000001","completion":"0.000002"}},{"id":"a-model"}]}""", HttpStatusCode.OK, json)
+                url.startsWith("https://a.example") ->
+                    respond("""{"choices":[{"message":{"content":"甲"},"finish_reason":"stop"}],"usage":{"prompt_tokens":600000,"completion_tokens":400000}}""", HttpStatusCode.OK, json)
+                else -> respond("""{"choices":[{"message":{"content":"乙"},"finish_reason":"stop"}]}""", HttpStatusCode.OK, json)
+            }
+        }
+        // 2026-11-14
+        val t = Translator(buildHttpClient(engine)) { 1_794_960_000_000L }
+        assertEquals("2026-11", Translator.monthOf(1_794_960_000_000L))
+        assertEquals("1970-01", Translator.monthOf(0L))
+        val a = LlmService("1", "A", "https://a.example/v1", "m", inputPrice = 1.0, outputPrice = 2.0, spendLimit = 1.0)
+        val b = LlmService("2", "B", "https://b.example/v1", "m")
+        val keys = mapOf("1" to "k", "2" to "k")
+        assertEquals("甲", t.translate("x", "zh-Hans", TranslationKind.TITLE, listOf(a, b), keys, null).text)
+        val used = t.usage(a)
+        assertEquals(600_000L, used.monthInput)
+        assertEquals(1.4, used.monthCost, 1e-9)
+        // Past the limit: B takes over.
+        val r = t.translate("y", "zh-Hans", TranslationKind.TITLE, listOf(a, b), keys, null)
+        assertEquals("B", r.provider)
+        assertTrue(r.fellBack)
+        // The ledger survives saving.
+        val copy = com.atlanyuey.aenht.shared.translate.LlmUsageLedger.decode(t.ledger.encode())
+        assertEquals(1.4, copy.usage("1", "2026-11").totalCost, 1e-9)
+        assertEquals(0.0, copy.usage("1", "2026-12").monthCost, 1e-9)
+
+        assertEquals(listOf("a-model", "b-model"), t.models("https://x.example/v1", "k"))
+        assertEquals(listOf(1.0, 2.0), t.publishedPrice("https://x.example/v1", "k", "b-model")?.map { kotlin.math.round(it * 1e6) / 1e6 })
+    }
 }

@@ -347,9 +347,16 @@
     <string name="l_344">選択</string>
     <string name="l_345">すべて選択</string>
     <string name="l_346">ダウンロード中</string>
-    <string name="l_347">設定のバックアップ</string>
-    <string name="l_348">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_349">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_350">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_351">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_347">フェードでページ送り</string>
+    <string name="l_348">フェードにすると、ページはスライドせずその場で次のページに切り替わり、速くめくっても目が疲れにくくなります。</string>
+    <string name="l_349">固定の行</string>
+    <string name="l_350">1 行目</string>
+    <string name="l_351">2 行目</string>
+    <string name="l_352">なし</string>
+    <string name="l_353">一覧の上に並ぶ表紙の行（最大 2 行）。一覧と一緒に読み込み・更新されます。</string>
+    <string name="l_354">設定のバックアップ</string>
+    <string name="l_355">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_356">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_357">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_358">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

@@ -347,9 +347,16 @@
     <string name="l_344">Seleccionar</string>
     <string name="l_345">Seleccionar todo</string>
     <string name="l_346">Descargando</string>
-    <string name="l_347">Copia de los ajustes</string>
-    <string name="l_348">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_349">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_350">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_351">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_347">Pasar página con fundido</string>
+    <string name="l_348">Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.</string>
+    <string name="l_349">Filas fijas</string>
+    <string name="l_350">Primera fila</string>
+    <string name="l_351">Segunda fila</string>
+    <string name="l_352">Ninguna</string>
+    <string name="l_353">Filas de portadas sobre la lista, como máximo dos. Se cargan con la lista y al actualizar.</string>
+    <string name="l_354">Copia de los ajustes</string>
+    <string name="l_355">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_356">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_357">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_358">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

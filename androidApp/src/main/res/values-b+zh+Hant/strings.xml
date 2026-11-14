@@ -347,9 +347,16 @@
     <string name="l_344">選擇</string>
     <string name="l_345">全選</string>
     <string name="l_346">下載中</string>
-    <string name="l_347">設定備份</string>
-    <string name="l_348">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_349">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_350">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_351">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_347">漸變翻頁動畫</string>
+    <string name="l_348">開啟漸變翻頁後，頁面不再滑動，而是在原位淡入下一頁，快速翻頁時更護眼。</string>
+    <string name="l_349">首頁固定推薦</string>
+    <string name="l_350">第一行</string>
+    <string name="l_351">第二行</string>
+    <string name="l_352">無</string>
+    <string name="l_353">顯示在列表上方的封面列，最多兩列，隨列表一起載入和重新整理。</string>
+    <string name="l_354">設定備份</string>
+    <string name="l_355">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_356">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_357">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_358">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

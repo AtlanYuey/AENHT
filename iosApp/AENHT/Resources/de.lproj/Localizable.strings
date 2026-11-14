@@ -346,3 +346,10 @@
 "Select" = "Select";
 "Select All" = "Select All";
 "Downloading" = "Downloading";
+"Fade Page Turns" = "Fade Page Turns";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.";
+"Pinned Rows" = "Pinned Rows";
+"First Row" = "First Row";
+"Second Row" = "Second Row";
+"None" = "None";
+"Rows of covers above the feed, at most two. They load with the feed and on refresh." = "Rows of covers above the feed, at most two. They load with the feed and on refresh.";

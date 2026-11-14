@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.ui.components
 
+import com.atlanyuey.aenht.core.label
+import com.atlanyuey.aenht.core.shortLabel
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -163,7 +165,7 @@ fun CoverView(
             Box(Modifier.padding(8.dp).align(Alignment.TopStart).size(10.dp).clip(Capsule()).background(categoryTint))
         }
         if (LocalShowsSiteBadge.current) {
-            CoverBadge(item.site.badge, Modifier.padding(6.dp).align(Alignment.TopEnd))
+            CoverBadge(item.site.shortLabel, Modifier.padding(6.dp).align(Alignment.TopEnd))
         }
         overlay(Modifier.align(Alignment.BottomCenter))
         LocalCoverBadge.current?.invoke(this, item)
@@ -264,7 +266,7 @@ fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifie
             else -> {
                 CoverView(item)
                 Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
-                if (AppSettings.showTags) CardTags(item, overlay = false)
+                CardFooter(item, overlay = false)
             }
         }
     }
@@ -280,8 +282,40 @@ private fun CompactOverlay(item: GallerySummary, modifier: Modifier) {
             .padding(start = 10.dp, end = 10.dp, top = 36.dp, bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        if (AppSettings.showTags) CardTags(item, overlay = true)
+        CardFooter(item, overlay = true)
         Txt(GalleryItem.pretty(item.title), style = Type.footnote.copy(fontWeight = FontWeight.SemiBold), color = Color.White, maxLines = 2)
+    }
+}
+
+/** Under a card: its tags (when shown) and, on the right, the rating. */
+@Composable
+fun CardFooter(item: GallerySummary, overlay: Boolean) {
+    val rating = item.rating ?: 0.0
+    if (!AppSettings.showTags && rating <= 0) return
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.weight(1f)) { if (AppSettings.showTags) CardTags(item, overlay) }
+        if (rating > 0) RatingBadge(rating, overlay)
+    }
+}
+
+/** One star filled as far as the rating goes (of 5), and the rating. */
+@Composable
+fun RatingBadge(rating: Double, overlay: Boolean = false, size: Dp = 11.dp) {
+    val color = Color(0xFFFFB400)
+    val fill = (rating / 5).coerceIn(0.0, 1.0).toFloat()
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Box(Modifier.size(size)) {
+            AppIcon(Icons.Star, null, tint = color.copy(alpha = 0.28f), size = size)
+            Box(Modifier.fillMaxSize().drawWithContent {
+                clipRect(right = this.size.width * fill) { this@drawWithContent.drawContent() }
+            }) { AppIcon(Icons.Star, null, tint = color, size = size) }
+        }
+        Txt(
+            String.format(java.util.Locale.ROOT, "%.2f", rating),
+            style = Type.caption2.copy(fontWeight = FontWeight.SemiBold),
+            color = if (overlay) Color.White else AppTheme.colors.secondaryLabel,
+            maxLines = 1,
+        )
     }
 }
 

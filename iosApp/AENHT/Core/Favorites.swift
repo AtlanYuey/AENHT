@@ -83,6 +83,7 @@ extension GalleryItem {
         token = r.token
         absoluteThumb = r.thumbnail
         favoriteFolder = Int(r.folder)
+        rating = r.rating > 0 ? r.rating : nil
     }
 
     var kotlinKey: GalleryKey {
@@ -94,6 +95,6 @@ extension GalleryItem {
         Bridge.shared.summary(site: site.kotlin, id: Int64(id), token: token, title: title,
                               thumbnail: thumbURL?.absoluteString, thumbWidth: Int32(thumbnailWidth),
                               thumbHeight: Int32(thumbnailHeight), pages: Int32(numPages), mediaId: mediaID,
-                              tagIds: tagIDs.map { KotlinInt(int: Int32($0)) })
+                              tagIds: tagIDs.map { KotlinInt(int: Int32($0)) }, rating: rating ?? 0)
     }
 }

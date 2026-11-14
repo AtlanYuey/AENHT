@@ -389,3 +389,43 @@ struct FiltersSettingsView: View {
         .task { await filters.refreshNhBlacklist(force: true) }
     }
 }
+
+/// Settings › General › Home › Pinned Rows: up to two rows of covers above each site's feed.
+struct HomeRowsSettingsView: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        Form {
+            ForEach(settings.enabledSites) { site in
+                let rows = settings.homeRows(for: site)
+                Section {
+                    Picker("First Row", selection: Binding<HomeRow?>(
+                        get: { rows.first },
+                        set: { new in
+                            guard let new else { settings.setHomeRows([], for: site); return }
+                            settings.setHomeRows([new] + rows.dropFirst().filter { $0 != new }, for: site)
+                        }
+                    )) {
+                        Text("None").tag(HomeRow?.none)
+                        ForEach(HomeRow.rows(for: site)) { Text($0.title).tag(HomeRow?.some($0)) }
+                    }
+                    if let first = rows.first {
+                        Picker("Second Row", selection: Binding<HomeRow?>(
+                            get: { rows.dropFirst().first },
+                            set: { new in settings.setHomeRows([first, new].compactMap { $0 }, for: site) }
+                        )) {
+                            Text("None").tag(HomeRow?.none)
+                            ForEach(HomeRow.rows(for: site).filter { $0 != first }) { Text($0.title).tag(HomeRow?.some($0)) }
+                        }
+                    }
+                } header: {
+                    Text(site.displayName)
+                } footer: {
+                    Text("Rows of covers above the feed, at most two. They load with the feed and on refresh.")
+                }
+            }
+        }
+        .navigationTitle("Pinned Rows")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}

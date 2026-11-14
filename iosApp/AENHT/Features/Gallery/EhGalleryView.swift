@@ -162,7 +162,11 @@ struct EhGalleryView: View {
                     Text(japanese).font(.subheadline).foregroundStyle(.secondary).lineLimit(titleExpanded ? nil : 2)
                 }
                 if let detail = model.detail {
-                    TranslateLine(text: detail.japaneseTitle ?? detail.title, kind: .title)
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        TranslateLine(text: detail.japaneseTitle ?? detail.title, kind: .title)
+                        Spacer(minLength: 0)
+                        ratingMenu(detail)
+                    }
                 }
                 HStack(spacing: 8) {
                     if let category = model.card?.category {
@@ -251,31 +255,6 @@ struct EhGalleryView: View {
     private func info(_ detail: EhGalleryDetail) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Divider()
-            // The rating matters most on E-Hentai: shown large; the menu rates.
-            Menu {
-                ForEach((1...10).reversed(), id: \.self) { half in
-                    let stars = Double(half) / 2
-                    Button(stars.truncatingRemainder(dividingBy: 1) == 0 ? "★ \(Int(stars))" : String(format: "★ %.1f", stars)) {
-                        Task { alertMessage = await model.rate(stars) }
-                    }
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    Text(model.rating, format: .number.precision(.fractionLength(2)))
-                        .font(.title2.bold())
-                        .foregroundStyle(.primary)
-                    RatingStars(rating: model.rating, size: 17)
-                    Text("\(Int(detail.ratingCount)) ratings").font(.footnote).foregroundStyle(.secondary)
-                    Spacer()
-                    if detail.ratedByUser {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
-                    }
-                }
-            } primaryAction: {
-                if !EhSession.shared.isLoggedIn { showLogin = true }
-            }
-            .buttonStyle(.plain)
-            Divider()
             HStack {
                 infoCell("Pages", "\(detail.pages)")
                 infoCell("Favorites", Int(detail.favoritedCount).formatted(.number.notation(.compactName)))
@@ -286,6 +265,31 @@ struct EhGalleryView: View {
         }
         .padding(.horizontal)
         .padding(.top, 22)
+    }
+
+    /// The rating under the title (tap: rate the gallery).
+    private func ratingMenu(_ detail: EhGalleryDetail) -> some View {
+        Menu {
+            Section("\(Int(detail.ratingCount)) ratings") {
+                ForEach((1...10).reversed(), id: \.self) { half in
+                    let stars = Double(half) / 2
+                    Button(stars.truncatingRemainder(dividingBy: 1) == 0 ? "★ \(Int(stars))" : String(format: "★ %.1f", stars)) {
+                        Task { alertMessage = await model.rate(stars) }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                RatingStars(rating: model.rating, size: 11)
+                Text(model.rating, format: .number.precision(.fractionLength(2)))
+                    .font(.footnote.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(detail.ratedByUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+            }
+            .fixedSize()
+        } primaryAction: {
+            if !EhSession.shared.isLoggedIn { showLogin = true }
+        }
+        .buttonStyle(.plain)
     }
 
     private func infoCell(_ title: LocalizedStringKey, _ value: String) -> some View {

@@ -15,6 +15,8 @@ struct InlineSearch: View {
     /// The site searched; switched under the field with the results.
     @State private var site: SiteKind = AppSettings.shared.searchStartSite
     @FocusState private var focused: Bool
+    /// The search follows a swipe from the left edge, which closes it (like going back).
+    @State private var dragX: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +24,23 @@ struct InlineSearch: View {
             content
         }
         .background(.background)
+        .offset(x: dragX)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 12, coordinateSpace: .global)
+                .onChanged { value in
+                    guard value.startLocation.x < 32, value.translation.width > 0 else { return }
+                    dragX = value.translation.width
+                }
+                .onEnded { value in
+                    guard value.startLocation.x < 32 else { return }
+                    if value.translation.width > 110 || value.predictedEndTranslation.width > 260 {
+                        withAnimation(.smooth(duration: 0.22)) { dragX = UIScreen.main.bounds.width }
+                        close()
+                    } else {
+                        withAnimation(.smooth(duration: 0.22)) { dragX = 0 }
+                    }
+                }
+        )
         .onChange(of: text) { _, new in
             if new.isEmpty { query = "" }
         }
@@ -36,21 +55,7 @@ struct InlineSearch: View {
     private var field: some View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                    .overlay(alignment: .bottomTrailing) {
-                        // The site being searched, on the magnifier.
-                        if settings.enabledSites.count > 1 {
-                            Text(site.badge)
-                                .font(.system(size: 7, weight: .heavy))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 2)
-                                .background(site == .ehentai ? Color(red: 0.62, green: 0.15, blue: 0.13) : .accentColor,
-                                            in: RoundedRectangle(cornerRadius: 3))
-                                .offset(x: 8, y: 6)
-                        }
-                    }
-                    .padding(.trailing, settings.enabledSites.count > 1 ? 6 : 0)
+                siteMenu
                 TextField("Titles, tags, artists, IDs", text: $text)
                     .focused($focused)
                     .submitLabel(.search)
@@ -76,6 +81,43 @@ struct InlineSearch: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    /// The magnifier with the searched site on it; with both sites, a menu that switches it.
+    @ViewBuilder private var siteMenu: some View {
+        if settings.enabledSites.count > 1 {
+            Menu {
+                ForEach(settings.enabledSites) { s in
+                    Button {
+                        site = s
+                    } label: {
+                        if s == site { Label(s.displayName, systemImage: "checkmark") } else { Text(s.displayName) }
+                    }
+                }
+            } label: {
+                magnifier
+            }
+            .accessibilityLabel(Text("Site"))
+        } else {
+            magnifier
+        }
+    }
+
+    private var magnifier: some View {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .overlay(alignment: .bottomTrailing) {                        // The site being searched, on the magnifier.
+                    if settings.enabledSites.count > 1 {
+                        Text(site.badge)
+                            .font(.system(size: 7, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 2)
+                            .background(site == .ehentai ? Color(red: 0.62, green: 0.15, blue: 0.13) : .accentColor,
+                                        in: RoundedRectangle(cornerRadius: 3))
+                            .offset(x: 8, y: 6)
+                    }
+                }
+                .padding(.trailing, settings.enabledSites.count > 1 ? 6 : 0)
     }
 
     @ViewBuilder private var content: some View {

@@ -346,3 +346,10 @@
 "Select" = "Seleccionar";
 "Select All" = "Seleccionar todo";
 "Downloading" = "Descargando";
+"Fade Page Turns" = "Pasar página con fundido";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.";
+"Pinned Rows" = "Filas fijas";
+"First Row" = "Primera fila";
+"Second Row" = "Segunda fila";
+"None" = "Ninguna";
+"Rows of covers above the feed, at most two. They load with the feed and on refresh." = "Filas de portadas sobre la lista, como máximo dos. Se cargan con la lista y al actualizar.";

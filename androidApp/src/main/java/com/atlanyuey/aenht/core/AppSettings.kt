@@ -186,6 +186,26 @@ enum class SiteChoice(val raw: String, val title: String) {
 }
 
 /** What the E-Hentai home page lists. */
+/** A row of covers pinned above the Home feed (at most two per site). */
+enum class HomeRow(val raw: String, val site: Site, val title: String) {
+    NhPopular("nh-popular", Site.NHENTAI, "Popular Now"),
+    NhToday("nh-today", Site.NHENTAI, "Popular Today"),
+    NhWeek("nh-week", Site.NHENTAI, "Popular This Week"),
+    NhMonth("nh-month", Site.NHENTAI, "Popular This Month"),
+    NhAll("nh-all", Site.NHENTAI, "All-Time Popular"),
+    EhPopular("eh-popular", Site.EHENTAI, "Popular Now"),
+    EhDay("eh-day", Site.EHENTAI, "Top Galleries Yesterday"),
+    EhMonth("eh-month", Site.EHENTAI, "Top Galleries This Month"),
+    EhYear("eh-year", Site.EHENTAI, "Top Galleries This Year"),
+    EhAll("eh-all", Site.EHENTAI, "Top Galleries of All Time");
+
+    companion object {
+        fun of(raw: String) = entries.firstOrNull { it.raw == raw }
+        fun of(site: Site) = entries.filter { it.site == site }
+        const val MAX = 2
+    }
+}
+
 enum class EhHomeList(val raw: String, val title: String) {
     Latest("latest", "Latest"),
     Popular("popular", "Popular Now"),
@@ -270,6 +290,7 @@ object AppSettings {
         doublePage = DoublePage.of(p.getString("doublePage", null))
         doublePageCover = p.getBoolean("doublePageCover", true)
         autoCrop = p.getBoolean("autoCrop", false)
+        homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -403,6 +424,18 @@ object AppSettings {
     /** Reader: plain white / black margins are cut off the pages (paged modes). */
     var autoCrop by Pref(false) { save("autoCrop", it) }
 
+    /** Rows pinned above the Home feed, both sites ("nh-popular,eh-popular"). */
+    var homeRowsRaw by Pref(DEFAULT_HOME_ROWS) { save("homeRows", it) }
+    private const val DEFAULT_HOME_ROWS = "nh-popular,eh-popular"
+
+    fun homeRows(site: Site): List<HomeRow> =
+        homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)
+
+    fun setHomeRows(site: Site, rows: List<HomeRow>) {
+        val others = homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site != site }
+        homeRowsRaw = (others + rows.distinct().take(HomeRow.MAX)).joinToString(",") { it.raw }
+    }
+
     /** The user's language models for translation, in order (JSON; keys are in the Keystore). */
     var llmServices by Pref("") { save("llmServices", it) }
 
@@ -519,6 +552,7 @@ object AppSettings {
         "doublePage" to doublePage.raw,
         "doublePageCover" to doublePageCover,
         "autoCrop" to autoCrop,
+        "homeRows" to homeRowsRaw,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -610,6 +644,7 @@ object AppSettings {
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }
                 "autoCrop" -> bool?.let { autoCrop = it }
+                "homeRows" -> string?.let { homeRowsRaw = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

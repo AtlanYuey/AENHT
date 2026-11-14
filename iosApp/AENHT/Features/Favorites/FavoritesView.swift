@@ -87,6 +87,7 @@ struct FavoritesView: View {
             }
         }
         .navigationTitle("Favorites")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) { titleMenu }
             if site == nil, let syncing = store.syncing {

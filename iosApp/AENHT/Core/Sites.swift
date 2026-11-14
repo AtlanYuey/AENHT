@@ -14,8 +14,11 @@ enum SiteKind: String, CaseIterable, Identifiable, Codable {
     case ehentai = "eh"
 
     var id: String { rawValue }
-    var badge: String { self == .nhentai ? "NH" : "EH" }
-    var displayName: String { self == .nhentai ? "nhentai" : "E-Hentai" }
+    /// ExHentai is in use: E-Hentai shows under ExHentai's name everywhere.
+    @MainActor static var exHentaiActive: Bool { AppSettings.shared.useExHentai && EhSession.shared.hasExHentai }
+
+    @MainActor var badge: String { self == .nhentai ? "NH" : Self.exHentaiActive ? "ExH" : "EH" }
+    @MainActor var displayName: String { self == .nhentai ? "nhentai" : Self.exHentaiActive ? "ExHentai" : "E-Hentai" }
 
     var kotlin: Site { self == .nhentai ? Bridge.shared.nhentai : Bridge.shared.ehentai }
 }
@@ -26,11 +29,11 @@ enum SiteChoice: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: LocalizedStringKey {
+    @MainActor var title: LocalizedStringKey {
         switch self {
         case .follow: "Same as Home"
         case .nh: "nhentai"
-        case .eh: "E-Hentai"
+        case .eh: LocalizedStringKey(SiteKind.ehentai.displayName)
         case .all: "All"
         }
     }
@@ -302,6 +305,13 @@ final class EhPageDataLoader: DataLoading, @unchecked Sendable {
                   didReceiveData: @escaping (Data, URLResponse) -> Void,
                   completion: @escaping (Error?) -> Void) -> any Cancellable {
         guard let url = request.url, url.scheme == "ehpage" else {
+            // Covers and thumbnails on ExHentai's servers need the account's cookies.
+            if let url = request.url, request.value(forHTTPHeaderField: "Cookie") == nil,
+               let cookies = EhService.shared.api.imageCookieHeader(url: url.absoluteString) {
+                var signed = request
+                signed.setValue(cookies, forHTTPHeaderField: "Cookie")
+                return base.loadData(with: signed, didReceiveData: didReceiveData, completion: completion)
+            }
             return base.loadData(with: request, didReceiveData: didReceiveData, completion: completion)
         }
         let task = Task {

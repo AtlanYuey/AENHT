@@ -1,6 +1,7 @@
 package com.atlanyuey.aenht.shared.db
 
 import androidx.room.AutoMigration
+import androidx.room.ColumnInfo
 import kotlinx.serialization.Serializable
 
 import androidx.room.ConstructedBy
@@ -42,6 +43,8 @@ data class HistoryRecord(
     val readAt: Long,
     /** nhentai tag ids, comma separated (language badge, card tags). */
     val tagIds: String = "",
+    /** E-Hentai's rating when last seen (0: none), for the card. */
+    @ColumnInfo(defaultValue = "0") val rating: Double = 0.0,
 ) {
     val galleryKey: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, galleryId, token)
     val tagIdList: List<Int> get() = tagIds.split(',').mapNotNull { it.toIntOrNull() }
@@ -82,6 +85,8 @@ data class FavoriteRecord(
     val exactTime: Boolean,
     val note: String? = null,
     val tagIds: String = "",
+    /** E-Hentai's rating when last seen (0: none), for the card. */
+    @ColumnInfo(defaultValue = "0") val rating: Double = 0.0,
 )
 
 @Dao
@@ -170,8 +175,8 @@ interface TombstoneDao {
 
 @Database(
     entities = [HistoryRecord::class, SearchHistoryRecord::class, FavoriteRecord::class, Tombstone::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ConstructedBy(AenhtDatabaseConstructor::class)
 abstract class AenhtDatabase : RoomDatabase() {

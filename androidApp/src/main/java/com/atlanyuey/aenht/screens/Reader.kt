@@ -684,7 +684,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 /** Shared by the reader sheet and More > Reading. */
 fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
     run {
-        section(footer = { FooterText(tr("Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
+        section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
             PickerRow(
                 tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
                 label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
@@ -716,7 +716,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
                 RowSeparator()
             }
             ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
-            ToggleRow(tr("Page Turn Animation"), AppSettings.animatePageTurns, { AppSettings.animatePageTurns = it })
+            ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
             ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it })
             ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it }, last = true)
         }

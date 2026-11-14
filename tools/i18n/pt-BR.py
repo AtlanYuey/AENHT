@@ -240,4 +240,11 @@ T = [
     "Select",
     "Select All",
     "Downloading",
+    "Fade Page Turns",
+    "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.",
+    "Pinned Rows",
+    "First Row",
+    "Second Row",
+    "None",
+    "Rows of covers above the feed, at most two. They load with the feed and on refresh.",
 ]

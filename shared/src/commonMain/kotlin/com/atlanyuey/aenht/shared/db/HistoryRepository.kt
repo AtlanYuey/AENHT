@@ -27,6 +27,7 @@ class HistoryRepository internal constructor(private val db: AenhtDatabase, priv
         numPages: Int = 0,
         page: Int? = null,
         tagIds: List<Int> = emptyList(),
+        rating: Double = 0.0,
     ): HistoryRecord {
         val previous = db.history().get(key.storageKey)
         val record = HistoryRecord(
@@ -43,6 +44,7 @@ class HistoryRepository internal constructor(private val db: AenhtDatabase, priv
             lastPage = page ?: previous?.lastPage ?: 0,
             readAt = now(),
             tagIds = tagIds.takeIf { it.isNotEmpty() }?.joinToString(",") ?: previous?.tagIds ?: "",
+            rating = if (rating > 0) rating else previous?.rating ?: 0.0,
         )
         db.history().upsert(record)
         return record

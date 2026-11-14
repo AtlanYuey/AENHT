@@ -99,9 +99,10 @@ object Bridge {
 
     fun summary(
         site: Site, id: Long, token: String?, title: String, thumbnail: String?, thumbWidth: Int, thumbHeight: Int,
-        pages: Int, mediaId: String, tagIds: List<Int>,
+        pages: Int, mediaId: String, tagIds: List<Int>, rating: Double,
     ): GallerySummary = GallerySummary(
         key = GalleryKey(site, id, token), title = title, thumbnail = thumbnail, thumbWidth = thumbWidth,
         thumbHeight = thumbHeight, pages = pages, languageBadge = null, nhTagIds = tagIds, mediaId = mediaId,
+        rating = rating.takeIf { it > 0 },
     )
 }

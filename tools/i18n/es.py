@@ -240,4 +240,11 @@ T = [
     "Seleccionar",
     "Seleccionar todo",
     "Descargando",
+    "Pasar página con fundido",
+    "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.",
+    "Filas fijas",
+    "Primera fila",
+    "Segunda fila",
+    "Ninguna",
+    "Filas de portadas sobre la lista, como máximo dos. Se cargan con la lista y al actualizar.",
 ]

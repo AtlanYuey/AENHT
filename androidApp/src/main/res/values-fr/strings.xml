@@ -347,9 +347,16 @@
     <string name="l_344">Select</string>
     <string name="l_345">Select All</string>
     <string name="l_346">Downloading</string>
-    <string name="l_347">Sauvegarde des réglages</string>
-    <string name="l_348">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_349">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_350">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_351">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_347">Fade Page Turns</string>
+    <string name="l_348">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
+    <string name="l_349">Pinned Rows</string>
+    <string name="l_350">First Row</string>
+    <string name="l_351">Second Row</string>
+    <string name="l_352">None</string>
+    <string name="l_353">Rows of covers above the feed, at most two. They load with the feed and on refresh.</string>
+    <string name="l_354">Sauvegarde des réglages</string>
+    <string name="l_355">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_356">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_357">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_358">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

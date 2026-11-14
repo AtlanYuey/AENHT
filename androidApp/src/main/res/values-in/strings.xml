@@ -347,9 +347,16 @@
     <string name="l_344">Select</string>
     <string name="l_345">Select All</string>
     <string name="l_346">Downloading</string>
-    <string name="l_347">Cadangan Pengaturan</string>
-    <string name="l_348">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_349">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_350">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_351">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_347">Fade Page Turns</string>
+    <string name="l_348">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
+    <string name="l_349">Pinned Rows</string>
+    <string name="l_350">First Row</string>
+    <string name="l_351">Second Row</string>
+    <string name="l_352">None</string>
+    <string name="l_353">Rows of covers above the feed, at most two. They load with the feed and on refresh.</string>
+    <string name="l_354">Cadangan Pengaturan</string>
+    <string name="l_355">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_356">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_357">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_358">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

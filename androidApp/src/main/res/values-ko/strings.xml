@@ -347,9 +347,16 @@
     <string name="l_344">선택</string>
     <string name="l_345">모두 선택</string>
     <string name="l_346">다운로드 중</string>
-    <string name="l_347">설정 백업</string>
-    <string name="l_348">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_349">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_350">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_351">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_347">페이드 페이지 넘김</string>
+    <string name="l_348">페이드로 넘기면 페이지가 밀리지 않고 그 자리에서 다음 페이지로 바뀌어 빠르게 넘길 때 눈이 편합니다.</string>
+    <string name="l_349">고정 행</string>
+    <string name="l_350">첫 번째 행</string>
+    <string name="l_351">두 번째 행</string>
+    <string name="l_352">없음</string>
+    <string name="l_353">목록 위에 표시되는 표지 행으로 최대 두 줄입니다. 목록과 함께 불러오고 새로고침됩니다.</string>
+    <string name="l_354">설정 백업</string>
+    <string name="l_355">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_356">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_357">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_358">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

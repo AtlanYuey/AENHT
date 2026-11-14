@@ -346,3 +346,10 @@
 "Select" = "選擇";
 "Select All" = "全選";
 "Downloading" = "下載中";
+"Fade Page Turns" = "漸變翻頁動畫";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "開啟漸變翻頁後，頁面不再滑動，而是在原位淡入下一頁，快速翻頁時更護眼。";
+"Pinned Rows" = "首頁固定推薦";
+"First Row" = "第一行";
+"Second Row" = "第二行";
+"None" = "無";
+"Rows of covers above the feed, at most two. They load with the feed and on refresh." = "顯示在列表上方的封面列，最多兩列，隨列表一起載入和重新整理。";

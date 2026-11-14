@@ -347,9 +347,16 @@
     <string name="l_344">Select</string>
     <string name="l_345">Select All</string>
     <string name="l_346">Downloading</string>
-    <string name="l_347">Einstellungen sichern</string>
-    <string name="l_348">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_349">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_350">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_351">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_347">Fade Page Turns</string>
+    <string name="l_348">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
+    <string name="l_349">Pinned Rows</string>
+    <string name="l_350">First Row</string>
+    <string name="l_351">Second Row</string>
+    <string name="l_352">None</string>
+    <string name="l_353">Rows of covers above the feed, at most two. They load with the feed and on refresh.</string>
+    <string name="l_354">Einstellungen sichern</string>
+    <string name="l_355">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_356">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_357">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_358">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

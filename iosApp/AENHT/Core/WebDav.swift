@@ -130,7 +130,8 @@ final class WebDavService {
                 thumbnail: e.thumbnail, thumbWidth: Int32(e.thumbWidth), thumbHeight: Int32(e.thumbHeight),
                 numPages: Int32(e.numPages), lastPage: Int32(e.lastPage),
                 readAt: Int64(e.lastRead.timeIntervalSince1970 * 1000),
-                tagIds: e.tagIDs.map(String.init).joined(separator: ",")
+                tagIds: e.tagIDs.map(String.init).joined(separator: ","),
+                rating: e.rating
             )
         }
         try await history.put(records: records)
@@ -155,12 +156,14 @@ final class WebDavService {
                 if !r.title.isEmpty { e.title = r.title }
                 if r.numPages > 0 { e.numPages = Int(r.numPages) }
                 if !tags.isEmpty { e.tagIDs = tags }
+                if r.rating > 0 { e.rating = r.rating }
             } else {
                 context.insert(HistoryEntry(
                     key: r.key, gid: Int(r.galleryId), site: r.site, token: r.token, mediaID: r.mediaId, title: r.title,
                     thumbnail: r.thumbnail, thumbWidth: Int(r.thumbWidth), thumbHeight: Int(r.thumbHeight),
                     numPages: Int(r.numPages), tagIDs: tags, lastPage: Int(r.lastPage), lastRead: date
                 ))
+                byKey[r.key] = nil
             }
         }
         try context.save()

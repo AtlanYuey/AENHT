@@ -388,3 +388,10 @@
 "Select" = "选择";
 "Select All" = "全选";
 "Downloading" = "下载中";
+"Fade Page Turns" = "渐变翻页动画";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。";
+"Pinned Rows" = "首页固定推荐";
+"First Row" = "第一行";
+"Second Row" = "第二行";
+"None" = "无";
+"Rows of covers above the feed, at most two. They load with the feed and on refresh." = "显示在列表上方的封面行，最多两行，随列表一起加载和刷新。";

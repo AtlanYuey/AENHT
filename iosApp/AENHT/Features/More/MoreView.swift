@@ -80,6 +80,7 @@ struct MoreView: View {
             }
         }
         .navigationTitle("Me")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogin) { LoginView() }
     }
 }
@@ -693,6 +694,7 @@ struct GeneralSettingsView: View {
         @Bindable var settings = settings
         Form {
             Section("Home") {
+                NavigationLink("Pinned Rows") { HomeRowsSettingsView() }
                 Picker("Language", selection: $settings.homeLanguage) {
                     ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
                 }

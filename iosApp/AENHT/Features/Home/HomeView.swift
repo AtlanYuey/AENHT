@@ -2,7 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
-    @State private var popular: [GalleryItem] = []
+    /// The rows pinned above the feed (Settings › General › Pinned Rows), as loaded.
+    @State private var rows: [HomeRow: [GalleryItem]] = [:]
     @State private var nhFeed = GalleryFeed.nh { page in
         let settings = AppSettings.shared
         return try await NHClient.shared.galleries(
@@ -29,9 +30,12 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                if settings.currentSite == .nhentai, !popular.isEmpty {
-                    SectionTitle(title: "Popular Now")
-                    PopularRow(items: popular)
+                SiteTitle()
+                ForEach(settings.homeRows(for: settings.currentSite)) { row in
+                    if let items = rows[row], !items.isEmpty {
+                        SectionTitle(title: LocalizedStringKey(row.titleKey))
+                        PopularRow(items: items)
+                    }
                 }
                 FeedHeader { startSearch() }
                     .onGeometryChange(for: CGFloat.self) {
@@ -52,23 +56,15 @@ struct HomeView: View {
             withAnimation(.smooth(duration: 0.25)) { docked = under }
         }
         .hidesBarsOnScroll()
-        .navigationTitle("Home")
-        .toolbar {
+        // No navigation bar: the page starts with the site's name (SiteTitle)
+        // right under the status bar; a small bar comes in once the feed's
+        // header has scrolled away.
+        .navigationTitle(settings.currentSite.displayName)
+        .toolbar(.hidden, for: .navigationBar)
+        .overlay(alignment: .top) {
             if docked, !searching {
-                ToolbarItem(placement: .topBarLeading) {
-                    HStack(spacing: 8) {
-                        SiteMenu(compact: true)
-                        SortMenu(compact: true)
-                    }
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    LanguageMenu(compact: true)
-                    Button {
-                        startSearch()
-                    } label: {
-                        Label("Search", systemImage: "magnifyingglass")
-                    }
-                }
+                DockedBar(onSearch: startSearch)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .overlay {
@@ -84,7 +80,16 @@ struct HomeView: View {
         .onChange(of: settings.homeLanguage) { Task { await feed.reload() } }
         .onChange(of: settings.homeSort) { Task { await nhFeed.reload() } }
         .onChange(of: settings.ehHomeList) { Task { await ehFeed.reload() } }
-        .onChange(of: settings.useExHentai) { Task { await ehFeed.reload() } }
+        .onChange(of: settings.useExHentai) {
+            // ExHentai's lists are other galleries.
+            rows = rows.filter { $0.key.site != .ehentai }
+            Task {
+                async let rows: Void = loadRows()
+                await ehFeed.reload()
+                await rows
+            }
+        }
+        .onChange(of: settings.homeRowsRaw) { Task { await loadRows() } }
         .onChange(of: settings.currentSite) { Task { if !feed.hasLoaded { await reload() } } }
     }
 
@@ -95,11 +100,67 @@ struct HomeView: View {
     private func reload() async {
         let current = feed
         async let list: Void = current.reload()
-        if settings.currentSite == .nhentai {
-            let popular = (try? await NHClient.shared.popular()) ?? self.popular
-            self.popular = popular
-        }
+        await loadRows()
         await list
+    }
+
+    private func loadRows() async {
+        let wanted = settings.homeRows(for: settings.currentSite)
+        await withTaskGroup(of: (HomeRow, [GalleryItem]?).self) { group in
+            for row in wanted {
+                group.addTask { (row, try? await Self.load(row)) }
+            }
+            for await (row, items) in group {
+                if let items { rows[row] = items }
+            }
+        }
+    }
+
+    private static func load(_ row: HomeRow) async throws -> [GalleryItem] {
+        switch row {
+        case .nhPopular: return try await NHClient.shared.popular()
+        case .nhToday: return try await NHClient.shared.galleries(query: "", sort: .popularToday, page: 1).result
+        case .nhWeek: return try await NHClient.shared.galleries(query: "", sort: .popularWeek, page: 1).result
+        case .nhMonth: return try await NHClient.shared.galleries(query: "", sort: .popularMonth, page: 1).result
+        case .nhAll: return try await NHClient.shared.galleries(query: "", sort: .popular, page: 1).result
+        case .ehPopular: return try await EhService.shared.list(Bridge.shared.popular(), cursor: nil).items
+        case .ehDay: return try await EhService.shared.list(Bridge.shared.toplist(period: 0), cursor: nil).items
+        case .ehMonth: return try await EhService.shared.list(Bridge.shared.toplist(period: 1), cursor: nil).items
+        case .ehYear: return try await EhService.shared.list(Bridge.shared.toplist(period: 2), cursor: nil).items
+        case .ehAll: return try await EhService.shared.list(Bridge.shared.toplist(period: 3), cursor: nil).items
+        }
+    }
+}
+
+/// The bar over the feed once its header has scrolled away: the site, the
+/// sort, the language and search.
+private struct DockedBar: View {
+    let onSearch: () -> Void
+
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        HStack(spacing: 14) {
+            SortMenu(compact: true)
+            Spacer(minLength: 8)
+            Text(settings.currentSite.displayName)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            LanguageMenu(compact: true)
+                .labelStyle(.iconOnly)
+            Button(action: onSearch) {
+                Image(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel(Text("Search"))
+        }
+        .font(.body.weight(.semibold))
+        .tint(.primary)
+        .padding(.horizontal)
+        .frame(height: 44)
+        .frame(maxWidth: .infinity)
+        .background(.bar, ignoresSafeAreaEdges: .top)
     }
 }
 
@@ -111,7 +172,6 @@ private struct FeedHeader: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            SiteMenu(compact: false)
             SortMenu(compact: false)
             Spacer(minLength: 0)
             LanguageMenu(compact: false)
@@ -176,34 +236,46 @@ private struct SortMenu: View {
     }
 }
 
-/// NH / EH: switches the site the home page is on (hidden with one site).
-private struct SiteMenu: View {
-    let compact: Bool
-
+/// The page's large title: the site Home shows ("nhentai", "E-Hentai",
+/// "ExHentai"). With both sites on, it is the menu that switches them.
+private struct SiteTitle: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        if settings.enabledSites.count > 1 {
-            Menu {
-                ForEach(settings.enabledSites) { site in
-                    Button {
-                        settings.homeSite = site
-                    } label: {
-                        if site == settings.currentSite { Label(site.displayName, systemImage: "checkmark") } else { Text(site.displayName) }
+        Group {
+            if settings.enabledSites.count > 1 {
+                Menu {
+                    Picker("Site", selection: Binding(get: { settings.currentSite }, set: { settings.homeSite = $0 })) {
+                        ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
                     }
+                } label: {
+                    label(chevron: true)
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(settings.currentSite.badge).font(compact ? .subheadline.weight(.bold) : .headline)
-                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                }
-                .foregroundStyle(.primary)
-                .padding(.horizontal, compact ? 0 : 12)
-                .frame(height: compact ? nil : 44)
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Site"))
+            } else {
+                label(chevron: false)
             }
-            .accessibilityLabel(Text("Site"))
-            .modifier(CapsuleGlass(enabled: !compact))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+        .padding(.top, 2)
+    }
+
+    private func label(chevron: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(settings.currentSite.displayName)
+                .font(.largeTitle.bold())
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if chevron {
+                Image(systemName: "chevron.down")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 

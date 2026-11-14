@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.ui.components
 
+import com.atlanyuey.aenht.core.label
+import com.atlanyuey.aenht.core.shortLabel
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,7 +18,7 @@ import com.atlanyuey.aenht.ui.theme.Type
 @Composable
 fun siteTitle(site: Site?): String = when (site) {
     null -> tr("All")
-    else -> site.displayName
+    else -> site.label
 }
 
 /**
@@ -42,7 +44,7 @@ fun SiteFilterButton(selected: Site?, onSelect: (Site?) -> Unit, allowAll: Boole
         modifier = Modifier.anchor(anchor).widthIn(max = 150.dp),
         horizontalPadding = 14.dp,
     ) {
-        Txt(selected?.badge ?: tr("All"), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+        Txt(selected?.shortLabel ?: tr("All"), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
         AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 12.dp)
     }
 }

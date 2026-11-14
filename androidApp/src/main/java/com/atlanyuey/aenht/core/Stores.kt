@@ -64,6 +64,7 @@ data class HistoryEntry(
     val tagIds: List<Int> = emptyList(),
     val site: String = Site.NHENTAI.key,
     val token: String? = null,
+    val rating: Double = 0.0,
 ) {
     val key: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, gid.toLong(), token)
 
@@ -77,7 +78,7 @@ data class HistoryEntry(
     val summary: GallerySummary
         get() = if (site == Site.NHENTAI.key) GallerySummary.from(item) else GallerySummary(
             key = key, title = title, thumbnail = thumbnail, thumbWidth = thumbWidth, thumbHeight = thumbHeight,
-            pages = numPages, languageBadge = null,
+            pages = numPages, languageBadge = null, rating = rating.takeIf { it > 0 },
         )
 
     companion object {
@@ -85,7 +86,7 @@ data class HistoryEntry(
             gid = record.galleryId.toInt(), mediaId = record.mediaId, title = record.title,
             thumbnail = record.thumbnail, thumbWidth = record.thumbWidth, thumbHeight = record.thumbHeight,
             numPages = record.numPages, lastPage = record.lastPage, lastRead = record.readAt,
-            tagIds = record.tagIdList, site = record.site, token = record.token,
+            tagIds = record.tagIdList, site = record.site, token = record.token, rating = record.rating,
         )
     }
 }
@@ -135,13 +136,14 @@ object HistoryStore {
             tagIds = item.nhTagIds.ifEmpty { previous?.tagIds ?: emptyList() },
             site = key.site.key,
             token = key.token ?: previous?.token,
+            rating = item.rating ?: previous?.rating ?: 0.0,
         )
         if (index >= 0) entries.removeAt(index)
         entries.add(0, entry)
         write {
             repo.record(
                 entry.key, entry.title, entry.mediaId, entry.thumbnail,
-                entry.thumbWidth, entry.thumbHeight, entry.numPages, entry.lastPage, entry.tagIds,
+                entry.thumbWidth, entry.thumbHeight, entry.numPages, entry.lastPage, entry.tagIds, entry.rating,
             )
         }
     }

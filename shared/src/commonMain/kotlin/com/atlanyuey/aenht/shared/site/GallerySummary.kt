@@ -89,6 +89,7 @@ data class GallerySummary(
             languageBadge = if (r.site == Site.NHENTAI.key) GalleryLanguage.from(r.tagIdList)?.badge else null,
             nhTagIds = r.tagIdList,
             mediaId = r.mediaId,
+            rating = r.rating.takeIf { it > 0 },
         )
 
         fun from(r: FavoriteRecord) = GallerySummary(
@@ -101,6 +102,7 @@ data class GallerySummary(
             languageBadge = null,
             mediaId = r.mediaId,
             favoriteFolder = r.folder,
+            rating = r.rating.takeIf { it > 0 },
         )
     }
 }

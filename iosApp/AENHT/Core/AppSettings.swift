@@ -135,6 +135,36 @@ enum FollowSpeed: String, CaseIterable, Identifiable {
     }
 }
 
+/// A row of covers pinned above the Home feed (at most two per site).
+enum HomeRow: String, CaseIterable, Identifiable {
+    case nhPopular = "nh-popular", nhToday = "nh-today", nhWeek = "nh-week", nhMonth = "nh-month", nhAll = "nh-all"
+    case ehPopular = "eh-popular", ehDay = "eh-day", ehMonth = "eh-month", ehYear = "eh-year", ehAll = "eh-all"
+
+    static let maximum = 2
+
+    var id: String { rawValue }
+    var site: SiteKind { rawValue.hasPrefix("nh") ? .nhentai : .ehentai }
+
+    /// The English title, also the localization key.
+    var titleKey: String {
+        switch self {
+        case .nhPopular, .ehPopular: "Popular Now"
+        case .nhToday: "Popular Today"
+        case .nhWeek: "Popular This Week"
+        case .nhMonth: "Popular This Month"
+        case .nhAll: "All-Time Popular"
+        case .ehDay: "Top Galleries Yesterday"
+        case .ehMonth: "Top Galleries This Month"
+        case .ehYear: "Top Galleries This Year"
+        case .ehAll: "Top Galleries of All Time"
+        }
+    }
+
+    var title: String { String(localized: String.LocalizationValue(titleKey)) }
+
+    static func rows(for site: SiteKind) -> [HomeRow] { allCases.filter { $0.site == site } }
+}
+
 /// Two pages side by side in the left-to-right / right-to-left modes.
 enum DoublePage: String, CaseIterable, Identifiable {
     case off, landscape, always
@@ -269,6 +299,19 @@ final class AppSettings {
     var doublePageCover: Bool { didSet { save(doublePageCover, "doublePageCover") } }
     /// Reader: plain white / black margins are cut off the pages (paged modes).
     var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
+    /// Rows pinned above the Home feed, both sites ("nh-popular,eh-popular").
+    var homeRowsRaw: String { didSet { save(homeRowsRaw, "homeRows") } }
+
+    func homeRows(for site: SiteKind) -> [HomeRow] {
+        Array(homeRowsRaw.split(separator: ",").compactMap { HomeRow(rawValue: String($0)) }.filter { $0.site == site }.prefix(HomeRow.maximum))
+    }
+
+    func setHomeRows(_ rows: [HomeRow], for site: SiteKind) {
+        var unique: [HomeRow] = []
+        for row in rows where !unique.contains(row) { unique.append(row) }
+        let others = homeRowsRaw.split(separator: ",").compactMap { HomeRow(rawValue: String($0)) }.filter { $0.site != site }
+        homeRowsRaw = (others + unique.prefix(HomeRow.maximum)).map(\.rawValue).joined(separator: ",")
+    }
     /// The user's language models for translation, in order (JSON; keys are in the Keychain).
     var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
@@ -359,6 +402,7 @@ final class AppSettings {
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         autoCrop = d.bool(forKey: "autoCrop")
+        homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,eh-popular"
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -446,6 +490,7 @@ final class AppSettings {
         values["doublePage"] = doublePage.rawValue
         values["doublePageCover"] = doublePageCover
         values["autoCrop"] = autoCrop
+        values["homeRows"] = homeRowsRaw
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -520,6 +565,7 @@ final class AppSettings {
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
         case "autoCrop": set(\.autoCrop, number?.boolValue)
+        case "homeRows": set(\.homeRowsRaw, string)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

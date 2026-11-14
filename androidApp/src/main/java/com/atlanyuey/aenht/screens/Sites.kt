@@ -418,3 +418,27 @@ class TranslationSettingsScreen : Screen() {
         }
     }
 }
+
+/** Settings › Home: the rows pinned above each site's feed (up to two). */
+class HomeSettingsScreen : Screen() {
+    @Composable
+    override fun Content() {
+        GroupedListScreen(tr("Home")) {
+            AppSettings.enabledSites.forEach { site ->
+                val rows = AppSettings.homeRows(site)
+                val options: List<HomeRow?> = listOf<HomeRow?>(null) + HomeRow.of(site)
+                val label: @Composable (HomeRow?) -> String = { it?.let { r -> tr(r.title) } ?: tr("None") }
+                section(site.label, footer = { FooterText(tr("Rows of covers above the feed, at most two. They load with the feed and on refresh.")) }) {
+                    PickerRow(tr("First Row"), options, rows.getOrNull(0), label = label, onSelect = { r ->
+                        AppSettings.setHomeRows(site, listOfNotNull(r, rows.getOrNull(1)?.takeIf { it != r }))
+                    })
+                    if (rows.isNotEmpty()) {
+                        PickerRow(tr("Second Row"), options.filter { it != rows[0] }, rows.getOrNull(1), label = label, onSelect = { r ->
+                            AppSettings.setHomeRows(site, listOfNotNull(rows[0], r))
+                        })
+                    }
+                }
+            }
+        }
+    }
+}

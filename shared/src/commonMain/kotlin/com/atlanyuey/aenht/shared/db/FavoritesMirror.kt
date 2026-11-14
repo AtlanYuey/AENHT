@@ -45,6 +45,7 @@ class FavoritesMirror internal constructor(
         thumbWidth = card.thumbWidth, thumbHeight = card.thumbHeight, numPages = card.pages,
         folder = folder, source = "account", favoritedAt = time, exactTime = exact,
         tagIds = card.nhTagIds.joinToString(","),
+        rating = card.rating ?: 0.0,
     )
 
     /** Favorited (or moved to [folder]) in the app: the time is known. */

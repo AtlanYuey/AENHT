@@ -273,12 +273,13 @@ struct PadTabBar: View {
         let icon: String
     }
 
-    private let items = [
-        Item(tab: .home, title: "Home", icon: "house"),
+    /// Home is named after the site it shows.
+    private var items: [Item] { [
+        Item(tab: .home, title: LocalizedStringKey(AppSettings.shared.currentSite.displayName), icon: "house"),
         Item(tab: .favorites, title: "Favorites", icon: "heart"),
         Item(tab: .history, title: "History", icon: "clock"),
         Item(tab: .more, title: "Me", icon: "person.crop.circle"),
-    ]
+    ] }
 
     var body: some View {
         GlassGroup {

@@ -194,9 +194,7 @@ struct GalleryCard: View {
                         .overlay { badge?(item) }
                         .galleryTransitionSource(item.id, namespace)
                     title
-                    if settings.showTags {
-                        CardTags(item: item, style: .plain)
-                    }
+                    CardFooter(item: item, style: .plain)
                 }
             }
             .contentShape(Rectangle())
@@ -221,9 +219,7 @@ struct GalleryCard: View {
     /// Tags and title over the bottom of the cover.
     private var compactOverlay: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if settings.showTags {
-                CardTags(item: item, style: .overlay)
-            }
+            CardFooter(item: item, style: .overlay)
             Text(item.prettyTitle)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.white)
@@ -238,6 +234,58 @@ struct GalleryCard: View {
             LinearGradient(colors: [.clear, .black.opacity(0.55), .black.opacity(0.8)],
                            startPoint: .top, endPoint: .bottom)
         )
+    }
+}
+
+/// Under a card: its tags (when shown) and, on the right, the rating.
+struct CardFooter: View {
+    let item: GalleryItem
+    let style: CardTagLine.Style
+
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        let rating = item.rating ?? 0
+        if settings.showTags || rating > 0 {
+            HStack(spacing: 6) {
+                if settings.showTags {
+                    CardTags(item: item, style: style)
+                }
+                Spacer(minLength: 0)
+                if rating > 0 {
+                    RatingBadge(rating: rating, overlay: style == .overlay)
+                        .fixedSize()
+                        .layoutPriority(1)
+                }
+            }
+        }
+    }
+}
+
+/// One star filled as far as the rating goes (of 5), and the rating.
+struct RatingBadge: View {
+    let rating: Double
+    var overlay = false
+    var size: CGFloat = 11
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ZStack {
+                Image(systemName: "star.fill").foregroundStyle(.orange.opacity(0.28))
+                Image(systemName: "star.fill").foregroundStyle(.orange)
+                    .mask(alignment: .leading) {
+                        GeometryReader { g in
+                            Rectangle().frame(width: g.size.width * min(max(rating / 5, 0), 1))
+                        }
+                    }
+            }
+            .font(.system(size: size, weight: .semibold))
+            Text(String(format: "%.2f", rating))
+                .font(.system(size: size, weight: .semibold).monospacedDigit())
+                .foregroundStyle(overlay ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(String(format: "%.2f", rating)))
     }
 }
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.atlanyuey.aenht.core.AppSettings
+import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.HandTracker
 import com.atlanyuey.aenht.core.TabBarPosition
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -142,7 +143,8 @@ fun RootView(
     val barAlignment = BiasAlignment(bias, 1f)
 
     val items = listOf(
-        TabInfo(tr("Home"), Icons.Home),
+        // Home is named after the site it shows.
+        TabInfo(AppSettings.currentSite.label, Icons.Home),
         TabInfo(tr("Favorites"), Icons.Heart),
         TabInfo(tr("History"), Icons.Clock),
         TabInfo(tr("Me"), Icons.PersonCircleOutline),

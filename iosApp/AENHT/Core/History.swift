@@ -20,6 +20,8 @@ final class HistoryEntry {
     var lastRead: Date
     /// For the language badge and tags on cards (empty for entries from before 2.1.0).
     var tagIDs: [Int] = []
+    /// E-Hentai's rating when last seen (0: none), for the card.
+    var rating: Double = 0
 
     init(key: String, gid: Int, site: String, token: String?, mediaID: String, title: String, thumbnail: String?,
          thumbWidth: Int, thumbHeight: Int, numPages: Int, tagIDs: [Int] = [],
@@ -50,6 +52,7 @@ final class HistoryEntry {
             item.token = token
             item.absoluteThumb = thumbnail
         }
+        if rating > 0 { item.rating = rating }
         return item
     }
 }
@@ -69,6 +72,7 @@ extension ModelContext {
             entry.title = title
             if numPages > 0 { entry.numPages = numPages }
             if !item.tagIDs.isEmpty { entry.tagIDs = item.tagIDs }
+            if let rating = item.rating, rating > 0 { entry.rating = rating }
             if let page { entry.lastPage = page }
         } else {
             insert(HistoryEntry(
@@ -78,6 +82,8 @@ extension ModelContext {
                 thumbHeight: item.thumbnailHeight, numPages: numPages,
                 tagIDs: item.tagIDs, lastPage: page ?? 0
             ))
+            if let rating = item.rating, rating > 0,
+               let entry = try? fetch(descriptor).first { entry.rating = rating }
         }
         try? save()
     }

@@ -116,6 +116,22 @@ class EhApi internal constructor(
     /** Cookies the site set during this session (e.g. `sk`), besides the login. */
     private val sessionCookies = mutableMapOf<String, String>()
 
+    /**
+     * Cookies for an image on ExHentai's servers (covers and thumbnails on
+     * s.exhentai.org need the account, like the pages); null for any other host.
+     */
+    fun imageCookieHeader(url: String): String? {
+        val host = url.substringAfter("://").substringBefore('/').substringBefore(':').lowercase()
+        if (host != "exhentai.org" && !host.endsWith(".exhentai.org")) return null
+        if (!isLoggedIn) return null
+        val cookies = linkedMapOf(
+            "ipb_member_id" to credentials.memberId!!,
+            "ipb_pass_hash" to credentials.passHash!!,
+        )
+        credentials.igneous?.takeIf { it.isNotEmpty() && it != "mystery" }?.let { cookies["igneous"] = it }
+        return cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
+    }
+
     private fun cookieHeader(url: String): String {
         val cookies = linkedMapOf("nw" to "1") // skip the content warning page
         if (isLoggedIn) {

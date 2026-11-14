@@ -99,7 +99,7 @@ struct RootView: View {
     /// iOS 26 shrinks it to a small button while a list scrolls down.
     private var phoneTabs: some View {
         TabView(selection: $selection) {
-            Tab("Home", systemImage: "house", value: AppTab.home) {
+            Tab(settings.currentSite.displayName, systemImage: "house", value: AppTab.home) {
                 NavigationStack {
                     HomeView().galleryDestinations()
                 }

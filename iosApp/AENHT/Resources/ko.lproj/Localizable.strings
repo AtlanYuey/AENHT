@@ -346,3 +346,10 @@
 "Select" = "선택";
 "Select All" = "모두 선택";
 "Downloading" = "다운로드 중";
+"Fade Page Turns" = "페이드 페이지 넘김";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "페이드로 넘기면 페이지가 밀리지 않고 그 자리에서 다음 페이지로 바뀌어 빠르게 넘길 때 눈이 편합니다.";
+"Pinned Rows" = "고정 행";
+"First Row" = "첫 번째 행";
+"Second Row" = "두 번째 행";
+"None" = "없음";
+"Rows of covers above the feed, at most two. They load with the feed and on refresh." = "목록 위에 표시되는 표지 행으로 최대 두 줄입니다. 목록과 함께 불러오고 새로고침됩니다.";

@@ -515,10 +515,10 @@ struct ReadingSettingsSections: View {
                 }
             }
             Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
-            Toggle("Page Turn Animation", isOn: $settings.animatePageTurns)
+            Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
         } footer: {
-            Text("Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
+            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
         }
         Section {
             VStack(alignment: .leading) {

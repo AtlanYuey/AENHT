@@ -39,7 +39,13 @@ object Net {
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
-                chain.proceed(chain.request().newBuilder().header("User-Agent", userAgent).build())
+                val request = chain.request()
+                val builder = request.newBuilder().header("User-Agent", userAgent)
+                // Covers and thumbnails on ExHentai's servers need the account's cookies.
+                if (request.header("Cookie") == null && request.url.host.endsWith("exhentai.org")) {
+                    EhClient.api.imageCookieHeader(request.url.toString())?.let { builder.header("Cookie", it) }
+                }
+                chain.proceed(builder.build())
             }
             .build()
     }

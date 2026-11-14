@@ -347,9 +347,16 @@
     <string name="l_344">Select</string>
     <string name="l_345">Select All</string>
     <string name="l_346">Downloading</string>
-    <string name="l_347">Sao lưu cài đặt</string>
-    <string name="l_348">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_349">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_350">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_351">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_347">Fade Page Turns</string>
+    <string name="l_348">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
+    <string name="l_349">Pinned Rows</string>
+    <string name="l_350">First Row</string>
+    <string name="l_351">Second Row</string>
+    <string name="l_352">None</string>
+    <string name="l_353">Rows of covers above the feed, at most two. They load with the feed and on refresh.</string>
+    <string name="l_354">Sao lưu cài đặt</string>
+    <string name="l_355">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_356">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_357">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_358">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>
