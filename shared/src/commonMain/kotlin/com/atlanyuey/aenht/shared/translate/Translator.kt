@@ -92,7 +92,7 @@ data class LlmService(
 
     /** [requestParameters] as shown in the settings (sorted, indented), or the reason they're not valid. */
     fun effectiveParametersText(): String = try {
-        prettyJson.encodeToString(JsonObject.serializer(), JsonObject(requestParameters().toSortedMap()))
+        prettyJson.encodeToString(JsonObject.serializer(), JsonObject(requestParameters().entries.sortedBy { it.key }.associate { it.key to it.value }))
     } catch (e: TranslationException) {
         e.message ?: ERROR_JSON
     }
