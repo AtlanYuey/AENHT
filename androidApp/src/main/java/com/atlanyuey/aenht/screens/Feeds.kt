@@ -309,13 +309,14 @@ class HomeScreen : Screen() {
         // navigation bar: its buttons show in the bar instead.
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val barBottom = with(density) { (statusTop + NAV_BAR_HEIGHT.dp).roundToPx() }
-        val headerIndex = 1 + pinned.size * 2
+        val headerIndex = 1
         val docked by remember(headerIndex, barBottom) {
             derivedStateOf {
                 val info = grid.layoutInfo
                 val header = info.visibleItemsInfo.firstOrNull { it.key == "feedTitle" }
                 if (header != null) {
-                    header.offset.y + header.size.height < barBottom
+                    // Offsets start after the top padding: on screen it is offset - viewportStartOffset.
+                    header.offset.y - info.viewportStartOffset + header.size.height < barBottom
                 } else {
                     (info.visibleItemsInfo.firstOrNull()?.index ?: 0) > headerIndex
                 }
@@ -366,7 +367,11 @@ class HomeScreen : Screen() {
             showTitle = { !searching },
             titleMenu = siteItems,
             leading = if (searching) null else {
-                { DockedSortButton(sortTitle, sortItems) }
+                {
+                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
+                        DockedSortButton(sortTitle, sortItems)
+                    }
+                }
             },
             trailing = {
                 if (searching) {
@@ -394,9 +399,11 @@ class HomeScreen : Screen() {
                     LaunchedEffect(Unit) { focus.requestFocus() }
                     GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
-                        GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
+                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
+                            GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
+                        }
                     }
                 }
             },
@@ -411,11 +418,23 @@ class HomeScreen : Screen() {
                     current.items, grid, padding,
                     onItemShown = { current.loadMoreIfNeeded(it) },
                     header = {
-                        pinned.forEach { (row, items) ->
-                            fullLine("rowTitle-${row.raw}") { FeedTitle(tr(row.title), null) }
-                            fullLine("row-${row.raw}") { PopularRow(items) }
+                        // One item for all pinned rows, always there: rows that load
+                        // after the feed make it taller instead of going in above
+                        // the item the grid keeps in place.
+                        fullLine("pinned") {
+                            Column {
+                                pinned.forEach { (row, items) ->
+                                    FeedTitle(tr(row.title), null)
+                                    PopularRow(items)
+                                }
+                            }
                         }
-                        fullLine("feedGap") { androidx.compose.foundation.layout.Spacer(Modifier.height(6.dp)) }
+                        fullLine("feedTitle") {
+                            FeedHeader(site, null, sortTitle, language, sortItems, languageItems) {
+                                search.site = AppSettings.searchStartSite()
+                                searching = true
+                            }
+                        }
                     },
                     footer = { feedFooter(current, L10n.string("No Galleries") to Icons.Photo) },
                 )

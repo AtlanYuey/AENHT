@@ -24,6 +24,12 @@ struct HomeView: View {
     @State private var searching = false
     /// The feed's header (sort, language, search) has scrolled under the
     /// navigation bar: its buttons show in the bar instead.
+    @State private var docked = false
+    /// Bottom of the feed's header in the feed's coordinates.
+    @State private var headerBottom: CGFloat = .infinity
+
+    private static let space = "homeFeed"
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -33,18 +39,29 @@ struct HomeView: View {
                         PopularRow(items: items)
                     }
                 }
-                Color.clear.frame(height: 10)
+                FeedHeader { startSearch() }
+                    .onGeometryChange(for: CGFloat.self) {
+                        $0.frame(in: .named(Self.space)).maxY
+                    } action: { headerBottom = $0 }
                 GalleryCollection(items: feed.items) { item in
                     Task { await feed.loadMoreIfNeeded(after: item) }
                 }
                 FeedPlaceholder(feed: feed)
                 FeedFooter(feed: feed)
             }
+            .coordinateSpace(.named(Self.space))
+        }
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            // The bar's bottom edge, in the feed's coordinates, is past the header.
+            geometry.contentOffset.y + geometry.contentInsets.top > headerBottom - 4
+        } action: { _, under in
+            withAnimation(.smooth(duration: 0.25)) { docked = under }
         }
         .hidesBarsOnScroll()
-        // The system bar (with its soft edge over the content), in three
-        // parts: the sort, the site's name (a menu that switches the site)
-        // and the language and search.
+        // The system bar (with its soft edge over the content): the site's
+        // name in the middle (a menu that switches the site). The feed's
+        // header (sort, language, search) sits above the feed and moves into
+        // the bar once it has scrolled under it.
         .navigationTitle(settings.currentSite.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
@@ -64,15 +81,17 @@ struct HomeView: View {
         .navigationDestination(item: $randomRoute) { GalleryDetailView(route: $0) }
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                SortMenu(compact: true)
-            }
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                LanguageMenu(compact: true)
-                Button {
-                    startSearch()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
+            if docked {
+                ToolbarItem(placement: .topBarLeading) {
+                    SortMenu(compact: true)
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    LanguageMenu(compact: true)
+                    Button {
+                        startSearch()
+                    } label: {
+                        Label("Search", systemImage: "magnifyingglass")
+                    }
                 }
             }
         }
@@ -138,6 +157,25 @@ struct HomeView: View {
         case .ehYear: return try await EhService.shared.list(Bridge.shared.toplist(period: 2), cursor: nil).items
         case .ehAll: return try await EhService.shared.list(Bridge.shared.toplist(period: 3), cursor: nil).items
         }
+    }
+}
+
+/// The feed's header: the sort (a button that switches it, with the
+/// language under it), and on the right the language and search buttons.
+/// Scrolled under the navigation bar, the same buttons show in the bar.
+private struct FeedHeader: View {
+    let onSearch: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            SortMenu(compact: false)
+            Spacer(minLength: 0)
+            LanguageMenu(compact: false)
+            CircleButton(systemImage: "magnifyingglass", label: "Search", tint: .primary, action: onSearch)
+        }
+        .padding(.horizontal)
+        .padding(.top, 20)
+        .padding(.bottom, 10)
     }
 }
 
