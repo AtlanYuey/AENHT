@@ -310,9 +310,15 @@
     <string name="l_307">No key</string>
     <string name="l_308">Move Up</string>
     <string name="l_309">Couldn\'t translate.</string>
-    <string name="l_310">Einstellungen sichern</string>
-    <string name="l_311">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_312">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_313">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_314">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_310">Volume Keys Turn Pages</string>
+    <string name="l_311">Page Brightness</string>
+    <string name="l_312">Grayscale</string>
+    <string name="l_313">Invert Colors</string>
+    <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
+    <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
+    <string name="l_316">Einstellungen sichern</string>
+    <string name="l_317">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_318">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_319">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_320">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

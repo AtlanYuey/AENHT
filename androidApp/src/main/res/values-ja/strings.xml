@@ -310,9 +310,15 @@
     <string name="l_307">キーなし</string>
     <string name="l_308">上へ移動</string>
     <string name="l_309">翻訳できませんでした。</string>
-    <string name="l_310">設定のバックアップ</string>
-    <string name="l_311">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_312">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_313">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_314">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_310">音量ボタンでページ送り</string>
+    <string name="l_311">ページの明るさ</string>
+    <string name="l_312">グレースケール</string>
+    <string name="l_313">色を反転</string>
+    <string name="l_314">明るさ、グレースケール、色の反転はページにのみ適用されます。</string>
+    <string name="l_315">明るさ、グレースケール、色の反転はページにのみ適用されます。グレースケールと色の反転には Android 12 以降が必要です。</string>
+    <string name="l_316">設定のバックアップ</string>
+    <string name="l_317">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_318">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_319">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_320">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

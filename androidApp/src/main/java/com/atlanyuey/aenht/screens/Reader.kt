@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import androidx.compose.ui.graphics.asComposeRenderEffect
+
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.ui.input.pointer.PointerEventType
 import android.app.Activity
@@ -121,6 +123,28 @@ val ReadMode.icon
         ReadMode.VerticalGap -> Icons.ContinuousGaps
     }
 
+/** The reader on screen turns pages with the volume keys (MainActivity forwards them). */
+object ReaderKeys {
+    /** Turns forward (true) or back; null when no reader is open. */
+    var handler: ((Boolean) -> Unit)? = null
+}
+
+/** Grayscale and / or inverted colors for the pages (Android 12+). */
+private fun pageColorEffect(grayscale: Boolean, invert: Boolean): androidx.compose.ui.graphics.RenderEffect? {
+    if ((!grayscale && !invert) || android.os.Build.VERSION.SDK_INT < 31) return null
+    val matrix = android.graphics.ColorMatrix()
+    if (grayscale) matrix.setSaturation(0f)
+    if (invert) {
+        matrix.postConcat(android.graphics.ColorMatrix(floatArrayOf(
+            -1f, 0f, 0f, 0f, 255f,
+            0f, -1f, 0f, 0f, 255f,
+            0f, 0f, -1f, 0f, 255f,
+            0f, 0f, 0f, 1f, 0f,
+        )))
+    }
+    return android.graphics.RenderEffect.createColorFilterEffect(android.graphics.ColorMatrixColorFilter(matrix)).asComposeRenderEffect()
+}
+
 /** Which taps turn the page: the outer 30 % on each side, when enabled. */
 private fun turnsPage(fraction: Float) = AppSettings.tapToTurnPages && (fraction < 0.3f || fraction > 0.7f)
 
@@ -233,6 +257,13 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             onDispose {}
         }
         DisposableEffect(Unit) {
+            ReaderKeys.handler = { forward ->
+                val base = if (AppSettings.readMode.isPaged) turnBase else page
+                go(if (forward) base + 1 else base - 1)
+            }
+            onDispose { ReaderKeys.handler = null }
+        }
+        DisposableEffect(Unit) {
             view.keepScreenOn = AppSettings.keepScreenOn
             onDispose {
                 view.keepScreenOn = false
@@ -298,8 +329,14 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     }
                 },
         ) {
+            val effect = pageColorEffect(AppSettings.readerGrayscale, AppSettings.readerInvert)
             Box(Modifier.fillMaxSize().layerBackdrop(backdrop).background(Color.Black)) {
-                if (mode.isPaged) Paged(mode) else Continuous(mode)
+                Box(Modifier.fillMaxSize().graphicsLayer { renderEffect = effect }) {
+                    if (mode.isPaged) Paged(mode) else Continuous(mode)
+                }
+                // The reader's own brightness: a dark layer over the pages.
+                val dim = (1.0 - AppSettings.readerBrightness).toFloat().coerceIn(0f, 0.8f)
+                if (dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
             }
             CompositionLocalProvider(LocalBackdrop provides backdrop) {
                 AnimatedVisibility(chromeVisible, Modifier.align(Alignment.TopCenter), enter = fadeIn(), exit = fadeOut()) {
@@ -594,7 +631,24 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
             }
             ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
             ToggleRow(tr("Page Turn Animation"), AppSettings.animatePageTurns, { AppSettings.animatePageTurns = it })
+            ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it })
             ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it }, last = true)
+        }
+        section(footer = { FooterText(tr("Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.")) }) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Row {
+                    Txt(tr("Page Brightness"), Modifier.weight(1f))
+                    Txt("${(AppSettings.readerBrightness * 100).toInt()}%", color = AppTheme.colors.secondaryLabel)
+                }
+                GlassSlider(
+                    AppSettings.readerBrightness.toFloat(),
+                    { AppSettings.readerBrightness = (Math.round(it * 20) / 20.0).coerceIn(0.2, 1.0) },
+                    0.2f..1f,
+                )
+            }
+            RowSeparator()
+            ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
+            ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
         }
         section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {

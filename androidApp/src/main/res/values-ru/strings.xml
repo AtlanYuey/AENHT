@@ -310,9 +310,15 @@
     <string name="l_307">No key</string>
     <string name="l_308">Move Up</string>
     <string name="l_309">Couldn\'t translate.</string>
-    <string name="l_310">Резервная копия настроек</string>
-    <string name="l_311">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_312">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_313">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_314">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_310">Volume Keys Turn Pages</string>
+    <string name="l_311">Page Brightness</string>
+    <string name="l_312">Grayscale</string>
+    <string name="l_313">Invert Colors</string>
+    <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
+    <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
+    <string name="l_316">Резервная копия настроек</string>
+    <string name="l_317">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_318">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_319">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_320">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>

@@ -40,6 +40,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** The volume keys turn pages in the reader (when that setting is on). */
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val handler = com.atlanyuey.aenht.screens.ReaderKeys.handler
+        if (handler != null && com.atlanyuey.aenht.core.AppSettings.volumeKeyTurns) {
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> { handler(true); return true }
+                android.view.KeyEvent.KEYCODE_VOLUME_UP -> { handler(false); return true }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (com.atlanyuey.aenht.screens.ReaderKeys.handler != null && com.atlanyuey.aenht.core.AppSettings.volumeKeyTurns &&
+            (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP)
+        ) return true
+        return super.onKeyUp(keyCode, event)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)

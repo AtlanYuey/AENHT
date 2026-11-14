@@ -310,9 +310,15 @@
     <string name="l_307">无密钥</string>
     <string name="l_308">上移</string>
     <string name="l_309">无法翻译。</string>
-    <string name="l_310">设置备份</string>
-    <string name="l_311">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_312">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_313">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_314">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_310">音量键翻页</string>
+    <string name="l_311">页面亮度</string>
+    <string name="l_312">灰度</string>
+    <string name="l_313">反色</string>
+    <string name="l_314">亮度、灰度和反色只作用于页面。</string>
+    <string name="l_315">亮度、灰度和反色只作用于页面。灰度和反色需要 Android 12 或更高版本。</string>
+    <string name="l_316">设置备份</string>
+    <string name="l_317">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_318">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_319">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_320">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

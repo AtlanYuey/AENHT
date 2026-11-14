@@ -117,6 +117,12 @@ struct ReaderView: View {
 
     var body: some View {
         content
+            .grayscale(settings.readerGrayscale ? 1 : 0)
+            .modifier(InvertIf(enabled: settings.readerInvert))
+            .overlay {
+                // The reader's own brightness: a dark layer over the pages.
+                Color.black.opacity(min(0.8, 1 - settings.readerBrightness)).allowsHitTesting(false)
+            }
             .background(Color.black)
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
@@ -471,6 +477,20 @@ struct ReadingSettingsSections: View {
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
         } footer: {
             Text("Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
+        }
+        Section {
+            VStack(alignment: .leading) {
+                HStack {
+                    Text("Page Brightness")
+                    Spacer()
+                    Text("\(Int(settings.readerBrightness * 100))%").foregroundStyle(.secondary).monospacedDigit()
+                }
+                Slider(value: $settings.readerBrightness, in: 0.2...1, step: 0.05)
+            }
+            Toggle("Grayscale", isOn: $settings.readerGrayscale)
+            Toggle("Invert Colors", isOn: $settings.readerInvert)
+        } footer: {
+            Text("Brightness, grayscale and inverted colors apply only to the pages.")
         }
         Section {
             VStack(alignment: .leading) {
@@ -888,5 +908,15 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         viewControllers.count > 1
+    }
+}
+
+
+/// Inverts the pages' colors when on.
+private struct InvertIf: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled { content.colorInvert() } else { content }
     }
 }

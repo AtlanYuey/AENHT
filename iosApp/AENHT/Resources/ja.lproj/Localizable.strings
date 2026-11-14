@@ -309,3 +309,9 @@
 "No key" = "キーなし";
 "Move Up" = "上へ移動";
 "Couldn't translate." = "翻訳できませんでした。";
+"Volume Keys Turn Pages" = "音量ボタンでページ送り";
+"Page Brightness" = "ページの明るさ";
+"Grayscale" = "グレースケール";
+"Invert Colors" = "色を反転";
+"Brightness, grayscale and inverted colors apply only to the pages." = "明るさ、グレースケール、色の反転はページにのみ適用されます。";
+"Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "明るさ、グレースケール、色の反転はページにのみ適用されます。グレースケールと色の反転には Android 12 以降が必要です。";

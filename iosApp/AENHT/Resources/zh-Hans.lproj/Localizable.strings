@@ -351,3 +351,9 @@
 "No key" = "无密钥";
 "Move Up" = "上移";
 "Couldn't translate." = "无法翻译。";
+"Volume Keys Turn Pages" = "音量键翻页";
+"Page Brightness" = "页面亮度";
+"Grayscale" = "灰度";
+"Invert Colors" = "反色";
+"Brightness, grayscale and inverted colors apply only to the pages." = "亮度、灰度和反色只作用于页面。";
+"Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "亮度、灰度和反色只作用于页面。灰度和反色需要 Android 12 或更高版本。";

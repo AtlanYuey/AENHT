@@ -310,9 +310,15 @@
     <string name="l_307">Sin clave</string>
     <string name="l_308">Subir</string>
     <string name="l_309">No se pudo traducir.</string>
-    <string name="l_310">Copia de los ajustes</string>
-    <string name="l_311">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_312">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_313">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_314">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_310">Teclas de volumen pasan página</string>
+    <string name="l_311">Brillo de la página</string>
+    <string name="l_312">Escala de grises</string>
+    <string name="l_313">Invertir colores</string>
+    <string name="l_314">El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.</string>
+    <string name="l_315">El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.</string>
+    <string name="l_316">Copia de los ajustes</string>
+    <string name="l_317">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_318">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_319">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_320">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

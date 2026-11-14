@@ -309,3 +309,9 @@
 "No key" = "Sin clave";
 "Move Up" = "Subir";
 "Couldn't translate." = "No se pudo traducir.";
+"Volume Keys Turn Pages" = "Teclas de volumen pasan página";
+"Page Brightness" = "Brillo de la página";
+"Grayscale" = "Escala de grises";
+"Invert Colors" = "Invertir colores";
+"Brightness, grayscale and inverted colors apply only to the pages." = "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.";
+"Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.";

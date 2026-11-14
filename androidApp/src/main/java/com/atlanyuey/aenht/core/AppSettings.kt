@@ -248,6 +248,10 @@ object AppSettings {
         searchBothSites = p.getBoolean("searchBothSites", false)
         filterRules = p.getString("filterRules", "") ?: ""
         llmServices = p.getString("llmServices", "") ?: ""
+        volumeKeyTurns = p.getBoolean("volumeKeyTurns", false)
+        readerBrightness = p.getFloat("readerBrightness", 1f).toDouble().coerceIn(0.2, 1.0)
+        readerGrayscale = p.getBoolean("readerGrayscale", false)
+        readerInvert = p.getBoolean("readerInvert", false)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -359,6 +363,13 @@ object AppSettings {
     /** E-Hentai favorite folders that Favorites › All shows (all ten by default). */
     var favoritesAllFolders by Pref((0..9).toSet()) { save("favoritesAllFolders", it.sorted().joinToString(",")) }
 
+    /** Reader: the volume keys turn pages. */
+    var volumeKeyTurns by Pref(false) { save("volumeKeyTurns", it) }
+    /** Reader: page brightness (0.2–1), separate from the screen's. */
+    var readerBrightness by Pref(1.0) { save("readerBrightness", it) }
+    var readerGrayscale by Pref(false) { save("readerGrayscale", it) }
+    var readerInvert by Pref(false) { save("readerInvert", it) }
+
     /** The user's language models for translation, in order (JSON; keys are in the Keystore). */
     var llmServices by Pref("") { save("llmServices", it) }
 
@@ -467,6 +478,10 @@ object AppSettings {
         "favoritesAllFolders" to favoritesAllFolders.sorted().joinToString(","),
         "filterRules" to filterRules,
         "llmServices" to llmServices,
+        "volumeKeyTurns" to volumeKeyTurns,
+        "readerBrightness" to readerBrightness,
+        "readerGrayscale" to readerGrayscale,
+        "readerInvert" to readerInvert,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -518,6 +533,10 @@ object AppSettings {
                 "searchBothSites" -> bool?.let { searchBothSites = it }
                 "filterRules" -> string?.let { filterRules = it }
                 "llmServices" -> string?.let { llmServices = it }
+                "volumeKeyTurns" -> bool?.let { volumeKeyTurns = it }
+                "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
+                "readerGrayscale" -> bool?.let { readerGrayscale = it }
+                "readerInvert" -> bool?.let { readerInvert = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

@@ -308,5 +308,11 @@
  "Used when no language model is set up or all of them fail. A key from Azure Translator has a free monthly allowance.",
  "No key",
  "Move Up",
- "Couldn't translate."
+ "Couldn't translate.",
+ "Volume Keys Turn Pages",
+ "Page Brightness",
+ "Grayscale",
+ "Invert Colors",
+ "Brightness, grayscale and inverted colors apply only to the pages.",
+ "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later."
 ]

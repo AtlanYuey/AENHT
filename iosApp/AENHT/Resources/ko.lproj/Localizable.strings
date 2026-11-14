@@ -309,3 +309,9 @@
 "No key" = "키 없음";
 "Move Up" = "위로 이동";
 "Couldn't translate." = "번역할 수 없습니다.";
+"Volume Keys Turn Pages" = "볼륨 키로 페이지 넘기기";
+"Page Brightness" = "페이지 밝기";
+"Grayscale" = "흑백";
+"Invert Colors" = "색상 반전";
+"Brightness, grayscale and inverted colors apply only to the pages." = "밝기, 흑백, 색상 반전은 페이지에만 적용됩니다.";
+"Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "밝기, 흑백, 색상 반전은 페이지에만 적용됩니다. 흑백과 색상 반전은 Android 12 이상이 필요합니다.";

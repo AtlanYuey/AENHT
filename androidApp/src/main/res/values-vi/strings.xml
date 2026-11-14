@@ -310,9 +310,15 @@
     <string name="l_307">No key</string>
     <string name="l_308">Move Up</string>
     <string name="l_309">Couldn\'t translate.</string>
-    <string name="l_310">Sao lưu cài đặt</string>
-    <string name="l_311">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_312">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_313">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_314">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_310">Volume Keys Turn Pages</string>
+    <string name="l_311">Page Brightness</string>
+    <string name="l_312">Grayscale</string>
+    <string name="l_313">Invert Colors</string>
+    <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
+    <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
+    <string name="l_316">Sao lưu cài đặt</string>
+    <string name="l_317">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_318">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_319">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_320">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

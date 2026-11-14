@@ -203,4 +203,10 @@ T = [
     "No key",
     "Move Up",
     "Couldn't translate.",
+    "Volume Keys Turn Pages",
+    "Page Brightness",
+    "Grayscale",
+    "Invert Colors",
+    "Brightness, grayscale and inverted colors apply only to the pages.",
+    "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.",
 ]

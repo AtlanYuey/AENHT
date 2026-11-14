@@ -242,6 +242,10 @@ final class AppSettings {
     var searchSite: SiteChoice { didSet { save(searchSite.rawValue, "searchSite") } }
     /// Search runs on both sites at once (twice the requests).
     var searchBothSites: Bool { didSet { save(searchBothSites, "searchBothSites") } }
+    /// Reader: page brightness (0.2–1), separate from the screen's.
+    var readerBrightness: Double { didSet { save(readerBrightness, "readerBrightness") } }
+    var readerGrayscale: Bool { didSet { save(readerGrayscale, "readerGrayscale") } }
+    var readerInvert: Bool { didSet { save(readerInvert, "readerInvert") } }
     /// The user's language models for translation, in order (JSON; keys are in the Keychain).
     var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
@@ -325,6 +329,9 @@ final class AppSettings {
         favoritesAllFolders = (d.array(forKey: "favoritesAllFolders") as? [Int]) ?? Array(0..<10)
         filterRules = d.string(forKey: "filterRules") ?? ""
         llmServices = d.string(forKey: "llmServices") ?? ""
+        readerBrightness = min(max(d.object(forKey: "readerBrightness") as? Double ?? 1, 0.2), 1)
+        readerGrayscale = d.bool(forKey: "readerGrayscale")
+        readerInvert = d.bool(forKey: "readerInvert")
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -397,6 +404,9 @@ final class AppSettings {
         values["searchBothSites"] = searchBothSites
         values["filterRules"] = filterRules
         values["llmServices"] = llmServices
+        values["readerBrightness"] = readerBrightness
+        values["readerGrayscale"] = readerGrayscale
+        values["readerInvert"] = readerInvert
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -464,6 +474,9 @@ final class AppSettings {
         case "searchBothSites": set(\.searchBothSites, number?.boolValue)
         case "filterRules": set(\.filterRules, string)
         case "llmServices": set(\.llmServices, string)
+        case "readerBrightness": set(\.readerBrightness, number.map { min(max($0.doubleValue, 0.2), 1) })
+        case "readerGrayscale": set(\.readerGrayscale, number?.boolValue)
+        case "readerInvert": set(\.readerInvert, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

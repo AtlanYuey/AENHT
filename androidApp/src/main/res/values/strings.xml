@@ -310,9 +310,15 @@
     <string name="l_307">No key</string>
     <string name="l_308">Move Up</string>
     <string name="l_309">Couldn\'t translate.</string>
-    <string name="l_310">Settings Backup</string>
-    <string name="l_311">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_312">Android\'s own backup also keeps these settings.</string>
-    <string name="l_313">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_314">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_310">Volume Keys Turn Pages</string>
+    <string name="l_311">Page Brightness</string>
+    <string name="l_312">Grayscale</string>
+    <string name="l_313">Invert Colors</string>
+    <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
+    <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
+    <string name="l_316">Settings Backup</string>
+    <string name="l_317">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_318">Android\'s own backup also keeps these settings.</string>
+    <string name="l_319">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_320">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

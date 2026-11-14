@@ -203,4 +203,10 @@ T = [
     "Sin clave",
     "Subir",
     "No se pudo traducir.",
+    "Teclas de volumen pasan página",
+    "Brillo de la página",
+    "Escala de grises",
+    "Invertir colores",
+    "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.",
+    "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.",
 ]
