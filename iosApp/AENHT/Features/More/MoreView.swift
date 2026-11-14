@@ -823,6 +823,8 @@ struct AcknowledgementsView: View {
              file: "eros_n-LICENSE", url: URL(string: "https://github.com/honjow/eros_n")!),
         Item(name: "Nuke", author: "Alexander Grebenyuk", license: "MIT License",
              file: "Nuke-LICENSE", url: URL(string: "https://github.com/kean/Nuke")!),
+        Item(name: "LobeHub Icons", author: "LobeHub", license: "MIT License",
+             file: "LobeHub-Icons-LICENSE", url: URL(string: "https://github.com/lobehub/lobe-icons")!),
         Item(name: "nhentai_tags_fetcher", author: "honjow", license: "MIT License",
              file: "nhentai_tags_fetcher-LICENSE", url: URL(string: "https://github.com/honjow/nhentai_tags_fetcher")!),
         Item(name: "EhTagTranslation Database", author: "EhTagTranslation", license: "CC BY-NC-SA 3.0",

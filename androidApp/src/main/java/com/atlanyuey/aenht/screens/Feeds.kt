@@ -341,14 +341,13 @@ class HomeScreen : Screen() {
             null
         }
         ScreenScaffold(
+            // Three parts, like the iOS bar: the sort, the site (a menu that
+            // switches it) and the language and search.
             title = site.label,
-            showTitle = { !searching && grid.pastTitle() },
+            showTitle = { !searching },
+            titleMenu = siteItems,
             leading = if (searching) null else {
-                {
-                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
-                        DockedSortButton(sortTitle, sortItems)
-                    }
-                }
+                { DockedSortButton(sortTitle, sortItems) }
             },
             trailing = {
                 if (searching) {
@@ -376,11 +375,9 @@ class HomeScreen : Screen() {
                     LaunchedEffect(Unit) { focus.requestFocus() }
                     GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
                 } else {
-                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
-                            GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
-                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
+                        GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
                     }
                 }
             },
@@ -395,17 +392,11 @@ class HomeScreen : Screen() {
                     current.items, grid, padding,
                     onItemShown = { current.loadMoreIfNeeded(it) },
                     header = {
-                        fullLine("title") { SiteTitle(site, siteItems) }
                         pinned.forEach { (row, items) ->
                             fullLine("rowTitle-${row.raw}") { FeedTitle(tr(row.title), null) }
                             fullLine("row-${row.raw}") { PopularRow(items) }
                         }
-                        fullLine("feedTitle") {
-                            FeedHeader(site, siteItems, sortTitle, language, sortItems, languageItems) {
-                                search.site = AppSettings.searchStartSite()
-                                searching = true
-                            }
-                        }
+                        fullLine("feedGap") { androidx.compose.foundation.layout.Spacer(Modifier.height(6.dp)) }
                     },
                     footer = { feedFooter(current, L10n.string("No Galleries") to Icons.Photo) },
                 )

@@ -11,6 +11,10 @@ Behaviour of several features was studied from, and re-implemented after:
 - NextN (https://github.com/erosTeam/NextN), MIT License
 No source code of those projects is copied; they are written in ArkTS.
 
+Artwork:
+- AI service icons: LobeHub Icons (https://github.com/lobehub/lobe-icons), MIT License,
+  as used by AY Translate.
+
 Data:
 - Tag names: nhentai_tags_fetcher (https://github.com/honjow/nhentai_tags_fetcher)
 - Tag translations: EhTagTranslation (https://github.com/EhTagTranslation/Database)

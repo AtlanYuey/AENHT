@@ -359,6 +359,7 @@ class TranslationSettingsScreen : Screen() {
                 services.forEachIndexed { i, s ->
                     ListRow(
                         s.name,
+                        leading = { ProviderIcon(s.presetKind) },
                         subtitle = serviceSubtitle(s),
                         titleColor = if (s.enabled) Color.Unspecified else AppTheme.colors.secondaryLabel,
                         onClick = { navigator.push(LlmServiceScreen(s, isNew = false)) },
@@ -406,6 +407,32 @@ class TranslationSettingsScreen : Screen() {
     }
 }
 
+/** A language model service's logo (LobeHub Icons, as in AY Translate). */
+@Composable
+fun ProviderIcon(preset: LlmPreset, size: androidx.compose.ui.unit.Dp = 30.dp) {
+    val res = when (preset) {
+        LlmPreset.DEEPSEEK -> com.atlanyuey.aenht.R.drawable.provider_deepseek
+        LlmPreset.GEMINI -> com.atlanyuey.aenht.R.drawable.provider_gemini
+        LlmPreset.OPENAI -> com.atlanyuey.aenht.R.drawable.provider_openai
+        LlmPreset.QWEN -> com.atlanyuey.aenht.R.drawable.provider_qwen
+        LlmPreset.SILICONFLOW -> com.atlanyuey.aenht.R.drawable.provider_siliconflow
+        LlmPreset.MOONSHOT -> com.atlanyuey.aenht.R.drawable.provider_moonshot
+        LlmPreset.ZHIPU -> com.atlanyuey.aenht.R.drawable.provider_zhipu
+        LlmPreset.OPENROUTER -> com.atlanyuey.aenht.R.drawable.provider_openrouter
+        LlmPreset.OTHER -> null
+    }
+    Box(
+        Modifier.size(size).clip(RoundedCornerShape(size * 0.27f)).background(Color.White).padding(size * 0.1f),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (res != null) {
+            androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(res), null, Modifier.fillMaxSize())
+        } else {
+            AppIcon(Icons.Sliders, null, tint = Color(0xFF007AFF), size = size * 0.6f)
+        }
+    }
+}
+
 internal fun llmCost(value: Double, symbol: String) =
     symbol + String.format(java.util.Locale.ROOT, if (value > 0 && value < 0.01) "%.4f" else "%.2f", value)
 
@@ -422,6 +449,7 @@ class LlmPresetScreen : Screen() {
                 LlmPreset.entries.forEachIndexed { i, preset ->
                     ListRow(
                         if (preset == LlmPreset.OTHER) tr("Other (OpenAI-compatible)") else preset.displayName,
+                        leading = { ProviderIcon(preset) },
                         subtitle = preset.baseUrl,
                         chevron = true,
                         last = i == LlmPreset.entries.lastIndex,

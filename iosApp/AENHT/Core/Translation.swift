@@ -313,6 +313,7 @@ struct TranslationSettingsView: View {
     private func serviceRow(_ s: LlmService) -> some View {
         let usage = service.usage(s)
         return HStack(spacing: 12) {
+            ProviderIcon(preset: s.presetKind)
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.name).foregroundStyle(s.enabled ? .primary : .secondary)
                 Group {
@@ -337,6 +338,25 @@ struct TranslationSettingsView: View {
     }
 }
 
+/// A language model service's logo (LobeHub Icons, as in AY Translate).
+struct ProviderIcon: View {
+    let preset: LlmPreset
+    var size: CGFloat = 30
+
+    var body: some View {
+        Group {
+            if preset == .other {
+                Image(systemName: "slider.horizontal.3").resizable().scaledToFit().foregroundStyle(.blue).padding(size * 0.2)
+            } else {
+                Image("provider-" + preset.key).renderingMode(.original).resizable().scaledToFit().padding(size * 0.1)
+            }
+        }
+        .frame(width: size, height: size)
+        .background(.white, in: RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+        .accessibilityHidden(true)
+    }
+}
+
 enum LlmFormat {
     static func cost(_ value: Double, _ service: LlmService) -> String {
         service.currencySymbol + String(format: value < 0.01 && value > 0 ? "%.4f" : "%.2f", value)
@@ -356,9 +376,12 @@ private struct LlmPresetPicker: View {
             NavigationLink {
                 LlmServiceEditor(original: LlmService.companion.create(id: UUID().uuidString, preset: preset), isNew: true) { dismiss() }
             } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(preset == .other ? String(localized: "Other (OpenAI-compatible)") : preset.displayName)
-                    Text(preset.baseUrl).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                HStack(spacing: 12) {
+                    ProviderIcon(preset: preset)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(preset == .other ? String(localized: "Other (OpenAI-compatible)") : preset.displayName)
+                        Text(preset.baseUrl).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
                 }
             }
         }

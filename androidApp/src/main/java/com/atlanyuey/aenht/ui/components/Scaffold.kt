@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -57,6 +60,8 @@ fun ScreenScaffold(
     leading: (@Composable RowScope.() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
     overlay: @Composable () -> Unit = {},
+    /** Makes the inline title a menu (with a chevron), like iOS's title menu. */
+    titleMenu: (() -> List<List<MenuItem>>)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val backdrop = rememberLayerBackdrop()
@@ -92,6 +97,7 @@ fun ScreenScaffold(
                     null
                 },
                 trailing = trailing,
+                titleMenu = titleMenu,
             )
             overlay()
         }
@@ -115,6 +121,7 @@ private fun NavBar(
     showTitle: () -> Boolean,
     leading: (@Composable RowScope.() -> Unit)?,
     trailing: @Composable RowScope.() -> Unit,
+    titleMenu: (() -> List<List<MenuItem>>)? = null,
 ) {
     Box(
         Modifier
@@ -135,7 +142,24 @@ private fun NavBar(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                Txt(title, style = Type.headline, maxLines = 1, align = TextAlign.Center)
+                if (titleMenu == null) {
+                    Txt(title, style = Type.headline, maxLines = 1, align = TextAlign.Center)
+                } else {
+                    val overlays = LocalOverlays.current
+                    val anchor = rememberAnchor()
+                    Row(
+                        Modifier
+                            .anchor(anchor)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { overlays.menu(anchor.bounds, titleMenu(), null) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Txt(title, style = Type.headline, maxLines = 1)
+                        AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 12.dp)
+                    }
+                }
             }
         }
         Row(

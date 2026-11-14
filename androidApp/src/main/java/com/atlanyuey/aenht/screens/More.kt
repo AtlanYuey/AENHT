@@ -919,6 +919,8 @@ private val licenses = listOf(
     License("Jetpack Compose, AndroidX, Kotlin", "Google, JetBrains", "Apache License 2.0", R.raw.apache_2_0, "https://developer.android.com/jetpack"),
     License("Ionicons", "Ionic", "MIT License", R.raw.ionicons, "https://github.com/ionic-team/ionicons"),
     License("Inter", "The Inter Project Authors", "SIL Open Font License 1.1", R.raw.inter_ofl, "https://github.com/rsms/inter"),
+    License("LobeHub Icons", "LobeHub", "MIT License", R.raw.lobehub_icons, "https://github.com/lobehub/lobe-icons"),
+    License("ML Kit", "Google", "ML Kit Terms of Service", null, "https://developers.google.com/ml-kit/terms"),
     License("nhentai_tags_fetcher", "honjow", "MIT License", R.raw.nhentai_tags_fetcher, "https://github.com/honjow/nhentai_tags_fetcher"),
     License("EhTagTranslation Database", "EhTagTranslation", "CC BY-NC-SA 3.0", null, "https://github.com/EhTagTranslation/Database"),
 )

@@ -22,50 +22,48 @@ struct HomeView: View {
     @State private var searching = false
     /// The feed's header (sort, language, search) has scrolled under the
     /// navigation bar: its buttons show in the bar instead.
-    @State private var docked = false
-    /// Bottom of the feed's header in the feed's coordinates.
-    @State private var headerBottom: CGFloat = .infinity
-
-    private static let space = "homeFeed"
-
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                SiteTitle()
                 ForEach(settings.homeRows(for: settings.currentSite)) { row in
                     if let items = rows[row], !items.isEmpty {
                         SectionTitle(title: LocalizedStringKey(row.titleKey))
                         PopularRow(items: items)
                     }
                 }
-                FeedHeader { startSearch() }
-                    .onGeometryChange(for: CGFloat.self) {
-                        $0.frame(in: .named(Self.space)).maxY
-                    } action: { headerBottom = $0 }
+                Color.clear.frame(height: 10)
                 GalleryCollection(items: feed.items) { item in
                     Task { await feed.loadMoreIfNeeded(after: item) }
                 }
                 FeedPlaceholder(feed: feed)
                 FeedFooter(feed: feed)
             }
-            .coordinateSpace(.named(Self.space))
-        }
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            // The bar's bottom edge, in the feed's coordinates, is past the header.
-            geometry.contentOffset.y + geometry.contentInsets.top > headerBottom - 4
-        } action: { _, under in
-            withAnimation(.smooth(duration: 0.25)) { docked = under }
         }
         .hidesBarsOnScroll()
-        // No navigation bar: the page starts with the site's name (SiteTitle)
-        // right under the status bar; a small bar comes in once the feed's
-        // header has scrolled away.
+        // The system bar (with its soft edge over the content), in three
+        // parts: the sort, the site's name (a menu that switches the site)
+        // and the language and search.
         .navigationTitle(settings.currentSite.displayName)
-        .toolbar(.hidden, for: .navigationBar)
-        .overlay(alignment: .top) {
-            if docked, !searching {
-                DockedBar(onSearch: startSearch)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleMenu {
+            if settings.enabledSites.count > 1 {
+                Picker("Site", selection: Binding(get: { settings.currentSite }, set: { settings.homeSite = $0 })) {
+                    ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
+                }
+            }
+        }
+        .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                SortMenu(compact: true)
+            }
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                LanguageMenu(compact: true)
+                Button {
+                    startSearch()
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
             }
         }
         .overlay {
@@ -133,57 +131,6 @@ struct HomeView: View {
     }
 }
 
-/// The bar over the feed once its header has scrolled away: the site, the
-/// sort, the language and search.
-private struct DockedBar: View {
-    let onSearch: () -> Void
-
-    @Environment(AppSettings.self) private var settings
-
-    var body: some View {
-        HStack(spacing: 14) {
-            SortMenu(compact: true)
-            Spacer(minLength: 8)
-            Text(settings.currentSite.displayName)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Spacer(minLength: 8)
-            LanguageMenu(compact: true)
-                .labelStyle(.iconOnly)
-            Button(action: onSearch) {
-                Image(systemName: "magnifyingglass")
-            }
-            .accessibilityLabel(Text("Search"))
-        }
-        .font(.body.weight(.semibold))
-        .tint(.primary)
-        .padding(.horizontal)
-        .frame(height: 44)
-        .frame(maxWidth: .infinity)
-        .background(.bar, ignoresSafeAreaEdges: .top)
-    }
-}
-
-/// The feed's header: the sort (a button that switches it), and on the
-/// right the language and search buttons. Scrolled under the navigation
-/// bar, the same buttons show in the bar.
-private struct FeedHeader: View {
-    let onSearch: () -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            SortMenu(compact: false)
-            Spacer(minLength: 0)
-            LanguageMenu(compact: false)
-            CircleButton(systemImage: "magnifyingglass", label: "Search", tint: .primary, action: onSearch)
-        }
-        .padding(.horizontal)
-        .padding(.top, 20)
-        .padding(.bottom, 10)
-    }
-}
-
 /// Switches the Home feed's sort: the section title, or a small button in
 /// the navigation bar.
 private struct SortMenu: View {
@@ -234,65 +181,6 @@ private struct SortMenu: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Sort"))
-    }
-}
-
-/// The page's large title: the site Home shows ("nhentai", "E-Hentai",
-/// "ExHentai"). With both sites on, it is the menu that switches them.
-private struct SiteTitle: View {
-    @Environment(AppSettings.self) private var settings
-
-    var body: some View {
-        Group {
-            if settings.enabledSites.count > 1 {
-                Menu {
-                    Picker("Site", selection: Binding(get: { settings.currentSite }, set: { settings.homeSite = $0 })) {
-                        ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
-                    }
-                } label: {
-                    label(chevron: true)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Site"))
-            } else {
-                label(chevron: false)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal)
-        .padding(.top, 2)
-    }
-
-    private func label(chevron: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(settings.currentSite.displayName)
-                .font(.largeTitle.bold())
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            if chevron {
-                Image(systemName: "chevron.down")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .contentShape(Rectangle())
-    }
-}
-
-private struct CapsuleGlass: ViewModifier {
-    let enabled: Bool
-
-    func body(content: Content) -> some View {
-        if enabled {
-            if #available(iOS 26.0, *) {
-                content.glassEffect(.regular.interactive(), in: Capsule())
-            } else {
-                content.background(.regularMaterial, in: Capsule())
-            }
-        } else {
-            content
-        }
     }
 }
 
