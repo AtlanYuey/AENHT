@@ -305,7 +305,7 @@ struct ReaderView: View {
             }, onSwipe: { direction in
                 handleSwipe(direction)
             })
-            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)")
+            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.spreadGapOn ? Int(settings.spreadGap) : 0)")
         } else {
             ScrollView(.vertical) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
@@ -632,6 +632,19 @@ struct ReadingSettingsSections: View {
                 }
                 if settings.doublePage != .off {
                     Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
+                    Toggle("Gap Between Pages", isOn: $settings.spreadGapOn)
+                    if settings.spreadGapOn {
+                        // Like the gap of the continuous mode.
+                        VStack(alignment: .leading) {
+                            LabeledContent("Page Gap") {
+                                Text("\(Int(settings.spreadGap)) pt")
+                                    .monospacedDigit()
+                            }
+                            Slider(value: $settings.spreadGap, in: 2...60, step: 2) {
+                                Text("Page Gap")
+                            }
+                        }
+                    }
                 }
             }
             if settings.readMode.isPaged {
@@ -1212,7 +1225,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             async let a = ImagePipeline.shared.image(for: requests[0])
             async let b = ImagePipeline.shared.image(for: requests[1])
             guard let first = try? await a, let second = try? await b, !Task.isCancelled, let self else { return }
-            let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second)
+            let settings = AppSettings.shared
+            let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second,
+                                  gap: settings.spreadGapOn ? settings.spreadGap : 0, screen: ReaderScreen.pixels,
+                                  scale: self.window?.screen.scale ?? self.traitCollection.displayScale)
             self.spinner.stopAnimating()
             UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
                 self.imageView.image = image
@@ -1220,7 +1236,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
     }
 
-    private static func join(_ left: UIImage, _ right: UIImage) -> UIImage {
+    /// The two pages side by side, [gap] points apart as they show on a
+    /// screen of [screen] pixels (the gap is black, like the reader).
+    private static func join(_ left: UIImage, _ right: UIImage, gap: CGFloat, screen: CGSize, scale screenScale: CGFloat) -> UIImage {
         let height = max(left.size.height, right.size.height)
         let leftWidth = left.size.width * height / max(1, left.size.height)
         let rightWidth = right.size.width * height / max(1, right.size.height)
@@ -1228,10 +1246,25 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         format.scale = 1
         // Keeps the joined image a sensible size for memory.
         let scale = min(1, 4096 / max(1, leftWidth + rightWidth))
-        let size = CGSize(width: (leftWidth + rightWidth) * scale, height: height * scale)
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            left.draw(in: CGRect(x: 0, y: 0, width: leftWidth * scale, height: size.height))
-            right.draw(in: CGRect(x: leftWidth * scale, y: 0, width: rightWidth * scale, height: size.height))
+        let pagesWidth = (leftWidth + rightWidth) * scale
+        let pagesHeight = height * scale
+        // The image is fitted to the screen: a gap of [gap] points on screen
+        // is this many pixels in the image.
+        var gapPixels: CGFloat = 0
+        if gap > 0, screen.width > 0, screen.height > 0 {
+            let gapOnScreen = gap * max(screenScale, 1)
+            // Solve fit = min(W / (w + g / fit), H / h) for the shown gap.
+            let fitByHeight = screen.height / pagesHeight
+            let fitByWidth = (screen.width - gapOnScreen) / pagesWidth
+            let fit = max(min(fitByHeight, fitByWidth), 0.01)
+            gapPixels = (gapOnScreen / fit).rounded()
+        }
+        let size = CGSize(width: pagesWidth + gapPixels, height: pagesHeight)
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.black.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            left.draw(in: CGRect(x: 0, y: 0, width: leftWidth * scale, height: pagesHeight))
+            right.draw(in: CGRect(x: leftWidth * scale + gapPixels, y: 0, width: rightWidth * scale, height: pagesHeight))
         }
     }
 

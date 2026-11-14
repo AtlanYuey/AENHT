@@ -587,7 +587,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true)
                 .zoomable(zoomState),
         ) {
-            Row(Modifier.fillMaxSize()) {
+            // The gap between the pages (Double Page › Gap Between Pages).
+            val gap = if (AppSettings.spreadGapOn) AppSettings.spreadGap.dp else 0.dp
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap)) {
                 ordered.forEachIndexed { i, p ->
                     val align = if (i == 0) Alignment.CenterEnd else Alignment.CenterStart
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
@@ -950,6 +952,22 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
             )
             if (AppSettings.doublePage != DoublePage.Off) {
                 ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
+                ToggleRow(tr("Gap Between Pages"), AppSettings.spreadGapOn, { AppSettings.spreadGapOn = it })
+                if (AppSettings.spreadGapOn) {
+                    // Like the gap of the continuous mode.
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Row {
+                            Txt(tr("Page Gap"), Modifier.weight(1f))
+                            Txt("${AppSettings.spreadGap.toInt()} pt", color = AppTheme.colors.secondaryLabel)
+                        }
+                        GlassSlider(
+                            AppSettings.spreadGap.toFloat(),
+                            { AppSettings.spreadGap = ((it / 2).toInt() * 2).toDouble().coerceIn(2.0, 60.0) },
+                            2f..60f,
+                        )
+                    }
+                    RowSeparator()
+                }
             }
         }
         if (AppSettings.readMode.isPaged) {

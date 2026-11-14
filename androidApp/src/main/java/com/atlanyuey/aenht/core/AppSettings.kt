@@ -342,6 +342,8 @@ object AppSettings {
         deviceTranslation = p.getBoolean("deviceTranslation", true)
         doublePage = DoublePage.of(p.getString("doublePage", null))
         doublePageCover = p.getBoolean("doublePageCover", true)
+        spreadGapOn = p.getBoolean("spreadGapOn", true)
+        spreadGap = p.getFloat("spreadGap", 6f).toDouble()
         autoCrop = p.getBoolean("autoCrop", false)
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
@@ -489,6 +491,9 @@ object AppSettings {
     var doublePage by Pref(DoublePage.Landscape) { save("doublePage", it.raw) }
     /** Reader, double page: the first page (the cover) stays alone. */
     var doublePageCover by Pref(true) { save("doublePageCover", it) }
+    /** Double page: a gap between the two pages, in dp. */
+    var spreadGapOn by Pref(true) { save("spreadGapOn", it) }
+    var spreadGap by Pref(6.0) { save("spreadGap", it) }
     /** Reader: plain white / black margins are cut off the pages (paged modes). */
     var autoCrop by Pref(false) { save("autoCrop", it) }
 
@@ -650,6 +655,8 @@ object AppSettings {
         "deviceTranslation" to deviceTranslation,
         "doublePage" to doublePage.raw,
         "doublePageCover" to doublePageCover,
+        "spreadGapOn" to spreadGapOn,
+        "spreadGap" to spreadGap,
         "autoCrop" to autoCrop,
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
@@ -755,6 +762,8 @@ object AppSettings {
                 "deviceTranslation" -> bool?.let { deviceTranslation = it }
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }
+                "spreadGapOn" -> bool?.let { spreadGapOn = it }
+                "spreadGap" -> number?.let { spreadGap = it.toDouble().coerceIn(2.0, 60.0) }
                 "autoCrop" -> bool?.let { autoCrop = it }
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }

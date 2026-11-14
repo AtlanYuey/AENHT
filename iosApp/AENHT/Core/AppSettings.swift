@@ -370,6 +370,9 @@ final class AppSettings {
     var doublePage: DoublePage { didSet { save(doublePage.rawValue, "doublePage") } }
     /// Reader, double page: the first page (the cover) stays alone.
     var doublePageCover: Bool { didSet { save(doublePageCover, "doublePageCover") } }
+    /// Double page: a gap between the two pages, in points.
+    var spreadGapOn: Bool { didSet { save(spreadGapOn, "spreadGapOn") } }
+    var spreadGap: Double { didSet { save(spreadGap, "spreadGap") } }
     /// Reader: plain white / black margins are cut off the pages (paged modes).
     var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
     /// Rows pinned above the Home feed, both sites ("nh-popular,eh-popular").
@@ -509,6 +512,8 @@ final class AppSettings {
         deviceTranslation = d.object(forKey: "deviceTranslation") as? Bool ?? true
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
+        spreadGapOn = d.object(forKey: "spreadGapOn") as? Bool ?? true
+        spreadGap = d.object(forKey: "spreadGap") as? Double ?? 6
         autoCrop = d.bool(forKey: "autoCrop")
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,nh-week,eh-day,eh-popular"
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
@@ -610,6 +615,8 @@ final class AppSettings {
         values["deviceTranslation"] = deviceTranslation
         values["doublePage"] = doublePage.rawValue
         values["doublePageCover"] = doublePageCover
+        values["spreadGapOn"] = spreadGapOn
+        values["spreadGap"] = spreadGap
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
         values["blockedCommenters"] = blockedCommenters
@@ -698,6 +705,8 @@ final class AppSettings {
         case "deviceTranslation": set(\.deviceTranslation, number?.boolValue)
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
+        case "spreadGapOn": set(\.spreadGapOn, number?.boolValue)
+        case "spreadGap": set(\.spreadGap, number.map { min(max($0.doubleValue, 2), 60) })
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)
