@@ -68,6 +68,7 @@ targets:
         CFBundleLocalizations: [en, ja, zh-Hans, zh-Hant, ko, es, fr, de, it, pt-BR, ru, vi, th, id]
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
+        NSPhotoLibraryAddUsageDescription: Saves reader pages to your photo library.
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true

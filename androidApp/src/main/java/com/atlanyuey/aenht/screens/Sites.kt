@@ -86,10 +86,27 @@ class EhAccountScreen : Screen() {
         val logoutTitle = tr("Log out of E-Hentai?")
         val logout = tr("Log Out")
         var checking by remember { mutableStateOf(false) }
+        var limit by remember { mutableStateOf<com.atlanyuey.aenht.shared.eh.EhImageLimit?>(null) }
+        LaunchedEffect(Unit) { limit = runCatching { EhClient.imageLimit() }.getOrNull() }
         GroupedListScreen(tr("E-Hentai")) {
             section {
                 ListRow(tr("Member ID"), value = EhAuth.memberId ?: "-")
                 ListRow(tr("ExHentai"), value = if (EhSession.hasExHentai) tr("Available") else tr("Not available"), last = true)
+            }
+            section("Image Limits", footer = { FooterText(tr("Viewing and downloading pages counts toward this limit; it recovers over time.")) }) {
+                val l = limit
+                if (l == null) {
+                    ListRow(tr("Used"), last = true, trailing = { ActivityIndicator(size = 16.dp) })
+                } else {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row {
+                            Txt(tr("Used"), Modifier.weight(1f))
+                            Txt("${l.used} / ${l.limit}", color = AppTheme.colors.secondaryLabel)
+                        }
+                        ProgressBar(if (l.limit > 0) l.used.toFloat() / l.limit else 0f)
+                        l.resetCost?.let { Txt(tr("Reset Cost: %lld GP", it), style = Type.footnote, color = AppTheme.colors.secondaryLabel) }
+                    }
+                }
             }
             section(footer = { FooterText(tr("ExHentai shows galleries that E-Hentai hides. It needs an account that has been given access.")) }) {
                 ToggleRow(tr("Use ExHentai"), AppSettings.useExHentai && EhSession.hasExHentai, { AppSettings.useExHentai = it }, last = !checking)
@@ -334,6 +351,16 @@ class FiltersScreen : Screen() {
                         AppSettings.useNhBlacklist = it
                         Filters.refreshNhBlacklist(force = true)
                     }, last = true, subtitle = if (Session.isLoggedIn) tr("%lld tags", Filters.nhBlacklistCount) else tr("Not logged in"))
+                }
+            }
+            val blocked = AppSettings.blockedCommenterSet.sorted()
+            if (blocked.isNotEmpty()) {
+                section("Blocked Commenters", footer = { FooterText(tr("Their comments are hidden on E-Hentai galleries. Long-press a comment to block its author.")) }) {
+                    blocked.forEachIndexed { i, name ->
+                        ListRow(name, last = i == blocked.lastIndex, trailing = {
+                            com.atlanyuey.aenht.ui.components.TextButton(tr("Unblock"), { AppSettings.unblockCommenter(name) })
+                        })
+                    }
                 }
             }
         }

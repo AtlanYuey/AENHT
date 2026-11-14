@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.prompt
+import coil3.request.allowHardware
+import coil3.toBitmap
 import androidx.compose.ui.graphics.asComposeRenderEffect
 
 import androidx.compose.foundation.interaction.DragInteraction
@@ -239,7 +242,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private fun turn(fraction: Float) {
         // Turning pages from the edges hides the controls.
         chromeVisible = false
-        val forward = if (fraction < 0.5f) isRtl else !isRtl
+        // Swapped tap zones: the left edge goes forward.
+        val forward = (if (fraction < 0.5f) isRtl else !isRtl) != AppSettings.swapTapZones
         val base = if (AppSettings.readMode.isPaged) turnBase else page
         go(step(base, forward))
     }
@@ -567,6 +571,15 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val overlays = LocalOverlays.current
         val settingsTitle = tr("Reader Settings")
         val shareTitle = tr("Share")
+        val goTitle = tr("Go to Page…")
+        val pageTitle = tr("Page Number")
+        val go = tr("Go")
+        val cancel = tr("Cancel")
+        val saveTitle = tr("Save Page")
+        val sharePageTitle = tr("Share Page")
+        val saved = tr("Saved to Photos.")
+        val failed = tr("Couldn't Save")
+        val needsAndroid10 = tr("Saving pages needs Android 10 or later. Share the page instead.")
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -589,12 +602,72 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         MenuItem(L10n.string(mode.title), mode.icon, checked = AppSettings.readMode == mode) { AppSettings.readMode = mode }
                     },
                     listOf(
+                        MenuItem(goTitle, Icons.ArrowForward) {
+                            overlays.prompt(pageTitle, "1 – $count", "${page + 1}", go, cancel, number = true) { text ->
+                                val target = (text.toIntOrNull() ?: return@prompt) - 1
+                                if (target in 0 until count) {
+                                    page = target
+                                    uiScope.launch { if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target) }
+                                }
+                            }
+                        },
+                        MenuItem(saveTitle, Icons.Download) {
+                            if (android.os.Build.VERSION.SDK_INT < 29) {
+                                overlays.alert(failed, needsAndroid10)
+                            } else {
+                                uiScope.launch {
+                                    val ok = runCatching { savePage(context) }.getOrDefault(false)
+                                    overlays.alert(if (ok) saveTitle else failed, if (ok) saved else null)
+                                }
+                            }
+                        },
+                        MenuItem(sharePageTitle, Icons.Photo) { uiScope.launch { runCatching { sharePage(context) } } },
+                    ),
+                    listOf(
                         MenuItem(settingsTitle, Icons.Sliders) { openSettings(overlays) },
                         MenuItem(shareTitle, Icons.Share) { context.shareLink(source.shareUrl, source.title) },
                     ),
                 )
             })
         }
+    }
+
+    /** The page shown, as decoded (from the image cache when it's there). */
+    private suspend fun pageBitmap(context: android.content.Context): android.graphics.Bitmap? {
+        val request = coil3.request.ImageRequest.Builder(context).data(source.pages[page].url).allowHardware(false).build()
+        val result = coil3.SingletonImageLoader.get(context).execute(request) as? coil3.request.SuccessResult ?: return null
+        return result.image.toBitmap()
+    }
+
+    /** Saves the page to Pictures/AENHT (Android 10 and later need no permission). */
+    @androidx.annotation.RequiresApi(29)
+    private suspend fun savePage(context: android.content.Context): Boolean {
+        val bitmap = pageBitmap(context) ?: return false
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "${source.id}-${page + 1}.jpg")
+                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AENHT")
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@withContext false
+            resolver.openOutputStream(uri)?.use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) } ?: false
+        }
+    }
+
+    private suspend fun sharePage(context: android.content.Context) {
+        val bitmap = pageBitmap(context) ?: return
+        val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val dir = java.io.File(context.cacheDir, "shared").apply { mkdirs() }
+            java.io.File(dir, "page-${page + 1}.jpg").also { f -> f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) } }
+        }
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".files", file)
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "image/jpeg"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(android.content.Intent.createChooser(send, null))
     }
 
     private fun openSettings(overlays: com.atlanyuey.aenht.ui.components.OverlayController) {
@@ -717,6 +790,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
             }
             ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
             ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
+            ToggleRow(tr("Swap Tap Zones"), AppSettings.swapTapZones, { AppSettings.swapTapZones = it })
             ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it })
             ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it }, last = true)
         }

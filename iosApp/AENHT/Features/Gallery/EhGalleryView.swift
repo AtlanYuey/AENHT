@@ -49,7 +49,9 @@ final class EhGalleryModel {
         busy = true
         defer { busy = false }
         do {
-            try await EhService.shared.setFavorite(gid: gid, token: token, folder: target)
+            // Moving between folders keeps the note.
+            let note = (target != nil && before != nil) ? ((try? await EhService.shared.favoriteNote(gid: gid, token: token)) ?? "") : ""
+            try await EhService.shared.setFavorite(gid: gid, token: token, folder: target, note: note)
             if let card {
                 if let target { await FavoritesStore.shared.added(card, folder: target) } else { await FavoritesStore.shared.removed(card) }
             }
@@ -77,6 +79,10 @@ struct EhGalleryView: View {
     @State private var alertMessage: String?
     @State private var confirmDeleteDownload = false
     @State private var titleExpanded = false
+    @State private var editingNote = false
+    @State private var note = ""
+    @Environment(\.openURL) private var openURL
+    @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
@@ -118,6 +124,30 @@ struct EhGalleryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    if let card = model.card {
+                        Button("Open in Browser", systemImage: "safari") { openURL(card.webURL) }
+                    }
+                    if let detail = model.detail, detail.torrentCount > 0 {
+                        NavigationLink {
+                            EhTorrentsView(gid: model.gid, token: model.token)
+                        } label: {
+                            Label("Torrents (\(Int(detail.torrentCount)))", systemImage: "arrow.down.circle")
+                        }
+                    }
+                    if model.folder != nil, EhSession.shared.isLoggedIn {
+                        Button("Favorite Note", systemImage: "note.text") {
+                            Task {
+                                note = (try? await EhService.shared.favoriteNote(gid: model.gid, token: model.token)) ?? ""
+                                editingNote = true
+                            }
+                        }
+                    }
+                } label: {
+                    Label("More", systemImage: "ellipsis")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 if let card = model.card {
                     ShareLink(item: card.webURL, subject: Text(card.title)) {
                         Label("Share", systemImage: "square.and.arrow.up")
@@ -128,6 +158,20 @@ struct EhGalleryView: View {
         .task { if model.detail == nil { await model.load(context: modelContext) } }
         .refreshable { await model.load(context: modelContext) }
         .sheet(isPresented: $showLogin) { EhLoginView() }
+        .alert("Favorite Note", isPresented: $editingNote) {
+            TextField("Note", text: $note)
+            Button("Save") {
+                guard let folder = model.folder else { return }
+                Task {
+                    do {
+                        try await EhService.shared.setFavorite(gid: model.gid, token: model.token, folder: folder, note: String(note.prefix(200)))
+                    } catch {
+                        alertMessage = error.localizedDescription
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .alert("Couldn't Update", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -369,7 +413,7 @@ struct EhGalleryView: View {
                 SectionTitle(title: "Comments")
                 if !detail.comments.isEmpty || EhSession.shared.isLoggedIn {
                     NavigationLink {
-                        EhCommentsView(gid: detail.gid, token: detail.token, initial: detail.comments)
+                        EhCommentsView(detail: detail)
                     } label: {
                         if detail.comments.isEmpty { Text("Add a comment…") } else { Text("See All (\(detail.comments.count))") }
                     }
@@ -383,7 +427,7 @@ struct EhGalleryView: View {
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: 12) {
-                        ForEach(detail.comments, id: \.id) { comment in
+                        ForEach(detail.comments.filter { !settings.blockedCommenterSet.contains($0.author) }, id: \.id) { comment in
                             EhCommentBubble(comment: comment, lineLimit: 5)
                                 .frame(width: 300, alignment: .topLeading)
                                 .padding(14)
@@ -514,26 +558,46 @@ struct EhListView: View {
 
 /// All comments of an E-Hentai gallery, and a field to add one when logged in.
 struct EhCommentsView: View {
-    let gid: Int64
-    let token: String
+    let detail: EhGalleryDetail
+    var gid: Int64 { detail.gid }
+    var token: String { detail.token }
     @State private var comments: [EhComment]
     @State private var draft = ""
     @State private var isPosting = false
     @State private var error: String?
+    @State private var blocking: EhComment?
     @FocusState private var composing: Bool
+    @Environment(AppSettings.self) private var settings
 
-    init(gid: Int64, token: String, initial: [EhComment]) {
-        self.gid = gid
-        self.token = token
-        _comments = State(initialValue: initial)
+    init(detail: EhGalleryDetail) {
+        self.detail = detail
+        _comments = State(initialValue: detail.comments)
     }
 
     var body: some View {
         List {
-            ForEach(comments, id: \.id) { comment in
+            ForEach(comments.filter { !settings.blockedCommenterSet.contains($0.author) }, id: \.id) { comment in
                 EhCommentBubble(comment: comment, lineLimit: nil)
                     .padding(.vertical, 4)
+                    .contextMenu {
+                        if EhSession.shared.isLoggedIn, !comment.isUploader {
+                            Button("Vote Up", systemImage: "hand.thumbsup") { Task { await vote(comment, up: true) } }
+                            Button("Vote Down", systemImage: "hand.thumbsdown") { Task { await vote(comment, up: false) } }
+                        }
+                        Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = comment.text }
+                        if !comment.isUploader {
+                            Button("Block \(comment.author)", systemImage: "eye.slash", role: .destructive) { blocking = comment }
+                        }
+                    }
             }
+        }
+        .confirmationDialog("Block Commenter?", isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } }),
+                            titleVisibility: .visible) {
+            Button("Block", role: .destructive) {
+                if let blocking { settings.blockCommenter(blocking.author) }
+            }
+        } message: {
+            Text("Comments by this user are hidden on every gallery. Unblock in Settings › Filters.")
         }
         .listStyle(.plain)
         .overlay {
@@ -580,6 +644,19 @@ struct EhCommentsView: View {
         .modifier(BarBackground())
     }
 
+    private func vote(_ comment: EhComment, up: Bool) async {
+        do {
+            if let score = try await EhService.shared.voteComment(detail, commentId: comment.id, up: up),
+               let i = comments.firstIndex(where: { $0.id == comment.id }) {
+                let c = comments[i]
+                comments[i] = EhComment(id: c.id, author: c.author, posted: c.posted, score: KotlinInt(int: Int32(score)),
+                                        text: c.text, isUploader: c.isUploader)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     private func post() async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
@@ -591,6 +668,53 @@ struct EhCommentsView: View {
             composing = false
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+}
+
+/// A gallery's torrents (tap: download the .torrent, made for the account).
+struct EhTorrentsView: View {
+    let gid: Int
+    let token: String
+    @State private var torrents: [EhTorrent]?
+    @State private var error: String?
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        List {
+            if let error {
+                ContentUnavailableView("Couldn't Load", systemImage: "wifi.exclamationmark", description: Text(error))
+            } else if let torrents {
+                if torrents.isEmpty {
+                    ContentUnavailableView("No Torrents", systemImage: "arrow.down.circle")
+                } else {
+                    Section {
+                        ForEach(torrents, id: \.url) { t in
+                            Button {
+                                if let url = URL(string: t.url) { openURL(url) }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(t.name).foregroundStyle(.primary)
+                                    Text("\(t.size) · \(String(localized: "Seeds")) \(t.seeds) · \(String(localized: "Peers")) \(t.peers) · \(t.posted)")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            .contextMenu {
+                                Button("Copy Link", systemImage: "link") { UIPasteboard.general.string = t.url }
+                            }
+                        }
+                    } footer: {
+                        Text("Torrent links are made for your account; don't share them.")
+                    }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Torrents")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            do { torrents = try await EhService.shared.torrents(gid: gid, token: token) } catch { self.error = error.localizedDescription }
         }
     }
 }

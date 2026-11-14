@@ -301,6 +301,22 @@ final class AppSettings {
     var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
     /// Rows pinned above the Home feed, both sites ("nh-popular,eh-popular").
     var homeRowsRaw: String { didSet { save(homeRowsRaw, "homeRows") } }
+    /// E-Hentai commenters whose comments are hidden (names, one per line).
+    var blockedCommenters: String { didSet { save(blockedCommenters, "blockedCommenters") } }
+    /// Reader: tapping the left edge goes forward (and the right edge back).
+    var swapTapZones: Bool { didSet { save(swapTapZones, "swapTapZones") } }
+
+    var blockedCommenterSet: Set<String> {
+        Set(blockedCommenters.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
+    }
+
+    func blockCommenter(_ name: String) {
+        blockedCommenters = (blockedCommenterSet.union([name])).sorted().joined(separator: "\n")
+    }
+
+    func unblockCommenter(_ name: String) {
+        blockedCommenters = blockedCommenterSet.subtracting([name]).sorted().joined(separator: "\n")
+    }
 
     func homeRows(for site: SiteKind) -> [HomeRow] {
         Array(homeRowsRaw.split(separator: ",").compactMap { HomeRow(rawValue: String($0)) }.filter { $0.site == site }.prefix(HomeRow.maximum))
@@ -403,6 +419,8 @@ final class AppSettings {
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         autoCrop = d.bool(forKey: "autoCrop")
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,eh-popular"
+        blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
+        swapTapZones = d.bool(forKey: "swapTapZones")
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -491,6 +509,8 @@ final class AppSettings {
         values["doublePageCover"] = doublePageCover
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
+        values["blockedCommenters"] = blockedCommenters
+        values["swapTapZones"] = swapTapZones
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -566,6 +586,8 @@ final class AppSettings {
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)
+        case "blockedCommenters": set(\.blockedCommenters, string)
+        case "swapTapZones": set(\.swapTapZones, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

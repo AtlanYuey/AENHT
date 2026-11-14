@@ -200,6 +200,36 @@ object EhParser {
             }
         }
 
+    /** The torrents listed on gallerytorrents.php. */
+    fun parseTorrents(html: String): List<EhTorrent> = Ksoup.parse(html).select("form").mapNotNull { form ->
+        val link = form.selectFirst("a[href*=.torrent]") ?: return@mapNotNull null
+        // Each cell reads "Label: value".
+        val cells = form.select("td").map { it.text().trim() }
+        fun field(label: String) = cells.firstOrNull { it.startsWith("$label:") }?.removePrefix("$label:")?.trim().orEmpty()
+        EhTorrent(
+            name = link.text().trim(),
+            url = link.attr("href"),
+            posted = field("Posted"),
+            size = field("Size"),
+            seeds = field("Seeds").filter(Char::isDigit).toIntOrNull() ?: 0,
+            peers = field("Peers").filter(Char::isDigit).toIntOrNull() ?: 0,
+            downloads = field("Downloads").filter(Char::isDigit).toIntOrNull() ?: 0,
+            uploader = field("Uploader"),
+        )
+    }
+
+    /** "You are currently at 1,234 towards a limit of 5,000" on home.php. */
+    fun parseImageLimit(html: String): EhImageLimit? {
+        val text = Ksoup.parse(html).text()
+        val m = Regex("""currently at\s*([\d,]+)\s*towards\s*(?:a|your|the)?\s*(?:account\s*)?limit of\s*([\d,]+)""", RegexOption.IGNORE_CASE).find(text) ?: return null
+        val cost = Regex("""Reset Cost:\s*([\d,]+)""", RegexOption.IGNORE_CASE).find(text)?.groupValues?.get(1)?.replace(",", "")?.toIntOrNull()
+        return EhImageLimit(m.groupValues[1].replace(",", "").toInt(), m.groupValues[2].replace(",", "").toInt(), cost)
+    }
+
+    /** The note of a favorite, from the favorites popup (gallerypopups.php). */
+    fun parseFavoriteNote(html: String): String =
+        Ksoup.parse(html).selectFirst("textarea[name=favnote]")?.wholeText()?.trim().orEmpty()
+
     /** The comments on a gallery page (the answer to posting one). */
     fun parseComments(html: String): List<EhComment> = parseComments(Ksoup.parse(html))
 

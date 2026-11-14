@@ -552,7 +552,7 @@ private fun androidx.compose.foundation.layout.BoxScope.DownloadBadge(key: Galle
 }
 
 @Composable
-private fun ProgressBar(progress: Float) {
+internal fun ProgressBar(progress: Float) {
     Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(AppTheme.colors.tertiaryFill)) {
         Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().background(AppTheme.tint))
     }

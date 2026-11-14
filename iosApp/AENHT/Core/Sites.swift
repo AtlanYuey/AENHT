@@ -226,8 +226,26 @@ final class EhService: @unchecked Sendable {
         try await call { try await $0.thumbnails(gid: Int64(gid), token: token, page: Int32(page)) }
     }
 
-    func setFavorite(gid: Int, token: String, folder: Int?) async throws {
-        try await call { try await $0.setFavorite(gid: Int64(gid), token: token, folder: folder.map { KotlinInt(int: Int32($0)) }, note: "") }
+    func setFavorite(gid: Int, token: String, folder: Int?, note: String = "") async throws {
+        try await call { try await $0.setFavorite(gid: Int64(gid), token: token, folder: folder.map { KotlinInt(int: Int32($0)) }, note: note) }
+    }
+
+    func favoriteNote(gid: Int, token: String) async throws -> String {
+        try await call { try await $0.favoriteNote(gid: Int64(gid), token: token) }
+    }
+
+    func torrents(gid: Int, token: String) async throws -> [EhTorrent] {
+        try await call { try await $0.torrents(gid: Int64(gid), token: token) }
+    }
+
+    func imageLimit() async throws -> EhImageLimit? {
+        try await call { try await $0.imageLimit() }
+    }
+
+    func voteComment(_ d: EhGalleryDetail, commentId: Int64, up: Bool) async throws -> Int? {
+        try await call {
+            try await $0.voteComment(gid: d.gid, token: d.token, apiUid: d.apiUid, apiKey: d.apiKey, commentId: commentId, up: up)
+        }?.intValue
     }
 
     func postComment(gid: Int64, token: String, text: String) async throws -> [EhComment] {

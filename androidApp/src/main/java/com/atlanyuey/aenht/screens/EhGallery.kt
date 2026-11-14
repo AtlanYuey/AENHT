@@ -164,7 +164,9 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         folder = target
         scope.launch {
             try {
-                EhClient.setFavorite(gid, token, target)
+                // Moving between folders keeps the note.
+                val note = if (target != null && before != null) runCatching { EhClient.favoriteNote(gid, token) }.getOrDefault("") else ""
+                EhClient.setFavorite(gid, token, target, note)
                 val card = summary
                 if (target != null) card?.let { FavoritesStore.added(it, target) } else FavoritesStore.removed(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token))
             } catch (e: Exception) {
@@ -172,6 +174,23 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 onError(e.localizedMessage ?: "")
             }
             busy = false
+        }
+    }
+
+    /** Shows the favorite's note to edit (E-Hentai saves it with the folder). */
+    private fun editNote(overlays: com.atlanyuey.aenht.ui.components.OverlayController, labels: List<String>) {
+        val current = folder ?: return
+        scope.launch {
+            val note = runCatching { EhClient.favoriteNote(gid, token) }.getOrDefault("")
+            overlays.prompt(labels[2], initial = note, confirm = labels[3], cancel = labels[4], singleLine = false) { text ->
+                scope.launch {
+                    try {
+                        EhClient.setFavorite(gid, token, current, text.take(200))
+                    } catch (e: Exception) {
+                        overlays.alert(labels[5], e.localizedMessage)
+                    }
+                }
+            }
         }
     }
 
@@ -194,6 +213,22 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             title = detail?.title ?: preview?.title,
             showTitle = { list.firstVisibleItemIndex > 1 },
             trailing = {
+                val navigator = LocalNavigator.current
+                val overlays = LocalOverlays.current
+                val labels = listOf(tr("Open in Browser"), tr("Torrents"), tr("Favorite Note"), tr("Save"), tr("Cancel"), tr("Couldn't Update"))
+                MenuButton(Icons.Ellipsis, tr("More"), {
+                    listOf(buildList {
+                        add(MenuItem(labels[0], Icons.Safari) {
+                            context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(EhClient.api.galleryUrl(gid, token))))
+                        })
+                        if ((detail?.torrentCount ?: 0) > 0) {
+                            add(MenuItem(labels[1], Icons.ArrowDown) { navigator.push(EhTorrentsScreen(gid, token)) })
+                        }
+                        if (folder != null && EhSession.isLoggedIn) {
+                            add(MenuItem(labels[2], Icons.Document) { editNote(overlays, labels) })
+                        }
+                    })
+                })
                 summary?.let { s -> GlassCircleButton(Icons.Share, tr("Share"), onClick = { context.shareLink(galleryLink(s), s.title) }) }
             },
         ) { padding ->
@@ -479,16 +514,17 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         Column {
             SectionTitle(tr("Comments")) {
                 if (d.comments.isNotEmpty()) {
-                    TextButton(tr("See All (%lld)", d.comments.size), { navigator.push(EhCommentsScreen(d.gid, d.token, d.comments)) })
+                    TextButton(tr("See All (%lld)", d.comments.size), { navigator.push(EhCommentsScreen(d)) })
                 } else if (EhSession.isLoggedIn) {
-                    TextButton(tr("Add a comment…"), { navigator.push(EhCommentsScreen(d.gid, d.token, d.comments)) })
+                    TextButton(tr("Add a comment…"), { navigator.push(EhCommentsScreen(d)) })
                 }
             }
-            if (d.comments.isEmpty()) {
+            val shown = d.comments.filter { it.author !in AppSettings.blockedCommenterSet }
+            if (shown.isEmpty()) {
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
             } else {
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(d.comments.take(10), key = { it.id }) { comment ->
+                    items(shown.take(10), key = { it.id }) { comment ->
                         Box(
                             Modifier.width(300.dp).clip(RoundedCornerShape(18.dp)).background(AppTheme.colors.quaternaryFill).padding(14.dp),
                         ) { EhCommentBubble(comment, maxLines = 5) }
@@ -521,8 +557,10 @@ fun EhCommentBubble(comment: EhComment, maxLines: Int = Int.MAX_VALUE) {
 }
 
 /** All comments of an E-Hentai gallery. */
-class EhCommentsScreen(private val gid: Long, private val token: String, initial: List<EhComment>) : Screen() {
-    private val comments = mutableStateListOf<EhComment>().apply { addAll(initial) }
+class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
+    private val gid = detail.gid
+    private val token = detail.token
+    private val comments = mutableStateListOf<EhComment>().apply { addAll(detail.comments) }
     private var draft by mutableStateOf("")
     private var posting by mutableStateOf(false)
     private var pulling by mutableStateOf(false)
@@ -535,10 +573,50 @@ class EhCommentsScreen(private val gid: Long, private val token: String, initial
         pulling = false
     }
 
+    private class Labels(
+        val up: String, val down: String, val copy: String, val block: String, val blockTitle: String,
+        val blockMessage: String, val cancel: String, val voteError: String, val copyText: (String) -> Unit,
+    )
+
+    private fun commentMenu(comment: EhComment, l: Labels, overlays: com.atlanyuey.aenht.ui.components.OverlayController): List<List<MenuItem>> = buildList {
+        val vote = { up: Boolean ->
+            scope.launch {
+                try {
+                    val score = EhClient.voteComment(detail, comment.id, up)
+                    val i = comments.indexOfFirst { it.id == comment.id }
+                    if (i >= 0 && score != null) comments[i] = comments[i].copy(score = score)
+                } catch (e: Exception) {
+                    overlays.alert(l.voteError, e.localizedMessage)
+                }
+            }
+            Unit
+        }
+        if (EhSession.isLoggedIn && !comment.isUploader) {
+            add(listOf(MenuItem(l.up, Icons.ArrowUp) { vote(true) }, MenuItem(l.down, Icons.ArrowDown) { vote(false) }))
+        }
+        add(listOf(MenuItem(l.copy, Icons.Copy) { l.copyText(comment.text) }))
+        if (!comment.isUploader) {
+            add(listOf(MenuItem(l.block + " " + comment.author, Icons.EyeOff, destructive = true) {
+                overlays.alert(l.blockTitle, l.blockMessage, listOf(
+                    DialogButton(l.cancel, ButtonRole.Cancel) {},
+                    DialogButton(l.block, ButtonRole.Destructive) { AppSettings.blockCommenter(comment.author) },
+                ))
+            }))
+        }
+    }
+
     @Composable
     override fun Content() {
         val overlays = LocalOverlays.current
         val errorTitle = tr("Couldn't Post")
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val labels = Labels(
+            tr("Vote Up"), tr("Vote Down"), tr("Copy"), tr("Block"), tr("Block Commenter?"),
+            tr("Comments by this user are hidden on every gallery. Unblock in Settings › Filters."), tr("Cancel"), tr("Couldn't Vote"),
+        ) { text ->
+            context.getSystemService(android.content.ClipboardManager::class.java)
+                ?.setPrimaryClip(android.content.ClipData.newPlainText("comment", text))
+        }
         ScreenScaffold(
             title = tr("Comments"),
             overlay = {
@@ -568,11 +646,54 @@ class EhCommentsScreen(private val gid: Long, private val token: String, initial
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 80.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (comments.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
-                    items(comments, key = { it.id }) { comment ->
-                        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppTheme.colors.quaternaryFill).padding(14.dp)) {
+                    val blocked = AppSettings.blockedCommenterSet
+                    val shown = comments.filter { it.author !in blocked }
+                    if (shown.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
+                    items(shown, key = { it.id }) { comment ->
+                        val anchor = rememberAnchor()
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .anchor(anchor)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(AppTheme.colors.quaternaryFill)
+                                .combinedClickable(onClick = {}, onLongClick = { overlays.menu(anchor.bounds, commentMenu(comment, labels, overlays)) })
+                                .padding(14.dp),
+                        ) {
                             EhCommentBubble(comment)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A gallery's torrents (tap: download the .torrent; the account's link). */
+class EhTorrentsScreen(private val gid: Long, private val token: String) : Screen() {
+    private var torrents by mutableStateOf<List<com.atlanyuey.aenht.shared.eh.EhTorrent>?>(null)
+    private var error by mutableStateOf<String?>(null)
+
+    @Composable
+    override fun Content() {
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            try { torrents = EhClient.torrents(gid, token) } catch (e: Exception) { error = e.localizedMessage }
+        }
+        GroupedListScreen(tr("Torrents")) {
+            val list = torrents
+            when {
+                error != null -> item { EmptyState(Icons.Warning, error ?: "") }
+                list == null -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { ActivityIndicator() } }
+                list.isEmpty() -> item { EmptyState(Icons.ArrowDown, tr("No Torrents")) }
+                else -> section(footer = { FooterText(tr("Torrent links are made for your account; don't share them.")) }) {
+                    list.forEachIndexed { i, t ->
+                        ListRow(
+                            t.name,
+                            subtitle = "${t.size} · ${tr("Seeds")} ${t.seeds} · ${tr("Peers")} ${t.peers} · ${t.posted}",
+                            last = i == list.lastIndex,
+                            onClick = { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(t.url))) },
+                        )
                     }
                 }
             }

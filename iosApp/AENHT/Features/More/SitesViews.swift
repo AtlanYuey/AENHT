@@ -69,6 +69,7 @@ struct EhAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var confirmLogout = false
     @State private var checking = false
+    @State private var limit: EhImageLimit?
 
     var body: some View {
         @Bindable var settings = settings
@@ -93,10 +94,28 @@ struct EhAccountView: View {
                 Text("ExHentai shows galleries that E-Hentai hides. It needs an account that has been given access.")
             }
             Section {
+                if let limit {
+                    VStack(alignment: .leading, spacing: 8) {
+                        LabeledContent("Used", value: "\(limit.used) / \(limit.limit)")
+                        ProgressView(value: Double(limit.used), total: Double(max(1, limit.limit)))
+                        if let cost = limit.resetCost {
+                            Text("Reset Cost: \(Int(truncating: cost)) GP").font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    LabeledContent("Used") { ProgressView() }
+                }
+            } header: {
+                Text("Image Limits")
+            } footer: {
+                Text("Viewing and downloading pages counts toward this limit; it recovers over time.")
+            }
+            Section {
                 Button("Log Out", role: .destructive) { confirmLogout = true }
             }
         }
         .navigationTitle("E-Hentai")
+        .task { limit = try? await EhService.shared.imageLimit() }
         .confirmationDialog("Log out of E-Hentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
             Button("Log Out", role: .destructive) {
                 ehSession.logout()
@@ -382,6 +401,22 @@ struct FiltersSettingsView: View {
                     }
                 } footer: {
                     Text("Uses the tag blacklist of your nhentai account (nhentai.net › Settings › Blacklist).")
+                }
+            }
+            let blocked = settings.blockedCommenterSet.sorted()
+            if !blocked.isEmpty {
+                Section {
+                    ForEach(blocked, id: \.self) { name in
+                        HStack {
+                            Text(name)
+                            Spacer()
+                            Button("Unblock") { settings.unblockCommenter(name) }
+                        }
+                    }
+                } header: {
+                    Text("Blocked Commenters")
+                } footer: {
+                    Text("Their comments are hidden on E-Hentai galleries. Long-press a comment to block its author.")
                 }
             }
         }

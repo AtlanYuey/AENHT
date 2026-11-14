@@ -3,6 +3,8 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
+    /// nhentai's random gallery, opened from the title's menu.
+    @State private var randomRoute: GalleryRoute?
     /// The rows pinned above the feed (Settings › General › Pinned Rows), as loaded.
     @State private var rows: [HomeRow: [GalleryItem]] = [:]
     @State private var nhFeed = GalleryFeed.nh { page in
@@ -51,7 +53,15 @@ struct HomeView: View {
                     ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
                 }
             }
+            if settings.currentSite == .nhentai {
+                Button("Random Gallery", systemImage: "dice") {
+                    Task {
+                        if let id = try? await NHClient.shared.randomID() { randomRoute = GalleryRoute(id: id, preview: nil) }
+                    }
+                }
+            }
         }
+        .navigationDestination(item: $randomRoute) { GalleryDetailView(route: $0) }
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

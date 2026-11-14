@@ -172,3 +172,19 @@ data class EhImagePage(
     /** True when the server sent the "509 bandwidth exceeded" placeholder. */
     val limitReached: Boolean,
 )
+
+/** A torrent of a gallery (gallerytorrents.php). */
+data class EhTorrent(
+    val name: String,
+    /** The .torrent link (personalized for the account). */
+    val url: String,
+    val posted: String,
+    val size: String,
+    val seeds: Int,
+    val peers: Int,
+    val downloads: Int,
+    val uploader: String,
+)
+
+/** The account's image quota (home.php): pages viewed of the limit, and what a reset costs. */
+data class EhImageLimit(val used: Int, val limit: Int, val resetCost: Int?)

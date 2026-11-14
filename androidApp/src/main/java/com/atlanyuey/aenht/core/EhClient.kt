@@ -99,6 +99,10 @@ object EhClient {
     suspend fun favoriteFolderNames(): List<String> = call { favoriteFolderNames() }
     suspend fun rate(d: EhGalleryDetail, stars: Double): Double = call { rate(d.gid, d.token, d.apiUid, d.apiKey, stars) }
     suspend fun postComment(gid: Long, token: String, text: String): List<EhComment> = call { postComment(gid, token, text) }
+    suspend fun torrents(gid: Long, token: String) = call { torrents(gid, token) }
+    suspend fun imageLimit() = call { imageLimit() }
+    suspend fun favoriteNote(gid: Long, token: String) = call { favoriteNote(gid, token) }
+    suspend fun voteComment(d: EhGalleryDetail, commentId: Long, up: Boolean) = call { voteComment(d.gid, d.token, d.apiUid, d.apiKey, commentId, up) }
     suspend fun galleryToken(gid: Long, pageToken: String, page: Int): String = call { galleryToken(gid, pageToken, page) }
 }
 

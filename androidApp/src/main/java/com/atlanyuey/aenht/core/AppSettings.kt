@@ -291,6 +291,8 @@ object AppSettings {
         doublePageCover = p.getBoolean("doublePageCover", true)
         autoCrop = p.getBoolean("autoCrop", false)
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
+        blockedCommenters = p.getString("blockedCommenters", "") ?: ""
+        swapTapZones = p.getBoolean("swapTapZones", false)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -428,6 +430,15 @@ object AppSettings {
     var homeRowsRaw by Pref(DEFAULT_HOME_ROWS) { save("homeRows", it) }
     private const val DEFAULT_HOME_ROWS = "nh-popular,eh-popular"
 
+    /** E-Hentai commenters whose comments are hidden (names, one per line). */
+    var blockedCommenters by Pref("") { save("blockedCommenters", it) }
+    val blockedCommenterSet: Set<String> get() = blockedCommenters.split('\n').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    fun blockCommenter(name: String) { blockedCommenters = (blockedCommenterSet + name.trim()).joinToString("\n") }
+    fun unblockCommenter(name: String) { blockedCommenters = (blockedCommenterSet - name.trim()).joinToString("\n") }
+
+    /** Reader: tapping the left edge goes forward (and the right edge back). */
+    var swapTapZones by Pref(false) { save("swapTapZones", it) }
+
     fun homeRows(site: Site): List<HomeRow> =
         homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)
 
@@ -553,6 +564,8 @@ object AppSettings {
         "doublePageCover" to doublePageCover,
         "autoCrop" to autoCrop,
         "homeRows" to homeRowsRaw,
+        "blockedCommenters" to blockedCommenters,
+        "swapTapZones" to swapTapZones,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -645,6 +658,8 @@ object AppSettings {
                 "doublePageCover" -> bool?.let { doublePageCover = it }
                 "autoCrop" -> bool?.let { autoCrop = it }
                 "homeRows" -> string?.let { homeRowsRaw = it }
+                "blockedCommenters" -> string?.let { blockedCommenters = it }
+                "swapTapZones" -> bool?.let { swapTapZones = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

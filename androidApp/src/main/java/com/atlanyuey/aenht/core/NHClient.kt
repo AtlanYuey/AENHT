@@ -80,10 +80,11 @@ object NHClient {
 
     suspend fun galleries(query: String, sort: SearchSort, page: Int) = call { galleries(query, sort.raw, page) }
     suspend fun popular() = call { popular() }
+    suspend fun randomId() = call { randomGalleryId() }
     suspend fun gallery(id: Int) = call { gallery(id) }
     suspend fun galleryJson(id: Int): JsonObject = call { galleryJson(id) }
     suspend fun comments(id: Int) = call { comments(id) }
-    suspend fun favorites(page: Int) = call { favorites(page) }
+    suspend fun favorites(page: Int, query: String = "") = call { favorites(page, query) }
     suspend fun setFavorite(id: Int, favorite: Boolean) = call { setFavorite(id, favorite) }
     suspend fun currentUser() = call { currentUser() }
     suspend fun postComment(id: Int, body: String) = call { postComment(id, body) }

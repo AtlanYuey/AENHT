@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.prompt
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.shortLabel
 import com.atlanyuey.aenht.shared.site.GallerySummary
@@ -335,8 +336,26 @@ class HomeScreen : Screen() {
         val languageItems = {
             listOf(pickerItems(LanguageFilter.entries, AppSettings.homeLanguage, { L10n.string(it.title) }) { AppSettings.homeLanguage = it })
         }
-        val siteItems: (() -> List<List<MenuItem>>)? = if (AppSettings.enabledSites.size > 1) {
-            { listOf(AppSettings.enabledSites.map { s -> MenuItem(s.label, checked = s == site) { AppSettings.homeSite = s } }) }
+        val navigator = LocalNavigator.current
+        val overlaysHome = LocalOverlays.current
+        val randomLabel = tr("Random Gallery")
+        val randomError = tr("Couldn't Load")
+        // The title's menu: the sites, and nhentai's random gallery.
+        val siteItems: (() -> List<List<MenuItem>>)? = if (AppSettings.enabledSites.size > 1 || site == Site.NHENTAI) {
+            {
+                buildList {
+                    if (AppSettings.enabledSites.size > 1) add(AppSettings.enabledSites.map { s -> MenuItem(s.label, checked = s == site) { AppSettings.homeSite = s } })
+                    if (site == Site.NHENTAI) add(listOf(MenuItem(randomLabel, Icons.SwapHorizontal) {
+                        scope.launch {
+                            try {
+                                navigator.push(GalleryScreen(NHClient.randomId(), null))
+                            } catch (e: Exception) {
+                                overlaysHome.alert(randomError, e.localizedMessage)
+                            }
+                        }
+                    }))
+                }
+            }
         } else {
             null
         }
@@ -526,8 +545,10 @@ private fun DockedSortButton(sortTitle: String, items: () -> List<List<MenuItem>
 class FavoritesScreen : Screen() {
     private var site by mutableStateOf(AppSettings.site(AppSettings.favoritesSite))
     private var ehFolder by mutableStateOf<Int?>(null)
-    private val nhFeedState = GalleryFeed(scope, nhFeed { page -> NHClient.favorites(page) }, filtered = false)
-    private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder) }, filtered = false)
+    /** Searching inside the favorites (both sites search their own; All filters the copy). */
+    private var query by mutableStateOf("")
+    private val nhFeedState = GalleryFeed(scope, nhFeed { page -> NHClient.favorites(page, query) }, filtered = false)
+    private val ehFeedState = GalleryFeed(scope, ehFeed { EhListSource.Favorites(ehFolder, query) }, filtered = false)
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 
@@ -555,7 +576,21 @@ class FavoritesScreen : Screen() {
         ScreenScaffold(
             title = tr("Favorites"),
             showTitle = { needsLogin || grid.pastTitle() },
-            trailing = { if (current == null) SyncIndicator() },
+            trailing = {
+                if (current == null) SyncIndicator()
+                if (!needsLogin) {
+                    val overlays = LocalOverlays.current
+                    val title = tr("Search Favorites")
+                    val search = tr("Search")
+                    val cancel = tr("Cancel")
+                    GlassCircleButton(Icons.Search, title, {
+                        overlays.prompt(title, initial = query, confirm = search, cancel = cancel) { text ->
+                            query = text.trim()
+                            if (site != null) feed.reload()
+                        }
+                    })
+                }
+            },
         ) { padding ->
             if (needsLogin) {
                 Column(Modifier.fillMaxSize().padding(padding)) {
@@ -579,6 +614,7 @@ class FavoritesScreen : Screen() {
             PullToRefresh(pulling, refresh, topInset = padding.calculateTopPadding()) {
                 if (current == null) {
                     val cards = FavoritesStore.cards(null, AppSettings.favoritesAllFolders.takeIf { it.size < 10 })
+                        .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
                     CompositionLocalProvider(LocalShowsSiteBadge provides true) {
                         GalleryGrid(
                             cards, grid, padding,
@@ -619,8 +655,8 @@ class FavoritesScreen : Screen() {
         val subtitle = when (site) {
             null -> allLabel
             Site.NHENTAI -> "nhentai"
-            Site.EHENTAI -> "E-Hentai · " + (ehFolder?.let { EhFolders.names.getOrNull(it) } ?: allFolders)
-        }
+            Site.EHENTAI -> Site.EHENTAI.label + " · " + (ehFolder?.let { EhFolders.names.getOrNull(it) } ?: allFolders)
+        } + if (query.isNotBlank()) " · “$query”" else ""
         LaunchedEffect(site) { if (site != Site.NHENTAI) EhFolders.load() }
         Row(
             Modifier
@@ -655,6 +691,12 @@ class FavoritesScreen : Screen() {
                     AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
                 }
                 Txt(subtitle, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = 1)
+            }
+            if (query.isNotBlank()) {
+                TextButton(tr("Clear Search"), {
+                    query = ""
+                    if (site == Site.EHENTAI) ehFeedState.reload() else if (site == Site.NHENTAI) nhFeedState.reload()
+                })
             }
         }
     }

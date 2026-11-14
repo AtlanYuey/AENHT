@@ -261,6 +261,44 @@ class EhApi internal constructor(
         return page
     }
 
+    // MARK: Torrents, quota, notes
+
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun torrents(gid: Long, token: String): List<EhTorrent> =
+        EhParser.parseTorrents(getPage("$host/gallerytorrents.php?gid=$gid&t=$token"))
+
+    /** The account's image quota, or null when the page doesn't show it. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun imageLimit(): EhImageLimit? {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        return EhParser.parseImageLimit(getPage("$EH/home.php"))
+    }
+
+    /** The note saved with a favorite. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun favoriteNote(gid: Long, token: String): String {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        return EhParser.parseFavoriteNote(getPage("$host/gallerypopups.php?gid=$gid&t=$token&act=addfav"))
+    }
+
+    /** Votes a comment up (+1) or down (-1); voting the same way again takes the vote back. Answers the new score. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun voteComment(gid: Long, token: String, apiUid: Long, apiKey: String, commentId: Long, up: Boolean): Int? {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        val o = api(
+            buildJsonObject {
+                put("method", "votecomment")
+                put("apiuid", apiUid)
+                put("apikey", apiKey)
+                put("gid", gid)
+                put("token", token)
+                put("comment_id", commentId)
+                put("comment_vote", if (up) 1 else -1)
+            },
+        )
+        return (o["comment_score"] as? JsonPrimitive)?.content?.toIntOrNull()
+    }
+
     // MARK: Comments
 
     /** Posts a comment (at least 10 characters, as the site requires) and returns the gallery's comments. */

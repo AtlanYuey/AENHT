@@ -10,11 +10,11 @@ struct FavoritesView: View {
     @Environment(AppSettings.self) private var settings
     @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.favoritesSite)
     @State private var ehFolder: Int?
-    @State private var nhFeed: GalleryFeed = {
-        let feed = GalleryFeed.nh { page in try await NHClient.shared.favorites(page: page) }
-        feed.filtered = false
-        return feed
-    }()
+    @State private var nhFeed: GalleryFeed
+    /// Searching inside the favorites (each site searches its own; All filters the copy).
+    @State private var query = ""
+    @State private var askQuery = false
+    @State private var draftQuery = ""
     @State private var ehFeed: GalleryFeed
     @State private var folderBox = FolderBox()
     @State private var showLogin = false
@@ -26,14 +26,26 @@ struct FavoritesView: View {
     @MainActor
     final class FolderBox {
         var folder: Int?
+        var query = ""
     }
 
     init() {
         let box = FolderBox()
         _folderBox = State(initialValue: box)
-        let eh = GalleryFeed.eh { Bridge.shared.favorites(folder: Int32(box.folder ?? -1), query: "") }
+        let nh = GalleryFeed.nh { page in try await NHClient.shared.favorites(page: page, query: box.query) }
+        nh.filtered = false
+        _nhFeed = State(initialValue: nh)
+        let eh = GalleryFeed.eh { Bridge.shared.favorites(folder: Int32(box.folder ?? -1), query: box.query) }
         eh.filtered = false
         _ehFeed = State(initialValue: eh)
+    }
+
+    private func applyQuery(_ text: String) {
+        query = text.trimmingCharacters(in: .whitespaces)
+        folderBox.query = query
+        Task {
+            if site == .nhentai { await nhFeed.reload() } else if site == .ehentai { await ehFeed.reload() }
+        }
     }
 
     private func loggedIn(_ site: SiteKind) -> Bool {
@@ -55,7 +67,9 @@ struct FavoritesView: View {
             } else if site == nil {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        GalleryCollection(items: store.cards(folders: Set(settings.favoritesAllFolders)))
+                        GalleryCollection(items: store.cards(folders: Set(settings.favoritesAllFolders)).filter {
+                            query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)
+                        })
                             .environment(\.showsSiteBadge, true)
                             .padding(.top, 8)
                         if store.items.isEmpty {
@@ -88,8 +102,22 @@ struct FavoritesView: View {
         }
         .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Search Favorites", isPresented: $askQuery) {
+            TextField("Search", text: $draftQuery)
+            Button("Search") { applyQuery(draftQuery) }
+            if !query.isEmpty { Button("Clear Search", role: .destructive) { applyQuery("") } }
+            Button("Cancel", role: .cancel) {}
+        }
         .toolbar {
             ToolbarItem(placement: .principal) { titleMenu }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    draftQuery = query
+                    askQuery = true
+                } label: {
+                    Label("Search Favorites", systemImage: query.isEmpty ? "magnifyingglass" : "magnifyingglass.circle.fill")
+                }
+            }
             if site == nil, let syncing = store.syncing {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 6) {

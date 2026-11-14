@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.ui.focus.focusRequester
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -443,3 +444,49 @@ private fun SheetOverlay(sheet: Overlay.Sheet, dismiss: () -> Unit) {
 
 @Suppress("unused")
 private fun Modifier.centered() = wrapContentSize(Alignment.Center)
+
+/** A sheet with a text field (iOS alert with a text field): a page number, a note… */
+fun OverlayController.prompt(
+    title: String,
+    message: String? = null,
+    initial: String = "",
+    confirm: String,
+    cancel: String,
+    number: Boolean = false,
+    singleLine: Boolean = true,
+    onDone: (String) -> Unit,
+) {
+    sheet { dismiss ->
+        var text by remember { mutableStateOf(initial) }
+        val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+        val colors = AppTheme.colors
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Txt(title, style = Type.headline)
+            message?.let { Txt(it, style = Type.footnote, color = colors.secondaryLabel) }
+            androidx.compose.foundation.text.BasicTextField(
+                text, { text = if (number) it.filter(Char::isDigit) else it },
+                singleLine = singleLine,
+                minLines = if (singleLine) 1 else 3,
+                textStyle = Type.body.copy(color = colors.label),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(AppTheme.tint),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = if (number) androidx.compose.ui.text.input.KeyboardType.Number else androidx.compose.ui.text.input.KeyboardType.Text,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focus)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                    .background(colors.tertiaryFill)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)) {
+                TextButton(cancel, { dismiss() })
+                TextButton(confirm, { onDone(text); dismiss() }, bold = true)
+            }
+        }
+        LaunchedEffect(Unit) { focus.requestFocus() }
+    }
+}

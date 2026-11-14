@@ -149,8 +149,17 @@ final class NHClient: @unchecked Sendable {
 
     // MARK: Account
 
-    func favorites(page: Int) async throws -> PageResponse<GalleryItem> {
-        let data = try await call { try await api.favoritesJson(page: Int32(page), query: "") }
+    /// A random gallery's number.
+    func randomID() async throws -> Int {
+        do {
+            return Int(try await api.randomGalleryId())
+        } catch {
+            throw Self.map(error)
+        }
+    }
+
+    func favorites(page: Int, query: String = "") async throws -> PageResponse<GalleryItem> {
+        let data = try await call { try await api.favoritesJson(page: Int32(page), query: query) }
         return try decode(PageResponse<GalleryItem>.self, data)
     }
 

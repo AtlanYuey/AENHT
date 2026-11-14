@@ -97,6 +97,9 @@ struct ReaderView: View {
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
     @State private var isLandscape = false
+    @State private var askPage = false
+    @State private var pageText = ""
+    @State private var notice: String?
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -176,6 +179,14 @@ struct ReaderView: View {
                                 Label(mode.title, systemImage: mode.systemImage).tag(mode)
                             }
                         }
+                        Section {
+                            Button("Go to Page…", systemImage: "arrow.right.to.line") {
+                                pageText = "\(page + 1)"
+                                askPage = true
+                            }
+                            Button("Save Page", systemImage: "square.and.arrow.down") { Task { await savePage() } }
+                            Button("Share Page", systemImage: "photo") { Task { await sharePage() } }
+                        }
                         Button("Reader Settings", systemImage: "slider.horizontal.3") {
                             showSettings = true
                         }
@@ -253,6 +264,21 @@ struct ReaderView: View {
                 prefetcher.stopPrefetching()
                 recordPage()
             }
+            .alert("Page Number", isPresented: $askPage) {
+                TextField("1 – \(pageCount)", text: $pageText).keyboardType(.numberPad)
+                Button("Go") {
+                    if let n = Int(pageText), (1...pageCount).contains(n) {
+                        turnFromPanel = true
+                        page = n - 1
+                        position = n - 1
+                        sliderValue = Double(n - 1)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
+                Button("OK", role: .cancel) {}
+            }
             .sheet(isPresented: $showSettings) {
                 ReaderSettingsSheet()
                     .presentationDetents([.medium, .large])
@@ -317,7 +343,34 @@ struct ReaderView: View {
             chromeVisible.toggle()
             return
         }
-        go(step(forward: fraction < 0.5 ? isRTL : !isRTL))
+        // Swapped tap zones: the left edge goes forward.
+        go(step(forward: (fraction < 0.5 ? isRTL : !isRTL) != settings.swapTapZones))
+    }
+
+    /// The page shown, as decoded (from the image cache when it's there).
+    private func pageImage() async -> UIImage? {
+        guard source.pages.indices.contains(page), let url = source.pages[page].url else { return nil }
+        return try? await ImagePipeline.shared.image(for: AutoCropProcessor.request(url))
+    }
+
+    private func savePage() async {
+        guard let image = await pageImage() else {
+            notice = String(localized: "Couldn't Save")
+            return
+        }
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        notice = String(localized: "Saved to Photos.")
+    }
+
+    private func sharePage() async {
+        guard let image = await pageImage() else { return }
+        let controller = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first { $0.activationState == .foregroundActive }
+        var top = scene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        controller.popoverPresentationController?.sourceView = top?.view
+        controller.popoverPresentationController?.sourceRect = CGRect(x: (top?.view.bounds.midX ?? 0), y: 60, width: 1, height: 1)
+        top?.present(controller, animated: true)
     }
 
     private func recordPage() {
@@ -516,6 +569,7 @@ struct ReadingSettingsSections: View {
             }
             Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
             Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
+            Toggle("Swap Tap Zones", isOn: $settings.swapTapZones)
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
         } footer: {
             Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
