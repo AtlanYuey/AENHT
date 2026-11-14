@@ -452,3 +452,9 @@
 "The site's own pages, signed in with this account." = "網站自己的頁面，已用此帳號登入。";
 "Downloading…" = "正在下載…";
 "Share or Save to Files" = "分享或儲存到「檔案」";
+"Log In with API Key" = "使用 API 金鑰登入";
+"Create a key on nhentai.net › Settings › API Keys." = "在 nhentai.net › 設定 › API Keys 中建立金鑰。";
+"Remove from This Device" = "從本機移除";
+"Tap an account to switch to it." = "點按帳號即可切換。";
+"Add Account" = "新增帳號";
+"Active" = "目前使用";

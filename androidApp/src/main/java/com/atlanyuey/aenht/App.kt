@@ -29,6 +29,7 @@ class App : Application(), SingletonImageLoader.Factory {
         L10n.context = this
         AppSettings.init(this)
         Auth.init(this)
+        com.atlanyuey.aenht.core.AccountBook.init(this)
         HistoryStore.init(this)
         Downloads.init(this)
         TagStore.init(this)

@@ -453,9 +453,15 @@
     <string name="l_450">Las páginas del propio sitio, con esta cuenta.</string>
     <string name="l_451">Descargando…</string>
     <string name="l_452">Compartir o guardar en Archivos</string>
-    <string name="l_453">Copia de los ajustes</string>
-    <string name="l_454">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_455">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_456">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_457">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_453">Iniciar sesión con clave API</string>
+    <string name="l_454">Crea una clave en nhentai.net › Ajustes › API Keys.</string>
+    <string name="l_455">Quitar de este dispositivo</string>
+    <string name="l_456">Toca una cuenta para cambiar a ella.</string>
+    <string name="l_457">Añadir cuenta</string>
+    <string name="l_458">En uso</string>
+    <string name="l_459">Copia de los ajustes</string>
+    <string name="l_460">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_461">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_462">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_463">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

@@ -58,6 +58,9 @@ sealed class NhException(message: String, val kind: String, val code: Int = 0, v
 }
 
 /** Where the app keeps the API tokens (Keychain on iOS, encrypted storage on Android). */
+/** Marks an API key kept in [TokenStorage.accessToken]. */
+const val API_KEY_PREFIX = "key:"
+
 interface TokenStorage {
     val accessToken: String?
     val refreshToken: String?
@@ -102,6 +105,33 @@ class NhApi internal constructor(
 
     val isLoggedIn: Boolean get() = !tokens.accessToken.isNullOrEmpty()
 
+    /** Logged in with an API key (nhentai.net › Settings › API Keys) instead of a login. */
+    val usesApiKey: Boolean get() = tokens.accessToken?.startsWith(API_KEY_PREFIX) == true
+
+    /** Checking a new API key: a rejection is the answer, not an expired login. */
+    private var checkingKey = false
+
+    /**
+     * Logs in with an API key (`Authorization: Key …`): kept like a login
+     * token, it never expires and needs no renewal. Answers the account; a
+     * wrong key leaves the previous login as it was.
+     */
+    @Throws(NhException::class, CancellationException::class)
+    suspend fun loginWithApiKey(key: String): CurrentUser {
+        val previousAccess = tokens.accessToken
+        val previousRefresh = tokens.refreshToken
+        tokens.save(API_KEY_PREFIX + key.trim(), null)
+        checkingKey = true
+        try {
+            return currentUser()
+        } catch (e: Exception) {
+            if (previousAccess != null) tokens.save(previousAccess, previousRefresh) else tokens.clear()
+            throw e
+        } finally {
+            checkingKey = false
+        }
+    }
+
     /** Called when the login can no longer be renewed (the account is kept). */
     var onNeedsVerification: (() -> Unit)? = null
 
@@ -124,7 +154,9 @@ class NhApi internal constructor(
                 this.method = method
                 query.forEach { (k, v) -> parameter(k, v) }
                 header(HttpHeaders.Accept, "application/json")
-                token?.let { header(HttpHeaders.Authorization, "User $it") }
+                token?.let {
+                    header(HttpHeaders.Authorization, if (it.startsWith(API_KEY_PREFIX)) "Key " + it.removePrefix(API_KEY_PREFIX) else "User $it")
+                }
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body.toString())
@@ -145,6 +177,12 @@ class NhApi internal constructor(
             val wait = retryAfter?.toLongOrNull()?.coerceIn(1, 120) ?: 30
             limiter.backOff(bucket, limit, wait.seconds)
             return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true)
+        }
+        if (code == 401 && token != null && token.startsWith(API_KEY_PREFIX)) {
+            // An API key isn't renewed: it was revoked (or is wrong).
+            if (checkingKey) throw NhException.Http(401, message(text) ?: "Invalid API key")
+            onNeedsVerification?.invoke()
+            throw NhException.NeedsVerification()
         }
         if (code == 401 && token != null && !retried) {
             if (refresh(token)) {

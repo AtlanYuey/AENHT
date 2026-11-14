@@ -68,6 +68,26 @@ class ProofOfWorkTest {
     }
 }
 
+class ApiKeyTest {
+    @Test
+    fun apiKeyIsSentAsKeyAndAWrongOneKeepsTheLogin() = runTest {
+        val json = headersOf(HttpHeaders.ContentType, "application/json")
+        val engine = MockEngine { request ->
+            when (request.headers[HttpHeaders.Authorization]) {
+                "Key good" -> respond("""{"id":7,"username":"reader","avatar_url":""}""", HttpStatusCode.OK, json)
+                else -> respond("""{"detail":"Invalid API key"}""", HttpStatusCode.Unauthorized, json)
+            }
+        }
+        val tokens = MemoryTokens("old-token", "old-refresh")
+        val api = NhApi(tokens, buildHttpClient(engine))
+        assertFailsWith<NhException> { api.loginWithApiKey("bad") }
+        assertEquals("old-token", tokens.accessToken)
+        assertEquals("reader", api.loginWithApiKey(" good ").username)
+        assertEquals("key:good", tokens.accessToken)
+        assertTrue(api.usesApiKey)
+    }
+}
+
 private class MemoryTokens(override var accessToken: String?, override var refreshToken: String?) : TokenStorage {
     override fun save(access: String, refresh: String?) {
         accessToken = access

@@ -453,9 +453,15 @@
     <string name="l_450">The site\'s own pages, signed in with this account.</string>
     <string name="l_451">Downloading…</string>
     <string name="l_452">Share or Save to Files</string>
-    <string name="l_453">สำรองการตั้งค่า</string>
-    <string name="l_454">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
-    <string name="l_455">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
-    <string name="l_456">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
-    <string name="l_457">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
+    <string name="l_453">Log In with API Key</string>
+    <string name="l_454">Create a key on nhentai.net › Settings › API Keys.</string>
+    <string name="l_455">Remove from This Device</string>
+    <string name="l_456">Tap an account to switch to it.</string>
+    <string name="l_457">Add Account</string>
+    <string name="l_458">Active</string>
+    <string name="l_459">สำรองการตั้งค่า</string>
+    <string name="l_460">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
+    <string name="l_461">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
+    <string name="l_462">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
+    <string name="l_463">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
 </resources>

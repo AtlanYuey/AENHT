@@ -140,13 +140,21 @@ final class EhSession {
         let ok = (try? await EhService.shared.api.verifyLogin())?.boolValue ?? false
         if !ok { EhCredentials.shared.clear() }
         refresh()
+        if ok { AccountBook.shared.rememberEh() }
         return ok
     }
 
     func logout() {
+        AccountBook.shared.forgetActive(.ehentai)
         EhService.shared.api.logout()
         AppSettings.shared.useExHentai = false
         refresh()
+    }
+
+    /// Another account: its folders are read again.
+    func resetFolders() {
+        foldersLoaded = false
+        folderNames = (0..<10).map { "Favorites \($0)" }
     }
 
     func loadFolders() async {

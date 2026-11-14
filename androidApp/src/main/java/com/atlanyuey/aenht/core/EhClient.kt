@@ -56,10 +56,12 @@ object EhSession {
         val ok = runCatching { EhClient.api.verifyLogin() }.getOrDefault(false)
         if (!ok) EhAuth.clear()
         refresh()
+        if (ok) AccountBook.rememberEh()
         return ok
     }
 
     fun logout() {
+        AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
         EhClient.api.logout()
         refresh()
     }

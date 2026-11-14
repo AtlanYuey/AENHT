@@ -168,6 +168,14 @@ final class NHClient: @unchecked Sendable {
         return try decode(FavoriteResult.self, data)
     }
 
+    func loginWithApiKey(_ key: String) async throws {
+        do {
+            _ = try await api.loginWithApiKey(key: key)
+        } catch {
+            throw Self.map(error)
+        }
+    }
+
     func currentUser() async throws -> CurrentUser {
         let data = try await call { try await api.currentUserJson() }
         return try decode(CurrentUser.self, data)

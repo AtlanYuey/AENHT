@@ -453,9 +453,15 @@
     <string name="l_450">The site\'s own pages, signed in with this account.</string>
     <string name="l_451">Downloading…</string>
     <string name="l_452">Share or Save to Files</string>
-    <string name="l_453">Cadangan Pengaturan</string>
-    <string name="l_454">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_455">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_456">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_457">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_453">Log In with API Key</string>
+    <string name="l_454">Create a key on nhentai.net › Settings › API Keys.</string>
+    <string name="l_455">Remove from This Device</string>
+    <string name="l_456">Tap an account to switch to it.</string>
+    <string name="l_457">Add Account</string>
+    <string name="l_458">Active</string>
+    <string name="l_459">Cadangan Pengaturan</string>
+    <string name="l_460">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_461">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_462">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_463">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

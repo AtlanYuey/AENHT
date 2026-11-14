@@ -453,9 +453,15 @@
     <string name="l_450">The site\'s own pages, signed in with this account.</string>
     <string name="l_451">Downloading…</string>
     <string name="l_452">Share or Save to Files</string>
-    <string name="l_453">Backup impostazioni</string>
-    <string name="l_454">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_455">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_456">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_457">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_453">Log In with API Key</string>
+    <string name="l_454">Create a key on nhentai.net › Settings › API Keys.</string>
+    <string name="l_455">Remove from This Device</string>
+    <string name="l_456">Tap an account to switch to it.</string>
+    <string name="l_457">Add Account</string>
+    <string name="l_458">Active</string>
+    <string name="l_459">Backup impostazioni</string>
+    <string name="l_460">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_461">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_462">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_463">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

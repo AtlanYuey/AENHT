@@ -452,3 +452,9 @@
 "The site's own pages, signed in with this account." = "Las páginas del propio sitio, con esta cuenta.";
 "Downloading…" = "Descargando…";
 "Share or Save to Files" = "Compartir o guardar en Archivos";
+"Log In with API Key" = "Iniciar sesión con clave API";
+"Create a key on nhentai.net › Settings › API Keys." = "Crea una clave en nhentai.net › Ajustes › API Keys.";
+"Remove from This Device" = "Quitar de este dispositivo";
+"Tap an account to switch to it." = "Toca una cuenta para cambiar a ella.";
+"Add Account" = "Añadir cuenta";
+"Active" = "En uso";

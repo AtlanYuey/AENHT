@@ -45,6 +45,12 @@ final class FavoritesStore {
     }
 
     /// Syncs the logged-in sites whose last sync is older than [maxAge].
+    /// Another account of `site` became active: its copy is read again.
+    func accountChanged(_ site: SiteKind) async {
+        lastSync[site] = nil
+        await sync([site])
+    }
+
     func syncIfStale(maxAge: TimeInterval = 15 * 60) async {
         let due = AppSettings.shared.enabledSites.filter {
             loggedIn($0) && Date().timeIntervalSince(lastSync[$0] ?? .distantPast) > maxAge

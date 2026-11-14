@@ -453,9 +453,15 @@
     <string name="l_450">The site\'s own pages, signed in with this account.</string>
     <string name="l_451">Downloading…</string>
     <string name="l_452">Share or Save to Files</string>
-    <string name="l_453">Settings Backup</string>
-    <string name="l_454">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_455">Android\'s own backup also keeps these settings.</string>
-    <string name="l_456">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_457">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_453">Log In with API Key</string>
+    <string name="l_454">Create a key on nhentai.net › Settings › API Keys.</string>
+    <string name="l_455">Remove from This Device</string>
+    <string name="l_456">Tap an account to switch to it.</string>
+    <string name="l_457">Add Account</string>
+    <string name="l_458">Active</string>
+    <string name="l_459">Settings Backup</string>
+    <string name="l_460">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_461">Android\'s own backup also keeps these settings.</string>
+    <string name="l_462">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_463">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

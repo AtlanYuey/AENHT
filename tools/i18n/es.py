@@ -346,4 +346,10 @@ T = [
     "Las páginas del propio sitio, con esta cuenta.",
     "Descargando…",
     "Compartir o guardar en Archivos",
+    "Iniciar sesión con clave API",
+    "Crea una clave en nhentai.net › Ajustes › API Keys.",
+    "Quitar de este dispositivo",
+    "Toca una cuenta para cambiar a ella.",
+    "Añadir cuenta",
+    "En uso",
 ]

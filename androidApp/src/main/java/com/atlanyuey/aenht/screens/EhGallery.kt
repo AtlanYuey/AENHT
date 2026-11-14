@@ -72,6 +72,12 @@ object EhFolders {
         private set
     private var loaded = false
 
+    /** Another account: its folders are read again. */
+    fun reset() {
+        loaded = false
+        names = List(10) { "Favorites $it" }
+    }
+
     suspend fun load() {
         if (loaded || !EhSession.isLoggedIn) return
         runCatching { EhClient.favoriteFolderNames() }.getOrNull()?.let {

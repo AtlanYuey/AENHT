@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.atlanyuey.aenht.screens
 
 import android.annotation.SuppressLint
@@ -6,6 +8,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import com.atlanyuey.aenht.ui.components.prompt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -34,36 +38,87 @@ class AccountsScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val overlays = LocalOverlays.current
+        val keyTitle = tr("Log In with API Key")
+        val keyMessage = tr("Create a key on nhentai.net › Settings › API Keys.")
+        val login = tr("Log In")
+        val cancel = tr("Cancel")
+        val failed = tr("Couldn't Log In")
+        val forgetLabel = tr("Remove from This Device")
         GroupedListScreen(tr("Accounts")) {
             if (AppSettings.nhentaiEnabled) {
-                section("nhentai") {
-                    if (Session.isLoggedIn) {
-                        ListRow(Session.user?.username ?: tr("Logged In"), subtitle = tr("nhentai account"),
-                            leading = { Avatar(Session.user?.avatar, 44) }, chevron = true, last = true,
-                            onClick = { navigator.push(AccountScreen()) })
-                    } else {
-                        ListRow(tr("Log In"), subtitle = tr("Sync favorites and post comments"),
-                            leading = { Avatar(null, 44) }, chevron = true, last = true,
-                            onClick = { navigator.push(LoginScreen()) })
+                val saved = AccountBook.accounts(Site.NHENTAI)
+                section("nhentai", footer = { if (saved.size > 1) FooterText(tr("Tap an account to switch to it.")) }) {
+                    saved.forEach { account ->
+                        AccountRow(account, forgetLabel) {
+                            if (AccountBook.isActive(account)) navigator.push(AccountScreen())
+                            else scope.launch { AccountBook.switchTo(account) }
+                        }
                     }
+                    if (saved.isEmpty() && Session.isLoggedIn) {
+                        ListRow(Session.user?.username ?: tr("Logged In"), subtitle = tr("nhentai account"),
+                            leading = { Avatar(Session.user?.avatar, 44) }, chevron = true,
+                            onClick = { navigator.push(AccountScreen()) })
+                    }
+                    ListRow(if (Session.isLoggedIn) tr("Add Account") else tr("Log In"), subtitle = if (Session.isLoggedIn) null else tr("Sync favorites and post comments"),
+                        leading = { Avatar(null, 44) }, chevron = true,
+                        onClick = { navigator.push(LoginScreen()) })
+                    ListRow(keyTitle, chevron = true, last = true, onClick = {
+                        overlays.prompt(keyTitle, keyMessage, "", login, cancel) { key ->
+                            if (key.isBlank()) return@prompt
+                            scope.launch {
+                                try {
+                                    Session.loginWithApiKey(key)
+                                } catch (e: Exception) {
+                                    overlays.alert(failed, e.localizedMessage)
+                                }
+                            }
+                        }
+                    })
                 }
             }
             if (AppSettings.ehentaiEnabled) {
-                section("E-Hentai") {
-                    if (EhSession.isLoggedIn) {
+                val saved = AccountBook.accounts(Site.EHENTAI)
+                section(Site.EHENTAI.label, footer = { if (saved.size > 1) FooterText(tr("Tap an account to switch to it.")) }) {
+                    saved.forEach { account ->
+                        AccountRow(account, forgetLabel) {
+                            if (AccountBook.isActive(account)) navigator.push(EhAccountScreen())
+                            else scope.launch { AccountBook.switchTo(account) }
+                        }
+                    }
+                    if (saved.isEmpty() && EhSession.isLoggedIn) {
                         ListRow(tr("Logged In"),
                             subtitle = if (EhSession.hasExHentai) tr("E-Hentai account · ExHentai access") else tr("E-Hentai account"),
-                            leading = { Avatar(null, 44) }, chevron = true, last = true,
-                            onClick = { navigator.push(EhAccountScreen()) })
-                    } else {
-                        ListRow(tr("Log In"), subtitle = tr("Favorites, ratings, watched tags and ExHentai"),
                             leading = { Avatar(null, 44) }, chevron = true,
-                            onClick = { navigator.push(EhLoginScreen()) })
-                        ListRow(tr("Log In with Cookies"), chevron = true, last = true,
-                            onClick = { navigator.push(EhCookieLoginScreen()) })
+                            onClick = { navigator.push(EhAccountScreen()) })
                     }
+                    ListRow(if (EhSession.isLoggedIn) tr("Add Account") else tr("Log In"),
+                        subtitle = if (EhSession.isLoggedIn) null else tr("Favorites, ratings, watched tags and ExHentai"),
+                        leading = { Avatar(null, 44) }, chevron = true,
+                        onClick = { navigator.push(EhLoginScreen()) })
+                    ListRow(tr("Log In with Cookies"), chevron = true, last = true,
+                        onClick = { navigator.push(EhCookieLoginScreen()) })
                 }
             }
+        }
+    }
+
+    /** A saved account: a check on the active one; long-press to remove it from the device. */
+    @Composable
+    private fun AccountRow(account: SavedAccount, forgetLabel: String, onClick: () -> Unit) {
+        val overlays = LocalOverlays.current
+        val anchor = rememberAnchor()
+        val active = AccountBook.isActive(account)
+        Box(Modifier.anchor(anchor).combinedClickable(onClick = onClick, onLongClick = {
+            if (!active) overlays.menu(anchor.bounds, listOf(listOf(MenuItem(forgetLabel, Icons.Trash, destructive = true) { AccountBook.forget(account) })))
+        })) {
+            ListRow(
+                account.name,
+                subtitle = if (active) tr("Active") else null,
+                leading = { Avatar(account.avatar, 44) },
+                trailing = { if (active) AppIcon(Icons.Check, null, tint = AppTheme.tint, size = 18.dp) },
+                chevron = active,
+            )
         }
     }
 }

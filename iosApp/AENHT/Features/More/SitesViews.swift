@@ -9,14 +9,21 @@ struct AccountsView: View {
     @Environment(UserSession.self) private var session
     @Environment(EhSession.self) private var ehSession
     @Environment(AppSettings.self) private var settings
+    @State private var book = AccountBook.shared
     @State private var showLogin = false
     @State private var showEhLogin = false
+    @State private var askKey = false
+    @State private var apiKey = ""
+    @State private var error: String?
 
     var body: some View {
         List {
             if settings.nhentaiEnabled {
-                Section("nhentai") {
-                    if session.isLoggedIn {
+                Section {
+                    ForEach(book.accounts(for: .nhentai)) { account in
+                        savedRow(account) { AccountView() }
+                    }
+                    if book.accounts(for: .nhentai).isEmpty, session.isLoggedIn {
                         NavigationLink { AccountView() } label: {
                             HStack(spacing: 12) {
                                 AvatarView(url: session.user?.avatar, size: 44)
@@ -26,39 +33,95 @@ struct AccountsView: View {
                                 }
                             }
                         }
-                    } else {
-                        Button { showLogin = true } label: {
-                            accountRow("Log In", "Sync favorites and post comments")
-                        }
                     }
+                    Button { showLogin = true } label: {
+                        accountRow(session.isLoggedIn ? "Add Account" : "Log In", session.isLoggedIn ? nil : "Sync favorites and post comments")
+                    }
+                    Button("Log In with API Key") {
+                        apiKey = ""
+                        askKey = true
+                    }
+                } header: {
+                    Text("nhentai")
+                } footer: {
+                    if book.accounts(for: .nhentai).count > 1 { Text("Tap an account to switch to it.") }
                 }
             }
             if settings.ehentaiEnabled {
-                Section("E-Hentai") {
-                    if ehSession.isLoggedIn {
+                Section {
+                    ForEach(book.accounts(for: .ehentai)) { account in
+                        savedRow(account) { EhAccountView() }
+                    }
+                    if book.accounts(for: .ehentai).isEmpty, ehSession.isLoggedIn {
                         NavigationLink { EhAccountView() } label: {
                             accountRow("Logged In", ehSession.hasExHentai ? "E-Hentai account · ExHentai access" : "E-Hentai account")
                         }
-                    } else {
-                        Button { showEhLogin = true } label: {
-                            accountRow("Log In", "Favorites, ratings, watched tags and ExHentai")
-                        }
-                        NavigationLink("Log In with Cookies") { EhCookieLoginView() }
                     }
+                    Button { showEhLogin = true } label: {
+                        accountRow(ehSession.isLoggedIn ? "Add Account" : "Log In",
+                                   ehSession.isLoggedIn ? nil : "Favorites, ratings, watched tags and ExHentai")
+                    }
+                    NavigationLink("Log In with Cookies") { EhCookieLoginView() }
+                } header: {
+                    Text(SiteKind.ehentai.displayName)
+                } footer: {
+                    if book.accounts(for: .ehentai).count > 1 { Text("Tap an account to switch to it.") }
                 }
             }
         }
         .navigationTitle("Accounts")
         .sheet(isPresented: $showLogin) { LoginView() }
         .sheet(isPresented: $showEhLogin) { EhLoginView() }
+        .alert("Log In with API Key", isPresented: $askKey) {
+            SecureField("API Key", text: $apiKey)
+            Button("Log In") {
+                let key = apiKey.trimmingCharacters(in: .whitespaces)
+                guard !key.isEmpty else { return }
+                Task {
+                    do { try await session.loginWithApiKey(key) } catch { self.error = error.localizedDescription }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Create a key on nhentai.net › Settings › API Keys.")
+        }
+        .alert("Couldn't Log In", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
     }
 
-    private func accountRow(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey) -> some View {
+    /// A saved account: the active one opens its page; another one is switched to.
+    @ViewBuilder
+    private func savedRow<Destination: View>(_ account: SavedAccount, @ViewBuilder destination: () -> Destination) -> some View {
+        let label = HStack(spacing: 12) {
+            AvatarView(url: account.avatar.flatMap(URL.init(string:)), size: 44)
+            VStack(alignment: .leading) {
+                Text(account.name).font(.headline).foregroundStyle(.primary)
+                if book.isActive(account) { Text("Active").font(.subheadline).foregroundStyle(.secondary) }
+            }
+            Spacer()
+            if book.isActive(account) { Image(systemName: "checkmark").foregroundStyle(.tint) }
+        }
+        if book.isActive(account) {
+            NavigationLink { destination() } label: { label }
+        } else {
+            Button {
+                Task { await book.switchTo(account) }
+            } label: { label }
+            .swipeActions {
+                Button("Remove from This Device", systemImage: "trash", role: .destructive) { book.forget(account) }
+            }
+        }
+    }
+
+    private func accountRow(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey?) -> some View {
         HStack(spacing: 12) {
             AvatarView(url: nil, size: 44)
             VStack(alignment: .leading) {
                 Text(title).font(.headline).foregroundStyle(.primary)
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                if let subtitle { Text(subtitle).font(.subheadline).foregroundStyle(.secondary) }
             }
         }
     }

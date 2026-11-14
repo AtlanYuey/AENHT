@@ -181,8 +181,21 @@ object Session {
         }
         try {
             user = NHClient.currentUser()
+            AccountBook.rememberNh()
         } catch (_: Exception) {
         }
+    }
+
+    /** Logs in with an API key (nhentai.net › Settings › API Keys). */
+    suspend fun loginWithApiKey(key: String) {
+        try {
+            user = NHClient.api.loginWithApiKey(key)
+        } catch (e: com.atlanyuey.aenht.shared.nh.NhException) {
+            throw NHException(e.message ?: L10n.string("Couldn't Log In"))
+        }
+        isLoggedIn = true
+        needsVerification = false
+        AccountBook.rememberNh()
     }
 
     suspend fun login(access: String, refresh: String?) {
@@ -192,6 +205,7 @@ object Session {
     }
 
     fun logout() {
+        AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.NHENTAI)
         Auth.clear()
         user = null
         isLoggedIn = false

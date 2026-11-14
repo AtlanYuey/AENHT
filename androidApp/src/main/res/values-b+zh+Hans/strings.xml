@@ -453,9 +453,15 @@
     <string name="l_450">网站自己的页面，已用此账号登录。</string>
     <string name="l_451">正在下载…</string>
     <string name="l_452">分享或存储到“文件”</string>
-    <string name="l_453">设置备份</string>
-    <string name="l_454">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_455">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_456">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_457">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_453">使用 API 密钥登录</string>
+    <string name="l_454">在 nhentai.net › 设置 › API Keys 中创建密钥。</string>
+    <string name="l_455">从本机移除</string>
+    <string name="l_456">点按账号即可切换。</string>
+    <string name="l_457">添加账号</string>
+    <string name="l_458">当前使用</string>
+    <string name="l_459">设置备份</string>
+    <string name="l_460">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_461">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_462">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_463">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

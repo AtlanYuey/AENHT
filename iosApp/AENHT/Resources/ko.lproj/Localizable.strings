@@ -452,3 +452,9 @@
 "The site's own pages, signed in with this account." = "이 계정으로 로그인된 사이트 자체 페이지입니다.";
 "Downloading…" = "다운로드 중…";
 "Share or Save to Files" = "공유 또는 파일에 저장";
+"Log In with API Key" = "API 키로 로그인";
+"Create a key on nhentai.net › Settings › API Keys." = "nhentai.net › 설정 › API Keys에서 키를 만드세요.";
+"Remove from This Device" = "이 기기에서 제거";
+"Tap an account to switch to it." = "계정을 탭하면 전환됩니다.";
+"Add Account" = "계정 추가";
+"Active" = "사용 중";

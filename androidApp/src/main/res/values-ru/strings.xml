@@ -453,9 +453,15 @@
     <string name="l_450">The site\'s own pages, signed in with this account.</string>
     <string name="l_451">Downloading…</string>
     <string name="l_452">Share or Save to Files</string>
-    <string name="l_453">Резервная копия настроек</string>
-    <string name="l_454">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_455">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_456">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_457">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_453">Log In with API Key</string>
+    <string name="l_454">Create a key on nhentai.net › Settings › API Keys.</string>
+    <string name="l_455">Remove from This Device</string>
+    <string name="l_456">Tap an account to switch to it.</string>
+    <string name="l_457">Add Account</string>
+    <string name="l_458">Active</string>
+    <string name="l_459">Резервная копия настроек</string>
+    <string name="l_460">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_461">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_462">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_463">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>

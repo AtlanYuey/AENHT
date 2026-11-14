@@ -81,6 +81,12 @@ object FavoritesStore {
         }
     }
 
+    /** Another account of [site] became active: its copy is read again. */
+    fun accountChanged(site: Site) {
+        lastSync.remove(site)
+        sync(listOf(site))
+    }
+
     /** Syncs when the last sync of a logged-in site is older than [maxAge]. */
     fun syncIfStale(maxAge: Long = 15 * 60 * 1000L) {
         if (!loaded) {

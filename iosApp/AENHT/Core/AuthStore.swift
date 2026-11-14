@@ -87,7 +87,15 @@ final class UserSession {
         }
         if let user = try? await NHClient.shared.currentUser() {
             self.user = user
+            AccountBook.shared.rememberNh(user: user)
         }
+    }
+
+    /// Logs in with an API key (nhentai.net › Settings › API Keys).
+    @MainActor
+    func loginWithApiKey(_ key: String) async throws {
+        try await NHClient.shared.loginWithApiKey(key)
+        await reload()
     }
 
     @MainActor
@@ -98,6 +106,7 @@ final class UserSession {
 
     @MainActor
     func logout() {
+        AccountBook.shared.forgetActive(.nhentai)
         AuthStore.shared.clear()
         user = nil
         isLoggedIn = false

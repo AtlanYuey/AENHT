@@ -453,9 +453,15 @@
     <string name="l_450">サイト自身のページです（このアカウントでログイン済み）。</string>
     <string name="l_451">ダウンロード中…</string>
     <string name="l_452">共有または“ファイル”に保存</string>
-    <string name="l_453">設定のバックアップ</string>
-    <string name="l_454">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_455">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_456">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_457">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_453">API キーでログイン</string>
+    <string name="l_454">nhentai.net › 設定 › API Keys でキーを作成してください。</string>
+    <string name="l_455">この端末から削除</string>
+    <string name="l_456">アカウントをタップすると切り替わります。</string>
+    <string name="l_457">アカウントを追加</string>
+    <string name="l_458">使用中</string>
+    <string name="l_459">設定のバックアップ</string>
+    <string name="l_460">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_461">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_462">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_463">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

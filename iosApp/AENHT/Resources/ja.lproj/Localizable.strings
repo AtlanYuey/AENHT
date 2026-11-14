@@ -452,3 +452,9 @@
 "The site's own pages, signed in with this account." = "サイト自身のページです（このアカウントでログイン済み）。";
 "Downloading…" = "ダウンロード中…";
 "Share or Save to Files" = "共有または“ファイル”に保存";
+"Log In with API Key" = "API キーでログイン";
+"Create a key on nhentai.net › Settings › API Keys." = "nhentai.net › 設定 › API Keys でキーを作成してください。";
+"Remove from This Device" = "この端末から削除";
+"Tap an account to switch to it." = "アカウントをタップすると切り替わります。";
+"Add Account" = "アカウントを追加";
+"Active" = "使用中";
