@@ -500,6 +500,9 @@ struct ReadingSettingsSections: View {
                     Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
                 }
             }
+            if settings.readMode.isPaged {
+                Toggle("Auto Crop Margins", isOn: $settings.autoCrop)
+            }
             if settings.readMode == .verticalGap {
                 VStack(alignment: .leading) {
                     LabeledContent("Page Gap") {
@@ -871,7 +874,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         imageView.image = nil
         resetZoom()
         guard let url else { return }
-        let request = ImageRequest(url: url)
+        let request = AutoCropProcessor.request(url)
         if let cached = ImagePipeline.shared.cache[request] {
             imageView.image = cached.image
             return
@@ -899,9 +902,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         imageView.image = nil
         resetZoom()
         spinner.startAnimating()
+        let requests = key.map(AutoCropProcessor.request)
         spreadTask = Task { [weak self] in
-            async let a = ImagePipeline.shared.image(for: ImageRequest(url: key[0]))
-            async let b = ImagePipeline.shared.image(for: ImageRequest(url: key[1]))
+            async let a = ImagePipeline.shared.image(for: requests[0])
+            async let b = ImagePipeline.shared.image(for: requests[1])
             guard let first = try? await a, let second = try? await b, !Task.isCancelled, let self else { return }
             let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second)
             self.spinner.stopAnimating()

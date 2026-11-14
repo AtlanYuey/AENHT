@@ -267,6 +267,8 @@ final class AppSettings {
     var doublePage: DoublePage { didSet { save(doublePage.rawValue, "doublePage") } }
     /// Reader, double page: the first page (the cover) stays alone.
     var doublePageCover: Bool { didSet { save(doublePageCover, "doublePageCover") } }
+    /// Reader: plain white / black margins are cut off the pages (paged modes).
+    var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
     /// The user's language models for translation, in order (JSON; keys are in the Keychain).
     var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
@@ -356,6 +358,7 @@ final class AppSettings {
         deviceTranslation = d.object(forKey: "deviceTranslation") as? Bool ?? true
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
+        autoCrop = d.bool(forKey: "autoCrop")
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -442,6 +445,7 @@ final class AppSettings {
         values["deviceTranslation"] = deviceTranslation
         values["doublePage"] = doublePage.rawValue
         values["doublePageCover"] = doublePageCover
+        values["autoCrop"] = autoCrop
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -515,6 +519,7 @@ final class AppSettings {
         case "deviceTranslation": set(\.deviceTranslation, number?.boolValue)
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
+        case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

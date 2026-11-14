@@ -343,9 +343,10 @@
     <string name="l_340">Always</string>
     <string name="l_341">Off</string>
     <string name="l_342">Cover Page Alone</string>
-    <string name="l_343">Settings Backup</string>
-    <string name="l_344">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_345">Android\'s own backup also keeps these settings.</string>
-    <string name="l_346">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_347">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_343">Auto Crop Margins</string>
+    <string name="l_344">Settings Backup</string>
+    <string name="l_345">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_346">Android\'s own backup also keeps these settings.</string>
+    <string name="l_347">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_348">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

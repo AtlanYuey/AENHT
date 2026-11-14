@@ -269,6 +269,7 @@ object AppSettings {
         deviceTranslation = p.getBoolean("deviceTranslation", true)
         doublePage = DoublePage.of(p.getString("doublePage", null))
         doublePageCover = p.getBoolean("doublePageCover", true)
+        autoCrop = p.getBoolean("autoCrop", false)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -399,6 +400,8 @@ object AppSettings {
     var doublePage by Pref(DoublePage.Landscape) { save("doublePage", it.raw) }
     /** Reader, double page: the first page (the cover) stays alone. */
     var doublePageCover by Pref(true) { save("doublePageCover", it) }
+    /** Reader: plain white / black margins are cut off the pages (paged modes). */
+    var autoCrop by Pref(false) { save("autoCrop", it) }
 
     /** The user's language models for translation, in order (JSON; keys are in the Keystore). */
     var llmServices by Pref("") { save("llmServices", it) }
@@ -515,6 +518,7 @@ object AppSettings {
         "deviceTranslation" to deviceTranslation,
         "doublePage" to doublePage.raw,
         "doublePageCover" to doublePageCover,
+        "autoCrop" to autoCrop,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -605,6 +609,7 @@ object AppSettings {
                 "deviceTranslation" -> bool?.let { deviceTranslation = it }
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }
+                "autoCrop" -> bool?.let { autoCrop = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

@@ -236,4 +236,5 @@ T = [
     "Siempre",
     "Desactivado",
     "Portada sola",
+    "Recortar márgenes automáticamente",
 ]

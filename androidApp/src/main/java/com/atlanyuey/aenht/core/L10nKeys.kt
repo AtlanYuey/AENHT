@@ -348,10 +348,11 @@ object L10nKeys {
         "Always" to R.string.l_340,
         "Off" to R.string.l_341,
         "Cover Page Alone" to R.string.l_342,
-        "Settings Backup" to R.string.l_343,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_344,
-        "Android's own backup also keeps these settings." to R.string.l_345,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_346,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_347,
+        "Auto Crop Margins" to R.string.l_343,
+        "Settings Backup" to R.string.l_344,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_345,
+        "Android's own backup also keeps these settings." to R.string.l_346,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_347,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_348,
     )
 }

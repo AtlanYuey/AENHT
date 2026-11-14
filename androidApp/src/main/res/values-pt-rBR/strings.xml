@@ -343,9 +343,10 @@
     <string name="l_340">Always</string>
     <string name="l_341">Off</string>
     <string name="l_342">Cover Page Alone</string>
-    <string name="l_343">Backup dos ajustes</string>
-    <string name="l_344">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_345">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_346">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_347">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_343">Auto Crop Margins</string>
+    <string name="l_344">Backup dos ajustes</string>
+    <string name="l_345">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_346">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_347">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_348">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

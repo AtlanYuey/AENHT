@@ -110,6 +110,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.zoomable
+import coil3.request.transformations
 import com.atlanyuey.aenht.shared.reader.Spreads
 import com.atlanyuey.aenht.core.DoublePage
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -476,8 +477,14 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 ordered.forEachIndexed { i, p ->
                     val align = if (i == 0) Alignment.CenterEnd else Alignment.CenterStart
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
+                        val context = LocalContext.current
+                        val crop = AppSettings.autoCrop
                         coil3.compose.AsyncImage(
-                            model = source.pages[p].url,
+                            model = remember(p, crop) {
+                                val url = source.pages[p].url
+                                if (!crop) url else coil3.request.ImageRequest.Builder(context).data(url)
+                                    .transformations(com.atlanyuey.aenht.core.AutoCropTransformation()).build()
+                            },
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             alignment = align,
@@ -499,8 +506,15 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true),
             contentAlignment = Alignment.Center,
         ) {
+            val context = LocalContext.current
+            val crop = AppSettings.autoCrop
+            val model = remember(index, crop) {
+                val url = source.pages[index].url
+                if (!crop) url else coil3.request.ImageRequest.Builder(context).data(url)
+                    .transformations(com.atlanyuey.aenht.core.AutoCropTransformation()).build()
+            }
             ZoomableAsyncImage(
-                model = source.pages[index].url,
+                model = model,
                 contentDescription = null,
                 state = imageState,
                 modifier = Modifier.fillMaxSize(),
@@ -683,6 +697,9 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
                 if (AppSettings.doublePage != DoublePage.Off) {
                     ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
                 }
+            }
+            if (AppSettings.readMode.isPaged) {
+                ToggleRow(tr("Auto Crop Margins"), AppSettings.autoCrop, { AppSettings.autoCrop = it })
             }
             if (AppSettings.readMode == ReadMode.VerticalGap) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {

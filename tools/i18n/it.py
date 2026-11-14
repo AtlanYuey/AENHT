@@ -236,4 +236,5 @@ T = [
     "Always",
     "Off",
     "Cover Page Alone",
+    "Auto Crop Margins",
 ]
