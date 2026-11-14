@@ -298,6 +298,7 @@ object AppSettings {
         downloadRetries = p.getInt("downloadRetries", 2).coerceIn(0, 5)
         downloadInterval = p.getFloat("downloadInterval", 0f).toDouble().coerceIn(0.0, 5.0)
         ehOriginalImages = p.getBoolean("ehOriginalImages", false)
+        appLock = p.getBoolean("appLock", false)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -454,6 +455,8 @@ object AppSettings {
     var downloadInterval by Pref(0.0) { save("downloadInterval", it) }
     /** E-Hentai downloads: the original images (cost GP when large). */
     var ehOriginalImages by Pref(false) { save("ehOriginalImages", it) }
+    /** Ask for the fingerprint / face or the device PIN when the app opens or comes back (kept on this device). */
+    var appLock by Pref(false) { save("appLock", it) }
 
     fun homeRows(site: Site): List<HomeRow> =
         homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)

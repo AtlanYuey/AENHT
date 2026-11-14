@@ -89,6 +89,24 @@ final class TagStore {
         return Array(sorted.prefix(limit))
     }
 
+    /// nhentai tags from the local list, by name or by translation (e.g.
+    /// Chinese); the site is asked only when this finds few.
+    func suggestNh(_ word: String, limit: Int = 12) -> [TagSuggestion] {
+        let w = word.lowercased()
+        guard w.count >= 2 else { return [] }
+        var starts: [(Int, TagName)] = []
+        var contains: [(Int, TagName)] = []
+        for (id, tag) in tags {
+            if tag.name.hasPrefix(w) {
+                starts.append((id, tag))
+            } else if tag.name.contains(w) || (translate(tag.name, type: tag.type)?.localizedCaseInsensitiveContains(word) ?? false) {
+                contains.append((id, tag))
+            }
+        }
+        let sorted = starts.sorted { $0.1.name.count < $1.1.name.count } + contains.sorted { $0.1.name.count < $1.1.name.count }
+        return sorted.prefix(limit).map { TagSuggestion(type: $0.1.type, name: $0.1.name) }
+    }
+
     /// Tags shown on a card: languages first, then content tags.
     func cardTags(for ids: [Int], limit: Int = 8) -> [TagName] {
         _ = revision

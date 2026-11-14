@@ -463,3 +463,17 @@
 "Comment" = "留言內容";
 "Commenter" = "留言者";
 "Settings" = "設定";
+"Unlock AENHT" = "解鎖 AENHT";
+"Unlock" = "解鎖";
+"App Lock" = "App 鎖";
+"Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps." = "開啟或回到 App 時要求驗證指紋、臉孔或裝置 PIN，並在最近使用中隱藏內容。";
+"Set a screen lock on this device first." = "請先為裝置設定螢幕鎖定。";
+"Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher." = "開啟或回到 App 時要求 Face ID、Touch ID 或密碼，並在 App 切換器中隱藏內容。";
+"Check for Updates" = "檢查更新";
+"Share Diagnostic Log" = "分享診斷日誌";
+"The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys." = "診斷日誌記錄本次執行中出錯的地方（請求失敗、翻譯、同步），不包含權杖、Cookie 或金鑰。";
+"This Version" = "目前版本";
+"Latest Version" = "最新版本";
+"None yet" = "暫無";
+"Update available" = "有可用更新";
+"Latest Test Build" = "最新測試版";

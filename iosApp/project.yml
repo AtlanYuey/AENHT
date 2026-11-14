@@ -69,6 +69,7 @@ targets:
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryAddUsageDescription: Saves reader pages to your photo library.
+        NSFaceIDUsageDescription: Unlocks the app when App Lock is on.
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true

@@ -86,6 +86,7 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
     private fun check(response: HttpResponse, allowed: Set<Int> = emptySet()) {
         val code = response.status.value
         if (code in 200..299 || code in allowed) return
+        com.atlanyuey.aenht.shared.app.Diagnostics.log("webdav", "${response.call.request.method.value} → $code")
         if (code == 401 || code == 403) throw WebDavException("HTTP $code", unauthorized = true)
         throw WebDavException("HTTP $code")
     }

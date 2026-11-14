@@ -169,8 +169,10 @@ class NhApi internal constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "${method.value} $path: ${e.message ?: e::class.simpleName}")
             throw NhException.Network(e.message ?: e.toString())
         }
+        if (code !in 200..299) com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "${method.value} $path → $code ${message(text) ?: ""}")
 
         if (code == 429 && !retried) {
             // Someone else (another app, the browser) used the quota: wait and try once more.

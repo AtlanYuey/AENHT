@@ -463,3 +463,17 @@
 "Comment" = "コメント本文";
 "Commenter" = "コメント投稿者";
 "Settings" = "設定";
+"Unlock AENHT" = "AENHT のロックを解除";
+"Unlock" = "ロック解除";
+"App Lock" = "アプリロック";
+"Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps." = "アプリを開くときや戻るときに指紋・顔・端末の PIN を求め、履歴画面では内容を隠します。";
+"Set a screen lock on this device first." = "先に端末の画面ロックを設定してください。";
+"Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher." = "アプリを開くときや戻るときに Face ID・Touch ID・パスコードを求め、アプリスイッチャーでは内容を隠します。";
+"Check for Updates" = "アップデートを確認";
+"Share Diagnostic Log" = "診断ログを共有";
+"The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys." = "診断ログには今回の起動中に起きた問題（失敗したリクエスト、翻訳、同期）が記録されます。トークン・Cookie・キーは含まれません。";
+"This Version" = "このバージョン";
+"Latest Version" = "最新バージョン";
+"None yet" = "まだありません";
+"Update available" = "アップデートがあります";
+"Latest Test Build" = "最新のテストビルド";

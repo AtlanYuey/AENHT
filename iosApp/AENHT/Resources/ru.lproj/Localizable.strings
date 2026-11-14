@@ -463,3 +463,17 @@
 "Comment" = "Comment";
 "Commenter" = "Commenter";
 "Settings" = "Settings";
+"Unlock AENHT" = "Unlock AENHT";
+"Unlock" = "Unlock";
+"App Lock" = "App Lock";
+"Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps." = "Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps.";
+"Set a screen lock on this device first." = "Set a screen lock on this device first.";
+"Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher." = "Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher.";
+"Check for Updates" = "Check for Updates";
+"Share Diagnostic Log" = "Share Diagnostic Log";
+"The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys." = "The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys.";
+"This Version" = "This Version";
+"Latest Version" = "Latest Version";
+"None yet" = "None yet";
+"Update available" = "Update available";
+"Latest Test Build" = "Latest Test Build";

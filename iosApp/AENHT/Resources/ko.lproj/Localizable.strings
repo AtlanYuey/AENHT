@@ -463,3 +463,17 @@
 "Comment" = "댓글 내용";
 "Commenter" = "댓글 작성자";
 "Settings" = "설정";
+"Unlock AENHT" = "AENHT 잠금 해제";
+"Unlock" = "잠금 해제";
+"App Lock" = "앱 잠금";
+"Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps." = "앱을 열거나 돌아올 때 지문, 얼굴 또는 기기 PIN을 요구하고 최근 앱에서 내용을 숨깁니다.";
+"Set a screen lock on this device first." = "먼저 기기 화면 잠금을 설정하세요.";
+"Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher." = "앱을 열거나 돌아올 때 Face ID, Touch ID 또는 암호를 요구하고 앱 전환기에서 내용을 숨깁니다.";
+"Check for Updates" = "업데이트 확인";
+"Share Diagnostic Log" = "진단 로그 공유";
+"The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys." = "진단 로그에는 이번 세션에서 생긴 문제(실패한 요청, 번역, 동기화)가 기록되며 토큰, 쿠키, 키는 포함되지 않습니다.";
+"This Version" = "현재 버전";
+"Latest Version" = "최신 버전";
+"None yet" = "아직 없음";
+"Update available" = "업데이트 있음";
+"Latest Test Build" = "최신 테스트 빌드";

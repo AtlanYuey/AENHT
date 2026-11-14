@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.core.EhSession
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.ui.components.GlassCircleButton
 import com.atlanyuey.aenht.shared.site.Site
@@ -816,6 +817,12 @@ class GeneralScreen : Screen() {
             section(footer = { FooterText(tr("When you return to the app, offer to open an nhentai link found on the clipboard.")) }) {
                 ToggleRow(tr("Detect Gallery Links"), AppSettings.detectClipboard, { AppSettings.detectClipboard = it }, last = true)
             }
+            section(footer = { FooterText(tr("Asks for your fingerprint, face or device PIN when the app opens or comes back, and hides it in recent apps.")) }) {
+                val ctx = LocalContext.current
+                val available = com.atlanyuey.aenht.core.AppLock.available(ctx)
+                ToggleRow(tr("App Lock"), AppSettings.appLock && available, { AppSettings.appLock = it }, last = true,
+                    subtitle = if (available) null else tr("Set a screen lock on this device first."))
+            }
             section(header = "Storage") {
                 ListRow(tr("Image Cache"), value = cache?.let { Formatter.formatShortFileSize(context, it) }) {
                     if (cache == null) ActivityIndicator()
@@ -935,6 +942,27 @@ class AboutScreen : Screen() {
                 ListRow(tr("Original Project"), value = "honjow/eros_n", chevron = true, onClick = { open("https://github.com/honjow/eros_n") })
                 ListRow(tr("Website"), value = "nhentai.net", chevron = true, last = true, onClick = { open(NHHost.SITE) })
             }
+            section(footer = { FooterText(tr("The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys.")) }) {
+                ListRow(tr("Check for Updates"), chevron = true, onClick = { navigator.push(UpdatesScreen()) })
+                ListRow(tr("Share Diagnostic Log"), chevron = true, last = true, onClick = {
+                    val header = buildString {
+                        append("AENHT ").append(com.atlanyuey.aenht.BuildConfig.VERSION_NAME).append(" (").append(com.atlanyuey.aenht.BuildConfig.VERSION_CODE).append(")\n")
+                        append("Android ").append(android.os.Build.VERSION.RELEASE).append(" (API ").append(android.os.Build.VERSION.SDK_INT).append("), ")
+                        append(android.os.Build.MANUFACTURER).append(' ').append(android.os.Build.MODEL).append('\n')
+                        append("Sites: ").append(AppSettings.enabledSites.joinToString { it.key })
+                        append(" · nhentai login: ").append(Session.isLoggedIn)
+                        append(" · E-Hentai login: ").append(EhSession.isLoggedIn).append(" · ExHentai: ").append(AppSettings.useExHentai && EhSession.hasExHentai).append('\n')
+                        append("Reader: ").append(AppSettings.readMode.raw).append(" · Language: ").append(java.util.Locale.getDefault().toLanguageTag())
+                    }
+                    val text = com.atlanyuey.aenht.shared.app.Diagnostics.report(header)
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "AENHT diagnostics")
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    context.startActivity(Intent.createChooser(send, null))
+                })
+            }
             section {
                 ListRow(tr("Open Source Licenses"), chevron = true, last = true, onClick = { navigator.push(LicensesScreen()) })
             }
@@ -1039,6 +1067,57 @@ class DownloadSettingsScreen : Screen() {
             if (AppSettings.ehentaiEnabled) {
                 section(Site.EHENTAI.label, footer = { FooterText(tr("Original images are larger; on E-Hentai they cost GP from your account when the file is big.")) }) {
                     ToggleRow(tr("Download Original Images"), AppSettings.ehOriginalImages, { AppSettings.ehOriginalImages = it }, last = true)
+                }
+            }
+        }
+    }
+}
+
+
+/** About › Check for Updates: the latest version, the latest test build, and the release notes. */
+class UpdatesScreen : Screen() {
+    private var info by mutableStateOf<com.atlanyuey.aenht.shared.app.UpdateInfo?>(null)
+    private var error by mutableStateOf<String?>(null)
+
+    @Composable
+    override fun Content() {
+        val context = LocalContext.current
+        fun open(url: String) = context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        LaunchedEffect(Unit) {
+            try {
+                info = com.atlanyuey.aenht.shared.app.UpdateChecker().check(com.atlanyuey.aenht.BuildConfig.VERSION_NAME)
+            } catch (e: Exception) {
+                error = e.localizedMessage ?: e.toString()
+            }
+        }
+        GroupedListScreen(tr("Check for Updates")) {
+            val i = info
+            section {
+                ListRow(tr("This Version"), value = com.atlanyuey.aenht.BuildConfig.VERSION_NAME, last = i == null)
+                if (i != null) {
+                    ListRow(
+                        tr("Latest Version"),
+                        value = i.latest?.tag ?: tr("None yet"),
+                        subtitle = if (i.updateAvailable) tr("Update available") else null,
+                        chevron = i.latest != null,
+                        onClick = i.latest?.let { r -> { open(r.url) } },
+                    )
+                    ListRow(
+                        tr("Latest Test Build"),
+                        value = i.testBuild?.date?.take(16)?.replace('T', ' ') ?: "-",
+                        chevron = i.testBuild != null,
+                        last = true,
+                        onClick = i.testBuild?.let { r -> { open(r.url) } },
+                    )
+                }
+            }
+            when {
+                error != null -> item { EmptyState(Icons.Warning, error ?: "") }
+                i == null -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { ActivityIndicator() } }
+                else -> i.releases.filter { it.notes.isNotBlank() }.take(10).forEach { r ->
+                    section(r.name + " · " + r.date.take(10)) {
+                        Txt(r.notes.trim(), Modifier.padding(16.dp), style = Type.footnote)
+                    }
                 }
             }
         }

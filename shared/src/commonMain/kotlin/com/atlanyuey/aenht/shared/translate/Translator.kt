@@ -136,6 +136,7 @@ class Translator internal constructor(private val http: HttpClient, private val 
             } catch (e: Exception) {
                 lastError = e.message
                 fellBack = true
+                com.atlanyuey.aenht.shared.app.Diagnostics.log("translate", "${service.name}: ${e.message}")
             }
         }
         microsoftKey?.takeIf { it.isNotBlank() }?.let { key ->

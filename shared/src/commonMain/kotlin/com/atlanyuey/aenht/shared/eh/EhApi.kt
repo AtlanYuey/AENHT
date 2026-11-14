@@ -173,10 +173,15 @@ class EhApi internal constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')}: ${e.message ?: e::class.simpleName}")
                 throw EhException.Network(e.message ?: e.toString())
             }
             remember(response)
             val text = response.bodyAsText()
+            if (response.status.value !in 200..299) {
+                com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')} → ${response.status.value}")
+            }
+            EhParser.problem(text)?.let { com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')}: ${it.kind} ${it.message}") }
             when (response.status.value) {
                 in 200..299 -> {}
                 404 -> throw EhException.NotFound()

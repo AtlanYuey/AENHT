@@ -236,7 +236,15 @@ struct InlineSearch: View {
         if site == .ehentai {
             suggestions = tagStore.suggestEh(word).map { TagSuggestion(type: $0.0, name: $0.1) }
         } else {
-            suggestions = (try? await NHClient.shared.suggestTags(word)) ?? []
+            // The local list first (also finds translated names); the site when it finds few.
+            let local = tagStore.suggestNh(word)
+            if local.count >= 5 {
+                suggestions = local
+            } else {
+                let remote = (try? await NHClient.shared.suggestTags(word)) ?? []
+                let known = Set(local.map(\.name))
+                suggestions = local + remote.filter { !known.contains($0.name) }
+            }
         }
     }
 }

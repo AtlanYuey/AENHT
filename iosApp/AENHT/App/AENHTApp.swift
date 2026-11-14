@@ -44,6 +44,7 @@ struct RootView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.scenePhase) private var scenePhase
     @State private var clipboardLink: ClipboardLink?
+    @State private var lock = AppLock.shared
     @State private var openedFromClipboard: ClipboardLink?
 
     var body: some View {
@@ -56,7 +57,16 @@ struct RootView: View {
                 phoneTabs
             }
         }
+        .overlay {
+            // Locked, or (with the lock on) in the app switcher.
+            if lock.locked || (lock.isEnabled && scenePhase != .active) {
+                LockCover(showsButton: lock.locked) { lock.unlock() }
+            }
+        }
+        .onAppear { lock.unlock() }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .background { lock.onBackground() }
+            if phase == .active { lock.unlock() }
             if phase == .active { checkClipboard() }
             if phase == .active { WebDavService.shared.syncIfDue() }
             if phase == .background { WebDavService.shared.syncIfDue(minutes: 1) }

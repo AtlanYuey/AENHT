@@ -1020,7 +1020,12 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
             val found = if (state.site == Site.EHENTAI) {
                 TagStore.suggestEh(word).map { (ns, name) -> TagSuggestion(0, ns, name, null) }
             } else {
-                runCatching { NHClient.suggestTags(word) }.getOrDefault(emptyList())
+                // The local list first (also finds translated names); the site when it finds few.
+                val local = TagStore.suggestNh(word)
+                if (local.size >= 5) local else {
+                    val known = local.map { it.name }.toSet()
+                    local + runCatching { NHClient.suggestTags(word) }.getOrDefault(emptyList()).filter { it.name !in known }
+                }
             }
             state.suggestions.clear()
             state.suggestions.addAll(found)

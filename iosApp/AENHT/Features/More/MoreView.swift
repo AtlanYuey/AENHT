@@ -1,3 +1,4 @@
+import Shared
 import SwiftUI
 import UIKit
 
@@ -725,6 +726,12 @@ struct GeneralSettingsView: View {
                 Text("Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden.")
             }
             Section {
+                Toggle("App Lock", isOn: Binding(get: { AppLock.shared.isEnabled }, set: { AppLock.shared.isEnabled = $0 }))
+                    .disabled(!AppLock.shared.available)
+            } footer: {
+                Text("Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher.")
+            }
+            Section {
                 Toggle("Detect Gallery Links", isOn: $settings.detectClipboard)
             } footer: {
                 Text("When you return to the app, offer to open an nhentai link found on the clipboard. iOS asks for permission to paste.")
@@ -798,6 +805,12 @@ struct AboutView: View {
                 Link(destination: NHHost.site) {
                     LabeledContent("Website", value: "nhentai.net")
                 }
+            }
+            Section {
+                NavigationLink("Check for Updates") { UpdatesView() }
+                Button("Share Diagnostic Log") { ShareSheet.present([DiagnosticReport.text()]) }
+            } footer: {
+                Text("The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys.")
             }
             Section {
                 NavigationLink {
@@ -943,5 +956,76 @@ struct DownloadSettingsView: View {
         }
         .navigationTitle("Download Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// The diagnostic report: the app, the device, a few settings and the log (without secrets).
+@MainActor
+enum DiagnosticReport {
+    static func text() -> String {
+        let info = Bundle.main.infoDictionary
+        let settings = AppSettings.shared
+        var header = "AENHT \(info?["CFBundleShortVersionString"] as? String ?? "?") (\(info?["CFBundleVersion"] as? String ?? "?"))\n"
+        header += "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion), \(UIDevice.current.model)\n"
+        header += "Sites: \(settings.enabledSites.map(\.rawValue).joined(separator: ", "))"
+        header += " · nhentai login: \(UserSession.shared.isLoggedIn) · E-Hentai login: \(EhSession.shared.isLoggedIn)"
+        header += " · ExHentai: \(SiteKind.exHentaiActive)\n"
+        header += "Reader: \(settings.readMode.rawValue) · Language: \(Locale.preferredLanguages.first ?? "?")"
+        return Diagnostics.shared.report(header: header)
+    }
+}
+
+/// About › Check for Updates: the latest version, the latest test build, and the release notes.
+struct UpdatesView: View {
+    @State private var info: UpdateInfo?
+    @State private var error: String?
+
+    private var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent("This Version", value: version)
+                if let info {
+                    if let latest = info.latest, let url = URL(string: latest.url) {
+                        Link(destination: url) {
+                            LabeledContent("Latest Version") {
+                                VStack(alignment: .trailing) {
+                                    Text(latest.tag)
+                                    if info.updateAvailable { Text("Update available").font(.caption).foregroundStyle(.tint) }
+                                }
+                            }
+                        }
+                    } else {
+                        LabeledContent("Latest Version", value: String(localized: "None yet"))
+                    }
+                    if let test = info.testBuild, let url = URL(string: test.url) {
+                        Link(destination: url) {
+                            LabeledContent("Latest Test Build", value: String(test.date.prefix(16)).replacingOccurrences(of: "T", with: " "))
+                        }
+                    }
+                }
+            }
+            if let error {
+                Text(error).foregroundStyle(.secondary)
+            } else if let info {
+                ForEach(info.releases.filter { !$0.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.prefix(10), id: \.tag) { release in
+                    Section("\(release.name) · \(String(release.date.prefix(10)))") {
+                        Text(release.notes.trimmingCharacters(in: .whitespacesAndNewlines)).font(.footnote)
+                    }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Check for Updates")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            do {
+                info = try await UpdateChecker().check(currentVersion: version)
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
     }
 }

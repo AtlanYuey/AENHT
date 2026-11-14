@@ -31,13 +31,36 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.isNavigationBarContrastEnforced = false
         handle(intent)
+        if (savedInstanceState == null) com.atlanyuey.aenht.core.AppLock.onLaunch()
         setContent {
             AppTheme {
                 LaunchedEffect(Unit) { Session.reload() }
                 LaunchedEffect(Unit) { TagStore.prepare() }
                 RootView(linkedGallery)
+                if (com.atlanyuey.aenht.core.AppLock.locked) {
+                    com.atlanyuey.aenht.ui.LockScreen { com.atlanyuey.aenht.core.AppLock.unlock(this@MainActivity) }
+                }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        com.atlanyuey.aenht.core.AppLock.unlock(this)
+        // With the lock on, the app's content isn't shown in Recents.
+        if (android.os.Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(!com.atlanyuey.aenht.core.AppSettings.appLock)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) com.atlanyuey.aenht.core.AppLock.onBackground()
+    }
+
+    @Deprecated("Device credential screen of Android 8")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == com.atlanyuey.aenht.core.AppLock.REQUEST) com.atlanyuey.aenht.core.AppLock.onResult(resultCode == RESULT_OK)
     }
 
     /** The volume keys turn pages in the reader (when that setting is on). */

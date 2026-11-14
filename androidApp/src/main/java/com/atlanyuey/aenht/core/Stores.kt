@@ -698,6 +698,26 @@ object TagStore {
     }
 
     /** Tags shown on a card: languages first, then content tags. */
+    /**
+     * nhentai tags from the local list, by name or by translation (e.g.
+     * Chinese); the site is asked only when this finds few.
+     */
+    fun suggestNh(word: String, limit: Int = 12): List<com.atlanyuey.aenht.core.TagSuggestion> {
+        revision
+        val w = word.lowercase()
+        if (w.length < 2) return emptyList()
+        val starts = mutableListOf<Pair<Int, TagName>>()
+        val contains = mutableListOf<Pair<Int, TagName>>()
+        for ((id, tag) in tags) {
+            when {
+                tag.name.startsWith(w) -> starts += id to tag
+                tag.name.contains(w) || translate(tag.name, tag.type)?.contains(word, ignoreCase = true) == true -> contains += id to tag
+            }
+        }
+        return (starts.sortedBy { it.second.name.length } + contains.sortedBy { it.second.name.length })
+            .take(limit).map { (id, tag) -> com.atlanyuey.aenht.core.TagSuggestion(id, tag.type, tag.name, null) }
+    }
+
     fun cardTags(ids: List<Int>, limit: Int = 8): List<TagName> {
         revision
         val languages = mutableListOf<TagName>()
