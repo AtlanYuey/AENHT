@@ -112,6 +112,12 @@ struct EhAccountView: View {
                 Text("Viewing and downloading pages counts toward this limit; it recovers over time.")
             }
             Section {
+                NavigationLink("E-Hentai Settings") { EhWebPage(path: "/uconfig.php", title: "E-Hentai Settings") }
+                NavigationLink("My Tags") { EhWebPage(path: "/mytags", title: "My Tags") }
+            } footer: {
+                Text("The site's own pages, signed in with this account.")
+            }
+            Section {
                 Button("Log Out", role: .destructive) { confirmLogout = true }
             }
         }
@@ -464,4 +470,51 @@ struct HomeRowsSettingsView: View {
         .navigationTitle("Pinned Rows")
         .navigationBarTitleDisplayMode(.inline)
     }
+}
+
+/// An E-Hentai page (site settings, My Tags) in a web view, signed in with
+/// the account's cookies; ExHentai's when it is in use.
+struct EhWebPage: View {
+    let path: String
+    let title: LocalizedStringKey
+
+    var body: some View {
+        EhSignedWebView(url: URL(string: (SiteKind.exHentaiActive ? "https://exhentai.org" : "https://e-hentai.org") + path)!)
+            .ignoresSafeArea(edges: .bottom)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct EhSignedWebView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> WKWebView {
+        let web = WKWebView(frame: .zero)
+        let store = web.configuration.websiteDataStore.httpCookieStore
+        let credentials = EhCredentials.shared
+        var cookies: [HTTPCookie] = []
+        for domain in [".e-hentai.org", ".exhentai.org"] {
+            var values: [(String, String)] = []
+            if let id = credentials.memberId { values.append(("ipb_member_id", id)) }
+            if let hash = credentials.passHash { values.append(("ipb_pass_hash", hash)) }
+            if domain == ".exhentai.org", let igneous = credentials.igneous, !igneous.isEmpty, igneous != "mystery" {
+                values.append(("igneous", igneous))
+            }
+            for (name, value) in values {
+                if let cookie = HTTPCookie(properties: [.domain: domain, .path: "/", .name: name, .value: value, .secure: "TRUE"]) {
+                    cookies.append(cookie)
+                }
+            }
+        }
+        let group = DispatchGroup()
+        for cookie in cookies {
+            group.enter()
+            store.setCookie(cookie) { group.leave() }
+        }
+        group.notify(queue: .main) { web.load(URLRequest(url: url)) }
+        return web
+    }
+
+    func updateUIView(_ web: WKWebView, context: Context) {}
 }

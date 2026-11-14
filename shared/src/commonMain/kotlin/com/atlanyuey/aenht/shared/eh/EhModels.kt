@@ -155,6 +155,8 @@ data class EhGalleryDetail(
     val apiUid: Long,
     val apiKey: String,
     val newerVersions: List<String> = emptyList(),
+    /** The `or` key of the archive download page, when offered. */
+    val archiverKey: String? = null,
 ) {
     val key: GalleryKey get() = GalleryKey(Site.EHENTAI, gid, token)
 }
@@ -188,3 +190,18 @@ data class EhTorrent(
 
 /** The account's image quota (home.php): pages viewed of the limit, and what a reset costs. */
 data class EhImageLimit(val used: Int, val limit: Int, val resetCost: Int?)
+
+/** One kind of archive (original or resampled) and what it costs. */
+data class EhArchiveOption(
+    /** "org" or "res" (the form's dltype). */
+    val type: String,
+    /** The site's button text ("Download Original Archive"). */
+    val label: String,
+    /** "1,234 GP", "Free!"… as shown. */
+    val cost: String,
+    /** "123.45 MiB" as shown. */
+    val size: String,
+)
+
+/** The archive download page: the kinds offered and the account's funds. */
+data class EhArchiveInfo(val options: List<EhArchiveOption>, val funds: String?)

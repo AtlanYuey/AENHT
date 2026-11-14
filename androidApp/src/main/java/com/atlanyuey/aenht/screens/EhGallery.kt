@@ -216,11 +216,20 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 val navigator = LocalNavigator.current
                 val overlays = LocalOverlays.current
                 val labels = listOf(tr("Open in Browser"), tr("Torrents"), tr("Favorite Note"), tr("Save"), tr("Cancel"), tr("Couldn't Update"))
+                val archiveLabel = tr("Download Archive")
+                val tagsLabel = tr("Vote on Tags")
                 MenuButton(Icons.Ellipsis, tr("More"), {
                     listOf(buildList {
                         add(MenuItem(labels[0], Icons.Safari) {
                             context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(EhClient.api.galleryUrl(gid, token))))
                         })
+                        val d = detail
+                        if (d != null && d.archiverKey != null && EhSession.isLoggedIn) {
+                            add(MenuItem(archiveLabel, Icons.Albums) { navigator.push(EhArchiveScreen(d)) })
+                        }
+                        if (d != null && EhSession.isLoggedIn) {
+                            add(MenuItem(tagsLabel, Icons.Tag) { navigator.push(EhTagVoteScreen(d)) })
+                        }
                         if ((detail?.torrentCount ?: 0) > 0) {
                             add(MenuItem(labels[1], Icons.ArrowDown) { navigator.push(EhTorrentsScreen(gid, token)) })
                         }
@@ -662,6 +671,159 @@ class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
                         ) {
                             EhCommentBubble(comment)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Archive download: the original or resampled zip (costs GP), saved or shared when done. */
+class EhArchiveScreen(private val detail: EhGalleryDetail) : Screen() {
+    private var info by mutableStateOf<com.atlanyuey.aenht.shared.eh.EhArchiveInfo?>(null)
+    private var error by mutableStateOf<String?>(null)
+    private var progress by mutableStateOf<Float?>(null)
+    private var file by mutableStateOf<java.io.File?>(null)
+
+    private suspend fun download(context: android.content.Context, url: String) {
+        progress = 0f
+        file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val dir = java.io.File(context.cacheDir, "shared").apply { mkdirs() }
+            val name = detail.title.replace(Regex("""[\\/:*?"<>|]"""), "_").take(120).ifBlank { "${detail.gid}" }
+            val out = java.io.File(dir, "$name.zip")
+            Net.client.newCall(okhttp3.Request.Builder().url(url).build()).execute().use { response ->
+                if (!response.isSuccessful) throw NHException("HTTP ${response.code}")
+                val body = response.body
+                val total = body.contentLength()
+                body.byteStream().use { input ->
+                    out.outputStream().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        var done = 0L
+                        while (true) {
+                            val n = input.read(buffer)
+                            if (n < 0) break
+                            output.write(buffer, 0, n)
+                            done += n
+                            if (total > 0) progress = done.toFloat() / total
+                        }
+                    }
+                }
+            }
+            out
+        }
+        progress = null
+    }
+
+    @Composable
+    override fun Content() {
+        val context = LocalContext.current
+        val overlays = LocalOverlays.current
+        val confirmTitle = tr("Download Archive?")
+        val confirm = tr("Download")
+        val cancel = tr("Cancel")
+        val failed = tr("Couldn't Download")
+        val saved = tr("Saved to Downloads › AENHT.")
+        LaunchedEffect(Unit) {
+            try { info = EhClient.archiveInfo(detail) } catch (e: Exception) { error = e.localizedMessage }
+        }
+        GroupedListScreen(tr("Download Archive")) {
+            val i = info
+            when {
+                error != null -> item { EmptyState(Icons.Warning, error ?: "") }
+                i == null -> item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { ActivityIndicator() } }
+                else -> {
+                    section(footer = { FooterText(tr("The archive is a zip of the whole gallery from E-Hentai's servers. Its cost is taken from your account's GP.") + (i.funds?.let { "\n" + tr("Funds: %@", it) } ?: "")) }) {
+                        i.options.forEachIndexed { index, option ->
+                            ListRow(
+                                option.label,
+                                subtitle = listOf(option.cost, option.size).filter { it.isNotBlank() }.joinToString(" · "),
+                                last = index == i.options.lastIndex,
+                                onClick = {
+                                    if (progress != null) return@ListRow
+                                    overlays.alert(confirmTitle, listOf(option.cost, option.size).filter { it.isNotBlank() }.joinToString(" · "), listOf(
+                                        DialogButton(cancel, ButtonRole.Cancel) {},
+                                        DialogButton(confirm, ButtonRole.Preferred) {
+                                            scope.launch {
+                                                try {
+                                                    download(context, EhClient.requestArchive(detail, option))
+                                                } catch (e: Exception) {
+                                                    progress = null
+                                                    overlays.alert(failed, e.localizedMessage)
+                                                }
+                                            }
+                                        },
+                                    ))
+                                },
+                            )
+                        }
+                    }
+                    progress?.let { p ->
+                        section { Column(Modifier.fillMaxWidth().padding(16.dp)) { ProgressBar(p) } }
+                    }
+                    file?.let { f ->
+                        section {
+                            ButtonRow(tr("Share"), {
+                                val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".files", f)
+                                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "application/zip"
+                                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(android.content.Intent.createChooser(send, null))
+                            }, last = android.os.Build.VERSION.SDK_INT < 29)
+                            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                                ButtonRow(tr("Save to Downloads"), {
+                                    scope.launch {
+                                        val ok = runCatching { Downloads.saveToDownloads(context, f) }.getOrDefault(false)
+                                        overlays.alert(if (ok) tr0(saved) else failed, null)
+                                    }
+                                }, last = true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun tr0(s: String) = s
+}
+
+/** Votes on a gallery's tags, and adds tags (E-Hentai tag voting). */
+class EhTagVoteScreen(private val detail: EhGalleryDetail) : Screen() {
+    private var adding by mutableStateOf("")
+    private val voted = mutableStateMapOf<String, Boolean>()
+
+    @Composable
+    override fun Content() {
+        val overlays = LocalOverlays.current
+        val failed = tr("Couldn't Vote")
+        fun vote(tags: String, up: Boolean, mark: String?) {
+            scope.launch {
+                try {
+                    EhClient.voteTags(detail, tags, up)?.let { overlays.alert(failed, it) } ?: mark?.let { voted[it] = up }
+                } catch (e: Exception) {
+                    overlays.alert(failed, e.localizedMessage)
+                }
+            }
+        }
+        GroupedListScreen(tr("Vote on Tags")) {
+            section("Add Tags", footer = { FooterText(tr("Separate tags with commas, with a namespace: female:glasses, artist:name. Adding votes for them.")) }) {
+                FieldRow(tr("Tags"), adding) { adding = it }
+                ButtonRow(tr("Add"), { vote(adding.trim(), true, null); adding = "" }, enabled = adding.isNotBlank(), last = true)
+            }
+            detail.tags.forEach { (namespace, tags) ->
+                section(namespace) {
+                    tags.forEachIndexed { i, tag ->
+                        val full = "$namespace:${tag.name}"
+                        ListRow(TagStore.displayName(tag.name, namespace), subtitle = tag.name.takeIf { TagStore.displayName(it, namespace) != it }, last = i == tags.lastIndex, trailing = {
+                            Box(Modifier.size(34.dp).clickable { vote(full, true, full) }, contentAlignment = Alignment.Center) {
+                                AppIcon(Icons.ArrowUp, tr("Vote Up"), tint = if (voted[full] == true) AppTheme.colors.green else AppTheme.colors.secondaryLabel, size = 17.dp)
+                            }
+                            Box(Modifier.size(34.dp).clickable { vote(full, false, full) }, contentAlignment = Alignment.Center) {
+                                AppIcon(Icons.ArrowDown, tr("Vote Down"), tint = if (voted[full] == false) AppTheme.colors.red else AppTheme.colors.secondaryLabel, size = 17.dp)
+                            }
+                        })
                     }
                 }
             }

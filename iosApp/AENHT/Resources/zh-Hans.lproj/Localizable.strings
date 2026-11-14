@@ -480,3 +480,17 @@
 "Galleries at Once: %lld" = "同时下载作品数：%lld";
 "Pages at Once: %lld" = "单本同时下载页数：%lld";
 "Retries: %lld" = "失败重试次数：%lld";
+"Download Archive" = "下载归档";
+"Vote on Tags" = "标签投票";
+"Download Archive?" = "下载归档？";
+"Couldn't Download" = "无法下载";
+"The archive is a zip of the whole gallery from E-Hentai's servers. Its cost is taken from your account's GP." = "归档是从 E-Hentai 服务器下载的整本 zip，费用从账号的 GP 中扣除。";
+"Funds: %@" = "余额：%@";
+"Save to Downloads" = "保存到下载";
+"Add Tags" = "添加标签";
+"Separate tags with commas, with a namespace: female:glasses, artist:name. Adding votes for them." = "多个标签用逗号分隔，并带上命名空间，例如 female:glasses, artist:name。添加即为它们投赞成票。";
+"E-Hentai Settings" = "E-Hentai 站点设置";
+"My Tags" = "My Tags";
+"The site's own pages, signed in with this account." = "网站自己的页面，已用此账号登录。";
+"Downloading…" = "正在下载…";
+"Share or Save to Files" = "分享或存储到“文件”";

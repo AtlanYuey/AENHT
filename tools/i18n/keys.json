@@ -437,5 +437,19 @@
  "Original images are larger; on E-Hentai they cost GP from your account when the file is big.",
  "Galleries at Once: %lld",
  "Pages at Once: %lld",
- "Retries: %lld"
+ "Retries: %lld",
+ "Download Archive",
+ "Vote on Tags",
+ "Download Archive?",
+ "Couldn't Download",
+ "The archive is a zip of the whole gallery from E-Hentai's servers. Its cost is taken from your account's GP.",
+ "Funds: %@",
+ "Save to Downloads",
+ "Add Tags",
+ "Separate tags with commas, with a namespace: female:glasses, artist:name. Adding votes for them.",
+ "E-Hentai Settings",
+ "My Tags",
+ "The site's own pages, signed in with this account.",
+ "Downloading…",
+ "Share or Save to Files"
 ]

@@ -128,6 +128,20 @@ struct EhGalleryView: View {
                     if let card = model.card {
                         Button("Open in Browser", systemImage: "safari") { openURL(card.webURL) }
                     }
+                    if let detail = model.detail, EhSession.shared.isLoggedIn {
+                        if detail.archiverKey != nil {
+                            NavigationLink {
+                                EhArchiveView(detail: detail)
+                            } label: {
+                                Label("Download Archive", systemImage: "doc.zipper")
+                            }
+                        }
+                        NavigationLink {
+                            EhTagVoteView(detail: detail)
+                        } label: {
+                            Label("Vote on Tags", systemImage: "tag")
+                        }
+                    }
                     if let detail = model.detail, detail.torrentCount > 0 {
                         NavigationLink {
                             EhTorrentsView(gid: model.gid, token: model.token)
@@ -715,6 +729,161 @@ struct EhTorrentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             do { torrents = try await EhService.shared.torrents(gid: gid, token: token) } catch { self.error = error.localizedDescription }
+        }
+    }
+}
+
+/// Archive download: the original or resampled zip (costs GP), shared or saved to Files when done.
+struct EhArchiveView: View {
+    let detail: EhGalleryDetail
+    @State private var info: EhArchiveInfo?
+    @State private var error: String?
+    @State private var confirming: EhArchiveOption?
+    @State private var downloading = false
+    @State private var file: URL?
+
+    var body: some View {
+        List {
+            if let error {
+                ContentUnavailableView("Couldn't Load", systemImage: "wifi.exclamationmark", description: Text(error))
+            } else if let info {
+                Section {
+                    ForEach(info.options, id: \.type) { option in
+                        Button {
+                            confirming = option
+                        } label: {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(option.label).foregroundStyle(.primary)
+                                Text([option.cost, option.size].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .disabled(downloading)
+                    }
+                } footer: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("The archive is a zip of the whole gallery from E-Hentai's servers. Its cost is taken from your account's GP.")
+                        if let funds = info.funds { Text("Funds: \(funds)") }
+                    }
+                }
+                if downloading {
+                    Section { HStack { ProgressView(); Text("Downloading…").foregroundStyle(.secondary) } }
+                }
+                if let file {
+                    Section {
+                        Button("Share or Save to Files", systemImage: "square.and.arrow.up") { ShareSheet.present([file]) }
+                    }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Download Archive")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            do { info = try await EhService.shared.archiveInfo(detail) } catch { self.error = error.localizedDescription }
+        }
+        .confirmationDialog("Download Archive?", isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
+                            titleVisibility: .visible) {
+            Button("Download") {
+                guard let option = confirming else { return }
+                Task { await download(option) }
+            }
+        } message: {
+            Text([confirming?.cost ?? "", confirming?.size ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+        }
+    }
+
+    private func download(_ option: EhArchiveOption) async {
+        downloading = true
+        defer { downloading = false }
+        do {
+            let link = try await EhService.shared.requestArchive(detail, option: option)
+            guard let url = URL(string: link) else { throw URLError(.badURL) }
+            let (temp, response) = try await URLSession.shared.download(from: url)
+            guard (response as? HTTPURLResponse)?.statusCode ?? 200 < 400 else { throw URLError(.badServerResponse) }
+            let name = String(detail.title.map { "/\\:*?\"<>|".contains($0) ? "_" : $0 }.prefix(120))
+            let target = FileManager.default.temporaryDirectory.appendingPathComponent((name.isEmpty ? "\(detail.gid)" : name) + ".zip")
+            try? FileManager.default.removeItem(at: target)
+            try FileManager.default.moveItem(at: temp, to: target)
+            file = target
+            ShareSheet.present([target])
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+}
+
+/// Votes on a gallery's tags, and adds tags (E-Hentai tag voting).
+struct EhTagVoteView: View {
+    let detail: EhGalleryDetail
+    @State private var adding = ""
+    @State private var voted: [String: Bool] = [:]
+    @State private var error: String?
+    @Environment(TagStore.self) private var tagStore
+
+    var body: some View {
+        List {
+            Section {
+                TextField("female:glasses, artist:name", text: $adding)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                Button("Add") {
+                    let tags = adding.trimmingCharacters(in: .whitespaces)
+                    adding = ""
+                    Task { await vote(tags, up: true, mark: nil) }
+                }
+                .disabled(adding.trimmingCharacters(in: .whitespaces).isEmpty)
+            } header: {
+                Text("Add Tags")
+            } footer: {
+                Text("Separate tags with commas, with a namespace: female:glasses, artist:name. Adding votes for them.")
+            }
+            ForEach(Array(detail.tags.keys).sorted(), id: \.self) { namespace in
+                Section(namespace) {
+                    ForEach(detail.tags[namespace] ?? [], id: \.name) { tag in
+                        let full = "\(namespace):\(tag.name)"
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(tagStore.displayName(tag.name, type: namespace))
+                                if tagStore.displayName(tag.name, type: namespace) != tag.name {
+                                    Text(tag.name).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            Button { Task { await vote(full, up: true, mark: full) } } label: {
+                                Image(systemName: voted[full] == true ? "hand.thumbsup.fill" : "hand.thumbsup")
+                            }
+                            .buttonStyle(.borderless)
+                            .tint(voted[full] == true ? .green : .secondary)
+                            Button { Task { await vote(full, up: false, mark: full) } } label: {
+                                Image(systemName: voted[full] == false ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                            }
+                            .buttonStyle(.borderless)
+                            .tint(voted[full] == false ? .red : .secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Vote on Tags")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Couldn't Vote", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
+    }
+
+    private func vote(_ tags: String, up: Bool, mark: String?) async {
+        do {
+            if let message = try await EhService.shared.voteTags(detail, tags: tags, up: up) {
+                error = message
+            } else if let mark {
+                voted[mark] = up
+            }
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }

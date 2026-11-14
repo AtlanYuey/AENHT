@@ -174,6 +174,7 @@ object EhParser {
             apiUid = scriptVar("apiuid")?.toLongOrNull() ?: -1,
             apiKey = scriptVar("apikey").orEmpty(),
             newerVersions = doc.select("#gnd a").map { it.attr("href") },
+            archiverKey = Regex("""archiver\.php\?gid=\d+&(?:amp;)?token=[0-9a-f]+&(?:amp;)?or=([^'"&\s]+)""").find(html)?.groupValues?.get(1),
         )
     }
 
@@ -199,6 +200,33 @@ object EhParser {
                 else -> null
             }
         }
+
+    /** The kinds of archive on archiver.php and their costs. */
+    fun parseArchiveInfo(html: String): EhArchiveInfo {
+        val doc = Ksoup.parse(html)
+        val options = doc.select("form").mapNotNull { form ->
+            val type = form.selectFirst("input[name=dltype]")?.attr("value") ?: return@mapNotNull null
+            val label = form.selectFirst("input[name=dlcheck]")?.attr("value").orEmpty()
+            // The cost and size are in the box around the form.
+            val box = form.parent() ?: form
+            val text = box.text()
+            EhArchiveOption(
+                type = type,
+                label = label,
+                cost = Regex("""Download Cost:\s*(.+?)(?=\s*Estimated Size:|$)""").find(text)?.groupValues?.get(1)?.trim().orEmpty(),
+                size = Regex("""Estimated Size:\s*([\d.,]+\s*\w+)""").find(text)?.groupValues?.get(1)?.trim().orEmpty(),
+            )
+        }
+        val funds = Regex("""([\d,]+)\s*GP\s*\[\??\]?\s*.*?Credits""").find(doc.text())?.groupValues?.get(1)
+            ?: Regex("""Current Funds:?\s*([\d,]+\s*GP)""", RegexOption.IGNORE_CASE).find(doc.text())?.groupValues?.get(1)
+        return EhArchiveInfo(options, funds)
+    }
+
+    /** The archive's download link, from the page that answers a request. */
+    fun parseArchiveLink(html: String): String? {
+        Regex("""document\.location\s*=\s*"([^"]+)"""").find(html)?.let { return it.groupValues[1] }
+        return Ksoup.parse(html).select("a[href]").map { it.attr("href") }.firstOrNull { "/archive/" in it }
+    }
 
     /** The torrents listed on gallerytorrents.php. */
     fun parseTorrents(html: String): List<EhTorrent> = Ksoup.parse(html).select("form").mapNotNull { form ->

@@ -119,6 +119,10 @@ class EhAccountScreen : Screen() {
                     }
                 }, enabled = !checking, last = true)
             }
+            section(footer = { FooterText(tr("The site's own pages, signed in with this account.")) }) {
+                ListRow(tr("E-Hentai Settings"), chevron = true, onClick = { navigator.push(EhWebScreen(tr0("https://e-hentai.org/uconfig.php"), "E-Hentai Settings")) })
+                ListRow(tr("My Tags"), chevron = true, last = true, onClick = { navigator.push(EhWebScreen(tr0("https://e-hentai.org/mytags"), "My Tags")) })
+            }
             section {
                 ButtonRow(logout, {
                     overlays.actionSheet(logoutTitle, null, listOf(DialogButton(logout, ButtonRole.Destructive) {
@@ -640,6 +644,46 @@ class HomeSettingsScreen : Screen() {
                     }
                 }
             }
+        }
+    }
+}
+
+private fun tr0(s: String) = s
+
+/**
+ * An E-Hentai page (site settings, My Tags) in a web view, signed in with
+ * the account's cookies; ExHentai's when it is in use.
+ */
+class EhWebScreen(private val url: String, private val titleKey: String) : Screen() {
+    private var loading by mutableStateOf(true)
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @Composable
+    override fun Content() {
+        val target = if (exHentaiActive) url.replace("https://e-hentai.org", "https://exhentai.org") else url
+        ScreenScaffold(title = tr(titleKey), trailing = { if (loading) ActivityIndicator(size = 18.dp) }) { padding ->
+            AndroidView(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                factory = { context ->
+                    WebView(context).apply {
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        val cookies = CookieManager.getInstance()
+                        cookies.setAcceptCookie(true)
+                        for (host in listOf("https://e-hentai.org", "https://exhentai.org", "https://forums.e-hentai.org")) {
+                            EhAuth.memberId?.let { cookies.setCookie(host, "ipb_member_id=$it; path=/") }
+                            EhAuth.passHash?.let { cookies.setCookie(host, "ipb_pass_hash=$it; path=/") }
+                            if (host.contains("exhentai")) EhAuth.igneous?.takeIf { it.isNotEmpty() && it != "mystery" }?.let { cookies.setCookie(host, "igneous=$it; path=/") }
+                        }
+                        cookies.flush()
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) { loading = true }
+                            override fun onPageFinished(view: WebView?, url: String?) { loading = false }
+                        }
+                        loadUrl(target)
+                    }
+                },
+            )
         }
     }
 }

@@ -438,3 +438,17 @@
 "Galleries at Once: %lld" = "同時に落とす作品数：%lld";
 "Pages at Once: %lld" = "作品ごとの同時ページ数：%lld";
 "Retries: %lld" = "再試行回数：%lld";
+"Download Archive" = "アーカイブをダウンロード";
+"Vote on Tags" = "タグに投票";
+"Download Archive?" = "アーカイブをダウンロードしますか？";
+"Couldn't Download" = "ダウンロードできません";
+"The archive is a zip of the whole gallery from E-Hentai's servers. Its cost is taken from your account's GP." = "アーカイブは E-Hentai のサーバーから取得する作品全体の zip です。費用はアカウントの GP から引かれます。";
+"Funds: %@" = "残高：%@";
+"Save to Downloads" = "ダウンロードに保存";
+"Add Tags" = "タグを追加";
+"Separate tags with commas, with a namespace: female:glasses, artist:name. Adding votes for them." = "複数のタグはカンマで区切り、名前空間を付けます（female:glasses, artist:name）。追加はそのタグへの賛成票になります。";
+"E-Hentai Settings" = "E-Hentai の設定";
+"My Tags" = "My Tags";
+"The site's own pages, signed in with this account." = "サイト自身のページです（このアカウントでログイン済み）。";
+"Downloading…" = "ダウンロード中…";
+"Share or Save to Files" = "共有または“ファイル”に保存";

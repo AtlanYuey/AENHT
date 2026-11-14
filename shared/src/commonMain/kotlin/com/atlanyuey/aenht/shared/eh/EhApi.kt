@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.shared.eh
 
+import com.fleeksoft.ksoup.Ksoup
 import com.atlanyuey.aenht.shared.net.RateLimit
 import com.atlanyuey.aenht.shared.net.RateLimiter
 import com.atlanyuey.aenht.shared.net.buildHttpClient
@@ -263,6 +264,70 @@ class EhApi internal constructor(
         val page = EhParser.parseImagePage(getPage(url.replace(EH, host).replace(EX, host), "image", Limits.image))
         if (page.limitReached) throw EhException.LimitReached()
         return page
+    }
+
+    // MARK: Archives and tags
+
+    private fun archiverUrl(gid: Long, token: String, key: String) = "$EH/archiver.php?gid=$gid&token=$token&or=$key"
+
+    /** The kinds of archive offered for a gallery and the account's funds. */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun archiveInfo(gid: Long, token: String, key: String): EhArchiveInfo {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        return EhParser.parseArchiveInfo(getPage(archiverUrl(gid, token, key)))
+    }
+
+    /**
+     * Asks for an archive (costs the GP shown) and answers its download link
+     * (a zip on an H@H server, valid for a while).
+     */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun requestArchive(gid: Long, token: String, key: String, option: EhArchiveOption): String {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        val url = archiverUrl(gid, token, key)
+        val html = withContext(Dispatchers.IO) {
+            limiter.acquire("page", Limits.page)
+            val response = try {
+                http.post(url) {
+                    header(HttpHeaders.Cookie, cookieHeader(url))
+                    setBody(FormDataContent(Parameters.build {
+                        append("dltype", option.type)
+                        append("dlcheck", option.label)
+                    }))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                throw EhException.Network(e.message ?: e.toString())
+            }
+            remember(response)
+            if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
+            response.bodyAsText()
+        }
+        val link = EhParser.parseArchiveLink(html)
+            ?: throw EhException.Rejected(EhParser.commentError(html) ?: Ksoup.parse(html).text().take(200).ifBlank { "No archive link" })
+        return if ("start=" in link) link else link.trimEnd('/') + "/?start=1"
+    }
+
+    /**
+     * Votes tags of a gallery up or down; tags not on it yet are added
+     * ("female:glasses, male:hat"). Answers the site's error, or null.
+     */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun voteTags(gid: Long, token: String, apiUid: Long, apiKey: String, tags: String, up: Boolean): String? {
+        if (!isLoggedIn) throw EhException.NotLoggedIn()
+        val o = api(
+            buildJsonObject {
+                put("method", "taggallery")
+                put("apiuid", apiUid)
+                put("apikey", apiKey)
+                put("gid", gid)
+                put("token", token)
+                put("tags", tags)
+                put("vote", if (up) 1 else -1)
+            },
+        )
+        return (o["error"] as? JsonPrimitive)?.content?.takeIf { it.isNotBlank() }
     }
 
     // MARK: Torrents, quota, notes

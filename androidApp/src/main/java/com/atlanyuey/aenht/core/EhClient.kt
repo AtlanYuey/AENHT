@@ -100,6 +100,10 @@ object EhClient {
     suspend fun rate(d: EhGalleryDetail, stars: Double): Double = call { rate(d.gid, d.token, d.apiUid, d.apiKey, stars) }
     suspend fun postComment(gid: Long, token: String, text: String): List<EhComment> = call { postComment(gid, token, text) }
     suspend fun torrents(gid: Long, token: String) = call { torrents(gid, token) }
+    suspend fun archiveInfo(d: EhGalleryDetail) = call { archiveInfo(d.gid, d.token, d.archiverKey ?: "") }
+    suspend fun requestArchive(d: EhGalleryDetail, option: com.atlanyuey.aenht.shared.eh.EhArchiveOption) =
+        call { requestArchive(d.gid, d.token, d.archiverKey ?: "", option) }
+    suspend fun voteTags(d: EhGalleryDetail, tags: String, up: Boolean) = call { voteTags(d.gid, d.token, d.apiUid, d.apiKey, tags, up) }
     suspend fun imageLimit() = call { imageLimit() }
     suspend fun favoriteNote(gid: Long, token: String) = call { favoriteNote(gid, token) }
     suspend fun voteComment(d: EhGalleryDetail, commentId: Long, up: Boolean) = call { voteComment(d.gid, d.token, d.apiUid, d.apiKey, commentId, up) }

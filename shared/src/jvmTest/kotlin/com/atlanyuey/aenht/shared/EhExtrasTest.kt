@@ -37,3 +37,24 @@ class EhExtrasTest {
         assertEquals("read later", EhParser.parseFavoriteNote("""<form><textarea name="favnote">read later</textarea></form>"""))
     }
 }
+
+class EhArchiveTest {
+    @Test
+    fun archiveOptionsAndLink() {
+        val page = """<div id="db"><div style="float:left">
+            <form action="https://e-hentai.org/archiver.php?gid=1&token=a&or=k" method="post">
+            <input type="hidden" name="dltype" value="org" /><input type="submit" name="dlcheck" value="Download Original Archive" /></form>
+            <p>Download Cost: <strong>Free!</strong></p><p>Estimated Size: <strong>120.53 MiB</strong></p></div>
+            <div style="float:right"><form action="#" method="post"><input type="hidden" name="dltype" value="res" />
+            <input type="submit" name="dlcheck" value="Download Resample Archive" /></form>
+            <p>Download Cost: <strong>1,234 GP</strong></p><p>Estimated Size: <strong>40.1 MiB</strong></p></div></div>"""
+        val info = EhParser.parseArchiveInfo(page)
+        assertEquals(listOf("org", "res"), info.options.map { it.type })
+        assertEquals("Free!", info.options[0].cost)
+        assertEquals("120.53 MiB", info.options[0].size)
+        assertEquals("1,234 GP", info.options[1].cost)
+        assertEquals("Download Resample Archive", info.options[1].label)
+        val answer = """<script type="text/javascript">document.location = "https://abc.hath.network/archive/1/xyz/";</script>"""
+        assertEquals("https://abc.hath.network/archive/1/xyz/", EhParser.parseArchiveLink(answer))
+    }
+}

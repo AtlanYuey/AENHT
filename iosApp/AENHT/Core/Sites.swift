@@ -234,6 +234,19 @@ final class EhService: @unchecked Sendable {
         try await call { try await $0.favoriteNote(gid: Int64(gid), token: token) }
     }
 
+    func archiveInfo(_ d: EhGalleryDetail) async throws -> EhArchiveInfo {
+        try await call { try await $0.archiveInfo(gid: d.gid, token: d.token, key: d.archiverKey ?? "") }
+    }
+
+    func requestArchive(_ d: EhGalleryDetail, option: EhArchiveOption) async throws -> String {
+        try await call { try await $0.requestArchive(gid: d.gid, token: d.token, key: d.archiverKey ?? "", option: option) }
+    }
+
+    /// Votes tags up or down (adding ones not there yet); answers the site's error, or nil.
+    func voteTags(_ d: EhGalleryDetail, tags: String, up: Bool) async throws -> String? {
+        try await call { try await $0.voteTags(gid: d.gid, token: d.token, apiUid: d.apiUid, apiKey: d.apiKey, tags: tags, up: up) }
+    }
+
     func torrents(gid: Int, token: String) async throws -> [EhTorrent] {
         try await call { try await $0.torrents(gid: Int64(gid), token: token) }
     }
