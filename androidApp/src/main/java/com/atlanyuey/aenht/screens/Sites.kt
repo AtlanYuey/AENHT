@@ -466,7 +466,7 @@ class TranslationSettingsScreen : Screen() {
                         },
                     )
                 }
-                ButtonRow(tr("Add Service"), { navigator.push(LlmPresetScreen()) }, last = true)
+                ButtonRow(tr("Add AI Service"), { navigator.push(LlmPresetScreen()) }, last = true)
             }
             section("Microsoft Translator", footer = { FooterText(tr("Used when no language model is set up or all of them fail. A key from Azure Translator has a free monthly allowance.")) }) {
                 FieldRow(tr("API Key"), msKey) { msKey = it }
@@ -532,7 +532,7 @@ class LlmPresetScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        GroupedListScreen(tr("Add Service")) {
+        GroupedListScreen(tr("Choose Provider")) {
             section {
                 LlmPreset.entries.forEachIndexed { i, preset ->
                     ListRow(
@@ -550,130 +550,161 @@ class LlmPresetScreen : Screen() {
 }
 
 /** A service's settings: address, key, model (from its list), test, prices, monthly limit and usage. */
+/**
+ * A service's settings, as in AY Translate: details and key, model (from
+ * the service's list), request parameters, a test, cost and limit.
+ */
 class LlmServiceScreen(private val original: LlmService, private val isNew: Boolean) : Screen() {
     private var name by mutableStateOf(original.name)
     private var baseUrl by mutableStateOf(original.baseUrl)
-    private var key by mutableStateOf(TranslationService.key(original.id))
+    private val loadedKey: String = TranslationService.key(original.id)
+    private var key: String by mutableStateOf(loadedKey)
     private var model by mutableStateOf(original.model)
     private var currency by mutableStateOf(original.currency)
-    private var inputPrice by mutableStateOf(original.inputPrice?.toString() ?: "")
-    private var outputPrice by mutableStateOf(original.outputPrice?.toString() ?: "")
+    private var inputPrice by mutableStateOf(original.inputPrice?.let { plain(it) } ?: "")
+    private var outputPrice by mutableStateOf(original.outputPrice?.let { plain(it) } ?: "")
     private var limitOn by mutableStateOf(original.spendLimit != null)
-    private var limit by mutableStateOf((original.spendLimit ?: 1.0).toString())
+    private var limit by mutableStateOf(plain(original.spendLimit ?: 1.0))
+    private var parameterPreset by mutableStateOf(original.parameterPreset)
+    private var bodyJson by mutableStateOf(original.bodyJson)
     private var models by mutableStateOf(emptyList<String>())
-    private var loadingModels by mutableStateOf(false)
-    private var modelsError by mutableStateOf<String?>(null)
+    private var discovering by mutableStateOf(false)
+    private var discoveryError by mutableStateOf<String?>(null)
+    private var discoveryRevision by mutableStateOf(0)
+    private val probes = com.atlanyuey.aenht.shared.translate.TranslationProbe.samples(TranslationService.targetLanguage)
+    private var probe by mutableStateOf(probes.first())
     private var testing by mutableStateOf(false)
-    private var testText by mutableStateOf(TranslationService.sampleText)
+    private var testJob: kotlinx.coroutines.Job? = null
     private var testResult by mutableStateOf<String?>(null)
-    // Request parameters; null: not sent (the service's own default).
-    private var temperature by mutableStateOf(original.temperature)
-    private var topP by mutableStateOf(original.topP)
-    private var maxTokens by mutableStateOf(original.maxTokens)
-    private var timeout by mutableStateOf(original.timeoutSeconds)
-    private var extraBody by mutableStateOf(original.extraBody)
-
-    private val effectiveKey get() = key.trim()
+    private var priceNote by mutableStateOf<String?>(null)
 
     private fun draft() = original.with(
         name = name.trim().ifEmpty { model.trim() }, baseUrl = baseUrl.trim(), model = model.trim(), enabled = original.enabled,
         inputPrice = inputPrice.toDoubleOrNull(), outputPrice = outputPrice.toDoubleOrNull(), currency = currency,
         spendLimit = if (limitOn) limit.toDoubleOrNull() else null,
-    ).withParameters(temperature, topP, maxTokens, timeout, extraBody.trim())
+    ).withRequestOptions(parameterPreset, bodyJson)
+
+    private fun cancelTest() {
+        testJob?.cancel()
+        testJob = null
+        testing = false
+        testResult = null
+    }
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        val overlays = LocalOverlays.current
-        val errorTitle = tr("Couldn't Connect")
-        val extraValid = draft().extraFields() != null
-        val canSave = baseUrl.isNotBlank() && model.isNotBlank() && effectiveKey.isNotBlank() && extraValid
+        val canSave = baseUrl.isNotBlank() && model.isNotBlank() && draft().parametersValid
         TranslationService.revision
-        // The model list loads by itself (again when the address or key changes).
-        val listError = tr("Couldn't load the model list: %@")
-        LaunchedEffect(baseUrl.trim(), effectiveKey) {
-            if (baseUrl.isBlank() || effectiveKey.isBlank()) return@LaunchedEffect
-            kotlinx.coroutines.delay(600)
-            loadingModels = true
+        LaunchedEffect(baseUrl) {
+            // A saved key isn't sent to an edited address by itself.
+            if (baseUrl != original.baseUrl && key == loadedKey) key = ""
+            models = emptyList()
+            discoveryError = null
+        }
+        LaunchedEffect(baseUrl, key, model, parameterPreset, bodyJson, probe) { cancelTest() }
+        // Pasting a key (or tapping Fetch) loads the service's model list.
+        LaunchedEffect(baseUrl.trim(), key.trim(), discoveryRevision) {
+            discovering = false
+            if (baseUrl.isBlank() || (key.isBlank() && discoveryRevision == 0)) return@LaunchedEffect
+            kotlinx.coroutines.delay(700)
+            discovering = true
+            discoveryError = null
             try {
-                models = TranslationService.models(baseUrl.trim(), effectiveKey)
-                modelsError = null
+                models = TranslationService.models(baseUrl.trim(), key.trim())
                 if (model.isBlank()) models.firstOrNull()?.let { model = it }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                models = emptyList()
-                modelsError = listError.replace("%@", e.localizedMessage ?: "")
+                discoveryError = e.localizedMessage
             } finally {
-                loadingModels = false
+                discovering = false
             }
         }
-        LaunchedEffect(model) {
-            if (original.presetKind != LlmPreset.OPENROUTER || model.isBlank()) return@LaunchedEffect
-            TranslationService.publishedPrice(baseUrl, effectiveKey, model)?.let { (i, o) ->
-                inputPrice = String.format(java.util.Locale.ROOT, "%.4f", i).trimEnd('0').trimEnd('.')
-                outputPrice = String.format(java.util.Locale.ROOT, "%.4f", o).trimEnd('0').trimEnd('.')
+        // Services that publish prices fill these in themselves, every time.
+        val published = tr("Price provided by the service and kept up to date automatically.")
+        val unpublished = tr("This provider does not publish prices. Enter the price from its pricing page; update it when it changes.")
+        LaunchedEffect(baseUrl, model) {
+            if (model.isBlank()) return@LaunchedEffect
+            kotlinx.coroutines.delay(900)
+            val price = TranslationService.publishedPrice(baseUrl.trim(), key.trim(), model.trim())
+            if (price != null && price.size == 2) {
+                inputPrice = plain(price[0])
+                outputPrice = plain(price[1])
+                priceNote = published
+            } else {
+                priceNote = unpublished
             }
         }
-        GroupedListScreen(name.ifBlank { original.name }, trailing = {
+        GroupedListScreen(if (isNew) tr("Add AI Service") else tr("Edit AI Service"), trailing = {
             com.atlanyuey.aenht.ui.components.TextButton(tr("Save"), {
-                TranslationService.store(draft(), key)
+                TranslationService.store(draft(), key.trim())
                 if (isNew) navigator.popTo { it is TranslationSettingsScreen } else navigator.pop()
             }, enabled = canSave, bold = true)
         }) {
-            section("Service") {
-                FieldRow(tr("Name"), name) { name = it }
-                FieldRow(tr("API Address"), baseUrl, url = true) { baseUrl = it }
-                // Shown as typed, so it's clear which key this is.
-                FieldRow(tr("API Key"), key, last = true) { key = it }
+            section("Service Details") {
+                FieldRow(tr("Service Name"), name) { name = it }
+                ListRow(tr("Provider"), value = if (original.presetKind == LlmPreset.OTHER) tr("Other (OpenAI-compatible)") else original.presetKind.displayName,
+                    leading = { ProviderIcon(original.presetKind, 24.dp) })
+                FieldRow(tr("Base URL"), baseUrl, url = true) { baseUrl = it }
+                // Shown as typed, so a pasted key can be checked.
+                FieldRow(tr("API Key (optional for keyless services)"), key, last = true) { key = it }
             }
-            section("Model", footer = {
-                FooterText(modelsError ?: tr("The service's models load by themselves once the address and key are in. The model can also be typed in."))
-            }) {
-                FieldRow(tr("Model"), model, last = models.isEmpty() && !loadingModels) { model = it }
-                if (loadingModels) {
-                    ListRow(tr("Loading Models…"), last = true, trailing = { ActivityIndicator(size = 16.dp) })
-                } else if (models.isNotEmpty()) {
-                    ListRow(tr("Choose from List"), value = "${models.size}", chevron = true, last = true, onClick = {
+            section("Model", footer = { FooterText(tr("Pasting a key fetches the provider’s model list. If listing is unavailable, choose Other Model and enter its ID.")) }) {
+                if (models.isNotEmpty()) {
+                    val other = tr("Other Model")
+                    ListRow(tr("Model"), value = if (model in models) model else other, chevron = true, onClick = {
                         navigator.push(ModelPickerScreen(models, model) { model = it })
                     })
                 }
+                if (models.isEmpty() || model !in models) FieldRow(tr("Model Name"), model) { model = it }
+                ListRow(tr("Fetch Available Models"), titleColor = AppTheme.tint, last = discoveryError == null,
+                    onClick = if (discovering) null else ({ discoveryRevision++ }),
+                    trailing = { if (discovering) ActivityIndicator(size = 16.dp) })
+                discoveryError?.let { Txt(it, Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp), style = Type.footnote, color = AppTheme.colors.secondaryLabel) }
             }
-            parametersSection(extraValid)
-            section("Test", footer = { testResult?.let { FooterText(it) } }) {
-                FieldRow(tr("Text to Translate"), testText) { testText = it }
-                ButtonRow(if (testing) tr("Testing…") else tr("Test Translation"), {
-                    testing = true
-                    scope.launch {
-                        try {
-                            val r = TranslationService.test(draft(), effectiveKey, testText)
-                            testResult = r.text + "\n" + String.format(java.util.Locale.ROOT, "%.1f s", r.millis / 1000.0) +
-                                " · " + (r.inputTokens + r.outputTokens) + " tokens"
-                        } catch (e: Exception) {
-                            testResult = null
-                            overlays.alert(errorTitle, e.localizedMessage)
-                        }
-                        testing = false
-                    }
-                }, enabled = !testing && canSave && testText.isNotBlank(), last = true)
+            section {
+                ListRow(tr("Request Parameters"), value = tr(draft().parameters.displayName), chevron = true, last = true, onClick = {
+                    navigator.push(LlmRequestOptionsScreen(parameterPreset, bodyJson, ::draftWith) { p, b -> parameterPreset = p; bodyJson = b })
+                })
             }
-            section("Cost", footer = {
-                FooterText(tr("Prices are per million tokens in the service's billing currency (OpenRouter publishes its own). Past the monthly limit, the next service in the order takes over."))
+            section("Test Translation", footer = {
+                FooterText(tr("Test sends only the selected sample to this endpoint with the current key and model. Provider fees may apply. Saving alone sends no translation request."))
             }) {
-                val symbol = if (currency == "CNY") "¥" else "$"
-                if (original.presetKind.choosesCurrency) {
-                    PickerRow(tr("Billing Currency"), listOf("USD", "CNY"), currency, label = { if (it == "CNY") tr("Chinese Yuan (¥)") else tr("US Dollar ($)") }, onSelect = { currency = it })
+                PickerRow(tr("Test Phrase"), probes, probe, label = { it.languageName }, onSelect = { probe = it })
+                Txt(probe.text, Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = Type.body)
+                RowSeparator()
+                ListRow(tr("Target Language"), value = TranslationService.targetName)
+                testResult?.let {
+                    Txt(it, Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = Type.body)
+                    RowSeparator()
                 }
-                FieldRow(tr("Input, per 1M tokens") + " ($symbol)", inputPrice) { inputPrice = it.filter { c -> c.isDigit() || c == '.' } }
-                FieldRow(tr("Output, per 1M tokens") + " ($symbol)", outputPrice) { outputPrice = it.filter { c -> c.isDigit() || c == '.' } }
-                ToggleRow(tr("Monthly Spending Limit"), limitOn, { limitOn = it }, last = !limitOn && isNew)
-                if (limitOn) FieldRow(tr("Limit") + " ($symbol)", limit, last = isNew) { limit = it.filter { c -> c.isDigit() || c == '.' } }
-                if (!isNew) {
-                    val usage = TranslationService.usage(original)
-                    ListRow(tr("This Month"), value = llmCost(usage.monthCost, symbol) + " · " + llmTokens(usage.monthInput + usage.monthOutput))
-                    ListRow(tr("Total"), value = llmCost(usage.totalCost, symbol) + " · " + llmTokens(usage.totalInput + usage.totalOutput))
-                    ButtonRow(tr("Reset Usage Figures"), { TranslationService.resetUsage(original) }, destructive = true, last = true)
-                }
+                ListRow(tr("Test Translation"), titleColor = if (canSave) AppTheme.tint else AppTheme.colors.tertiaryLabel, last = true,
+                    onClick = if (testing || !canSave) null else ({
+                        cancelTest()
+                        testing = true
+                        val sample = probe.text
+                        testJob = scope.launch {
+                            testResult = try {
+                                val r = TranslationService.test(draft(), key.trim(), sample)
+                                r.text + "\n" + String.format(java.util.Locale.ROOT, "%.1f s", r.millis / 1000.0) + " · " + "%,d".format(r.inputTokens + r.outputTokens) + " tokens"
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                e.localizedMessage
+                            }
+                            testing = false
+                        }
+                    }),
+                    trailing = { if (testing) ActivityIndicator(size = 16.dp) })
+            }
+            costSection(priceNote)
+            section("Device Keychain") {
+                Txt(tr("The key stays visible for checking pasted text. It is saved only on this device, encrypted, separately for each service."),
+                    Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                RowSeparator()
+                Txt(tr("Changing the endpoint clears a previously saved key. Paste a replacement for the new destination."),
+                    Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
             }
             if (!isNew) {
                 section {
@@ -686,34 +717,96 @@ class LlmServiceScreen(private val original: LlmService, private val isNew: Bool
         }
     }
 
-    /** Request parameters, like AY Translate: each one is sent only when on. */
-    private fun androidx.compose.foundation.lazy.LazyListScope.parametersSection(extraValid: Boolean) {
-        section("Request Parameters", footer = {
-            FooterText(tr("Defaults: temperature 0.2, timeout 30 s; Top P and max tokens aren't sent, so the service uses its own. Extra parameters are added to the request as they are."))
+    private fun draftWith(preset: String, body: String) = draft().withRequestOptions(preset, body)
+
+    private fun androidx.compose.foundation.lazy.LazyListScope.costSection(note: String?) {
+        section("Cost", footer = {
+            FooterText(tr("Tokens are counted from what the provider reports for each request, and costed at the price in effect at that moment. When this month’s spending reaches the limit, this service is skipped: the next one in the order takes over, then the on-device engine. A limit needs a price."))
         }) {
-            ParameterSlider(tr("Temperature"), temperature, 0f..2f, 0.1f, LlmService.DEFAULT_TEMPERATURE) { temperature = it }
-            ParameterSlider(tr("Top P"), topP, 0f..1f, 0.05f, 1.0) { topP = it }
-            ToggleRow(tr("Max Tokens"), maxTokens != null, { maxTokens = if (it) 1024 else null })
-            maxTokens?.let { tokens ->
-                FieldRow(tr("Tokens"), "$tokens") { text -> text.filter(Char::isDigit).toIntOrNull()?.let { maxTokens = it.coerceIn(1, 1_000_000) } }
+            val symbol = if (currency == "CNY") "¥" else "$"
+            if (original.presetKind.choosesCurrency) {
+                PickerRow(tr("Billing Currency"), listOf("CNY", "USD"), currency, label = { if (it == "CNY") "¥ CNY" else "$ USD" }, onSelect = { currency = it })
             }
-            FieldRow(tr("Timeout") + " (s)", "$timeout") { text -> text.filter(Char::isDigit).toIntOrNull()?.let { timeout = it.coerceIn(1, 600) } }
-            FieldRow(tr("Extra Parameters (JSON)"), extraBody, last = extraValid) { extraBody = it }
-            if (!extraValid) {
-                Txt(tr("Not a JSON object."), Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp), style = Type.footnote, color = AppTheme.colors.red)
+            FieldRow(tr("Input price / 1M tokens") + " ($symbol)", inputPrice) { inputPrice = it.filter { c -> c.isDigit() || c == '.' } }
+            FieldRow(tr("Output price / 1M tokens") + " ($symbol)", outputPrice) { outputPrice = it.filter { c -> c.isDigit() || c == '.' } }
+            note?.let {
+                Txt(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                RowSeparator()
+            }
+            val usage = TranslationService.usage(original)
+            ListRow(tr("This month"), value = usageText(usage.monthInput, usage.monthOutput, usage.monthCost, symbol))
+            ListRow(tr("Total"), value = usageText(usage.totalInput, usage.totalOutput, usage.totalCost, symbol))
+            val hasUsage = usage.totalInput + usage.totalOutput > 0
+            ToggleRow(tr("Monthly Spending Limit"), limitOn, { limitOn = it }, last = !limitOn && !hasUsage)
+            if (limitOn) FieldRow(tr("Limit") + " ($symbol)", limit, last = !hasUsage) { limit = it.filter { c -> c.isDigit() || c == '.' } }
+            if (hasUsage) ButtonRow(tr("Reset Usage Figures"), { TranslationService.resetUsage(original) }, destructive = true, last = true)
+        }
+    }
+
+    @Composable
+    private fun usageText(input: Long, output: Long, cost: Double, symbol: String): String {
+        val lines = listOf(tr("Input %@ tokens", "%,d".format(input)), tr("Output %@ tokens", "%,d".format(output))) +
+            listOfNotNull((symbol + plain(cost)).takeIf { inputPrice.isNotBlank() || cost > 0 })
+        return lines.joinToString("\n")
+    }
+
+}
+
+/** A price or amount without trailing zeros (at most four decimals). */
+private fun plain(value: Double): String =
+    java.math.BigDecimal(value).setScale(4, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+
+/** A service's request parameters, as in AY Translate: a preset, custom body fields over it, and what is sent. */
+class LlmRequestOptionsScreen(
+    preset: String,
+    body: String,
+    private val draft: (String, String) -> LlmService,
+    private val onChange: (String, String) -> Unit,
+) : Screen() {
+    private var preset by mutableStateOf(preset)
+    private var body by mutableStateOf(body)
+
+    @Composable
+    override fun Content() {
+        GroupedListScreen(tr("Request Parameters")) {
+            section(footer = {
+                FooterText(tr("Model defaults sends no reasoning override. Choose only parameters supported by your model; stronger reasoning can increase latency. Gemini's compatible API also accepts reasoning_effort on supported models."))
+            }) {
+                PickerRow(tr("Parameter Preset"), com.atlanyuey.aenht.shared.translate.LlmParameterPreset.entries,
+                    com.atlanyuey.aenht.shared.translate.LlmParameterPreset.of(preset), label = { tr(it.displayName) },
+                    onSelect = { preset = it.key; onChange(preset, body) }, last = true)
+            }
+            section("Custom Body Parameters", footer = {
+                FooterText(tr("Custom values override the preset. For example: {\"temperature\":0.2,\"max_completion_tokens\":4096}. Do not put credentials here. Test Translation uses these same parameters."))
+            }) {
+                JsonField(body) { body = it; onChange(preset, body) }
+            }
+            section("Effective Parameters") {
+                val service = draft(preset, body)
+                val text = service.effectiveParametersText()
+                Txt(if (service.parametersValid) text else tr(text), Modifier.padding(16.dp),
+                    style = Type.footnote.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace))
             }
         }
     }
 
     @Composable
-    private fun ParameterSlider(title: String, value: Double?, range: ClosedFloatingPointRange<Float>, step: Float, fallback: Double, onChange: (Double?) -> Unit) {
-        ToggleRow(title, value != null, { onChange(if (it) fallback else null) },
-            subtitle = value?.let { String.format(java.util.Locale.ROOT, "%.2f", it) } ?: tr("Service Default"))
-        if (value != null) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                GlassSlider(value.toFloat(), { v -> onChange((Math.round(v / step) * step).toDouble()) }, range)
-            }
-            RowSeparator()
+    private fun JsonField(value: String, onChange: (String) -> Unit) {
+        val colors = AppTheme.colors
+        Box(Modifier.fillMaxWidth().padding(12.dp)) {
+            androidx.compose.foundation.text.BasicTextField(
+                value, onChange,
+                textStyle = Type.body.copy(color = colors.label, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(AppTheme.tint),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(autoCorrectEnabled = false),
+                minLines = 6,
+                maxLines = 16,
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) Txt(tr("JSON object"), style = Type.body.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace), color = colors.tertiaryLabel)
+                    inner()
+                },
+            )
         }
     }
 }

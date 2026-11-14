@@ -101,11 +101,6 @@ final class TranslationService {
     }
 
     /// Translates a sample with the service (its usage counts too).
-    /// The text a service is tested with (it can be edited before the test).
-    var sampleText: String {
-        target.hasPrefix("en") ? "今日はいい天気ですね。散歩に行きましょう。" : "It's a nice day today. Let's go for a walk."
-    }
-
     func test(_ service: LlmService, key: String, text: String) async throws -> LlmTestResult {
         do {
             let result = try await translator.test(service: service, key: key, text: text, target: target)
@@ -138,7 +133,8 @@ final class TranslationService {
 
     /// A language model or Microsoft Translator is set up.
     var hasRemote: Bool {
-        services.contains { $0.enabled && hasKey($0) } || !microsoftKey.isEmpty
+        // A service without a key counts too (self-hosted ones need none).
+        services.contains { $0.enabled } || !microsoftKey.isEmpty
     }
 
     var isAvailable: Bool { AppSettings.shared.deviceTranslation || hasRemote }
@@ -278,7 +274,7 @@ struct TranslationSettingsView: View {
                 }
                 .onMove { service.move(from: $0, to: $1) }
                 .onDelete { offsets in offsets.map { services[$0] }.forEach(service.remove) }
-                Button("Add Service", systemImage: "plus.circle.fill") { adding = true }
+                Button("Add AI Service", systemImage: "plus.circle.fill") { adding = true }
             } header: {
                 HStack {
                     Text("Order of Use")
@@ -398,14 +394,14 @@ private struct LlmPresetPicker: View {
                 }
             }
         }
-        .navigationTitle("Add Service")
+        .navigationTitle("Choose Provider")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
     }
 }
 
-/// A service's settings: address, key, model (from its list), test, prices,
-/// monthly limit and usage.
+/// A service's settings, as in AY Translate: details and key, model (from
+/// the service's list), request parameters, a test, cost and limit.
 struct LlmServiceEditor: View {
     let original: LlmService
     var isNew = false
@@ -416,100 +412,161 @@ struct LlmServiceEditor: View {
     @State private var name = ""
     @State private var baseURL = ""
     @State private var key = ""
+    @State private var loadedKey = ""
+    @State private var loadedBaseURL = ""
     @State private var model = ""
     @State private var currency = "USD"
     @State private var inputPrice: Double?
     @State private var outputPrice: Double?
     @State private var limitOn = false
     @State private var limit: Double = 1
+    @State private var parameterPreset = LlmParameterPreset.modelDefault.key
+    @State private var bodyJSON = ""
     @State private var models: [String] = []
-    @State private var loadingModels = false
-    @State private var modelsError: String?
+    @State private var modelSelection = otherModel
+    @State private var discovering = false
+    @State private var discoveryError: String?
+    @State private var discoveryRevision = 0
+    @State private var probeID = ""
     @State private var testing = false
-    @State private var testText = ""
+    @State private var testTask: Task<Void, Never>?
     @State private var testResult: String?
-    @State private var error: String?
+    @State private var priceNote: LocalizedStringKey?
     @State private var loaded = false
-    // Request parameters; nil: not sent (the service's own default).
-    @State private var temperature: Double?
-    @State private var topP: Double?
-    @State private var maxTokens: Int?
-    @State private var timeout = Int(LlmService.companion.DEFAULT_TIMEOUT)
-    @State private var extraBody = ""
+
+    private static let otherModel = "__other__"
 
     private var draft: LlmService {
         original.with(
-            name: name.trimmingCharacters(in: .whitespaces).isEmpty ? model : name.trimmingCharacters(in: .whitespaces),
-            baseUrl: baseURL.trimmingCharacters(in: .whitespaces), model: model.trimmingCharacters(in: .whitespaces),
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? model : name.trimmingCharacters(in: .whitespacesAndNewlines),
+            baseUrl: baseURL.trimmingCharacters(in: .whitespacesAndNewlines), model: model.trimmingCharacters(in: .whitespacesAndNewlines),
             enabled: original.enabled,
             inputPrice: inputPrice.map { KotlinDouble(value: $0) }, outputPrice: outputPrice.map { KotlinDouble(value: $0) },
             currency: currency, spendLimit: limitOn ? KotlinDouble(value: limit) : nil
-        ).withParameters(
-            temperature: temperature.map { KotlinDouble(value: $0) }, topP: topP.map { KotlinDouble(value: $0) },
-            maxTokens: maxTokens.map { KotlinInt(value: Int32($0)) }, timeoutSeconds: Int32(timeout),
-            extraBody: extraBody.trimmingCharacters(in: .whitespacesAndNewlines)
-        )
+        ).withRequestOptions(preset: parameterPreset, bodyJson: bodyJSON)
     }
 
-    private var effectiveKey: String { key.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var extraBodyValid: Bool { draft.extraFields() != nil }
-    private var canSave: Bool { !baseURL.isEmpty && !model.isEmpty && !effectiveKey.isEmpty && extraBodyValid }
+    private var trimmedKey: String { key.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var canSave: Bool { !baseURL.isEmpty && !model.isEmpty && draft.parametersValid }
+    private var probes: [TranslationProbe] { TranslationProbe.companion.samples(excludingTarget: service.target) }
+    private var probe: TranslationProbe { probes.first { $0.id == probeID } ?? probes[0] }
+    private var discoveryIdentity: String { baseURL + "\n" + key + "\n" + String(discoveryRevision) }
+    private var priceIdentity: String { [baseURL, model, loaded ? "1" : "0"].joined(separator: "\n") }
 
     var body: some View {
+        form
+            .onChange(of: modelSelection) { _, value in
+                if value != Self.otherModel { model = value }
+            }
+            .onChange(of: baseURL) { _, new in
+                models = []
+                modelSelection = Self.otherModel
+                discoveryError = nil
+                // A saved key isn't sent to an edited address by itself.
+                if new != loadedBaseURL, key == loadedKey { key = "" }
+                cancelTest()
+            }
+            .onChange(of: key) { cancelTest() }
+            .onChange(of: model) { cancelTest() }
+            .onChange(of: parameterPreset) { cancelTest() }
+            .onChange(of: bodyJSON) { cancelTest() }
+            .onChange(of: probeID) { cancelTest() }
+            .onDisappear { cancelTest() }
+            .task(id: priceIdentity) {
+                // Services that publish prices fill these in themselves, every
+                // time this page opens (a discount shows up here).
+                guard loaded, !model.isEmpty else { return }
+                try? await Task.sleep(for: .milliseconds(900))
+                guard !Task.isCancelled else { return }
+                if let price = await service.publishedPrice(baseURL: baseURL, key: trimmedKey, model: model) {
+                    inputPrice = price.input
+                    outputPrice = price.output
+                    priceNote = "Price provided by the service and kept up to date automatically."
+                } else if !Task.isCancelled {
+                    priceNote = "This provider does not publish prices. Enter the price from its pricing page; update it when it changes."
+                }
+            }
+    }
+
+    private var form: some View {
         Form {
-            Section("Service") {
-                TextField("Name", text: $name)
-                TextField("API Address", text: $baseURL).keyboardType(.URL)
-                // Shown as typed, so it's clear which key this is.
-                TextField("API Key", text: $key)
-                    .font(.callout.monospaced())
+            Section("Service Details") {
+                TextField("Service Name", text: $name)
+                LabeledContent("Provider") {
+                    HStack {
+                        ProviderIcon(preset: original.presetKind, size: 24)
+                        Text(original.presetKind == .other ? String(localized: "Other (OpenAI-compatible)") : original.presetKind.displayName)
+                    }
+                }
+                TextField("Base URL", text: $baseURL, axis: .vertical)
+                    .keyboardType(.URL)
+                // Shown as typed, so a pasted key can be checked.
+                TextField("API Key (optional for keyless services)", text: $key, axis: .vertical)
             }
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             Section {
-                if models.isEmpty {
-                    TextField("Model", text: $model)
+                if !models.isEmpty {
+                    Picker("Model", selection: $modelSelection) {
+                        ForEach(models, id: \.self) { Text(verbatim: $0).tag($0) }
+                        Text("Other Model").tag(Self.otherModel)
+                    }
+                }
+                if modelSelection == Self.otherModel || models.isEmpty {
+                    TextField("Model Name", text: $model)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                } else {
-                    Picker("Model", selection: $model) {
-                        if !models.contains(model) { Text(model.isEmpty ? String(localized: "Choose") : model).tag(model) }
-                        ForEach(models, id: \.self) { Text($0).tag($0) }
-                    }
-                    .pickerStyle(.navigationLink)
                 }
-                if loadingModels {
+                Button { discoveryRevision += 1 } label: {
                     HStack {
-                        Text("Loading Models…").foregroundStyle(.secondary)
+                        Label("Fetch Available Models", systemImage: "arrow.clockwise")
                         Spacer()
-                        ProgressView()
+                        if discovering { ProgressView() }
                     }
-                } else if let modelsError {
-                    Text(modelsError).font(.footnote).foregroundStyle(.secondary)
                 }
+                .disabled(discovering)
+                if let discoveryError { Text(discoveryError).font(.footnote).foregroundStyle(.secondary) }
             } header: {
                 Text("Model")
             } footer: {
-                Text("The service's models load by themselves once the address and key are in. The model can also be typed in.")
+                Text("Pasting a key fetches the provider’s model list. If listing is unavailable, choose Other Model and enter its ID.")
             }
-            parametersSection
             Section {
-                TextField("Text to Translate", text: $testText, axis: .vertical)
-                    .lineLimit(2...6)
-                Button {
-                    Task { await test() }
+                NavigationLink {
+                    LlmRequestOptionsView(preset: $parameterPreset, bodyJSON: $bodyJSON, draft: { draft })
                 } label: {
+                    LabeledContent("Request Parameters", value: String(localized: String.LocalizationValue(LlmParameterPreset.companion.of(key: parameterPreset).displayName)))
+                }
+            }
+            Section {
+                Picker("Test Phrase", selection: Binding(get: { probe.id }, set: { probeID = $0 })) {
+                    ForEach(probes, id: \.id) { Text(verbatim: $0.languageName).tag($0.id) }
+                }
+                Text(verbatim: probe.text).textSelection(.enabled)
+                LabeledContent("Target Language", value: Locale.current.localizedString(forIdentifier: service.target) ?? service.target)
+                if let testResult { Text(verbatim: testResult).textSelection(.enabled) }
+                Button(action: test) {
                     HStack {
-                        Text("Test Translation")
-                        if testing { Spacer(); ProgressView() }
+                        Label("Test Translation", systemImage: "play.fill")
+                        Spacer()
+                        if testing { ProgressView() }
                     }
                 }
-                .disabled(testing || !canSave || testText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                if let testResult { Text(testResult).font(.callout).textSelection(.enabled) }
+                .disabled(testing || !canSave)
             } header: {
-                Text("Test")
+                Text("Test Translation")
+            } footer: {
+                Text("Test sends only the selected sample to this endpoint with the current key and model. Provider fees may apply. Saving alone sends no translation request.")
             }
             costSection
+            Section {
+                Text("The key stays visible for checking pasted text. It is saved only in this device’s Keychain, separately for each service.")
+                Text("Changing the endpoint clears a previously saved key. Paste a replacement for the new destination.")
+            } header: {
+                Text("Device Keychain")
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
             if !isNew {
                 Section {
                     Button("Delete Service", role: .destructive) {
@@ -519,38 +576,37 @@ struct LlmServiceEditor: View {
                 }
             }
         }
-        .navigationTitle(name.isEmpty ? original.name : name)
+        .navigationTitle(isNew ? "Add AI Service" : "Edit AI Service")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
-                    service.store(draft, key: key)
+                    service.store(draft, key: trimmedKey)
                     if let onSaved { onSaved() } else { dismiss() }
                 }
                 .disabled(!canSave)
             }
         }
         .onAppear(perform: load)
-        // The model list loads by itself (again when the address or key changes).
-        .task(id: "\(baseURL)|\(effectiveKey)") {
-            guard !baseURL.isEmpty, !effectiveKey.isEmpty else { return }
-            try? await Task.sleep(for: .milliseconds(600))
-            guard !Task.isCancelled else { return }
-            await loadModels()
-        }
-        .onChange(of: model) { _, new in
-            guard original.presetKind == .openrouter, !new.isEmpty else { return }
-            Task {
-                if let price = await service.publishedPrice(baseURL: baseURL, key: effectiveKey, model: new) {
-                    inputPrice = price.input
-                    outputPrice = price.output
-                }
+        // Pasting a key (or tapping Fetch) loads the service's model list.
+        .task(id: discoveryIdentity) {
+            discovering = false
+            guard loaded, !trimmedKey.isEmpty || discoveryRevision > 0, !baseURL.isEmpty else { return }
+            let identity = discoveryIdentity
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled, identity == discoveryIdentity else { return }
+            discovering = true
+            discoveryError = nil
+            do {
+                let available = try await service.models(baseURL: baseURL.trimmingCharacters(in: .whitespacesAndNewlines), key: trimmedKey)
+                guard !Task.isCancelled, identity == discoveryIdentity else { return }
+                models = available
+                if model.isEmpty, let first = available.first { model = first }
+                modelSelection = available.contains(model) ? model : Self.otherModel
+            } catch {
+                if identity == discoveryIdentity { discoveryError = error.localizedDescription }
             }
-        }
-        .alert("Couldn't Connect", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(error ?? "")
+            if identity == discoveryIdentity { discovering = false }
         }
     }
 
@@ -560,126 +616,131 @@ struct LlmServiceEditor: View {
         Section {
             if original.presetKind.choosesCurrency {
                 Picker("Billing Currency", selection: $currency) {
-                    Text("US Dollar ($)").tag("USD")
-                    Text("Chinese Yuan (¥)").tag("CNY")
+                    Text(verbatim: "¥ CNY").tag("CNY")
+                    Text(verbatim: "$ USD").tag("USD")
                 }
             }
-            LabeledContent("Input, per 1M tokens") {
+            LabeledContent("Input price / 1M tokens") {
                 TextField("0", value: $inputPrice, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
             }
-            LabeledContent("Output, per 1M tokens") {
+            LabeledContent("Output price / 1M tokens") {
                 TextField("0", value: $outputPrice, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
             }
+            if let priceNote { Text(priceNote).font(.footnote).foregroundStyle(.secondary) }
+            LabeledContent("This month") { usageFigures(input: usage.monthInput, output: usage.monthOutput, cost: usage.monthCost, symbol: symbol) }
+            LabeledContent("Total") { usageFigures(input: usage.totalInput, output: usage.totalOutput, cost: usage.totalCost, symbol: symbol) }
             Toggle("Monthly Spending Limit", isOn: $limitOn)
             if limitOn {
-                LabeledContent("Limit (\(symbol))") {
-                    TextField("1", value: $limit, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                LabeledContent("Limit") {
+                    HStack(spacing: 4) {
+                        Text(verbatim: symbol)
+                        TextField("1", value: $limit, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                    }
                 }
             }
-            if !isNew {
-                LabeledContent("This Month", value: "\(LlmFormat.cost(usage.monthCost, draft)) · \(LlmFormat.tokens(usage.monthInput + usage.monthOutput))")
-                LabeledContent("Total", value: "\(LlmFormat.cost(usage.totalCost, draft)) · \(LlmFormat.tokens(usage.totalInput + usage.totalOutput))")
+            if usage.totalInput + usage.totalOutput > 0 {
                 Button("Reset Usage Figures", role: .destructive) { service.resetUsage(original) }
             }
         } header: {
             Text("Cost")
         } footer: {
-            Text("Prices are per million tokens in the service's billing currency (OpenRouter publishes its own). Past the monthly limit, the next service in the order takes over.")
+            Text("Tokens are counted from what the provider reports for each request, and costed at the price in effect at that moment. When this month’s spending reaches the limit, this service is skipped: the next one in the order takes over, then the on-device engine. A limit needs a price.")
         }
+    }
+
+    /// Input and output tokens on their own lines, the amount below them.
+    private func usageFigures(input: Int64, output: Int64, cost: Double, symbol: String) -> some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("Input \(Int(input).formatted()) tokens")
+            Text("Output \(Int(output).formatted()) tokens")
+            if inputPrice != nil || cost > 0 {
+                Text(verbatim: symbol + cost.formatted(.number.precision(.fractionLength(0...4)))).foregroundStyle(.primary)
+            }
+        }
+        .font(.callout.monospacedDigit())
     }
 
     private func load() {
         guard !loaded else { return }
-        loaded = true
         name = original.name
         baseURL = original.baseUrl
+        loadedBaseURL = original.baseUrl
         model = original.model
         currency = original.currency
         inputPrice = original.inputPrice?.doubleValue
         outputPrice = original.outputPrice?.doubleValue
         limitOn = original.spendLimit != nil
         limit = original.spendLimit?.doubleValue ?? 1
-        key = service.key(original)
-        temperature = original.temperature?.doubleValue
-        topP = original.topP?.doubleValue
-        maxTokens = original.maxTokens.map { Int($0.int32Value) }
-        timeout = Int(original.timeoutSeconds)
-        extraBody = original.extraBody
-        testText = service.sampleText
+        parameterPreset = original.parameterPreset
+        bodyJSON = original.bodyJson
+        loadedKey = service.key(original)
+        key = loadedKey
+        probeID = probes.first?.id ?? ""
+        loaded = true
     }
 
-    private func loadModels() async {
-        loadingModels = true
-        defer { loadingModels = false }
-        do {
-            models = try await service.models(baseURL: baseURL.trimmingCharacters(in: .whitespaces), key: effectiveKey)
-            modelsError = nil
-            if model.isEmpty, let first = models.first { model = first }
-        } catch {
-            models = []
-            modelsError = String(localized: "Couldn't load the model list: \(error.localizedDescription)")
+    private func cancelTest() {
+        testTask?.cancel()
+        testTask = nil
+        testing = false
+        testResult = nil
+    }
+
+    private func test() {
+        cancelTest()
+        let service = self.service, draft = self.draft, key = trimmedKey, text = probe.text
+        testing = true
+        testTask = Task {
+            do {
+                let r = try await service.test(draft, key: key, text: text)
+                guard !Task.isCancelled else { return }
+                testResult = "\(r.text)\n\(String(format: "%.1f", Double(r.millis) / 1000)) s · \(LlmFormat.tokens(r.inputTokens + r.outputTokens))"
+            } catch {
+                guard !Task.isCancelled else { return }
+                testResult = error.localizedDescription
+            }
+            testing = false
         }
     }
+}
 
-    /// Request parameters, like AY Translate: each one is sent only when on.
-    @ViewBuilder private var parametersSection: some View {
-        Section {
-            parameterSlider("Temperature", value: $temperature, range: 0...2, step: 0.1,
-                            fallback: LlmService.companion.DEFAULT_TEMPERATURE)
-            parameterSlider("Top P", value: $topP, range: 0...1, step: 0.05, fallback: 1)
-            Toggle("Max Tokens", isOn: Binding(get: { maxTokens != nil }, set: { maxTokens = $0 ? 1024 : nil }))
-            if let tokens = maxTokens {
-                Stepper(value: Binding(get: { tokens }, set: { maxTokens = $0 }), in: 64...32768, step: 64) {
-                    LabeledContent("Tokens", value: "\(tokens)")
+/// A service's request parameters, as in AY Translate: a preset, custom body
+/// fields over it, and what is actually sent.
+struct LlmRequestOptionsView: View {
+    @Binding var preset: String
+    @Binding var bodyJSON: String
+    let draft: () -> LlmService
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Parameter Preset", selection: $preset) {
+                    ForEach(LlmParameterPreset.entries, id: \.key) {
+                        Text(String(localized: String.LocalizationValue($0.displayName))).tag($0.key)
+                    }
                 }
+            } footer: {
+                Text("Model defaults sends no reasoning override. Choose only parameters supported by your model; stronger reasoning can increase latency. Gemini's compatible API also accepts reasoning_effort on supported models.")
             }
-            Stepper(value: $timeout, in: 5...600, step: 5) {
-                LabeledContent("Timeout", value: "\(timeout) s")
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Extra Parameters (JSON)")
-                TextField(text: $extraBody, prompt: Text(verbatim: "{\"reasoning_effort\": \"low\"}"), axis: .vertical) { EmptyView() }
-                    .font(.callout.monospaced())
-                    .lineLimit(1...6)
+            Section {
+                TextField("JSON object", text: $bodyJSON, axis: .vertical)
+                    .font(.system(.body, design: .monospaced))
+                    .lineLimit(6...16)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                if !extraBodyValid {
-                    Text("Not a JSON object.").font(.footnote).foregroundStyle(.red)
-                }
+            } header: {
+                Text("Custom Body Parameters")
+            } footer: {
+                Text("Custom values override the preset. For example: {\"temperature\":0.2,\"max_completion_tokens\":4096}. Do not put credentials here. Test Translation uses these same parameters.")
             }
-        } header: {
-            Text("Request Parameters")
-        } footer: {
-            Text("Defaults: temperature 0.2, timeout 30 s; Top P and max tokens aren't sent, so the service uses its own. Extra parameters are added to the request as they are.")
-        }
-    }
-
-    private func parameterSlider(_ title: LocalizedStringKey, value: Binding<Double?>, range: ClosedRange<Double>,
-                                 step: Double, fallback: Double) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Toggle(isOn: Binding(get: { value.wrappedValue != nil }, set: { value.wrappedValue = $0 ? fallback : nil })) {
-                HStack {
-                    Text(title)
-                    Spacer()
-                    Text(value.wrappedValue.map { String(format: "%.2f", $0) } ?? String(localized: "Service Default"))
-                        .foregroundStyle(.secondary).monospacedDigit()
-                }
-            }
-            if let current = value.wrappedValue {
-                Slider(value: Binding(get: { current }, set: { value.wrappedValue = ($0 / step).rounded() * step }), in: range)
+            Section("Effective Parameters") {
+                let text = draft().effectiveParametersText()
+                Text(verbatim: draft().parametersValid ? text : String(localized: String.LocalizationValue(text)))
+                    .font(.system(.footnote, design: .monospaced))
+                    .textSelection(.enabled)
             }
         }
-    }
-
-    private func test() async {
-        testing = true
-        defer { testing = false }
-        do {
-            let r = try await service.test(draft, key: effectiveKey, text: testText)
-            testResult = "\(r.text)\n\(String(format: "%.1f", Double(r.millis) / 1000)) s · \(LlmFormat.tokens(r.inputTokens + r.outputTokens))"
-        } catch {
-            testResult = nil
-            self.error = error.localizedDescription
-        }
+        .navigationTitle("Request Parameters")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

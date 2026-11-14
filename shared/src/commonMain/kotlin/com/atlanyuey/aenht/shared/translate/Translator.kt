@@ -3,7 +3,6 @@ package com.atlanyuey.aenht.shared.translate
 import com.atlanyuey.aenht.shared.net.buildHttpClient
 import com.atlanyuey.aenht.shared.net.lenientJson
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -48,14 +47,10 @@ data class LlmService(
     val currency: String = "USD",
     /** Monthly spending limit in [currency]; null: no limit. Past it, the next service takes over. */
     val spendLimit: Double? = null,
-    // Request parameters (like AY Translate); null: not sent, the service's own default.
-    val temperature: Double? = DEFAULT_TEMPERATURE,
-    val topP: Double? = null,
-    val maxTokens: Int? = null,
-    /** Seconds to wait for an answer. */
-    val timeoutSeconds: Int = DEFAULT_TIMEOUT,
-    /** More fields for the request body, as a JSON object (e.g. {"reasoning_effort": "low"}); empty: none. */
-    val extraBody: String = "",
+    /** Request parameters, as in AY Translate: a preset ([LlmParameterPreset.key]) ... */
+    val parameterPreset: String = LlmParameterPreset.MODEL_DEFAULT.key,
+    /** ... and custom body fields (a JSON object) that override it. */
+    val bodyJson: String = "",
 ) {
     val presetKind: LlmPreset get() = LlmPreset.of(preset)
     val currencySymbol: String get() = if (currency == "CNY") "¥" else "$"
@@ -72,21 +67,88 @@ data class LlmService(
         inputPrice = inputPrice, outputPrice = outputPrice, currency = currency, spendLimit = spendLimit,
     )
 
-    /** A copy with other request parameters (for Swift). */
-    fun withParameters(temperature: Double?, topP: Double?, maxTokens: Int?, timeoutSeconds: Int, extraBody: String): LlmService =
-        copy(temperature = temperature, topP = topP, maxTokens = maxTokens, timeoutSeconds = timeoutSeconds, extraBody = extraBody)
+    val parameters: LlmParameterPreset get() = LlmParameterPreset.of(parameterPreset)
 
-    /** The extra fields, or null when [extraBody] isn't a JSON object. */
-    fun extraFields(): JsonObject? =
-        if (extraBody.isBlank()) JsonObject(emptyMap())
-        else runCatching { lenientJson.parseToJsonElement(extraBody) as? JsonObject }.getOrNull()
+    /** A copy with other request parameters (for Swift). */
+    fun withRequestOptions(preset: String, bodyJson: String): LlmService = copy(parameterPreset = preset, bodyJson = bodyJson)
+
+    /**
+     * The fields added to each request: the preset's, overridden by the custom
+     * JSON. Like AY Translate: at most 16 KB, a JSON object, none of the fields
+     * the app manages, and only one token limit.
+     */
+    @Throws(TranslationException::class)
+    fun requestParameters(): JsonObject {
+        val result = parameters.parameters.toMutableMap()
+        if (bodyJson.isNotBlank()) {
+            val custom = (if (bodyJson.encodeToByteArray().size <= 16_384) runCatching { lenientJson.parseToJsonElement(bodyJson) as? JsonObject }.getOrNull() else null)
+                ?: throw TranslationException(ERROR_JSON)
+            if (custom.keys.any { it.lowercase() in RESERVED }) throw TranslationException(ERROR_RESERVED)
+            result.putAll(custom)
+        }
+        if ("max_tokens" in result && "max_completion_tokens" in result) throw TranslationException(ERROR_TOKEN_LIMITS)
+        return JsonObject(result)
+    }
+
+    /** [requestParameters] as shown in the settings (sorted, indented), or the reason they're not valid. */
+    fun effectiveParametersText(): String = try {
+        prettyJson.encodeToString(JsonObject.serializer(), JsonObject(requestParameters().toSortedMap()))
+    } catch (e: TranslationException) {
+        e.message ?: ERROR_JSON
+    }
+
+    /** Whether [requestParameters] can be built (the custom JSON is acceptable). */
+    val parametersValid: Boolean get() = runCatching { requestParameters() }.isSuccess
 
     companion object {
-        const val DEFAULT_TEMPERATURE = 0.2
-        const val DEFAULT_TIMEOUT = 30
+        const val ERROR_JSON = "Enter a JSON object of at most 16 KB."
+        const val ERROR_RESERVED = "Model, messages, stream, tools, credentials and response count are managed by the app."
+        const val ERROR_TOKEN_LIMITS = "Use only one of max_tokens and max_completion_tokens."
+        private val RESERVED = setOf(
+            "messages", "model", "stream", "n", "tools", "tool_choice", "functions", "function_call", "api_key", "authorization",
+            "prompt", "instructions", "input", "target_language", "source_language", "language",
+        )
+        private val prettyJson = kotlinx.serialization.json.Json { prettyPrint = true }
 
         fun create(id: String, preset: LlmPreset): LlmService =
             LlmService(id, preset.displayName, preset.baseUrl, preset.suggestedModel, true, preset.key, currency = preset.defaultCurrency)
+    }
+}
+
+/** Request parameter presets (as in AY Translate). */
+enum class LlmParameterPreset(val key: String, val displayName: String, val parameters: JsonObject) {
+    MODEL_DEFAULT("modelDefault", "Model defaults", JsonObject(emptyMap())),
+    OPENAI_NONE("openAINone", "OpenAI · No reasoning", effort("none")),
+    LOW("low", "Reasoning · Low", effort("low")),
+    MEDIUM("medium", "Reasoning · Medium", effort("medium")),
+    HIGH("high", "Reasoning · High", effort("high")),
+    DEEPSEEK_FAST("deepSeekFast", "DeepSeek · Thinking off", buildJsonObject { put("thinking", buildJsonObject { put("type", "disabled") }) }),
+    DEEPSEEK_THINKING("deepSeekThinking", "DeepSeek · Thinking on", buildJsonObject { put("thinking", buildJsonObject { put("type", "enabled") }) }),
+    QWEN_FAST("qwenFast", "Qwen · Thinking off", buildJsonObject { put("enable_thinking", false) }),
+    CUSTOM("custom", "Custom JSON", JsonObject(emptyMap()));
+
+    companion object {
+        fun of(key: String?) = entries.firstOrNull { it.key == key } ?: MODEL_DEFAULT
+    }
+}
+
+private fun effort(level: String) = buildJsonObject { put("reasoning_effort", level) }
+
+/** Sample sentences to test a service with (as in AY Translate), one per language. */
+data class TranslationProbe(val id: String, val languageName: String, val text: String) {
+    companion object {
+        private val all = listOf(
+            TranslationProbe("en", "English", "Please keep the original layout and translate the whole sentence."),
+            TranslationProbe("ja", "日本語", "このケーキはとてもおいしいです。もう一口食べてもいいですか？"),
+            TranslationProbe("ko", "한국어", "다음 기차는 언제 출발하나요? 표 두 장을 사고 싶어요."),
+            TranslationProbe("es", "Español", "¿Dónde está la estación? Quisiera comprar dos billetes."),
+            TranslationProbe("fr", "Français", "Ce restaurant propose un menu végétarien et des desserts faits maison."),
+            TranslationProbe("de", "Deutsch", "Bitte übersetzen Sie den vollständigen Satz und behalten Sie die Namen bei."),
+            TranslationProbe("zh", "中文", "请保留原来的排版，完整翻译这句话，并让标题和正文容易阅读。"),
+        )
+
+        /** The samples not in the target language. */
+        fun samples(excludingTarget: String): List<TranslationProbe> = all.filter { !excludingTarget.lowercase().startsWith(it.id) }
     }
 }
 
@@ -142,7 +204,8 @@ class Translator internal constructor(private val http: HttpClient, private val 
         var fellBack = false
         var lastError: String? = null
         for (service in services.filter { it.enabled }) {
-            val key = keys[service.id] ?: continue
+            // A service without a key is used too (self-hosted ones need none).
+            val key = keys[service.id].orEmpty()
             if (overLimit(service)) {
                 lastError = "${service.name}: spending limit reached"
                 fellBack = true
@@ -241,12 +304,9 @@ class Translator internal constructor(private val http: HttpClient, private val 
     private suspend fun llm(service: LlmService, key: String, text: String, target: String, kind: TranslationKind): Answer =
         withContext(Dispatchers.IO) {
             val url = service.baseUrl.trimEnd('/') + "/chat/completions"
-            val extra = service.extraFields() ?: throw TranslationException("${service.name}: the extra parameters aren't a JSON object")
-            val body = buildJsonObject {
+            val parameters = service.requestParameters()
+            var body = buildJsonObject {
                 put("model", service.model)
-                service.temperature?.let { put("temperature", it) }
-                service.topP?.let { put("top_p", it) }
-                service.maxTokens?.let { put("max_tokens", it) }
                 put(
                     "messages",
                     buildJsonArray {
@@ -254,13 +314,31 @@ class Translator internal constructor(private val http: HttpClient, private val 
                         add(buildJsonObject { put("role", "user"); put("content", text) })
                     },
                 )
-                extra.forEach { (name, value) -> put(name, value) }
+                parameters.forEach { (name, value) -> put(name, value) }
             }
-            val response = http.post(url) {
-                timeout { requestTimeoutMillis = service.timeoutSeconds.coerceIn(5, 600) * 1000L }
-                header(HttpHeaders.Authorization, "Bearer $key")
+            // Gemini on Google's compatible API reasons before answering unless
+            // told otherwise, which only makes a short translation slower: unless
+            // a reasoning setting was chosen, the light level is asked for, and
+            // a model that rejects the field is asked again without it (AY).
+            val modelId = service.model.lowercase().substringAfterLast('/')
+            val lightReasoning = service.baseUrl.contains("generativelanguage.googleapis.com") && modelId.startsWith("gemini-") &&
+                listOf("reasoning_effort", "reasoning", "thinking", "extra_body", "thinking_config").none { it in body }
+            if (lightReasoning) body = JsonObject(body + ("reasoning_effort" to JsonPrimitive("low")))
+            suspend fun send() = http.post(url) {
+                if (key.isNotBlank()) header(HttpHeaders.Authorization, "Bearer ${key.trim()}")
                 contentType(ContentType.Application.Json)
                 setBody(body.toString())
+            }
+            var response = send()
+            if (lightReasoning && response.status.value == 400) {
+                body = JsonObject(body - "reasoning_effort")
+                response = send()
+            }
+            // Rate limits and busy servers are usually momentary: one more try.
+            if (response.status.value in setOf(429, 500, 502, 503, 504)) {
+                val wait = response.headers["Retry-After"]?.toDoubleOrNull()?.coerceIn(0.3, 4.0) ?: 1.0
+                kotlinx.coroutines.delay((wait * 1000).toLong())
+                response = send()
             }
             val raw = response.bodyAsText()
             val o = runCatching { lenientJson.parseToJsonElement(raw).jsonObject }.getOrNull()

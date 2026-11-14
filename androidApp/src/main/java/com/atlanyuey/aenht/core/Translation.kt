@@ -68,9 +68,11 @@ object TranslationService {
 
     suspend fun publishedPrice(baseUrl: String, key: String, model: String): List<Double>? = translator.publishedPrice(baseUrl, key, model)
 
-    /** The text a service is tested with (it can be edited before the test). */
-    val sampleText: String
-        get() = if (target.startsWith("en")) "今日はいい天気ですね。散歩に行きましょう。" else "It's a nice day today. Let's go for a walk."
+    /** The target language (the app's): test samples leave it out. */
+    val targetLanguage: String get() = target
+
+    /** Its name, in the app's language. */
+    val targetName: String get() = Locale.forLanguageTag(target).let { it.getDisplayName(it) }
 
     /** Translates [text] with the service (its usage counts too). */
     suspend fun test(service: LlmService, key: String, text: String): LlmTestResult {
@@ -121,7 +123,7 @@ object TranslationService {
         set(value) { secrets["microsoftRegion"] = value?.trim() }
 
     val isAvailable: Boolean
-        get() = AppSettings.deviceTranslation || services.any { it.enabled && hasKey(it.id) } || !microsoftKey.isNullOrEmpty()
+        get() = AppSettings.deviceTranslation || services.any { it.enabled } || !microsoftKey.isNullOrEmpty()
 
     /** The app's language, as the target. */
     private val target: String

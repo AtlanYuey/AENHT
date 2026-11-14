@@ -45,7 +45,7 @@ class TranslatorTest {
         assertEquals("你好", r.text)
         assertEquals("Microsoft Translator", r.provider)
         assertTrue(r.fellBack)
-        assertTrue(seen.none { it.startsWith("https://c.example") }) // no key: skipped
+        assertTrue(seen.any { it.startsWith("https://c.example") }) // no key: tried too (self-hosted services need none)
 
         t.microsoftKey = null
         val local = object : LocalTranslator {
@@ -70,23 +70,38 @@ class TranslatorTest {
     }
 
     @Test
-    fun requestParametersAreSent() = runTest {
-        var body = ""
+    fun requestParametersFollowThePresetAndTheCustomJson() = runTest {
+        val bodies = mutableListOf<String>()
         val engine = MockEngine { request ->
-            body = (request.body as io.ktor.http.content.TextContent).text
+            bodies += (request.body as io.ktor.http.content.TextContent).text
             respond("""{"choices":[{"message":{"content":"好"},"finish_reason":"stop"}]}""", HttpStatusCode.OK, json)
         }
-        val service = LlmService("1", "A", "https://a.example/v1", "m")
-            .withParameters(null, 0.9, 256, 20, """{"reasoning_effort":"low"}""")
-        Translator(buildHttpClient(engine)) { 0L }.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(service), mapOf("1" to "k"), null)
-        val sent = kotlinx.serialization.json.Json.parseToJsonElement(body) as kotlinx.serialization.json.JsonObject
-        assertEquals(null, sent["temperature"])
-        assertEquals("0.9", sent["top_p"].toString())
-        assertEquals("256", sent["max_tokens"].toString())
-        assertEquals("\"low\"", sent["reasoning_effort"].toString())
+        val t = Translator(buildHttpClient(engine)) { 0L }
+        fun sent() = kotlinx.serialization.json.Json.parseToJsonElement(bodies.last()) as kotlinx.serialization.json.JsonObject
+        val base = LlmService("1", "A", "https://a.example/v1", "m")
 
-        val broken = service.withParameters(0.2, null, null, 30, "{not json")
-        assertEquals(null, broken.extraFields())
+        // Model defaults: nothing added (no temperature either).
+        t.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(base), mapOf("1" to "k"), null)
+        assertEquals(setOf("model", "messages"), sent().keys)
+
+        // A preset, overridden by the custom JSON.
+        val custom = base.withRequestOptions("deepSeekFast", """{"temperature":0.2,"thinking":{"type":"enabled"}}""")
+        t.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(custom), mapOf("1" to "k"), null)
+        assertEquals("0.2", sent()["temperature"].toString())
+        assertEquals("""{"type":"enabled"}""", sent()["thinking"].toString())
+
+        // Gemini on Google's API: light reasoning unless one was chosen.
+        val gemini = LlmService("2", "G", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash")
+        t.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(gemini), mapOf("2" to "k"), null)
+        assertEquals("\"low\"", sent()["reasoning_effort"].toString())
+        t.translate("ok", "zh-Hans", TranslationKind.COMMENT, listOf(gemini.withRequestOptions("high", "")), mapOf("2" to "k"), null)
+        assertEquals("\"high\"", sent()["reasoning_effort"].toString())
+
+        // Not accepted: not an object, fields the app manages, two token limits.
+        assertEquals(false, base.withRequestOptions("custom", "{not json").parametersValid)
+        assertEquals(LlmService.ERROR_RESERVED, base.withRequestOptions("custom", """{"model":"x"}""").effectiveParametersText())
+        assertEquals(false, base.withRequestOptions("custom", """{"max_tokens":1,"max_completion_tokens":2}""").parametersValid)
+        assertEquals("{\n    \"reasoning_effort\": \"low\"\n}", base.withRequestOptions("low", "").effectiveParametersText())
     }
 
     @Test
