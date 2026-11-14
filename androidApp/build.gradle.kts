@@ -13,7 +13,7 @@ android {
     buildToolsVersion = "37.0.0"
 
     defaultConfig {
-        applicationId = "com.atlanyuey.aenht"
+        applicationId = "com.atlanyuey.ENHentai"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

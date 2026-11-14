@@ -12,7 +12,7 @@ unsigned IPA (`_unsigned` in its name) for sideloading tools.
 
 On a Mac: `base64 -i cert.p12 | pbcopy`, `base64 -i profile.mobileprovision | pbcopy`.
 
-- A profile for one app id signs the app with that bundle id; a wildcard profile keeps `com.atlanyuey.aenht`.
+- A profile for one app id signs the app with that bundle id; a wildcard profile keeps `com.atlanyuey.ENHentai`.
 - The entitlements come from the profile. iCloud key-value sync works only with a profile that has the iCloud capability.
 - The run summary shows the certificate, the profile (team, app id, expiry) and the signed bundle id, so a broken or expired secret shows up there.
 - The newest build is always at the `dev-latest` pre-release as `AENHT.ipa` / `AENHT-debug.apk`.

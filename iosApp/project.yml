@@ -47,7 +47,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: AENHT
-        PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.aenht
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.ENHentai
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
         OTHER_LDFLAGS: $(inherited) -framework Shared
         TARGETED_DEVICE_FAMILY: "1,2"

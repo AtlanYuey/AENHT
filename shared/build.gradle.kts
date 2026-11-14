@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.serialization.json)
             implementation(libs.okio)
+            implementation(libs.ksoup)
             api(libs.room.runtime)
         }
         commonTest.dependencies {
