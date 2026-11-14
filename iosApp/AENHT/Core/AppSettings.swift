@@ -305,9 +305,10 @@ final class AppSettings {
         recentSearches = d.stringArray(forKey: "recentSearches") ?? []
         nhentaiEnabled = d.object(forKey: "nhentaiEnabled") as? Bool ?? true
         ehentaiEnabled = d.object(forKey: "ehentaiEnabled") as? Bool ?? true
-        homeSiteDefault = SiteChoice(rawValue: d.string(forKey: "homeSiteDefault") ?? "") ?? .follow
+        let siteDefault = SiteChoice(rawValue: d.string(forKey: "homeSiteDefault") ?? "") ?? .follow
+        homeSiteDefault = siteDefault
         let lastSite = SiteKind(rawValue: d.string(forKey: "homeSite") ?? "") ?? .nhentai
-        homeSite = homeSiteDefault == .nh ? .nhentai : homeSiteDefault == .eh ? .ehentai : lastSite
+        homeSite = siteDefault == .nh ? .nhentai : siteDefault == .eh ? .ehentai : lastSite
         useExHentai = d.bool(forKey: "useExHentai")
         ehHomeList = EhHomeList(rawValue: d.string(forKey: "ehHomeList") ?? "") ?? .latest
         favoritesSite = SiteChoice(rawValue: d.string(forKey: "favoritesSite") ?? "") ?? .follow

@@ -39,7 +39,7 @@ final class GalleryFeed {
     /// A feed of an E-Hentai list.
     static func eh(_ source: @escaping @MainActor () -> EhListSource) -> GalleryFeed {
         GalleryFeed { cursor in
-            let s = source()
+            let s = await source()
             return try await EhService.shared.list(s, cursor: cursor)
         }
     }

@@ -252,7 +252,7 @@ struct EhGalleryView: View {
             Menu {
                 ForEach((1...10).reversed(), id: \.self) { half in
                     let stars = Double(half) / 2
-                    Button(stars.truncatingRemainder(dividingBy: 1) == 0 ? "★ \(Int(stars))" : "★ \(stars, specifier: "%.1f")") {
+                    Button(stars.truncatingRemainder(dividingBy: 1) == 0 ? "★ \(Int(stars))" : String(format: "★ %.1f", stars)) {
                         Task { alertMessage = await model.rate(stars) }
                     }
                 }
