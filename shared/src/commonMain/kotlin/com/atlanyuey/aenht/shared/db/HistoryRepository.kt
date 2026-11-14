@@ -1,10 +1,14 @@
 package com.atlanyuey.aenht.shared.db
 
 import com.atlanyuey.aenht.shared.site.GalleryKey
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 
 /** Reading history of both sites, newest first. */
-class HistoryRepository(private val db: AenhtDatabase, private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() }) {
+class HistoryRepository internal constructor(private val db: AenhtDatabase, private val now: () -> Long) {
+    constructor(db: AenhtDatabase) : this(db, { Clock.System.now().toEpochMilliseconds() })
+
+    @Throws(CancellationException::class)
     suspend fun all(): List<HistoryRecord> = db.history().all()
 
     fun observe() = db.history().observeAll()
@@ -44,7 +48,33 @@ class HistoryRepository(private val db: AenhtDatabase, private val now: () -> Lo
         return record
     }
 
-    suspend fun delete(key: GalleryKey) = db.history().delete(key.storageKey)
+    /**
+     * Copies history kept elsewhere (the iOS app's own store) in, before a
+     * WebDAV sync: a record replaces the one here only when it was read later.
+     */
+    @Throws(CancellationException::class)
+    suspend fun put(records: List<HistoryRecord>) {
+        for (record in records) {
+            val mine = db.history().get(record.key)
+            if (mine == null || record.readAt > mine.readAt) db.history().upsert(record)
+        }
+    }
 
-    suspend fun clear() = db.history().clear()
+    /** Deletes by storage key ("nh:1", "eh:2:token"), remembering it for WebDAV sync. */
+    @Throws(CancellationException::class)
+    suspend fun delete(storageKey: String) {
+        db.history().delete(storageKey)
+        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, storageKey, now())))
+    }
+
+    suspend fun delete(key: GalleryKey) {
+        db.history().delete(key.storageKey)
+        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, key.storageKey, now())))
+    }
+
+    @Throws(CancellationException::class)
+    suspend fun clear() {
+        db.history().clear()
+        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, Tombstone.ALL, now())))
+    }
 }

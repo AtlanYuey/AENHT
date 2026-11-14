@@ -37,6 +37,7 @@ class App : Application(), SingletonImageLoader.Factory {
         com.atlanyuey.aenht.core.EhPages.init(this)
         com.atlanyuey.aenht.core.FavoritesStore.init(this)
         com.atlanyuey.aenht.core.TranslationService.init(this)
+        com.atlanyuey.aenht.core.WebDavService.init(this)
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader =

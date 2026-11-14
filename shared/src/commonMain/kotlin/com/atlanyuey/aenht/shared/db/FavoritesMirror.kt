@@ -55,7 +55,10 @@ class FavoritesMirror internal constructor(
     }
 
     @Throws(CancellationException::class)
-    suspend fun removed(key: GalleryKey) = lock.withLock { db.favorites().delete(key.storageKey) }
+    suspend fun removed(key: GalleryKey) = lock.withLock {
+        db.favorites().delete(key.storageKey)
+        db.tombstones().upsert(listOf(Tombstone(Tombstone.FAVORITE, key.storageKey, now())))
+    }
 
     /** Reads all of a site's favorites and updates the copy (galleries no longer favorited are removed). */
     @Throws(Exception::class)

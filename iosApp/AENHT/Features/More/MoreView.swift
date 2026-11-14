@@ -65,6 +65,9 @@ struct MoreView: View {
                 NavigationLink { SyncSettingsView() } label: {
                     SettingsLabel("iCloud Sync", systemImage: "icloud.fill", color: .cyan)
                 }
+                NavigationLink { WebDavSettingsView() } label: {
+                    SettingsLabel("WebDAV Sync", systemImage: "externaldrive.fill.badge.icloud", color: .blue)
+                }
             }
 
             Section {

@@ -7,6 +7,9 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.builtins.serializer
 import kotlin.math.ceil
 import kotlin.math.max
@@ -269,8 +272,15 @@ object AppSettings {
 
     private fun SharedPreferences.intOrNull(key: String) = if (contains(key)) getInt(key, 0) else null
 
+    /** Applying settings from WebDAV: their change time is kept, not reset to now. */
+    private var applyingSync = false
+
+    /** When the settings last changed on this device (or came from another one), for WebDAV sync. */
+    val changedAt: Long get() = if (::prefs.isInitialized) prefs.getLong("settingsChangedAt", 0L) else 0L
+
     private fun save(key: String, value: Any) {
         if (!::prefs.isInitialized || loading) return
+        if (!applyingSync) prefs.edit().putLong("settingsChangedAt", System.currentTimeMillis()).apply()
         prefs.edit().apply {
             when (value) {
                 is String -> putString(key, value)
@@ -491,6 +501,38 @@ object AppSettings {
     )
 
     /** Applies imported settings; unknown keys and invalid values are ignored. */
+    /** The settings as JSON: the export file (the same as the iOS app's) and WebDAV sync. */
+    fun toJson(pretty: Boolean = false): String {
+        val o = kotlinx.serialization.json.buildJsonObject {
+            snapshot().toSortedMap().forEach { (key, value) ->
+                when (value) {
+                    is Boolean -> put(key, kotlinx.serialization.json.JsonPrimitive(value))
+                    is Number -> put(key, kotlinx.serialization.json.JsonPrimitive(value))
+                    is List<*> -> put(key, kotlinx.serialization.json.JsonArray(value.map { kotlinx.serialization.json.JsonPrimitive(it.toString()) }))
+                    else -> put(key, kotlinx.serialization.json.JsonPrimitive(value.toString()))
+                }
+            }
+        }
+        return kotlinx.serialization.json.Json { prettyPrint = pretty }.encodeToString(kotlinx.serialization.json.JsonObject.serializer(), o)
+    }
+
+    /** Applies settings from a JSON file or from WebDAV ([changedAt]: the other device's change time). */
+    fun applyJson(text: String, changedAt: Long? = null) {
+        val o = Net.json.parseToJsonElement(text) as kotlinx.serialization.json.JsonObject
+        val values = o.mapValues { (_, v) ->
+            when (v) {
+                is kotlinx.serialization.json.JsonPrimitive ->
+                    if (v.isString) v.content else v.booleanOrNull ?: v.longOrNull ?: v.doubleOrNull ?: v.content
+                is kotlinx.serialization.json.JsonArray -> v.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }
+                else -> null
+            }
+        }
+        if (changedAt == null) { apply(values); return }
+        applyingSync = true
+        try { apply(values) } finally { applyingSync = false }
+        prefs.edit().putLong("settingsChangedAt", changedAt).apply()
+    }
+
     fun apply(values: Map<String, Any?>) {
         for ((key, value) in values) {
             val string = value as? String

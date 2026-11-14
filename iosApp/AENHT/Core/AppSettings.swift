@@ -338,8 +338,16 @@ final class AppSettings {
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
+    /// When the settings last changed on this device (or came from WebDAV), in epoch milliseconds.
+    var changedAt: Int64 {
+        Int64(defaults.object(forKey: "settingsChangedAt") as? Double ?? 0)
+    }
+
+    func setChangedAt(_ value: Int64) { defaults.set(Double(value), forKey: "settingsChangedAt") }
+
     private func save(_ value: Any, _ key: String) {
         defaults.set(value, forKey: key)
+        if !isApplyingSynced { setChangedAt(Int64(Date.now.timeIntervalSince1970 * 1000)) }
         if !isApplyingSynced, syncColumns || !Self.columnKeys.contains(key) {
             SettingsSync.shared.settingChanged(key, value)
         }

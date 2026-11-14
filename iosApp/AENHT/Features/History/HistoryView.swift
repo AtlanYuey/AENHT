@@ -72,6 +72,7 @@ struct HistoryView: View {
             Button("Clear History", role: .destructive) {
                 try? modelContext.delete(model: HistoryEntry.self)
                 try? modelContext.save()
+                Task { try? await WebDavService.shared.history.clear() }
             }
         }
     }
@@ -121,6 +122,8 @@ struct HistoryView: View {
     }
 
     private func delete(_ entry: HistoryEntry) {
+        let key = entry.key
+        Task { try? await WebDavService.shared.history.delete(storageKey: key) }
         modelContext.delete(entry)
         try? modelContext.save()
     }

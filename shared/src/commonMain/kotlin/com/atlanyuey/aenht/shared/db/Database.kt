@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.shared.db
 
+import androidx.room.AutoMigration
+import kotlinx.serialization.Serializable
+
 import androidx.room.ConstructedBy
 import androidx.room.Dao
 import androidx.room.Database
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
  * A gallery the user opened, on either site, with the last page read.
  * [key] is [GalleryKey.storageKey]; [site] repeats its site for filtering.
  */
+@Serializable
 @Entity(tableName = "history", indices = [Index("readAt"), Index("site")])
 data class HistoryRecord(
     @androidx.room.PrimaryKey val key: String,
@@ -57,6 +61,7 @@ data class SearchHistoryRecord(
  * estimated from the list order on the first sync ([exactTime] = false) and
  * exact for favorites added or first seen later.
  */
+@Serializable
 @Entity(tableName = "favorites", indices = [Index("favoritedAt"), Index("site")])
 data class FavoriteRecord(
     @androidx.room.PrimaryKey val key: String,
@@ -120,6 +125,9 @@ interface FavoriteDao {
     @Query("SELECT * FROM favorites ORDER BY favoritedAt DESC")
     fun observeAll(): Flow<List<FavoriteRecord>>
 
+    @Query("SELECT * FROM favorites ORDER BY favoritedAt DESC")
+    suspend fun all(): List<FavoriteRecord>
+
     @Query("SELECT * FROM favorites WHERE site = :site ORDER BY favoritedAt DESC")
     suspend fun bySite(site: String): List<FavoriteRecord>
 
@@ -133,15 +141,44 @@ interface FavoriteDao {
     suspend fun delete(key: String)
 }
 
+/**
+ * Something deleted on this device, so that WebDAV sync doesn't bring it
+ * back from another device: [kind] "history" (a gallery's history entry;
+ * [key] "*" for clearing all) or "favorite" (a local favorite).
+ */
+@Serializable
+@Entity(tableName = "sync_tombstones", primaryKeys = ["kind", "key"])
+data class Tombstone(val kind: String, val key: String, val deletedAt: Long) {
+    companion object {
+        const val HISTORY = "history"
+        const val FAVORITE = "favorite"
+        const val ALL = "*"
+    }
+}
+
+@Dao
+interface TombstoneDao {
+    @Query("SELECT * FROM sync_tombstones")
+    suspend fun all(): List<Tombstone>
+
+    @Upsert
+    suspend fun upsert(records: List<Tombstone>)
+
+    @Query("DELETE FROM sync_tombstones WHERE deletedAt < :before")
+    suspend fun prune(before: Long)
+}
+
 @Database(
-    entities = [HistoryRecord::class, SearchHistoryRecord::class, FavoriteRecord::class],
-    version = 1,
+    entities = [HistoryRecord::class, SearchHistoryRecord::class, FavoriteRecord::class, Tombstone::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @ConstructedBy(AenhtDatabaseConstructor::class)
 abstract class AenhtDatabase : RoomDatabase() {
     abstract fun history(): HistoryDao
     abstract fun searchHistory(): SearchHistoryDao
     abstract fun favorites(): FavoriteDao
+    abstract fun tombstones(): TombstoneDao
 
     companion object {
         const val FILE_NAME = "aenht.db"

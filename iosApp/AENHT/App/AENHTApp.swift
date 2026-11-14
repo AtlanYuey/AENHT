@@ -30,7 +30,7 @@ struct AENHTApp: App {
                 .task { await session.reload() }
                 .task { await tagStore.prepare() }
         }
-        .modelContainer(for: HistoryEntry.self)
+        .modelContainer(AppModel.container)
     }
 }
 
@@ -58,6 +58,8 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { checkClipboard() }
+            if phase == .active { WebDavService.shared.syncIfDue() }
+            if phase == .background { WebDavService.shared.syncIfDue(minutes: 1) }
         }
         .alert("Open Gallery?", isPresented: Binding(
             get: { clipboardLink != nil },

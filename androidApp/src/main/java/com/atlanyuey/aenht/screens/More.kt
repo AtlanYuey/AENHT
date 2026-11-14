@@ -175,6 +175,7 @@ class MoreScreen : Screen() {
                 SettingsNav(tr("Appearance"), Icons.Palette, SettingsBlue) { AppearanceScreen() }
                 SettingsNav(tr("Reading"), Icons.Book, Color(0xFFFF9500)) { ReadingScreen() }
                 SettingsNav(tr("General"), Icons.Gear, Color(0xFF8E8E93)) { GeneralScreen() }
+                SettingsNav(tr("WebDAV Sync"), Icons.Cloud, Color(0xFF5AC8FA)) { WebDavScreen() }
                 SettingsNav(tr("Settings Backup"), Icons.CloudUpload, Color(0xFF32ADE6), last = true) { BackupScreen() }
             }
             section {
@@ -726,7 +727,7 @@ class BackupScreen : Screen() {
             if (uri != null) {
                 runCatching {
                     context.contentResolver.openOutputStream(uri)?.use { out ->
-                        out.write(settingsJson().toByteArray())
+                        out.write(AppSettings.toJson(pretty = true).toByteArray())
                     }
                 }
             }
@@ -735,16 +736,7 @@ class BackupScreen : Screen() {
             if (uri != null) {
                 val result = runCatching {
                     val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } ?: ""
-                    val o = Net.json.parseToJsonElement(text) as JsonObject
-                    AppSettings.apply(
-                        o.mapValues { (_, v) ->
-                            when (v) {
-                                is JsonPrimitive -> v.booleanOrNull ?: v.longOrNull ?: v.doubleOrNull ?: v.content
-                                is kotlinx.serialization.json.JsonArray -> v.mapNotNull { (it as? JsonPrimitive)?.content }
-                                else -> null
-                            }
-                        },
-                    )
+                    AppSettings.applyJson(text)
                 }
                 overlays.alert(importTitle, if (result.isSuccess) imported else result.exceptionOrNull()?.localizedMessage)
             }
@@ -763,20 +755,6 @@ class BackupScreen : Screen() {
                 })
             }
         }
-    }
-
-    private fun settingsJson(): String {
-        val o = kotlinx.serialization.json.buildJsonObject {
-            AppSettings.snapshot().toSortedMap().forEach { (key, value) ->
-                when (value) {
-                    is Boolean -> put(key, JsonPrimitive(value))
-                    is Number -> put(key, JsonPrimitive(value))
-                    is List<*> -> put(key, kotlinx.serialization.json.JsonArray(value.map { JsonPrimitive(it.toString()) }))
-                    else -> put(key, JsonPrimitive(value.toString()))
-                }
-            }
-        }
-        return kotlinx.serialization.json.Json { prettyPrint = true }.encodeToString(JsonObject.serializer(), o)
     }
 }
 

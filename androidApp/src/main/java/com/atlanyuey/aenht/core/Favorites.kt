@@ -50,6 +50,9 @@ object FavoritesStore {
         appContext = context.applicationContext
     }
 
+    /** Reads the copy again (after WebDAV sync added to it). */
+    suspend fun reloadFromDatabase() = reload()
+
     private suspend fun reload() {
         val all = runCatching { mirror.all() }.getOrDefault(emptyList())
         records.clear()

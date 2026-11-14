@@ -110,6 +110,13 @@ object HistoryStore {
         }
     }
 
+    /** Reads the history again (after WebDAV sync changed it). */
+    suspend fun reloadFromDatabase() {
+        val loaded = writes.withLock { runCatching { repo.all() }.getOrNull() } ?: return
+        entries.clear()
+        entries.addAll(loaded.map { HistoryEntry.from(it) })
+    }
+
     /** Records that a gallery of either site was opened (or read up to [page]). */
     fun record(item: GallerySummary, page: Int? = null) {
         val key = item.key
