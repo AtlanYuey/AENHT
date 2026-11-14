@@ -97,6 +97,7 @@ struct ReaderView: View {
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
     @State private var isLandscape = false
+    @Environment(\.privacyMode) private var privacy
     @State private var askPage = false
     @State private var pageText = ""
     @State private var notice: String?
@@ -146,6 +147,7 @@ struct ReaderView: View {
 
     var body: some View {
         content
+            .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
             .overlay {

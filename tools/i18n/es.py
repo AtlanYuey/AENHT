@@ -371,4 +371,11 @@ T = [
     "Aún ninguna",
     "Actualización disponible",
     "Última compilación de prueba",
+    "Desenfocar toda la app",
+    "Cubrir la app",
+    "Desenfocar imágenes y texto",
+    "Desenfocar imágenes",
+    "En segundo plano",
+    "Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado. Desenfocar necesita Android 12; antes se cubre.",
+    "Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado.",
 ]

@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">Einstellungen sichern</string>
-    <string name="l_479">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_480">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_481">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_482">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">Einstellungen sichern</string>
+    <string name="l_486">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_487">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_488">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_489">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

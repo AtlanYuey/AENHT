@@ -478,9 +478,16 @@
     <string name="l_475">아직 없음</string>
     <string name="l_476">업데이트 있음</string>
     <string name="l_477">최신 테스트 빌드</string>
-    <string name="l_478">설정 백업</string>
-    <string name="l_479">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_480">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_481">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_482">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_478">앱 전체 흐리게</string>
+    <string name="l_479">앱 완전히 가리기</string>
+    <string name="l_480">이미지와 텍스트 흐리게</string>
+    <string name="l_481">이미지 흐리게</string>
+    <string name="l_482">백그라운드에서</string>
+    <string name="l_483">다른 앱으로 전환할 때 보이는 모습으로, 최근 앱 화면에 사적인 내용이 보이지 않게 합니다. 흐리기는 Android 12 이상이 필요하며, 이전 버전에서는 가립니다.</string>
+    <string name="l_484">다른 앱으로 전환할 때 보이는 모습으로, 앱 전환기에 사적인 내용이 보이지 않게 합니다.</string>
+    <string name="l_485">설정 백업</string>
+    <string name="l_486">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_487">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_488">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_489">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

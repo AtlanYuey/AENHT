@@ -22,7 +22,7 @@ import com.atlanyuey.aenht.ui.theme.Type
 
 /** Covers the app while it is locked (App Lock). */
 @Composable
-fun LockScreen(onUnlock: () -> Unit) {
+fun LockScreen(showsButton: Boolean = true, onUnlock: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
@@ -34,7 +34,7 @@ fun LockScreen(onUnlock: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             AppIcon(Icons.EyeOff, null, tint = AppTheme.colors.secondaryLabel, size = 44.dp)
             Txt("AENHT", style = Type.title2)
-            TextButton(tr("Unlock"), onUnlock, bold = true)
+            if (showsButton) TextButton(tr("Unlock"), onUnlock, bold = true)
         }
     }
 }

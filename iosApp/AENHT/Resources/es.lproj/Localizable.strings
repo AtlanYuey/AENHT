@@ -477,3 +477,10 @@
 "None yet" = "Aún ninguna";
 "Update available" = "Actualización disponible";
 "Latest Test Build" = "Última compilación de prueba";
+"Blur the Whole App" = "Desenfocar toda la app";
+"Cover the App" = "Cubrir la app";
+"Blur Pictures and Text" = "Desenfocar imágenes y texto";
+"Blur Pictures" = "Desenfocar imágenes";
+"In the Background" = "En segundo plano";
+"What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered." = "Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado. Desenfocar necesita Android 12; antes se cubre.";
+"What the app shows when you switch away from it, so the app switcher shows nothing private." = "Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado.";

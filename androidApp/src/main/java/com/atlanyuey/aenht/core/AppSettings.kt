@@ -186,6 +186,19 @@ enum class SiteChoice(val raw: String, val title: String) {
 }
 
 /** What the E-Hentai home page lists. */
+/** What the app shows when it is in the background (the app switcher's picture). */
+enum class BackgroundPrivacy(val raw: String, val title: String) {
+    Off("off", "Off"),
+    BlurApp("blurApp", "Blur the Whole App"),
+    Cover("cover", "Cover the App"),
+    BlurContent("blurContent", "Blur Pictures and Text"),
+    BlurImages("blurImages", "Blur Pictures");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Off
+    }
+}
+
 /** A row of covers pinned above the Home feed (at most two per site). */
 enum class HomeRow(val raw: String, val site: Site, val title: String) {
     NhPopular("nh-popular", Site.NHENTAI, "Popular Now"),
@@ -299,6 +312,7 @@ object AppSettings {
         downloadInterval = p.getFloat("downloadInterval", 0f).toDouble().coerceIn(0.0, 5.0)
         ehOriginalImages = p.getBoolean("ehOriginalImages", false)
         appLock = p.getBoolean("appLock", false)
+        backgroundPrivacy = BackgroundPrivacy.of(p.getString("backgroundPrivacy", null))
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -457,6 +471,8 @@ object AppSettings {
     var ehOriginalImages by Pref(false) { save("ehOriginalImages", it) }
     /** Ask for the fingerprint / face or the device PIN when the app opens or comes back (kept on this device). */
     var appLock by Pref(false) { save("appLock", it) }
+    /** What the app shows in the background / app switcher. */
+    var backgroundPrivacy by Pref(BackgroundPrivacy.Off) { save("backgroundPrivacy", it.raw) }
 
     fun homeRows(site: Site): List<HomeRow> =
         homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)
@@ -590,6 +606,7 @@ object AppSettings {
         "downloadRetries" to downloadRetries,
         "downloadInterval" to downloadInterval,
         "ehOriginalImages" to ehOriginalImages,
+        "backgroundPrivacy" to backgroundPrivacy.raw,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -689,6 +706,7 @@ object AppSettings {
                 "downloadRetries" -> number?.let { downloadRetries = it.toInt().coerceIn(0, 5) }
                 "downloadInterval" -> number?.let { downloadInterval = it.toDouble().coerceIn(0.0, 5.0) }
                 "ehOriginalImages" -> bool?.let { ehOriginalImages = it }
+                "backgroundPrivacy" -> string?.let { backgroundPrivacy = BackgroundPrivacy.of(it) }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

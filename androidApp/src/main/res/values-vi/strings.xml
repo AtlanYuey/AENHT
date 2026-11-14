@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">Sao lưu cài đặt</string>
-    <string name="l_479">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_480">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_481">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_482">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">Sao lưu cài đặt</string>
+    <string name="l_486">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_487">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_488">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_489">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

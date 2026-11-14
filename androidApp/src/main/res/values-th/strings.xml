@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">สำรองการตั้งค่า</string>
-    <string name="l_479">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
-    <string name="l_480">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
-    <string name="l_481">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
-    <string name="l_482">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">สำรองการตั้งค่า</string>
+    <string name="l_486">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
+    <string name="l_487">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
+    <string name="l_488">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
+    <string name="l_489">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
 </resources>

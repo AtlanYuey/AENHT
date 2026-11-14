@@ -176,6 +176,7 @@ struct PadRootView: View {
             tab(.history) { HistoryView() }
             tab(.more) { MoreView() }
         }
+        .privacyContentBlur()
         .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar, collapsed: barsHidden) {
             PadTabBar(selection: $selection)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { barFrame = $0 }

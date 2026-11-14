@@ -478,9 +478,16 @@
     <string name="l_475">Aún ninguna</string>
     <string name="l_476">Actualización disponible</string>
     <string name="l_477">Última compilación de prueba</string>
-    <string name="l_478">Copia de los ajustes</string>
-    <string name="l_479">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_480">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_481">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_482">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_478">Desenfocar toda la app</string>
+    <string name="l_479">Cubrir la app</string>
+    <string name="l_480">Desenfocar imágenes y texto</string>
+    <string name="l_481">Desenfocar imágenes</string>
+    <string name="l_482">En segundo plano</string>
+    <string name="l_483">Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado. Desenfocar necesita Android 12; antes se cubre.</string>
+    <string name="l_484">Lo que muestra la app al cambiar a otra, para que el selector de apps no enseñe nada privado.</string>
+    <string name="l_485">Copia de los ajustes</string>
+    <string name="l_486">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_487">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_488">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_489">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

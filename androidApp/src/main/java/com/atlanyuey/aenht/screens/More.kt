@@ -823,6 +823,10 @@ class GeneralScreen : Screen() {
                 ToggleRow(tr("App Lock"), AppSettings.appLock && available, { AppSettings.appLock = it }, last = true,
                     subtitle = if (available) null else tr("Set a screen lock on this device first."))
             }
+            section(footer = { FooterText(tr("What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.")) }) {
+                PickerRow(tr("In the Background"), com.atlanyuey.aenht.core.BackgroundPrivacy.entries, AppSettings.backgroundPrivacy,
+                    label = { tr(it.title) }, onSelect = { AppSettings.backgroundPrivacy = it }, last = true)
+            }
             section(header = "Storage") {
                 ListRow(tr("Image Cache"), value = cache?.let { Formatter.formatShortFileSize(context, it) }) {
                     if (cache == null) ActivityIndicator()

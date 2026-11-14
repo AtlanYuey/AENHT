@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import com.atlanyuey.aenht.ui.components.prompt
 import coil3.request.allowHardware
@@ -364,7 +365,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         ) {
             val effect = pageColorEffect(AppSettings.readerGrayscale, AppSettings.readerInvert)
             Box(Modifier.fillMaxSize().layerBackdrop(backdrop).background(Color.Black)) {
-                Box(Modifier.fillMaxSize().graphicsLayer { renderEffect = effect }) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { renderEffect = effect }
+                        .then(if (com.atlanyuey.aenht.core.Privacy.blursImages) Modifier.blur(40.dp) else Modifier),
+                ) {
                     if (mode.isPaged) Paged(mode) else Continuous(mode)
                 }
                 // The reader's own brightness: a dark layer over the pages.

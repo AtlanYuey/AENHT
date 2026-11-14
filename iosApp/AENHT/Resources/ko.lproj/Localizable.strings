@@ -477,3 +477,10 @@
 "None yet" = "아직 없음";
 "Update available" = "업데이트 있음";
 "Latest Test Build" = "최신 테스트 빌드";
+"Blur the Whole App" = "앱 전체 흐리게";
+"Cover the App" = "앱 완전히 가리기";
+"Blur Pictures and Text" = "이미지와 텍스트 흐리게";
+"Blur Pictures" = "이미지 흐리게";
+"In the Background" = "백그라운드에서";
+"What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered." = "다른 앱으로 전환할 때 보이는 모습으로, 최근 앱 화면에 사적인 내용이 보이지 않게 합니다. 흐리기는 Android 12 이상이 필요하며, 이전 버전에서는 가립니다.";
+"What the app shows when you switch away from it, so the app switcher shows nothing private." = "다른 앱으로 전환할 때 보이는 모습으로, 앱 전환기에 사적인 내용이 보이지 않게 합니다.";

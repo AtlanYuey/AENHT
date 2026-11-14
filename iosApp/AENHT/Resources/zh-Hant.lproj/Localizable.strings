@@ -477,3 +477,10 @@
 "None yet" = "暫無";
 "Update available" = "有可用更新";
 "Latest Test Build" = "最新測試版";
+"Blur the Whole App" = "模糊整個 App";
+"Cover the App" = "完全遮蓋 App";
+"Blur Pictures and Text" = "模糊圖片和文字";
+"Blur Pictures" = "模糊圖片";
+"In the Background" = "切到背景時";
+"What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered." = "切換到其他 App 時這裡顯示的內容，避免在多工畫面露出隱私。模糊需要 Android 12，更早的版本會改為完全遮蓋。";
+"What the app shows when you switch away from it, so the app switcher shows nothing private." = "切換到其他 App 時這裡顯示的內容，避免在 App 切換器中露出隱私。";

@@ -12,6 +12,7 @@ struct RemoteImage: View {
     var blur: Bool = false
     /// Where to load the image from when [url] fails (asked only then).
     var fallback: (() -> URL?)? = nil
+    @Environment(\.privacyMode) private var privacy
 
     var body: some View {
         LazyImage(request: request) { state in
@@ -19,7 +20,7 @@ struct RemoteImage: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
-                    .blur(radius: blur ? 18 : 0, opaque: true)
+                    .blur(radius: blur ? 18 : privacy == .blurImages ? 28 : 0, opaque: true)
                     .transition(.opacity)
             } else if state.error != nil, let other = fallback?(), other != url {
                 RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur)

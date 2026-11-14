@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui
 
+import androidx.compose.ui.draw.blur
 import kotlinx.coroutines.launch
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -205,7 +206,13 @@ fun RootView(
                     }
                 },
         ) {
-            Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .layerBackdrop(backdrop)
+                    // In the background: the pages blurred, the tab bar left sharp.
+                    .then(if (com.atlanyuey.aenht.core.Privacy.blursContent) Modifier.blur(36.dp) else Modifier),
+            ) {
                 holder.SaveableStateProvider("tab$selected") {
                     NavHost(navigator)
                 }

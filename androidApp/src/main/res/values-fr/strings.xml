@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">Sauvegarde des réglages</string>
-    <string name="l_479">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_480">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_481">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_482">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">Sauvegarde des réglages</string>
+    <string name="l_486">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_487">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_488">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_489">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

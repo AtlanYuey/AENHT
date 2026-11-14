@@ -57,9 +57,11 @@ struct RootView: View {
                 phoneTabs
             }
         }
+        .environment(\.privacyMode, scenePhase == .active ? .off : settings.backgroundPrivacy)
+        .blur(radius: scenePhase != .active && settings.backgroundPrivacy == .blurApp ? 30 : 0)
         .overlay {
-            // Locked, or (with the lock on) in the app switcher.
-            if lock.locked || (lock.isEnabled && scenePhase != .active) {
+            // Locked, or (with the lock on, or Cover the App) in the app switcher.
+            if lock.locked || ((lock.isEnabled || settings.backgroundPrivacy == .cover) && scenePhase != .active) {
                 LockCover(showsButton: lock.locked) { lock.unlock() }
             }
         }
@@ -113,21 +115,25 @@ struct RootView: View {
                 NavigationStack {
                     HomeView().galleryDestinations()
                 }
+                .privacyContentBlur()
             }
             Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
                 NavigationStack {
                     FavoritesView().galleryDestinations()
                 }
+                .privacyContentBlur()
             }
             Tab("History", systemImage: "clock", value: AppTab.history) {
                 NavigationStack {
                     HistoryView().galleryDestinations()
                 }
+                .privacyContentBlur()
             }
             Tab("Me", systemImage: "person.crop.circle", value: AppTab.more) {
                 NavigationStack {
                     MoreView().galleryDestinations()
                 }
+                .privacyContentBlur()
             }
         }
         .modifier(TabBarMinimize(enabled: settings.hideBarsOnScroll))

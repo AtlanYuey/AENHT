@@ -114,7 +114,7 @@ fun RemoteImage(
         onError = { if (!failed && fallback != null) failed = true },
         modifier = modifier
             .background(placeholder)
-            .then(if (blur) Modifier.blur(18.dp) else Modifier),
+            .then(if (blur || com.atlanyuey.aenht.core.Privacy.blursImages) Modifier.blur(if (blur) 18.dp else 30.dp) else Modifier),
     )
 }
 

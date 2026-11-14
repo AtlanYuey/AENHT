@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.blur
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -36,7 +38,14 @@ class MainActivity : ComponentActivity() {
             AppTheme {
                 LaunchedEffect(Unit) { Session.reload() }
                 LaunchedEffect(Unit) { TagStore.prepare() }
-                RootView(linkedGallery)
+                androidx.compose.foundation.layout.Box(
+                    if (com.atlanyuey.aenht.core.Privacy.blursApp) androidx.compose.ui.Modifier.blur(40.dp) else androidx.compose.ui.Modifier,
+                ) {
+                    RootView(linkedGallery)
+                }
+                if (com.atlanyuey.aenht.core.Privacy.covers) {
+                    com.atlanyuey.aenht.ui.LockScreen(showsButton = false) {}
+                }
                 if (com.atlanyuey.aenht.core.AppLock.locked) {
                     com.atlanyuey.aenht.ui.LockScreen { com.atlanyuey.aenht.core.AppLock.unlock(this@MainActivity) }
                 }
@@ -46,9 +55,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.atlanyuey.aenht.core.Privacy.hidden = false
         com.atlanyuey.aenht.core.AppLock.unlock(this)
-        // With the lock on, the app's content isn't shown in Recents.
-        if (android.os.Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(!com.atlanyuey.aenht.core.AppSettings.appLock)
+        // With the lock on or "Cover the App", the app's content isn't shown in Recents.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            setRecentsScreenshotEnabled(
+                !com.atlanyuey.aenht.core.AppSettings.appLock && com.atlanyuey.aenht.core.Privacy.mode != com.atlanyuey.aenht.core.BackgroundPrivacy.Cover,
+            )
+        }
+    }
+
+    override fun onPause() {
+        // Hidden before the system takes the app switcher's picture.
+        if (com.atlanyuey.aenht.core.AppSettings.backgroundPrivacy != com.atlanyuey.aenht.core.BackgroundPrivacy.Off) {
+            com.atlanyuey.aenht.core.Privacy.hidden = true
+        }
+        super.onPause()
     }
 
     override fun onStop() {

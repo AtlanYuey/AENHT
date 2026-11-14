@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">Settings Backup</string>
-    <string name="l_479">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_480">Android\'s own backup also keeps these settings.</string>
-    <string name="l_481">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_482">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">Settings Backup</string>
+    <string name="l_486">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_487">Android\'s own backup also keeps these settings.</string>
+    <string name="l_488">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_489">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

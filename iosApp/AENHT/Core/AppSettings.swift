@@ -135,6 +135,23 @@ enum FollowSpeed: String, CaseIterable, Identifiable {
     }
 }
 
+/// What the app shows when it is in the background (the app switcher's picture).
+enum BackgroundPrivacy: String, CaseIterable, Identifiable {
+    case off, blurApp, cover, blurContent, blurImages
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: String(localized: "Off")
+        case .blurApp: String(localized: "Blur the Whole App")
+        case .cover: String(localized: "Cover the App")
+        case .blurContent: String(localized: "Blur Pictures and Text")
+        case .blurImages: String(localized: "Blur Pictures")
+        }
+    }
+}
+
 /// A row of covers pinned above the Home feed (at most two per site).
 enum HomeRow: String, CaseIterable, Identifiable {
     case nhPopular = "nh-popular", nhToday = "nh-today", nhWeek = "nh-week", nhMonth = "nh-month", nhAll = "nh-all"
@@ -315,6 +332,8 @@ final class AppSettings {
     var downloadInterval: Double { didSet { save(downloadInterval, "downloadInterval") } }
     /// E-Hentai downloads: the original images (cost GP when large).
     var ehOriginalImages: Bool { didSet { save(ehOriginalImages, "ehOriginalImages") } }
+    /// What the app shows in the background / app switcher.
+    var backgroundPrivacy: BackgroundPrivacy { didSet { save(backgroundPrivacy.rawValue, "backgroundPrivacy") } }
 
     var blockedCommenterSet: Set<String> {
         Set(blockedCommenters.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
@@ -436,6 +455,7 @@ final class AppSettings {
         downloadRetries = min(max(d.object(forKey: "downloadRetries") as? Int ?? 2, 0), 5)
         downloadInterval = min(max(d.double(forKey: "downloadInterval"), 0), 5)
         ehOriginalImages = d.bool(forKey: "ehOriginalImages")
+        backgroundPrivacy = BackgroundPrivacy(rawValue: d.string(forKey: "backgroundPrivacy") ?? "") ?? .off
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -531,6 +551,7 @@ final class AppSettings {
         values["downloadRetries"] = downloadRetries
         values["downloadInterval"] = downloadInterval
         values["ehOriginalImages"] = ehOriginalImages
+        values["backgroundPrivacy"] = backgroundPrivacy.rawValue
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -613,6 +634,7 @@ final class AppSettings {
         case "downloadRetries": set(\.downloadRetries, number.map { min(max($0.intValue, 0), 5) })
         case "downloadInterval": set(\.downloadInterval, number.map { min(max($0.doubleValue, 0), 5) })
         case "ehOriginalImages": set(\.ehOriginalImages, number?.boolValue)
+        case "backgroundPrivacy": set(\.backgroundPrivacy, string.flatMap(BackgroundPrivacy.init(rawValue:)))
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

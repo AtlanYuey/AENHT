@@ -477,3 +477,10 @@
 "None yet" = "まだありません";
 "Update available" = "アップデートがあります";
 "Latest Test Build" = "最新のテストビルド";
+"Blur the Whole App" = "アプリ全体をぼかす";
+"Cover the App" = "アプリを覆い隠す";
+"Blur Pictures and Text" = "画像と文字をぼかす";
+"Blur Pictures" = "画像をぼかす";
+"In the Background" = "バックグラウンドでは";
+"What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered." = "他のアプリに切り替えたときの表示です。マルチタスク画面に私的な内容が映らないようにします。ぼかしには Android 12 が必要で、それより前は覆い隠します。";
+"What the app shows when you switch away from it, so the app switcher shows nothing private." = "他のアプリに切り替えたときの表示です。アプリスイッチャーに私的な内容が映らないようにします。";

@@ -519,3 +519,10 @@
 "None yet" = "暂无";
 "Update available" = "有可用更新";
 "Latest Test Build" = "最新测试版";
+"Blur the Whole App" = "模糊整个应用";
+"Cover the App" = "完全覆盖应用";
+"Blur Pictures and Text" = "模糊图片和文字";
+"Blur Pictures" = "模糊图片";
+"In the Background" = "切到后台时";
+"What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered." = "切换到其他应用时这里显示的内容，避免在多任务界面露出隐私。模糊需要 Android 12，更早的版本会改为完全覆盖。";
+"What the app shows when you switch away from it, so the app switcher shows nothing private." = "切换到其他应用时这里显示的内容，避免在应用切换器中露出隐私。";

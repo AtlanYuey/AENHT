@@ -732,6 +732,13 @@ struct GeneralSettingsView: View {
                 Text("Asks for Face ID, Touch ID or your passcode when the app opens or comes back, and hides it in the app switcher.")
             }
             Section {
+                Picker("In the Background", selection: $settings.backgroundPrivacy) {
+                    ForEach(BackgroundPrivacy.allCases) { Text($0.title).tag($0) }
+                }
+            } footer: {
+                Text("What the app shows when you switch away from it, so the app switcher shows nothing private.")
+            }
+            Section {
                 Toggle("Detect Gallery Links", isOn: $settings.detectClipboard)
             } footer: {
                 Text("When you return to the app, offer to open an nhentai link found on the clipboard. iOS asks for permission to paste.")

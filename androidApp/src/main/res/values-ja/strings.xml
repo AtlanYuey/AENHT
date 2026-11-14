@@ -478,9 +478,16 @@
     <string name="l_475">まだありません</string>
     <string name="l_476">アップデートがあります</string>
     <string name="l_477">最新のテストビルド</string>
-    <string name="l_478">設定のバックアップ</string>
-    <string name="l_479">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_480">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_481">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_482">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_478">アプリ全体をぼかす</string>
+    <string name="l_479">アプリを覆い隠す</string>
+    <string name="l_480">画像と文字をぼかす</string>
+    <string name="l_481">画像をぼかす</string>
+    <string name="l_482">バックグラウンドでは</string>
+    <string name="l_483">他のアプリに切り替えたときの表示です。マルチタスク画面に私的な内容が映らないようにします。ぼかしには Android 12 が必要で、それより前は覆い隠します。</string>
+    <string name="l_484">他のアプリに切り替えたときの表示です。アプリスイッチャーに私的な内容が映らないようにします。</string>
+    <string name="l_485">設定のバックアップ</string>
+    <string name="l_486">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_487">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_488">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_489">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

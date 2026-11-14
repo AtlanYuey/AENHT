@@ -371,4 +371,11 @@ T = [
     "None yet",
     "Update available",
     "Latest Test Build",
+    "Blur the Whole App",
+    "Cover the App",
+    "Blur Pictures and Text",
+    "Blur Pictures",
+    "In the Background",
+    "What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.",
+    "What the app shows when you switch away from it, so the app switcher shows nothing private.",
 ]

@@ -478,9 +478,16 @@
     <string name="l_475">暂无</string>
     <string name="l_476">有可用更新</string>
     <string name="l_477">最新测试版</string>
-    <string name="l_478">设置备份</string>
-    <string name="l_479">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_480">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_481">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_482">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_478">模糊整个应用</string>
+    <string name="l_479">完全覆盖应用</string>
+    <string name="l_480">模糊图片和文字</string>
+    <string name="l_481">模糊图片</string>
+    <string name="l_482">切到后台时</string>
+    <string name="l_483">切换到其他应用时这里显示的内容，避免在多任务界面露出隐私。模糊需要 Android 12，更早的版本会改为完全覆盖。</string>
+    <string name="l_484">切换到其他应用时这里显示的内容，避免在应用切换器中露出隐私。</string>
+    <string name="l_485">设置备份</string>
+    <string name="l_486">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_487">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_488">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_489">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

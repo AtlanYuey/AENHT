@@ -478,9 +478,16 @@
     <string name="l_475">None yet</string>
     <string name="l_476">Update available</string>
     <string name="l_477">Latest Test Build</string>
-    <string name="l_478">Резервная копия настроек</string>
-    <string name="l_479">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_480">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_481">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_482">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_478">Blur the Whole App</string>
+    <string name="l_479">Cover the App</string>
+    <string name="l_480">Blur Pictures and Text</string>
+    <string name="l_481">Blur Pictures</string>
+    <string name="l_482">In the Background</string>
+    <string name="l_483">What the app shows when you switch away from it, so the app switcher shows nothing private. Blurring needs Android 12; before that the app is covered.</string>
+    <string name="l_484">What the app shows when you switch away from it, so the app switcher shows nothing private.</string>
+    <string name="l_485">Резервная копия настроек</string>
+    <string name="l_486">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_487">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_488">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_489">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>
