@@ -171,6 +171,7 @@ class MoreScreen : Screen() {
             section {
                 SettingsNav(tr("Sites"), Icons.Layers, Color(0xFFFF2D55)) { SitesScreen() }
                 SettingsNav(tr("Filters"), Icons.EyeOff, Color(0xFF8E8E93)) { FiltersScreen() }
+                SettingsNav(tr("Translation"), Icons.Language, Color(0xFF34C759)) { TranslationSettingsScreen() }
                 SettingsNav(tr("Appearance"), Icons.Palette, SettingsBlue) { AppearanceScreen() }
                 SettingsNav(tr("Reading"), Icons.Book, Color(0xFFFF9500)) { ReadingScreen() }
                 SettingsNav(tr("General"), Icons.Gear, Color(0xFF8E8E93)) { GeneralScreen() }

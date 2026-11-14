@@ -4,6 +4,7 @@ import com.atlanyuey.aenht.core.EhPageRef
 import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
 import com.atlanyuey.aenht.shared.site.GallerySummary
 import com.atlanyuey.aenht.ui.components.galleryLink
+import com.atlanyuey.aenht.ui.components.TranslateLine
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -405,6 +406,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 detail?.subtitle?.let {
                     Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
                 }
+                detail?.let { TranslateLine(it.japaneseTitle ?: it.displayTitle, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
             }
             detail?.let { d ->
                 val artists = d.tags(TagGroup.Artist) + d.tags(TagGroup.Group)
@@ -673,6 +675,7 @@ fun CommentBubble(comment: GalleryComment, maxLines: Int = Int.MAX_VALUE) {
                 )
             }
             Txt(comment.body, style = Type.subheadline, maxLines = maxLines)
+            if (maxLines == Int.MAX_VALUE) TranslateLine(comment.body, com.atlanyuey.aenht.shared.translate.TranslationKind.COMMENT)
         }
     }
 }

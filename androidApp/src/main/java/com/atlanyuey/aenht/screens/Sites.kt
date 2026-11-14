@@ -337,3 +337,81 @@ class FiltersScreen : Screen() {
         }
     }
 }
+
+// MARK: - Translation
+
+/** Me › Translation: the language models (in order) and Microsoft Translator. */
+class TranslationSettingsScreen : Screen() {
+    private var name by mutableStateOf("")
+    private var baseUrl by mutableStateOf("https://api.openai.com/v1")
+    private var model by mutableStateOf("")
+    private var key by mutableStateOf("")
+    private var msKey by mutableStateOf(TranslationService.microsoftKey ?: "")
+    private var msRegion by mutableStateOf(TranslationService.microsoftRegion ?: "")
+    private var revision by mutableStateOf(0)
+
+    @Composable
+    private fun Field(label: String, value: String, last: Boolean = false, secret: Boolean = false, onChange: (String) -> Unit) {
+        val colors = AppTheme.colors
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Txt(label, style = Type.footnote, color = colors.secondaryLabel)
+            BasicTextField(
+                value, onChange,
+                singleLine = true,
+                textStyle = Type.body.copy(color = colors.label),
+                cursorBrush = SolidColor(AppTheme.tint),
+                visualTransformation = if (secret) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(colors.tertiaryFill).padding(horizontal = 12.dp, vertical = 10.dp),
+            )
+        }
+        if (!last) RowSeparator()
+    }
+
+    @Composable
+    override fun Content() {
+        revision
+        val services = TranslationService.services
+        GroupedListScreen(tr("Translation")) {
+            if (services.isNotEmpty()) {
+                section("Language Models", footer = { FooterText(tr("Tried from top to bottom: a model that refuses or fails hands over to the next one, then to Microsoft Translator.")) }) {
+                    services.forEachIndexed { i, s ->
+                        ListRow(
+                            s.name,
+                            subtitle = s.model + if (TranslationService.hasKey(s.id)) "" else " · " + tr("No key"),
+                            last = i == services.lastIndex,
+                            trailing = {
+                                GlassToggle(s.enabled, { TranslationService.setEnabled(s.id, it); revision++ })
+                                Box(Modifier.size(32.dp).clickable { TranslationService.move(s.id, up = true); revision++ }, contentAlignment = Alignment.Center) {
+                                    AppIcon(Icons.ArrowUp, tr("Move Up"), size = 16.dp)
+                                }
+                                Box(Modifier.size(32.dp).clickable { TranslationService.remove(s.id); revision++ }, contentAlignment = Alignment.Center) {
+                                    AppIcon(Icons.Trash, tr("Delete"), tint = AppTheme.colors.red, size = 16.dp)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+            section("Add a Language Model", footer = { FooterText(tr("Any service with an OpenAI-compatible API. Keys stay on this device (Android Keystore) and are not exported with the settings.")) }) {
+                Field(tr("Name"), name) { name = it }
+                Field(tr("API Address"), baseUrl) { baseUrl = it }
+                Field(tr("Model"), model) { model = it }
+                Field(tr("API Key"), key, secret = true) { key = it }
+                ButtonRow(tr("Add"), {
+                    TranslationService.add(name, baseUrl, model, key)
+                    name = ""; model = ""; key = ""
+                    revision++
+                }, enabled = baseUrl.isNotBlank() && model.isNotBlank() && key.isNotBlank(), last = true)
+            }
+            section("Microsoft Translator", footer = { FooterText(tr("Used when no language model is set up or all of them fail. A key from Azure Translator has a free monthly allowance.")) }) {
+                Field(tr("API Key"), msKey, secret = true) { msKey = it }
+                Field(tr("Region (optional)"), msRegion) { msRegion = it }
+                ButtonRow(tr("Save"), {
+                    TranslationService.microsoftKey = msKey
+                    TranslationService.microsoftRegion = msRegion
+                    revision++
+                }, last = true)
+            }
+        }
+    }
+}

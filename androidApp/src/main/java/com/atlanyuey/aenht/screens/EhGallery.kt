@@ -276,6 +276,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     detail?.japaneseTitle?.let {
                         Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
                     }
+                    detail?.let { TranslateLine(it.japaneseTitle ?: it.title, com.atlanyuey.aenht.shared.translate.TranslationKind.TITLE) }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         (detail?.category ?: preview?.category)?.let { c ->
                             Txt(
@@ -499,6 +500,7 @@ fun EhCommentBubble(comment: EhComment, maxLines: Int = Int.MAX_VALUE) {
         }
         Txt(comment.posted, style = Type.caption1, color = AppTheme.colors.secondaryLabel, maxLines = 1)
         Txt(comment.text, style = Type.subheadline, maxLines = maxLines)
+        if (maxLines == Int.MAX_VALUE) TranslateLine(comment.text, com.atlanyuey.aenht.shared.translate.TranslationKind.COMMENT)
     }
 }
 

@@ -247,6 +247,7 @@ object AppSettings {
         searchSite = SiteChoice.of(p.getString("searchSite", null), SiteChoice.Follow)
         searchBothSites = p.getBoolean("searchBothSites", false)
         filterRules = p.getString("filterRules", "") ?: ""
+        llmServices = p.getString("llmServices", "") ?: ""
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -358,6 +359,9 @@ object AppSettings {
     /** E-Hentai favorite folders that Favorites › All shows (all ten by default). */
     var favoritesAllFolders by Pref((0..9).toSet()) { save("favoritesAllFolders", it.sorted().joinToString(",")) }
 
+    /** The user's language models for translation, in order (JSON; keys are in the Keystore). */
+    var llmServices by Pref("") { save("llmServices", it) }
+
     /** Filter rules for both sites (JSON, see ContentFilter). */
     var filterRules by Pref("") { save("filterRules", it) }
     /** Lists also leave out galleries with tags on the nhentai account's blacklist. */
@@ -462,6 +466,7 @@ object AppSettings {
         "searchBothSites" to searchBothSites,
         "favoritesAllFolders" to favoritesAllFolders.sorted().joinToString(","),
         "filterRules" to filterRules,
+        "llmServices" to llmServices,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -512,6 +517,7 @@ object AppSettings {
                 "searchSite" -> string?.let { searchSite = SiteChoice.of(it, searchSite) }
                 "searchBothSites" -> bool?.let { searchBothSites = it }
                 "filterRules" -> string?.let { filterRules = it }
+                "llmServices" -> string?.let { llmServices = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
