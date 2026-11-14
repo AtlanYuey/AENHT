@@ -15,6 +15,11 @@ Artwork:
 - AI service icons: LobeHub Icons (https://github.com/lobehub/lobe-icons), MIT License,
   as used by AY Translate.
 
+Models:
+- Super-resolution: Real-ESRGAN (https://github.com/xinntao/Real-ESRGAN),
+  BSD 3-Clause License, Xintao Wang: realesr-animevideov3 (bundled) and
+  realesrgan-x4plus-anime (optional download, models/sr).
+
 Data:
 - Tag names: nhentai_tags_fetcher (https://github.com/honjow/nhentai_tags_fetcher)
 - Tag translations: EhTagTranslation (https://github.com/EhTagTranslation/Database)

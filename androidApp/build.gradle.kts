@@ -1,7 +1,65 @@
+import java.io.File
+import java.net.URI
+import java.security.MessageDigest
+import java.util.zip.ZipInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+}
+
+/**
+ * Downloads ncnn's prebuilt Android libraries (super-resolution in the
+ * reader, src/main/cpp) and checks them against a known SHA-256.
+ */
+abstract class FetchNcnn : DefaultTask() {
+    @get:Input abstract val url: Property<String>
+    @get:Input abstract val sha256: Property<String>
+    @get:OutputDirectory abstract val destination: DirectoryProperty
+
+    @TaskAction
+    fun fetch() {
+        val dir = destination.get().asFile
+        dir.deleteRecursively()
+        dir.mkdirs()
+        val zip = File(dir, "ncnn.zip")
+        URI(url.get()).toURL().openStream().use { input -> zip.outputStream().use { input.copyTo(it) } }
+        val digest = MessageDigest.getInstance("SHA-256")
+        zip.inputStream().use { input ->
+            val buffer = ByteArray(1 shl 16)
+            while (true) {
+                val n = input.read(buffer)
+                if (n < 0) break
+                digest.update(buffer, 0, n)
+            }
+        }
+        val hex = digest.digest().joinToString("") { "%02x".format(it) }
+        check(hex == sha256.get()) { "ncnn download has SHA-256 $hex, expected ${sha256.get()}" }
+        ZipInputStream(zip.inputStream().buffered()).use { entries ->
+            while (true) {
+                val entry = entries.nextEntry ?: break
+                val target = File(dir, entry.name).canonicalFile
+                check(target.path.startsWith(dir.canonicalPath)) { "bad path in ncnn zip: ${entry.name}" }
+                if (entry.isDirectory) target.mkdirs() else {
+                    target.parentFile.mkdirs()
+                    target.outputStream().use { entries.copyTo(it) }
+                }
+            }
+        }
+        zip.delete()
+    }
+}
+
+val ncnnVersion = "20261020"
+val ncnnDir = layout.buildDirectory.dir("ncnn")
+val fetchNcnn = tasks.register<FetchNcnn>("fetchNcnn") {
+    url.set("https://github.com/Tencent/ncnn/releases/download/$ncnnVersion/ncnn-$ncnnVersion-android-vulkan-shared.zip")
+    sha256.set("1b01048590564bae1c3d2d2a2b37ff101d50ad86c2cd2dc862bce7087905444d")
+    destination.set(ncnnDir)
+}
+tasks.configureEach {
+    if (name.startsWith("configureCMake") || name.startsWith("buildCMake")) dependsOn(fetchNcnn)
 }
 
 // Release signing from the environment (CI secrets); unsigned otherwise.
@@ -11,6 +69,7 @@ android {
     namespace = "com.atlanyuey.aenht"
     compileSdk = 37
     buildToolsVersion = "37.0.0"
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "com.atlanyuey.ENHentai"
@@ -18,6 +77,22 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        // Super-resolution's native code (ncnn): ARM phones, 64 and 32 bit.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DNCNN_ROOT=${ncnnDir.get().asFile.absolutePath}/ncnn-$ncnnVersion-android-vulkan-shared",
+                    "-DANDROID_STL=c++_static",
+                )
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
     androidResources {
         localeFilters += listOf(

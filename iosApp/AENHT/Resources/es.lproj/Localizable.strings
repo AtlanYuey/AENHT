@@ -500,3 +500,10 @@
 "5 Minutes" = "5 minutos";
 "10 Minutes" = "10 minutos";
 "The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would)." = "El lector mantiene la pantalla encendida este tiempo tras el último toque y luego la deja al bloqueo automático del sistema (nunca la apaga antes que el sistema).";
+"Super Resolution" = "Superresolución";
+"High Quality" = "Alta calidad";
+"Download High Quality Model" = "Descargar modelo de alta calidad";
+"Delete High Quality Model" = "Eliminar modelo de alta calidad";
+"Installing…" = "Instalando…";
+"Not available on this device." = "No disponible en este dispositivo.";
+"Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on." = "Mejora en el dispositivo las páginas de baja resolución hasta la de tu pantalla. La página se muestra al instante y se vuelve más nítida cuando está lista. Automático: solo páginas claramente más pequeñas que la pantalla; en dispositivos lentos, solo la página actual.";

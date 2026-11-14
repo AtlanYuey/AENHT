@@ -501,9 +501,16 @@
     <string name="l_498">5 分</string>
     <string name="l_499">10 分</string>
     <string name="l_500">最後に触れてからこの時間は画面をつけたままにし、その後はシステムの自動ロックに任せます（システムの設定より早く消すことはありません）。</string>
-    <string name="l_501">設定のバックアップ</string>
-    <string name="l_502">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_503">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_504">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_505">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_501">超解像</string>
+    <string name="l_502">高画質</string>
+    <string name="l_503">高画質モデルをダウンロード</string>
+    <string name="l_504">高画質モデルを削除</string>
+    <string name="l_505">インストール中…</string>
+    <string name="l_506">このデバイスでは使えません。</string>
+    <string name="l_507">解像度の低いページを端末上で画面の解像度まで鮮明にします。ページはすぐに表示され、準備ができると滑らかに鮮明になります。自動：画面より明らかに小さいページのみ。処理の遅い端末では表示中のページのみ。</string>
+    <string name="l_508">設定のバックアップ</string>
+    <string name="l_509">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_510">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_511">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_512">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

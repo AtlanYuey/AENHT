@@ -394,4 +394,11 @@ T = [
     "5 Minutes",
     "10 Minutes",
     "The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).",
+    "Super Resolution",
+    "High Quality",
+    "Download High Quality Model",
+    "Delete High Quality Model",
+    "Installing…",
+    "Not available on this device.",
+    "Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on.",
 ]

@@ -501,9 +501,16 @@
     <string name="l_498">5 Minutes</string>
     <string name="l_499">10 Minutes</string>
     <string name="l_500">The reader keeps the screen on this long after the last touch, then leaves it to the system\'s own auto-lock (it never turns the screen off sooner than the system would).</string>
-    <string name="l_501">Backup dos ajustes</string>
-    <string name="l_502">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_503">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_504">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_505">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_501">Super Resolution</string>
+    <string name="l_502">High Quality</string>
+    <string name="l_503">Download High Quality Model</string>
+    <string name="l_504">Delete High Quality Model</string>
+    <string name="l_505">Installing…</string>
+    <string name="l_506">Not available on this device.</string>
+    <string name="l_507">Sharpens low-resolution pages to your screen\'s resolution, on this device. A page shows at once and turns sharper when it\'s ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you\'re on.</string>
+    <string name="l_508">Backup dos ajustes</string>
+    <string name="l_509">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_510">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_511">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_512">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

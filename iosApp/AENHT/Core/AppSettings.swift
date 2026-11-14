@@ -362,6 +362,8 @@ final class AppSettings {
     var readerBrightness: Double { didSet { save(readerBrightness, "readerBrightness") } }
     var readerGrayscale: Bool { didSet { save(readerGrayscale, "readerGrayscale") } }
     var readerInvert: Bool { didSet { save(readerInvert, "readerInvert") } }
+    var superResolution: SuperResolutionMode { didSet { save(superResolution.rawValue, "superResolution") } }
+    var superResolutionModel: SuperResolutionModel { didSet { save(superResolutionModel.rawValue, "superResolutionModel") } }
     /// Translation: Apple's on-device translation is the last fallback (or the only one).
     var deviceTranslation: Bool { didSet { save(deviceTranslation, "deviceTranslation") } }
     /// Reader: two pages side by side (left-to-right / right-to-left modes).
@@ -504,6 +506,8 @@ final class AppSettings {
         readerBrightness = min(max(d.object(forKey: "readerBrightness") as? Double ?? 1, 0.2), 1)
         readerGrayscale = d.bool(forKey: "readerGrayscale")
         readerInvert = d.bool(forKey: "readerInvert")
+        superResolution = SuperResolutionMode(rawValue: d.string(forKey: "superResolution") ?? "") ?? .auto
+        superResolutionModel = SuperResolutionModel(rawValue: d.string(forKey: "superResolutionModel") ?? "") ?? .standard
         deviceTranslation = d.object(forKey: "deviceTranslation") as? Bool ?? true
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
@@ -605,6 +609,7 @@ final class AppSettings {
         values["readerBrightness"] = readerBrightness
         values["readerGrayscale"] = readerGrayscale
         values["readerInvert"] = readerInvert
+        values["superResolution"] = superResolution.rawValue
         values["deviceTranslation"] = deviceTranslation
         values["doublePage"] = doublePage.rawValue
         values["doublePageCover"] = doublePageCover
@@ -693,6 +698,7 @@ final class AppSettings {
         case "readerBrightness": set(\.readerBrightness, number.map { min(max($0.doubleValue, 0.2), 1) })
         case "readerGrayscale": set(\.readerGrayscale, number?.boolValue)
         case "readerInvert": set(\.readerInvert, number?.boolValue)
+        case "superResolution": set(\.superResolution, string.flatMap(SuperResolutionMode.init(rawValue:)))
         case "deviceTranslation": set(\.deviceTranslation, number?.boolValue)
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)

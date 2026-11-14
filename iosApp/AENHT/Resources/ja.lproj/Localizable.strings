@@ -500,3 +500,10 @@
 "5 Minutes" = "5 分";
 "10 Minutes" = "10 分";
 "The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would)." = "最後に触れてからこの時間は画面をつけたままにし、その後はシステムの自動ロックに任せます（システムの設定より早く消すことはありません）。";
+"Super Resolution" = "超解像";
+"High Quality" = "高画質";
+"Download High Quality Model" = "高画質モデルをダウンロード";
+"Delete High Quality Model" = "高画質モデルを削除";
+"Installing…" = "インストール中…";
+"Not available on this device." = "このデバイスでは使えません。";
+"Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on." = "解像度の低いページを端末上で画面の解像度まで鮮明にします。ページはすぐに表示され、準備ができると滑らかに鮮明になります。自動：画面より明らかに小さいページのみ。処理の遅い端末では表示中のページのみ。";

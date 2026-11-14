@@ -500,3 +500,10 @@
 "5 Minutes" = "5 分鐘";
 "10 Minutes" = "10 分鐘";
 "The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would)." = "閱讀時最後一次觸控後保持亮屏這麼久，之後交還給系統的自動鎖定（不會比系統設定更早熄屏）。";
+"Super Resolution" = "超解析度";
+"High Quality" = "高品質";
+"Download High Quality Model" = "下載高品質模型";
+"Delete High Quality Model" = "刪除高品質模型";
+"Installing…" = "正在安裝…";
+"Not available on this device." = "此裝置不支援。";
+"Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on." = "在本機把低解析度頁面放大到螢幕解析度並變清晰。頁面會先立即顯示，處理完成後再平滑變清晰。自動：只處理明顯小於螢幕的頁面；較慢的裝置只處理目前頁面。";

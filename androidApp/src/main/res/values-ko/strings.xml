@@ -501,9 +501,16 @@
     <string name="l_498">5분</string>
     <string name="l_499">10분</string>
     <string name="l_500">마지막 터치 후 이 시간 동안 화면을 켜 두고, 그 뒤에는 시스템 자동 잠금에 맡깁니다(시스템 설정보다 일찍 끄지 않습니다).</string>
-    <string name="l_501">설정 백업</string>
-    <string name="l_502">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_503">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_504">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_505">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_501">초해상도</string>
+    <string name="l_502">고품질</string>
+    <string name="l_503">고품질 모델 다운로드</string>
+    <string name="l_504">고품질 모델 삭제</string>
+    <string name="l_505">설치 중…</string>
+    <string name="l_506">이 기기에서는 사용할 수 없습니다.</string>
+    <string name="l_507">해상도가 낮은 페이지를 기기에서 화면 해상도로 선명하게 만듭니다. 페이지는 바로 표시되고 준비되면 부드럽게 선명해집니다. 자동: 화면보다 확실히 작은 페이지만, 느린 기기에서는 보고 있는 페이지만 처리합니다.</string>
+    <string name="l_508">설정 백업</string>
+    <string name="l_509">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_510">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_511">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_512">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

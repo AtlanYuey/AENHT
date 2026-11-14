@@ -6,6 +6,11 @@ import androidx.compose.ui.draw.clip
 import com.atlanyuey.aenht.ui.components.prompt
 import coil3.request.allowHardware
 import coil3.toBitmap
+import coil3.asImage
+import com.atlanyuey.aenht.ui.components.ButtonRow
+import coil3.request.crossfade
+import coil3.request.placeholder
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.graphics.asComposeRenderEffect
 
 import androidx.compose.foundation.interaction.DragInteraction
@@ -610,8 +615,37 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 if (!crop) url else coil3.request.ImageRequest.Builder(context).data(url)
                     .transformations(com.atlanyuey.aenht.core.AutoCropTransformation()).build()
             }
+            // Super resolution: the page sharpened to the screen's resolution
+            // replaces it once ready (the original stays as the placeholder,
+            // and fades into the sharper one: no reload, no flash).
+            val srMode = AppSettings.superResolution
+            val srModel = if (AppSettings.superResolutionModel == com.atlanyuey.aenht.core.SrModel.High &&
+                com.atlanyuey.aenht.core.SrModels.isReady(context)) com.atlanyuey.aenht.core.SrModel.High else com.atlanyuey.aenht.core.SrModel.Standard
+            val screen = androidx.compose.ui.platform.LocalWindowInfo.current.containerSize
+            var sharp by remember(index, crop) { mutableStateOf<coil3.request.ImageRequest?>(null) }
+            // Slower devices: only the page shown (measured, see SuperResolution.isFast).
+            val wanted = index == page || com.atlanyuey.aenht.core.SuperResolution.isFast
+            LaunchedEffect(index, crop, srMode, srModel, wanted) {
+                if (srMode == com.atlanyuey.aenht.core.SrMode.Off || !wanted) return@LaunchedEffect
+                val url = source.pages[index].url ?: return@LaunchedEffect
+                val request = coil3.request.ImageRequest.Builder(context).data(url).allowHardware(false).apply {
+                    if (crop) transformations(com.atlanyuey.aenht.core.AutoCropTransformation())
+                }.build()
+                val original = (coil3.SingletonImageLoader.get(context).execute(request) as? coil3.request.SuccessResult)
+                    ?.image?.toBitmap() ?: return@LaunchedEffect
+                val enhanced = com.atlanyuey.aenht.core.SuperResolution.enhance(
+                    context, original, "$url|$crop", screen.width, screen.height, srMode, srModel,
+                ) ?: return@LaunchedEffect
+                // Not while zoomed in (the page would move under the fingers).
+                androidx.compose.runtime.snapshotFlow { (zoomState.zoomFraction ?: 0f) < 0.01f }.first { it }
+                sharp = coil3.request.ImageRequest.Builder(context).data(enhanced)
+                    .placeholder(original.asImage())
+                    .crossfade(350)
+                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
+                    .build()
+            }
             ZoomableAsyncImage(
-                model = model,
+                model = sharp ?: model,
                 contentDescription = null,
                 state = imageState,
                 modifier = Modifier.fillMaxSize(),
@@ -942,6 +976,43 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
     }
 }
 
+/** Reading settings › Display › Super Resolution. */
+private fun androidx.compose.foundation.lazy.LazyListScope.superResolutionSection() {
+    val footer = "Sharpens low-resolution pages to your screen's resolution, on this device. A page shows at once and turns sharper when it's ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you're on."
+    section("Super Resolution", footer = {
+        FooterText(tr(footer) + if (com.atlanyuey.aenht.core.SuperResolution.available) "" else "\n\n" + tr("Not available on this device."))
+    }) {
+        val context = LocalContext.current
+        LaunchedEffect(Unit) { com.atlanyuey.aenht.core.SrModels.refresh(context) }
+        val mode = AppSettings.superResolution
+        PickerRow(tr("Super Resolution"), com.atlanyuey.aenht.core.SrMode.entries, mode, label = { tr(it.title) },
+            onSelect = { AppSettings.superResolution = it }, last = mode == com.atlanyuey.aenht.core.SrMode.Off)
+        if (mode != com.atlanyuey.aenht.core.SrMode.Off) {
+            when (val state = com.atlanyuey.aenht.core.SrModels.state) {
+                is com.atlanyuey.aenht.core.SrModels.State.Ready -> {
+                    PickerRow(tr("Model"), com.atlanyuey.aenht.core.SrModel.entries, AppSettings.superResolutionModel,
+                        label = { tr(it.title) }, onSelect = { AppSettings.superResolutionModel = it })
+                    ButtonRow(tr("Delete High Quality Model"), { com.atlanyuey.aenht.core.SrModels.delete(context) }, destructive = true, last = true)
+                }
+                is com.atlanyuey.aenht.core.SrModels.State.Downloading ->
+                    ListRow(tr("Downloading…"), value = "${(state.fraction * 100).toInt()}%", last = true,
+                        onClick = { com.atlanyuey.aenht.core.SrModels.cancel() })
+                else -> {
+                    val failed = state as? com.atlanyuey.aenht.core.SrModels.State.Failed
+                    ListRow(
+                        tr("Download High Quality Model"),
+                        titleColor = AppTheme.tint,
+                        value = android.text.format.Formatter.formatShortFileSize(context, com.atlanyuey.aenht.core.SrModels.SIZE_BYTES),
+                        subtitle = failed?.message,
+                        last = true,
+                        onClick = { com.atlanyuey.aenht.core.SrModels.download(context) },
+                    )
+                }
+            }
+        }
+    }
+}
+
 private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
     section(footer = { FooterText(tr("Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.")) }) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
@@ -959,6 +1030,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
         ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
         ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
     }
+    superResolutionSection()
     section(footer = { FooterText(tr("The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).")) }) {
         PickerRow(tr("Keep Screen On"), com.atlanyuey.aenht.core.ScreenOn.entries, AppSettings.screenOn,
             label = { tr(it.title) }, onSelect = { AppSettings.screenOn = it }, last = true)

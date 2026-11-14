@@ -854,6 +854,8 @@ struct AcknowledgementsView: View {
              file: "Nuke-LICENSE", url: URL(string: "https://github.com/kean/Nuke")!),
         Item(name: "LobeHub Icons", author: "LobeHub", license: "MIT License",
              file: "LobeHub-Icons-LICENSE", url: URL(string: "https://github.com/lobehub/lobe-icons")!),
+        Item(name: "Real-ESRGAN (super-resolution models)", author: "Xintao Wang", license: "BSD 3-Clause License",
+             file: "Real-ESRGAN-LICENSE", url: URL(string: "https://github.com/xinntao/Real-ESRGAN")!),
         Item(name: "nhentai_tags_fetcher", author: "honjow", license: "MIT License",
              file: "nhentai_tags_fetcher-LICENSE", url: URL(string: "https://github.com/honjow/nhentai_tags_fetcher")!),
         Item(name: "EhTagTranslation Database", author: "EhTagTranslation", license: "CC BY-NC-SA 3.0",

@@ -394,4 +394,11 @@ T = [
     "5 minutos",
     "10 minutos",
     "El lector mantiene la pantalla encendida este tiempo tras el último toque y luego la deja al bloqueo automático del sistema (nunca la apaga antes que el sistema).",
+    "Superresolución",
+    "Alta calidad",
+    "Descargar modelo de alta calidad",
+    "Eliminar modelo de alta calidad",
+    "Instalando…",
+    "No disponible en este dispositivo.",
+    "Mejora en el dispositivo las páginas de baja resolución hasta la de tu pantalla. La página se muestra al instante y se vuelve más nítida cuando está lista. Automático: solo páginas claramente más pequeñas que la pantalla; en dispositivos lentos, solo la página actual.",
 ]

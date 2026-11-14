@@ -501,9 +501,16 @@
     <string name="l_498">5 分钟</string>
     <string name="l_499">10 分钟</string>
     <string name="l_500">阅读时最后一次触摸后保持亮屏这么久，之后交还给系统的自动锁定（不会比系统设置更早熄屏）。</string>
-    <string name="l_501">设置备份</string>
-    <string name="l_502">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_503">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_504">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_505">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_501">超分辨率</string>
+    <string name="l_502">高质量</string>
+    <string name="l_503">下载高质量模型</string>
+    <string name="l_504">删除高质量模型</string>
+    <string name="l_505">正在安装…</string>
+    <string name="l_506">此设备不支持。</string>
+    <string name="l_507">在本机把低分辨率页面放大到屏幕分辨率并变清晰。页面会先立即显示，处理完成后再平滑变清晰。自动：只处理明显小于屏幕的页面；较慢的设备只处理当前页。</string>
+    <string name="l_508">设置备份</string>
+    <string name="l_509">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_510">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_511">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_512">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

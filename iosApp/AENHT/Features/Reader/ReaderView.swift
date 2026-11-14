@@ -106,6 +106,7 @@ struct ReaderView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
 
     @State private var prefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
@@ -158,6 +159,9 @@ struct ReaderView: View {
             }
             .background(Color.black)
             .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscape = $0 }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                ReaderScreen.pixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
+            }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -510,7 +514,6 @@ struct ReaderView: View {
 
 /// Runs [hide] a while after the last [schedule]. It holds no view state,
 /// so a touch changes nothing on screen until the controls actually hide.
-@MainActor
 /// Keeps the screen on while reading, until the Keep Screen On time has
 /// passed without a touch (Reading settings). It then only stops holding
 /// the screen on: the system's auto-lock decides, never sooner than usual.
@@ -536,6 +539,7 @@ private final class ScreenAwake {
     }
 }
 
+@MainActor
 private final class ChromeHider {
     private var task: Task<Void, Never>?
 
@@ -678,6 +682,7 @@ struct ReadingSettingsSections: View {
         } footer: {
             Text("Brightness, grayscale and inverted colors apply only to the pages.")
         }
+        SuperResolutionSection(settings: settings)
         Section {
             Picker("Keep Screen On", selection: $settings.screenOn) {
                 ForEach(ScreenOn.allCases) { Text($0.title).tag($0) }
@@ -1003,7 +1008,14 @@ final class PageController: UIViewController {
             zoomView.loadSpread(urls, rightToLeft: rightToLeft)
         } else {
             zoomView.load(urls.first ?? nil)
+            // Fast devices sharpen the pages around the one shown too.
+            if SuperResolutionSpeed.isFast { zoomView.enhanceWhenReady() }
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if urls.count == 1 { zoomView.enhanceWhenReady() }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -1082,6 +1094,43 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         task?.cancel()
         spreadTask?.cancel()
         pendingTap?.cancel()
+        enhanceTask?.cancel()
+    }
+
+    // MARK: Super resolution
+
+    private var enhanceTask: Task<Void, Never>?
+    private var wantsEnhance = false
+    private var enhancedURL: URL?
+
+    /// Sharpens the page once it has loaded (Super Resolution settings).
+    func enhanceWhenReady() {
+        wantsEnhance = true
+        startEnhance()
+    }
+
+    private func startEnhance() {
+        guard wantsEnhance, enhanceTask == nil, let url = currentURL, enhancedURL != url,
+              let image = imageView.image else { return }
+        let settings = AppSettings.shared
+        let mode = settings.superResolution
+        guard mode != .off else { return }
+        let kind: SuperResolutionModel = settings.superResolutionModel == .high && SuperResolutionModels.shared.isReady
+            ? .high : .standard
+        let key = url.absoluteString + (settings.autoCrop ? "|crop" : "")
+        let target = ReaderScreen.pixels
+        enhanceTask = Task { [weak self] in
+            let enhanced = await SuperResolver.shared.enhance(image, key: key, target: target, mode: mode, kind: kind)
+            guard let self, !Task.isCancelled else { return }
+            self.enhanceTask = nil
+            guard let enhanced, self.currentURL == url else { return }
+            self.enhancedURL = url
+            // The same picture, sharper: a slow cross-fade, no reload.
+            UIView.transition(with: self.imageView, duration: 0.35,
+                              options: [.transitionCrossDissolve, .allowUserInteraction]) {
+                self.imageView.image = enhanced
+            }
+        }
     }
 
     override func layoutSubviews() {
@@ -1105,6 +1154,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         guard url != currentURL else { return }
         task?.cancel()
         spreadTask?.cancel()
+        enhanceTask?.cancel()
+        enhanceTask = nil
+        enhancedURL = nil
         currentURL = url
         imageView.image = nil
         resetZoom()
@@ -1112,6 +1164,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         let request = AutoCropProcessor.request(url)
         if let cached = ImagePipeline.shared.cache[request] {
             imageView.image = cached.image
+            startEnhance()
             return
         }
         spinner.startAnimating()
@@ -1122,6 +1175,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
                 UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
                     self.imageView.image = response.image
                 }
+                self.startEnhance()
             }
         }
     }

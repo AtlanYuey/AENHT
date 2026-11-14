@@ -32,7 +32,7 @@ jobs:
         run: |
           SDKMANAGER=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
           yes | "$SDKMANAGER" --licenses > /dev/null || true
-          "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" > /dev/null
+          "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Set up Gradle

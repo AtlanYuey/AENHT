@@ -337,6 +337,8 @@ object AppSettings {
         readerBrightness = p.getFloat("readerBrightness", 1f).toDouble().coerceIn(0.2, 1.0)
         readerGrayscale = p.getBoolean("readerGrayscale", false)
         readerInvert = p.getBoolean("readerInvert", false)
+        superResolution = SrMode.of(p.getString("superResolution", null))
+        superResolutionModel = SrModel.of(p.getString("superResolutionModel", null))
         deviceTranslation = p.getBoolean("deviceTranslation", true)
         doublePage = DoublePage.of(p.getString("doublePage", null))
         doublePageCover = p.getBoolean("doublePageCover", true)
@@ -480,6 +482,8 @@ object AppSettings {
     var readerBrightness by Pref(1.0) { save("readerBrightness", it) }
     var readerGrayscale by Pref(false) { save("readerGrayscale", it) }
     var readerInvert by Pref(false) { save("readerInvert", it) }
+    var superResolution by Pref(SrMode.Auto) { save("superResolution", it.raw) }
+    var superResolutionModel by Pref(SrModel.Standard) { save("superResolutionModel", it.raw) }
     /** Translation: the device's own translator is the last fallback (or the only one). */
     var deviceTranslation by Pref(true) { save("deviceTranslation", it) }
     /** Reader: two pages side by side (left-to-right / right-to-left modes). */
@@ -644,6 +648,7 @@ object AppSettings {
         "readerBrightness" to readerBrightness,
         "readerGrayscale" to readerGrayscale,
         "readerInvert" to readerInvert,
+        "superResolution" to superResolution.raw,
         "deviceTranslation" to deviceTranslation,
         "doublePage" to doublePage.raw,
         "doublePageCover" to doublePageCover,
@@ -749,6 +754,7 @@ object AppSettings {
                 "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
                 "readerGrayscale" -> bool?.let { readerGrayscale = it }
                 "readerInvert" -> bool?.let { readerInvert = it }
+                "superResolution" -> string?.let { superResolution = SrMode.of(it) }
                 "deviceTranslation" -> bool?.let { deviceTranslation = it }
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }

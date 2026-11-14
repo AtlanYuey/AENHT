@@ -501,9 +501,16 @@
     <string name="l_498">5 minutos</string>
     <string name="l_499">10 minutos</string>
     <string name="l_500">El lector mantiene la pantalla encendida este tiempo tras el último toque y luego la deja al bloqueo automático del sistema (nunca la apaga antes que el sistema).</string>
-    <string name="l_501">Copia de los ajustes</string>
-    <string name="l_502">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_503">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_504">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_505">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_501">Superresolución</string>
+    <string name="l_502">Alta calidad</string>
+    <string name="l_503">Descargar modelo de alta calidad</string>
+    <string name="l_504">Eliminar modelo de alta calidad</string>
+    <string name="l_505">Instalando…</string>
+    <string name="l_506">No disponible en este dispositivo.</string>
+    <string name="l_507">Mejora en el dispositivo las páginas de baja resolución hasta la de tu pantalla. La página se muestra al instante y se vuelve más nítida cuando está lista. Automático: solo páginas claramente más pequeñas que la pantalla; en dispositivos lentos, solo la página actual.</string>
+    <string name="l_508">Copia de los ajustes</string>
+    <string name="l_509">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_510">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_511">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_512">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

@@ -501,9 +501,16 @@
     <string name="l_498">5 Minutes</string>
     <string name="l_499">10 Minutes</string>
     <string name="l_500">The reader keeps the screen on this long after the last touch, then leaves it to the system\'s own auto-lock (it never turns the screen off sooner than the system would).</string>
-    <string name="l_501">Sauvegarde des réglages</string>
-    <string name="l_502">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_503">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_504">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_505">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_501">Super Resolution</string>
+    <string name="l_502">High Quality</string>
+    <string name="l_503">Download High Quality Model</string>
+    <string name="l_504">Delete High Quality Model</string>
+    <string name="l_505">Installing…</string>
+    <string name="l_506">Not available on this device.</string>
+    <string name="l_507">Sharpens low-resolution pages to your screen\'s resolution, on this device. A page shows at once and turns sharper when it\'s ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you\'re on.</string>
+    <string name="l_508">Sauvegarde des réglages</string>
+    <string name="l_509">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_510">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_511">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_512">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

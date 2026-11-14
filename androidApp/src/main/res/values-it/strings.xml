@@ -501,9 +501,16 @@
     <string name="l_498">5 Minutes</string>
     <string name="l_499">10 Minutes</string>
     <string name="l_500">The reader keeps the screen on this long after the last touch, then leaves it to the system\'s own auto-lock (it never turns the screen off sooner than the system would).</string>
-    <string name="l_501">Backup impostazioni</string>
-    <string name="l_502">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_503">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_504">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_505">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_501">Super Resolution</string>
+    <string name="l_502">High Quality</string>
+    <string name="l_503">Download High Quality Model</string>
+    <string name="l_504">Delete High Quality Model</string>
+    <string name="l_505">Installing…</string>
+    <string name="l_506">Not available on this device.</string>
+    <string name="l_507">Sharpens low-resolution pages to your screen\'s resolution, on this device. A page shows at once and turns sharper when it\'s ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you\'re on.</string>
+    <string name="l_508">Backup impostazioni</string>
+    <string name="l_509">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_510">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_511">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_512">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

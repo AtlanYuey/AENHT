@@ -501,9 +501,16 @@
     <string name="l_498">5 Minutes</string>
     <string name="l_499">10 Minutes</string>
     <string name="l_500">The reader keeps the screen on this long after the last touch, then leaves it to the system\'s own auto-lock (it never turns the screen off sooner than the system would).</string>
-    <string name="l_501">Settings Backup</string>
-    <string name="l_502">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_503">Android\'s own backup also keeps these settings.</string>
-    <string name="l_504">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_505">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_501">Super Resolution</string>
+    <string name="l_502">High Quality</string>
+    <string name="l_503">Download High Quality Model</string>
+    <string name="l_504">Delete High Quality Model</string>
+    <string name="l_505">Installing…</string>
+    <string name="l_506">Not available on this device.</string>
+    <string name="l_507">Sharpens low-resolution pages to your screen\'s resolution, on this device. A page shows at once and turns sharper when it\'s ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you\'re on.</string>
+    <string name="l_508">Settings Backup</string>
+    <string name="l_509">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_510">Android\'s own backup also keeps these settings.</string>
+    <string name="l_511">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_512">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

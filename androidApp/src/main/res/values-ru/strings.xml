@@ -501,9 +501,16 @@
     <string name="l_498">5 Minutes</string>
     <string name="l_499">10 Minutes</string>
     <string name="l_500">The reader keeps the screen on this long after the last touch, then leaves it to the system\'s own auto-lock (it never turns the screen off sooner than the system would).</string>
-    <string name="l_501">Резервная копия настроек</string>
-    <string name="l_502">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_503">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_504">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_505">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_501">Super Resolution</string>
+    <string name="l_502">High Quality</string>
+    <string name="l_503">Download High Quality Model</string>
+    <string name="l_504">Delete High Quality Model</string>
+    <string name="l_505">Installing…</string>
+    <string name="l_506">Not available on this device.</string>
+    <string name="l_507">Sharpens low-resolution pages to your screen\'s resolution, on this device. A page shows at once and turns sharper when it\'s ready. Automatic: only pages clearly smaller than the screen; on slower devices, only the page you\'re on.</string>
+    <string name="l_508">Резервная копия настроек</string>
+    <string name="l_509">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_510">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_511">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_512">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>
