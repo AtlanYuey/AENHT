@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Translation of titles and comments: the user's language models in
 /// order, then Microsoft Translator with the user's key (see the shared
-/// Translator). Keys stay in the Keychain; the list of services is stored
+/// Translator), then Apple's on-device translation. Keys stay in the Keychain; the list of services is stored
 /// with the settings without keys.
 @MainActor
 @Observable
@@ -74,12 +74,21 @@ final class TranslationService {
         }
     }
 
-    var isAvailable: Bool {
+    /// A language model or Microsoft Translator is set up.
+    var hasRemote: Bool {
         services.contains { $0.enabled && hasKey($0) } || !microsoftKey.isEmpty
     }
 
+    var isAvailable: Bool { AppSettings.shared.deviceTranslation || hasRemote }
+
+    func cached(_ text: String, kind: TranslationKind) -> Translation? { cache["\(target)|\(kind.name)|\(text)"] }
+
+    func store(_ translation: Translation, for text: String, kind: TranslationKind) {
+        cache["\(target)|\(kind.name)|\(text)"] = translation
+    }
+
     /// The app's language, as the target.
-    private var target: String {
+    var target: String {
         let code = Locale.preferredLanguages.first ?? "en"
         if code.hasPrefix("zh") { return code.contains("Hant") || code.hasSuffix("TW") || code.hasSuffix("HK") ? "zh-Hant" : "zh-Hans" }
         return code
@@ -113,6 +122,8 @@ struct TranslateLine: View {
     @State private var result: Translation?
     @State private var error: String?
     @State private var working = false
+    @State private var fellBack = false
+    @State private var deviceRequest: UUID?
     private var service: TranslationService { .shared }
 
     var body: some View {
@@ -123,14 +134,7 @@ struct TranslateLine: View {
                     Text(result.fellBack ? "Translated by \(result.provider) (switched)" : "Translated by \(result.provider)")
                         .font(.caption2).foregroundStyle(.tertiary)
                 } else {
-                    Button {
-                        working = true
-                        error = nil
-                        Task {
-                            do { result = try await service.translate(text, kind: kind) } catch { self.error = error.localizedDescription }
-                            working = false
-                        }
-                    } label: {
+                    Button(action: start) {
                         HStack(spacing: 5) {
                             if working { ProgressView().controlSize(.mini) } else { Image(systemName: "character.bubble") }
                             Text("Translate")
@@ -143,6 +147,39 @@ struct TranslateLine: View {
                     if let error { Text(error).font(.caption2).foregroundStyle(.red).lineLimit(2) }
                 }
             }
+            .modifier(DeviceTranslationTask(text: text, target: service.target, request: $deviceRequest) { outcome in
+                switch outcome {
+                case .success(let translated):
+                    let t = Translation(text: translated, provider: String(localized: "On-Device Translation"), fellBack: fellBack)
+                    service.store(t, for: text, kind: kind)
+                    result = t
+                case .failure(let failure):
+                    error = failure.localizedDescription
+                }
+                working = false
+            })
+        }
+    }
+
+    private func start() {
+        if let cached = service.cached(text, kind: kind) { result = cached; return }
+        working = true
+        error = nil
+        fellBack = false
+        guard service.hasRemote else { deviceRequest = UUID(); return }
+        Task {
+            do {
+                result = try await service.translate(text, kind: kind)
+                working = false
+            } catch {
+                if AppSettings.shared.deviceTranslation {
+                    fellBack = true
+                    deviceRequest = UUID()
+                } else {
+                    self.error = error.localizedDescription
+                    working = false
+                }
+            }
         }
     }
 }
@@ -150,6 +187,7 @@ struct TranslateLine: View {
 /// Me › Translation: the language models (in order) and Microsoft Translator.
 struct TranslationSettingsView: View {
     @State private var service = TranslationService.shared
+    @Environment(AppSettings.self) private var settings
     @State private var name = ""
     @State private var baseURL = "https://api.openai.com/v1"
     @State private var model = ""
@@ -210,6 +248,12 @@ struct TranslationSettingsView: View {
                 Text("Microsoft Translator")
             } footer: {
                 Text("Used when no language model is set up or all of them fail. A key from Azure Translator has a free monthly allowance.")
+            }
+            Section {
+                @Bindable var settings = settings
+                Toggle("On-Device Translation", isOn: $settings.deviceTranslation)
+            } footer: {
+                Text("The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language.")
             }
         }
         .navigationTitle("Translation")

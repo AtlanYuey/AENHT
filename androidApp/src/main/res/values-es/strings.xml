@@ -316,9 +316,15 @@
     <string name="l_313">Invertir colores</string>
     <string name="l_314">El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.</string>
     <string name="l_315">El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.</string>
-    <string name="l_316">Copia de los ajustes</string>
-    <string name="l_317">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_318">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_319">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_320">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_316">Traducción en el dispositivo</string>
+    <string name="l_317">El dispositivo no puede traducir a este idioma.</string>
+    <string name="l_318">El dispositivo no puede traducir desde este idioma.</string>
+    <string name="l_319">El dispositivo no pudo reconocer el idioma.</string>
+    <string name="l_320">El último recurso, gratis: la traducción en el dispositivo de Google (ML Kit). La primera vez descarga un modelo de unos 30 MB por idioma.</string>
+    <string name="l_321">El último recurso, gratis: la traducción en el dispositivo de Apple. La primera vez, el sistema ofrece descargar cada idioma.</string>
+    <string name="l_322">Copia de los ajustes</string>
+    <string name="l_323">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_324">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_325">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_326">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

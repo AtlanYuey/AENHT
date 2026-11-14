@@ -105,6 +105,8 @@ dependencies {
     implementation(libs.backdrop)
     implementation(libs.kyant.shapes)
     implementation(libs.telephoto.zoomable.coil3)
+    implementation(libs.mlkit.translate)
+    implementation(libs.mlkit.language.id)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 

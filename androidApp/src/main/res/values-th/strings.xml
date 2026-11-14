@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">สำรองการตั้งค่า</string>
-    <string name="l_317">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
-    <string name="l_318">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
-    <string name="l_319">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
-    <string name="l_320">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">สำรองการตั้งค่า</string>
+    <string name="l_323">บันทึกการตั้งค่าเป็นไฟล์แล้วนำเข้าบนอุปกรณ์อื่น ไฟล์นี้ใช้กับแอป iOS ได้ด้วย</string>
+    <string name="l_324">การสำรองข้อมูลของ Android ก็เก็บการตั้งค่าเหล่านี้ด้วย</string>
+    <string name="l_325">เมื่อกลับมาที่แอป จะเสนอให้เปิดลิงก์ nhentai ที่อยู่ในคลิปบอร์ด</string>
+    <string name="l_326">การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน</string>
 </resources>

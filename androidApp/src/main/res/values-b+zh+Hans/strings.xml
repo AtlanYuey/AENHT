@@ -316,9 +316,15 @@
     <string name="l_313">反色</string>
     <string name="l_314">亮度、灰度和反色只作用于页面。</string>
     <string name="l_315">亮度、灰度和反色只作用于页面。灰度和反色需要 Android 12 或更高版本。</string>
-    <string name="l_316">设置备份</string>
-    <string name="l_317">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_318">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_319">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_320">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_316">本机翻译</string>
+    <string name="l_317">本机无法翻译成这种语言。</string>
+    <string name="l_318">本机无法翻译这种语言。</string>
+    <string name="l_319">本机无法识别语言。</string>
+    <string name="l_320">最后的回退，免费：Google 的本机翻译（ML Kit）。首次使用时，每种语言会下载约 30 MB 的语言模型。</string>
+    <string name="l_321">最后的回退，免费：Apple 的本机翻译。首次使用时，系统会提示下载各语言。</string>
+    <string name="l_322">设置备份</string>
+    <string name="l_323">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_324">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_325">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_326">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

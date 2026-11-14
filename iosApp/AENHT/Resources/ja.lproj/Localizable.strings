@@ -315,3 +315,9 @@
 "Invert Colors" = "色を反転";
 "Brightness, grayscale and inverted colors apply only to the pages." = "明るさ、グレースケール、色の反転はページにのみ適用されます。";
 "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "明るさ、グレースケール、色の反転はページにのみ適用されます。グレースケールと色の反転には Android 12 以降が必要です。";
+"On-Device Translation" = "端末内翻訳";
+"The device can't translate into this language." = "端末はこの言語への翻訳に対応していません。";
+"The device can't translate from this language." = "端末はこの言語からの翻訳に対応していません。";
+"The device couldn't recognize the language." = "端末で言語を認識できませんでした。";
+"The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language." = "最後の代替手段（無料）：Google の端末内翻訳（ML Kit）。初回は言語ごとに約 30 MB の言語モデルをダウンロードします。";
+"The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language." = "最後の代替手段（無料）：Apple の端末内翻訳。初回は言語ごとにダウンロードを求められます。";

@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Backup dos ajustes</string>
-    <string name="l_317">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_318">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_319">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_320">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Backup dos ajustes</string>
+    <string name="l_323">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_324">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_325">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_326">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

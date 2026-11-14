@@ -6,6 +6,8 @@ activity = "1.13.0"
 core = "1.19.1"
 lifecycle = "2.11.0"
 coil = "3.6.3"
+mlkit-translate = "17.0.3"
+mlkit-language-id = "17.0.6"
 okhttp = "5.5.1"
 serialization = "1.12.0"
 coroutines = "1.11.0"
@@ -23,6 +25,8 @@ okio = "3.18.2"
 ksoup = "0.2.6"
 
 [libraries]
+mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkit-translate" }
+mlkit-language-id = { group = "com.google.mlkit", name = "language-id", version.ref = "mlkit-language-id" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }

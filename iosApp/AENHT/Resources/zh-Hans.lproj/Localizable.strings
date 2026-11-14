@@ -357,3 +357,9 @@
 "Invert Colors" = "反色";
 "Brightness, grayscale and inverted colors apply only to the pages." = "亮度、灰度和反色只作用于页面。";
 "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "亮度、灰度和反色只作用于页面。灰度和反色需要 Android 12 或更高版本。";
+"On-Device Translation" = "本机翻译";
+"The device can't translate into this language." = "本机无法翻译成这种语言。";
+"The device can't translate from this language." = "本机无法翻译这种语言。";
+"The device couldn't recognize the language." = "本机无法识别语言。";
+"The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language." = "最后的回退，免费：Google 的本机翻译（ML Kit）。首次使用时，每种语言会下载约 30 MB 的语言模型。";
+"The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language." = "最后的回退，免费：Apple 的本机翻译。首次使用时，系统会提示下载各语言。";

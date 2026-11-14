@@ -11,7 +11,7 @@ import java.util.UUID
 /**
  * Translation of titles and comments: the user's language models in
  * order, then Microsoft Translator with the user's key (see the shared
- * Translator). Keys stay in the Android Keystore; the list of services is
+ * Translator), then the device's own (ML Kit). Keys stay in the Android Keystore; the list of services is
  * stored with the settings without keys.
  */
 object TranslationService {
@@ -59,7 +59,8 @@ object TranslationService {
         get() = secrets["microsoftRegion"]
         set(value) { secrets["microsoftRegion"] = value?.trim() }
 
-    val isAvailable: Boolean get() = services.any { it.enabled && hasKey(it.id) } || !microsoftKey.isNullOrEmpty()
+    val isAvailable: Boolean
+        get() = AppSettings.deviceTranslation || services.any { it.enabled && hasKey(it.id) } || !microsoftKey.isNullOrEmpty()
 
     /** The app's language, as the target. */
     private val target: String
@@ -78,7 +79,7 @@ object TranslationService {
         val list = services
         val keys = list.mapNotNull { s -> secrets[s.id]?.let { s.id to it } }.toMap()
         return try {
-            translator.translate(text, target, kind, list, keys, null).also { cache[key] = it }
+            translator.translate(text, target, kind, list, keys, DeviceTranslator.takeIf { AppSettings.deviceTranslation }).also { cache[key] = it }
         } catch (e: Exception) {
             throw NHException(e.message ?: L10n.string("Couldn't translate."))
         }

@@ -316,9 +316,15 @@
     <string name="l_313">色を反転</string>
     <string name="l_314">明るさ、グレースケール、色の反転はページにのみ適用されます。</string>
     <string name="l_315">明るさ、グレースケール、色の反転はページにのみ適用されます。グレースケールと色の反転には Android 12 以降が必要です。</string>
-    <string name="l_316">設定のバックアップ</string>
-    <string name="l_317">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_318">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_319">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_320">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_316">端末内翻訳</string>
+    <string name="l_317">端末はこの言語への翻訳に対応していません。</string>
+    <string name="l_318">端末はこの言語からの翻訳に対応していません。</string>
+    <string name="l_319">端末で言語を認識できませんでした。</string>
+    <string name="l_320">最後の代替手段（無料）：Google の端末内翻訳（ML Kit）。初回は言語ごとに約 30 MB の言語モデルをダウンロードします。</string>
+    <string name="l_321">最後の代替手段（無料）：Apple の端末内翻訳。初回は言語ごとにダウンロードを求められます。</string>
+    <string name="l_322">設定のバックアップ</string>
+    <string name="l_323">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_324">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_325">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_326">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

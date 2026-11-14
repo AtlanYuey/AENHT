@@ -246,6 +246,8 @@ final class AppSettings {
     var readerBrightness: Double { didSet { save(readerBrightness, "readerBrightness") } }
     var readerGrayscale: Bool { didSet { save(readerGrayscale, "readerGrayscale") } }
     var readerInvert: Bool { didSet { save(readerInvert, "readerInvert") } }
+    /// Translation: Apple's on-device translation is the last fallback (or the only one).
+    var deviceTranslation: Bool { didSet { save(deviceTranslation, "deviceTranslation") } }
     /// The user's language models for translation, in order (JSON; keys are in the Keychain).
     var llmServices: String { didSet { save(llmServices, "llmServices") } }
     /// Filter rules for both sites (JSON, see the shared ContentFilter).
@@ -332,6 +334,7 @@ final class AppSettings {
         readerBrightness = min(max(d.object(forKey: "readerBrightness") as? Double ?? 1, 0.2), 1)
         readerGrayscale = d.bool(forKey: "readerGrayscale")
         readerInvert = d.bool(forKey: "readerInvert")
+        deviceTranslation = d.object(forKey: "deviceTranslation") as? Bool ?? true
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -407,6 +410,7 @@ final class AppSettings {
         values["readerBrightness"] = readerBrightness
         values["readerGrayscale"] = readerGrayscale
         values["readerInvert"] = readerInvert
+        values["deviceTranslation"] = deviceTranslation
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -477,6 +481,7 @@ final class AppSettings {
         case "readerBrightness": set(\.readerBrightness, number.map { min(max($0.doubleValue, 0.2), 1) })
         case "readerGrayscale": set(\.readerGrayscale, number?.boolValue)
         case "readerInvert": set(\.readerInvert, number?.boolValue)
+        case "deviceTranslation": set(\.deviceTranslation, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

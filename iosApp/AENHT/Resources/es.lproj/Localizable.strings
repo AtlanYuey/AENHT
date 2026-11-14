@@ -315,3 +315,9 @@
 "Invert Colors" = "Invertir colores";
 "Brightness, grayscale and inverted colors apply only to the pages." = "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.";
 "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.";
+"On-Device Translation" = "Traducción en el dispositivo";
+"The device can't translate into this language." = "El dispositivo no puede traducir a este idioma.";
+"The device can't translate from this language." = "El dispositivo no puede traducir desde este idioma.";
+"The device couldn't recognize the language." = "El dispositivo no pudo reconocer el idioma.";
+"The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language." = "El último recurso, gratis: la traducción en el dispositivo de Google (ML Kit). La primera vez descarga un modelo de unos 30 MB por idioma.";
+"The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language." = "El último recurso, gratis: la traducción en el dispositivo de Apple. La primera vez, el sistema ofrece descargar cada idioma.";

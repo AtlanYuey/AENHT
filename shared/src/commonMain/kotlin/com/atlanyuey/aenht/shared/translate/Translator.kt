@@ -95,7 +95,13 @@ class Translator internal constructor(private val http: HttpClient, private val 
             }
         }
         local?.let { l ->
-            l.translate(text, target)?.let { return Translation(it, l.name, fellBack) }
+            try {
+                l.translate(text, target)?.let { return Translation(it, l.name, fellBack) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                lastError = e.message ?: lastError
+            }
         }
         throw TranslationException(lastError ?: "No translator is available")
     }

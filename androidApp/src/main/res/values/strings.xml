@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Settings Backup</string>
-    <string name="l_317">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_318">Android\'s own backup also keeps these settings.</string>
-    <string name="l_319">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_320">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Settings Backup</string>
+    <string name="l_323">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_324">Android\'s own backup also keeps these settings.</string>
+    <string name="l_325">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_326">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

@@ -209,4 +209,10 @@ T = [
     "Invertir colores",
     "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas.",
     "El brillo, la escala de grises y la inversión de colores solo afectan a las páginas. La escala de grises y la inversión necesitan Android 12 o posterior.",
+    "Traducción en el dispositivo",
+    "El dispositivo no puede traducir a este idioma.",
+    "El dispositivo no puede traducir desde este idioma.",
+    "El dispositivo no pudo reconocer el idioma.",
+    "El último recurso, gratis: la traducción en el dispositivo de Google (ML Kit). La primera vez descarga un modelo de unos 30 MB por idioma.",
+    "El último recurso, gratis: la traducción en el dispositivo de Apple. La primera vez, el sistema ofrece descargar cada idioma.",
 ]

@@ -412,6 +412,9 @@ class TranslationSettingsScreen : Screen() {
                     revision++
                 }, last = true)
             }
+            section(footer = { FooterText(tr("The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.")) }) {
+                ToggleRow(tr("On-Device Translation"), AppSettings.deviceTranslation, { AppSettings.deviceTranslation = it }, last = true)
+            }
         }
     }
 }

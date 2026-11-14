@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Einstellungen sichern</string>
-    <string name="l_317">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_318">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_319">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_320">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Einstellungen sichern</string>
+    <string name="l_323">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_324">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_325">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_326">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

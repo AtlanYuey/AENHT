@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Sauvegarde des réglages</string>
-    <string name="l_317">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_318">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_319">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_320">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Sauvegarde des réglages</string>
+    <string name="l_323">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_324">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_325">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_326">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

@@ -314,5 +314,11 @@
  "Grayscale",
  "Invert Colors",
  "Brightness, grayscale and inverted colors apply only to the pages.",
- "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later."
+ "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.",
+ "On-Device Translation",
+ "The device can't translate into this language.",
+ "The device can't translate from this language.",
+ "The device couldn't recognize the language.",
+ "The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.",
+ "The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language."
 ]

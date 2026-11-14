@@ -252,6 +252,7 @@ object AppSettings {
         readerBrightness = p.getFloat("readerBrightness", 1f).toDouble().coerceIn(0.2, 1.0)
         readerGrayscale = p.getBoolean("readerGrayscale", false)
         readerInvert = p.getBoolean("readerInvert", false)
+        deviceTranslation = p.getBoolean("deviceTranslation", true)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -369,6 +370,8 @@ object AppSettings {
     var readerBrightness by Pref(1.0) { save("readerBrightness", it) }
     var readerGrayscale by Pref(false) { save("readerGrayscale", it) }
     var readerInvert by Pref(false) { save("readerInvert", it) }
+    /** Translation: the device's own translator is the last fallback (or the only one). */
+    var deviceTranslation by Pref(true) { save("deviceTranslation", it) }
 
     /** The user's language models for translation, in order (JSON; keys are in the Keystore). */
     var llmServices by Pref("") { save("llmServices", it) }
@@ -482,6 +485,7 @@ object AppSettings {
         "readerBrightness" to readerBrightness,
         "readerGrayscale" to readerGrayscale,
         "readerInvert" to readerInvert,
+        "deviceTranslation" to deviceTranslation,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -537,6 +541,7 @@ object AppSettings {
                 "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
                 "readerGrayscale" -> bool?.let { readerGrayscale = it }
                 "readerInvert" -> bool?.let { readerInvert = it }
+                "deviceTranslation" -> bool?.let { deviceTranslation = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

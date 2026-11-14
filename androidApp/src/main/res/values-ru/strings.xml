@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Резервная копия настроек</string>
-    <string name="l_317">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
-    <string name="l_318">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
-    <string name="l_319">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
-    <string name="l_320">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Резервная копия настроек</string>
+    <string name="l_323">Сохраните настройки в файл и импортируйте его на другом устройстве. Файл подходит и для версии для iOS.</string>
+    <string name="l_324">Встроенное резервное копирование Android тоже сохраняет эти настройки.</string>
+    <string name="l_325">При возвращении в приложение предлагать открыть ссылку nhentai из буфера обмена.</string>
+    <string name="l_326">Недавние запросы показываются в начале поиска. Если выключить, новые запросы не сохраняются, а список скрыт.</string>
 </resources>

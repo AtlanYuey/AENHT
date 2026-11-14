@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Cadangan Pengaturan</string>
-    <string name="l_317">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_318">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_319">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_320">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Cadangan Pengaturan</string>
+    <string name="l_323">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_324">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_325">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_326">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

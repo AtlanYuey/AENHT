@@ -316,9 +316,15 @@
     <string name="l_313">Invert Colors</string>
     <string name="l_314">Brightness, grayscale and inverted colors apply only to the pages.</string>
     <string name="l_315">Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later.</string>
-    <string name="l_316">Backup impostazioni</string>
-    <string name="l_317">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_318">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_319">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_320">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_316">On-Device Translation</string>
+    <string name="l_317">The device can\'t translate into this language.</string>
+    <string name="l_318">The device can\'t translate from this language.</string>
+    <string name="l_319">The device couldn\'t recognize the language.</string>
+    <string name="l_320">The last fallback, free: Google\'s on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language.</string>
+    <string name="l_321">The last fallback, free: Apple\'s on-device translation. The first time, the system offers to download each language.</string>
+    <string name="l_322">Backup impostazioni</string>
+    <string name="l_323">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_324">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_325">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_326">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

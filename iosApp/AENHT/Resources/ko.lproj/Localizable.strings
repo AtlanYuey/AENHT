@@ -315,3 +315,9 @@
 "Invert Colors" = "색상 반전";
 "Brightness, grayscale and inverted colors apply only to the pages." = "밝기, 흑백, 색상 반전은 페이지에만 적용됩니다.";
 "Brightness, grayscale and inverted colors apply only to the pages. Grayscale and inverted colors need Android 12 or later." = "밝기, 흑백, 색상 반전은 페이지에만 적용됩니다. 흑백과 색상 반전은 Android 12 이상이 필요합니다.";
+"On-Device Translation" = "기기 내 번역";
+"The device can't translate into this language." = "기기에서 이 언어로 번역할 수 없습니다.";
+"The device can't translate from this language." = "기기에서 이 언어를 번역할 수 없습니다.";
+"The device couldn't recognize the language." = "기기에서 언어를 인식하지 못했습니다.";
+"The last fallback, free: Google's on-device translation (ML Kit). The first time, it downloads a language model of about 30 MB for each language." = "마지막 대체 수단(무료): Google의 기기 내 번역(ML Kit). 처음에는 언어마다 약 30MB의 언어 모델을 다운로드합니다.";
+"The last fallback, free: Apple's on-device translation. The first time, the system offers to download each language." = "마지막 대체 수단(무료): Apple의 기기 내 번역. 처음에는 시스템에서 언어별 다운로드를 제안합니다.";

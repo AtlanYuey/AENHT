@@ -316,9 +316,15 @@
     <string name="l_313">색상 반전</string>
     <string name="l_314">밝기, 흑백, 색상 반전은 페이지에만 적용됩니다.</string>
     <string name="l_315">밝기, 흑백, 색상 반전은 페이지에만 적용됩니다. 흑백과 색상 반전은 Android 12 이상이 필요합니다.</string>
-    <string name="l_316">설정 백업</string>
-    <string name="l_317">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_318">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_319">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_320">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_316">기기 내 번역</string>
+    <string name="l_317">기기에서 이 언어로 번역할 수 없습니다.</string>
+    <string name="l_318">기기에서 이 언어를 번역할 수 없습니다.</string>
+    <string name="l_319">기기에서 언어를 인식하지 못했습니다.</string>
+    <string name="l_320">마지막 대체 수단(무료): Google의 기기 내 번역(ML Kit). 처음에는 언어마다 약 30MB의 언어 모델을 다운로드합니다.</string>
+    <string name="l_321">마지막 대체 수단(무료): Apple의 기기 내 번역. 처음에는 시스템에서 언어별 다운로드를 제안합니다.</string>
+    <string name="l_322">설정 백업</string>
+    <string name="l_323">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_324">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_325">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_326">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>
