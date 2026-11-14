@@ -216,7 +216,25 @@ final class DownloadManager {
 
     // MARK: Worker
 
+    /// Galleries downloading now (Download Settings limits how many at once).
+    private var running = 0
+
     private func run(_ uid: String) async {
+        // Waits its turn: the others keep downloading meanwhile.
+        if running >= AppSettings.shared.downloadGalleries {
+            update(uid) { $0.state = .queued }
+            while running >= AppSettings.shared.downloadGalleries {
+                if Task.isCancelled { return }
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            update(uid) { $0.state = .downloading }
+        }
+        running += 1
+        defer { running -= 1 }
+        await download(uid)
+    }
+
+    private func download(_ uid: String) async {
         if record(uid: uid)?.siteKind == .ehentai, !(await completeEhPages(uid)) {
             tasks[uid] = nil
             update(uid) { $0.state = .failed }
@@ -233,18 +251,25 @@ final class DownloadManager {
         }
         update(uid) { $0.completed = $0.pages.count - pending.count }
 
+        let settings = AppSettings.shared
+        let attempts = settings.downloadRetries + 1
+        let interval = settings.downloadInterval
+        let original = settings.ehOriginalImages
+        let atOnce = isEh ? min(3, settings.downloadPages) : settings.downloadPages
         await withTaskGroup(of: Bool.self) { group in
             var iterator = pending.makeIterator()
             func addNext() -> Bool {
                 guard let page = iterator.next() else { return false }
                 group.addTask {
+                    if interval > 0 { try? await Task.sleep(for: .seconds(interval)) }
                     let file = folder.appendingPathComponent(page.file)
-                    return isEh ? await Self.fetchEh(page, to: file) : await Self.fetch(page.remote, to: file)
+                    return isEh ? await Self.fetchEh(page, to: file, attempts: attempts, original: original)
+                        : await Self.fetch(page.remote, to: file, attempts: attempts)
                 }
                 return true
             }
-            // E-Hentai: fewer at a time (each page also loads its page link).
-            for _ in 0..<(isEh ? 2 : 3) {
+            // E-Hentai: at most 3 at a time (each page also loads its page link).
+            for _ in 0..<atOnce {
                 if !addNext() { break }
             }
             for await ok in group {
@@ -286,15 +311,16 @@ final class DownloadManager {
     }
 
     /// An E-Hentai page: its image link first, then the image (another node when it fails).
-    nonisolated private static func fetchEh(_ page: DownloadRecord.Page, to file: URL) async -> Bool {
+    nonisolated private static func fetchEh(_ page: DownloadRecord.Page, to file: URL, attempts: Int, original: Bool) async -> Bool {
         var reloadKey: String?
-        for attempt in 0..<3 {
+        for attempt in 0..<max(1, attempts) {
             if Task.isCancelled { return false }
             guard let info = try? await EhService.shared.call({ try await $0.imagePage(pageUrl: page.remote, reloadKey: reloadKey) }) else {
                 try? await Task.sleep(for: .seconds(Double(2 * (attempt + 1))))
                 continue
             }
-            if await fetch(info.imageUrl, to: file, attempts: 1) { return true }
+            let url = original ? (info.originalUrl ?? info.imageUrl) : info.imageUrl
+            if await fetch(url, to: file, attempts: 1) { return true }
             reloadKey = info.reloadKey
         }
         return false
@@ -302,10 +328,15 @@ final class DownloadManager {
 
     nonisolated private static func fetch(_ remote: String, to file: URL, attempts: Int = 3) async -> Bool {
         guard let url = URL(string: remote) else { return false }
+        var request = URLRequest(url: url)
+        // Original images (and ExHentai's servers) need the account's cookies.
+        if let cookies = EhService.shared.api.imageCookieHeader(url: remote) {
+            request.setValue(cookies, forHTTPHeaderField: "Cookie")
+        }
         for attempt in 0..<attempts {
             if Task.isCancelled { return false }
             do {
-                let (data, response) = try await URLSession.shared.data(from: url)
+                let (data, response) = try await URLSession.shared.data(for: request)
                 guard let http = response as? HTTPURLResponse, http.statusCode == 200, !data.isEmpty else {
                     throw URLError(.badServerResponse)
                 }
@@ -316,6 +347,47 @@ final class DownloadManager {
             }
         }
         return false
+    }
+
+    // MARK: CBZ
+
+    /// The finished download as a CBZ (the pages in order and a
+    /// ComicInfo.xml, zipped by the system), for sharing or saving to Files.
+    nonisolated static func exportCBZ(_ record: DownloadRecord) throws -> URL {
+        let fm = FileManager.default
+        let name = String(record.title.map { "/\\:*?\"<>|".contains($0) ? "_" : $0 }.prefix(120))
+        let base = fm.temporaryDirectory.appendingPathComponent("cbz-\(record.id)", isDirectory: true)
+        try? fm.removeItem(at: base)
+        let content = base.appendingPathComponent(name.isEmpty ? "\(record.id)" : name, isDirectory: true)
+        try fm.createDirectory(at: content, withIntermediateDirectories: true)
+        let folder = Self.folder(record)
+        for (i, page) in record.pages.sorted(by: { $0.number < $1.number }).enumerated() {
+            let source = folder.appendingPathComponent(page.file)
+            guard fm.fileExists(atPath: source.path) else { continue }
+            let ext = source.pathExtension.isEmpty ? "jpg" : source.pathExtension
+            try fm.copyItem(at: source, to: content.appendingPathComponent(String(format: "%04d.%@", i + 1, ext)))
+        }
+        func esc(_ s: String) -> String { s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;") }
+        let web = record.siteKind == .ehentai ? "https://e-hentai.org/g/\(record.id)/\(record.token ?? "")/" : "https://nhentai.net/g/\(record.id)/"
+        let info = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo>\n  <Title>\(esc(record.title))</Title>\n  <PageCount>\(record.pages.count)</PageCount>\n  <Web>\(esc(web))</Web>\n</ComicInfo>\n"
+        try Data(info.utf8).write(to: content.appendingPathComponent("ComicInfo.xml"))
+        // Reading a folder "for uploading" gives it zipped.
+        var zipped: URL?
+        var coordinatorError: NSError?
+        var copyError: Error?
+        NSFileCoordinator().coordinate(readingItemAt: content, options: .forUploading, error: &coordinatorError) { zip in
+            let target = base.appendingPathComponent((name.isEmpty ? "\(record.id)" : name) + ".cbz")
+            do {
+                try fm.copyItem(at: zip, to: target)
+                zipped = target
+            } catch {
+                copyError = error
+            }
+        }
+        if let coordinatorError { throw coordinatorError }
+        if let copyError { throw copyError }
+        guard let zipped else { throw CocoaError(.fileWriteUnknown) }
+        return zipped
     }
 
     private func update(_ id: Int, _ change: (inout DownloadRecord) -> Void) {

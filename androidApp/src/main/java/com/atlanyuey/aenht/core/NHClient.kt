@@ -42,7 +42,7 @@ object Net {
                 val request = chain.request()
                 val builder = request.newBuilder().header("User-Agent", userAgent)
                 // Covers and thumbnails on ExHentai's servers need the account's cookies.
-                if (request.header("Cookie") == null && request.url.host.endsWith("exhentai.org")) {
+                if (request.header("Cookie") == null && request.url.host.endsWith("hentai.org")) {
                     EhClient.api.imageCookieHeader(request.url.toString())?.let { builder.header("Cookie", it) }
                 }
                 chain.proceed(builder.build())

@@ -185,6 +185,9 @@ struct DownloadsView: View {
         .environment(\.showsSiteBadge, site == nil && settings.enabledSites.count > 1)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { DownloadSettingsView() } label: { Label("Download Settings", systemImage: "gearshape") }
+            }
             if settings.libraryStyle != .cards, !records.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(editMode.isEditing ? "Done" : "Select") {
@@ -306,7 +309,13 @@ private struct DownloadMenuItems: View {
             case .failed:
                 Button("Retry", systemImage: "arrow.clockwise") { downloads.resume(uid: uid) }
             case .finished:
-                EmptyView()
+                Button("Share as CBZ", systemImage: "doc.zipper") {
+                    Task.detached {
+                        if let url = try? DownloadManager.exportCBZ(record) {
+                            await MainActor.run { ShareSheet.present([url]) }
+                        }
+                    }
+                }
             }
             Button("Delete", systemImage: "trash", role: .destructive) { downloads.delete(uid: uid) }
         }
@@ -895,5 +904,44 @@ private struct LicenseTextView: View {
                 }
             }
         }
+    }
+}
+
+/// Downloads › Settings: how many at once, retries, a pause between pages, E-Hentai's originals.
+struct DownloadSettingsView: View {
+    @Environment(AppSettings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Form {
+            Section {
+                Stepper("Galleries at Once: \(settings.downloadGalleries)", value: $settings.downloadGalleries, in: 1...5)
+                Stepper("Pages at Once: \(settings.downloadPages)", value: $settings.downloadPages, in: 1...6)
+                Stepper("Retries: \(settings.downloadRetries)", value: $settings.downloadRetries, in: 0...5)
+            } footer: {
+                Text("More at once is faster but more likely to be limited by the site. E-Hentai uses at most 3 pages at once.")
+            }
+            Section {
+                VStack(alignment: .leading) {
+                    LabeledContent("Interval") {
+                        Text(String(format: "%.1f s", settings.downloadInterval)).monospacedDigit()
+                    }
+                    Slider(value: $settings.downloadInterval, in: 0...5, step: 0.5)
+                }
+            } footer: {
+                Text("A pause before each page, gentler on the sites.")
+            }
+            if settings.ehentaiEnabled {
+                Section {
+                    Toggle("Download Original Images", isOn: $settings.ehOriginalImages)
+                } header: {
+                    Text(SiteKind.ehentai.displayName)
+                } footer: {
+                    Text("Original images are larger; on E-Hentai they cost GP from your account when the file is big.")
+                }
+            }
+        }
+        .navigationTitle("Download Settings")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

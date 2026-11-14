@@ -293,6 +293,11 @@ object AppSettings {
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
         swapTapZones = p.getBoolean("swapTapZones", false)
+        downloadGalleries = p.getInt("downloadGalleries", 2).coerceIn(1, 5)
+        downloadPages = p.getInt("downloadPages", 3).coerceIn(1, 6)
+        downloadRetries = p.getInt("downloadRetries", 2).coerceIn(0, 5)
+        downloadInterval = p.getFloat("downloadInterval", 0f).toDouble().coerceIn(0.0, 5.0)
+        ehOriginalImages = p.getBoolean("ehOriginalImages", false)
         useNhBlacklist = p.getBoolean("useNhBlacklist", true)
         favoritesAllFolders = p.getString("favoritesAllFolders", null)?.split(",")?.mapNotNull { it.toIntOrNull() }?.toSet() ?: (0..9).toSet()
         when (homeSiteDefault) {
@@ -439,6 +444,17 @@ object AppSettings {
     /** Reader: tapping the left edge goes forward (and the right edge back). */
     var swapTapZones by Pref(false) { save("swapTapZones", it) }
 
+    /** Downloads: galleries downloading at once (the rest wait their turn). */
+    var downloadGalleries by Pref(2) { save("downloadGalleries", it) }
+    /** Downloads: pages of one gallery at once (E-Hentai uses at most 3). */
+    var downloadPages by Pref(3) { save("downloadPages", it) }
+    /** Downloads: tries again this many times when a page fails. */
+    var downloadRetries by Pref(2) { save("downloadRetries", it) }
+    /** Downloads: seconds to wait before each page. */
+    var downloadInterval by Pref(0.0) { save("downloadInterval", it) }
+    /** E-Hentai downloads: the original images (cost GP when large). */
+    var ehOriginalImages by Pref(false) { save("ehOriginalImages", it) }
+
     fun homeRows(site: Site): List<HomeRow> =
         homeRowsRaw.split(',').mapNotNull { HomeRow.of(it.trim()) }.filter { it.site == site }.take(HomeRow.MAX)
 
@@ -566,6 +582,11 @@ object AppSettings {
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
         "swapTapZones" to swapTapZones,
+        "downloadGalleries" to downloadGalleries,
+        "downloadPages" to downloadPages,
+        "downloadRetries" to downloadRetries,
+        "downloadInterval" to downloadInterval,
+        "ehOriginalImages" to ehOriginalImages,
         "useNhBlacklist" to useNhBlacklist,
         "recentSearches" to recentSearches.toList(),
     )
@@ -660,6 +681,11 @@ object AppSettings {
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }
                 "swapTapZones" -> bool?.let { swapTapZones = it }
+                "downloadGalleries" -> number?.let { downloadGalleries = it.toInt().coerceIn(1, 5) }
+                "downloadPages" -> number?.let { downloadPages = it.toInt().coerceIn(1, 6) }
+                "downloadRetries" -> number?.let { downloadRetries = it.toInt().coerceIn(0, 5) }
+                "downloadInterval" -> number?.let { downloadInterval = it.toDouble().coerceIn(0.0, 5.0) }
+                "ehOriginalImages" -> bool?.let { ehOriginalImages = it }
                 "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }

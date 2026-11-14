@@ -305,6 +305,16 @@ final class AppSettings {
     var blockedCommenters: String { didSet { save(blockedCommenters, "blockedCommenters") } }
     /// Reader: tapping the left edge goes forward (and the right edge back).
     var swapTapZones: Bool { didSet { save(swapTapZones, "swapTapZones") } }
+    /// Downloads: galleries downloading at once (the rest wait their turn).
+    var downloadGalleries: Int { didSet { save(downloadGalleries, "downloadGalleries") } }
+    /// Downloads: pages of one gallery at once (E-Hentai uses at most 3).
+    var downloadPages: Int { didSet { save(downloadPages, "downloadPages") } }
+    /// Downloads: tries again this many times when a page fails.
+    var downloadRetries: Int { didSet { save(downloadRetries, "downloadRetries") } }
+    /// Downloads: seconds to wait before each page.
+    var downloadInterval: Double { didSet { save(downloadInterval, "downloadInterval") } }
+    /// E-Hentai downloads: the original images (cost GP when large).
+    var ehOriginalImages: Bool { didSet { save(ehOriginalImages, "ehOriginalImages") } }
 
     var blockedCommenterSet: Set<String> {
         Set(blockedCommenters.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
@@ -421,6 +431,11 @@ final class AppSettings {
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,eh-popular"
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
         swapTapZones = d.bool(forKey: "swapTapZones")
+        downloadGalleries = min(max(d.object(forKey: "downloadGalleries") as? Int ?? 2, 1), 5)
+        downloadPages = min(max(d.object(forKey: "downloadPages") as? Int ?? 3, 1), 6)
+        downloadRetries = min(max(d.object(forKey: "downloadRetries") as? Int ?? 2, 0), 5)
+        downloadInterval = min(max(d.double(forKey: "downloadInterval"), 0), 5)
+        ehOriginalImages = d.bool(forKey: "ehOriginalImages")
         useNhBlacklist = d.object(forKey: "useNhBlacklist") as? Bool ?? true
     }
 
@@ -511,6 +526,11 @@ final class AppSettings {
         values["homeRows"] = homeRowsRaw
         values["blockedCommenters"] = blockedCommenters
         values["swapTapZones"] = swapTapZones
+        values["downloadGalleries"] = downloadGalleries
+        values["downloadPages"] = downloadPages
+        values["downloadRetries"] = downloadRetries
+        values["downloadInterval"] = downloadInterval
+        values["ehOriginalImages"] = ehOriginalImages
         values["useNhBlacklist"] = useNhBlacklist
         values["favoritesAllFolders"] = favoritesAllFolders.sorted().map(String.init).joined(separator: ",")
         return values
@@ -588,6 +608,11 @@ final class AppSettings {
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)
         case "swapTapZones": set(\.swapTapZones, number?.boolValue)
+        case "downloadGalleries": set(\.downloadGalleries, number.map { min(max($0.intValue, 1), 5) })
+        case "downloadPages": set(\.downloadPages, number.map { min(max($0.intValue, 1), 6) })
+        case "downloadRetries": set(\.downloadRetries, number.map { min(max($0.intValue, 0), 5) })
+        case "downloadInterval": set(\.downloadInterval, number.map { min(max($0.doubleValue, 0), 5) })
+        case "ehOriginalImages": set(\.ehOriginalImages, number?.boolValue)
         case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })

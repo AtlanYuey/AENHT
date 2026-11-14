@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.core.label
+import com.atlanyuey.aenht.ui.components.GlassCircleButton
+import com.atlanyuey.aenht.shared.site.Site
 import com.atlanyuey.aenht.shared.site.GalleryKey
 import com.atlanyuey.aenht.core.GalleryItem
 import com.atlanyuey.aenht.ui.components.SiteFilterButton
@@ -340,6 +343,8 @@ class DownloadsScreen : Screen() {
                     })
                 }
                 SiteFilterButton(site, { site = it })
+                val nav = LocalNavigator.current
+                GlassCircleButton(Icons.Gear, tr("Download Settings"), { nav.push(DownloadSettingsScreen()) })
             },
             overlay = {
                 if (selecting && AppSettings.libraryStyle != LibraryStyle.Cards) {
@@ -408,6 +413,13 @@ class DownloadsScreen : Screen() {
         val resume = tr("Resume")
         val retry = tr("Retry")
         val delete = tr("Delete")
+        val exportCbz = tr("Share as CBZ")
+        val saveCbz = tr("Save CBZ to Downloads")
+        val saved = tr("Saved to Downloads › AENHT.")
+        val failed = tr("Couldn't Save")
+        val context = LocalContext.current
+        val overlays = LocalOverlays.current
+        val scope = rememberCoroutineScope()
         return { key ->
             val record = Downloads.record(key)
             buildList {
@@ -419,6 +431,28 @@ class DownloadsScreen : Screen() {
                     DownloadRecord.PAUSED -> add(MenuItem(resume, Icons.Refresh) { Downloads.resume(key) })
                     DownloadRecord.FAILED -> add(MenuItem(retry, Icons.Refresh) { Downloads.resume(key) })
                     else -> {}
+                }
+                if (record?.state == DownloadRecord.FINISHED) {
+                    add(MenuItem(exportCbz, Icons.Share) {
+                        scope.launch {
+                            val file = Downloads.exportCbz(context, key) ?: return@launch
+                            val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".files", file)
+                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "application/vnd.comicbook+zip"
+                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(android.content.Intent.createChooser(send, null))
+                        }
+                    })
+                    if (android.os.Build.VERSION.SDK_INT >= 29) {
+                        add(MenuItem(saveCbz, Icons.Download) {
+                            scope.launch {
+                                val ok = runCatching { Downloads.exportCbz(context, key)?.let { Downloads.saveToDownloads(context, it) } == true }.getOrDefault(false)
+                                overlays.alert(if (ok) saveCbz else failed, if (ok) saved else null)
+                            }
+                        })
+                    }
                 }
                 add(MenuItem(delete, Icons.Trash, destructive = true) { Downloads.delete(key) })
             }
@@ -967,6 +1001,45 @@ class LicenseTextScreen(private val title: String, private val resource: Int) : 
                         .padding(PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 16.dp)),
                     style = Type.footnote.copy(fontFamily = FontFamily.Monospace),
                 )
+            }
+        }
+    }
+}
+
+
+/** Downloads › Settings: how many at once, retries, a pause between pages, E-Hentai's originals. */
+class DownloadSettingsScreen : Screen() {
+    @Composable
+    override fun Content() {
+        GroupedListScreen(tr("Download Settings")) {
+            section(footer = { FooterText(tr("More at once is faster but more likely to be limited by the site. E-Hentai uses at most 3 pages at once.")) }) {
+                ListRow(tr("Galleries at Once"), value = "${AppSettings.downloadGalleries}") {
+                    Stepper(AppSettings.downloadGalleries, 1..5) { AppSettings.downloadGalleries = it }
+                }
+                ListRow(tr("Pages at Once"), value = "${AppSettings.downloadPages}") {
+                    Stepper(AppSettings.downloadPages, 1..6) { AppSettings.downloadPages = it }
+                }
+                ListRow(tr("Retries"), value = "${AppSettings.downloadRetries}", last = true) {
+                    Stepper(AppSettings.downloadRetries, 0..5) { AppSettings.downloadRetries = it }
+                }
+            }
+            section(footer = { FooterText(tr("A pause before each page, gentler on the sites.")) }) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    Row {
+                        Txt(tr("Interval"), Modifier.weight(1f))
+                        Txt(String.format(java.util.Locale.ROOT, "%.1f", AppSettings.downloadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
+                    }
+                    GlassSlider(
+                        AppSettings.downloadInterval.toFloat(),
+                        { AppSettings.downloadInterval = (Math.round(it * 2) / 2.0).coerceIn(0.0, 5.0) },
+                        0f..5f,
+                    )
+                }
+            }
+            if (AppSettings.ehentaiEnabled) {
+                section(Site.EHENTAI.label, footer = { FooterText(tr("Original images are larger; on E-Hentai they cost GP from your account when the file is big.")) }) {
+                    ToggleRow(tr("Download Original Images"), AppSettings.ehOriginalImages, { AppSettings.ehOriginalImages = it }, last = true)
+                }
             }
         }
     }

@@ -422,5 +422,20 @@
  "Saved to Photos.",
  "Couldn't Save",
  "Saving pages needs Android 10 or later. Share the page instead.",
- "Swap Tap Zones"
+ "Swap Tap Zones",
+ "Download Settings",
+ "Share as CBZ",
+ "Save CBZ to Downloads",
+ "Saved to Downloads › AENHT.",
+ "Galleries at Once",
+ "Pages at Once",
+ "Retries",
+ "More at once is faster but more likely to be limited by the site. E-Hentai uses at most 3 pages at once.",
+ "A pause before each page, gentler on the sites.",
+ "Interval",
+ "Download Original Images",
+ "Original images are larger; on E-Hentai they cost GP from your account when the file is big.",
+ "Galleries at Once: %lld",
+ "Pages at Once: %lld",
+ "Retries: %lld"
 ]

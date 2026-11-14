@@ -407,7 +407,25 @@ object Downloads {
 
     fun delete(id: Int) = delete(GalleryKey.nh(id))
 
+    /** Galleries downloading now (Download Settings limits how many at once). */
+    private var running = 0
+
     private suspend fun run(key: GalleryKey) {
+        // Waits its turn: the others keep downloading meanwhile.
+        if (running >= AppSettings.downloadGalleries) {
+            update(key) { it.copy(state = DownloadRecord.QUEUED) }
+            while (running >= AppSettings.downloadGalleries) delay(500)
+            update(key) { it.copy(state = DownloadRecord.DOWNLOADING) }
+        }
+        running++
+        try {
+            download(key)
+        } finally {
+            running--
+        }
+    }
+
+    private suspend fun download(key: GalleryKey) {
         if (record(key)?.isEh == true && !completeEhPages(key)) {
             jobs.remove(key.storageKey)
             update(key) { it.copy(state = DownloadRecord.FAILED) }
@@ -422,13 +440,17 @@ object Downloads {
         }
         update(key) { it.copy(completed = it.pages.size - pending.size) }
         var failures = 0
-        // E-Hentai: fewer at a time (each page also loads its page link).
-        val semaphore = Semaphore(if (record.isEh) 2 else 3)
+        // E-Hentai: at most 3 at a time (each page also loads its page link).
+        val semaphore = Semaphore(if (record.isEh) minOf(3, AppSettings.downloadPages) else AppSettings.downloadPages)
+        val interval = (AppSettings.downloadInterval * 1000).toLong()
+        val attempts = AppSettings.downloadRetries + 1
         coroutineScope {
             pending.map { page ->
                 async {
                     val ok = semaphore.withPermit {
-                        if (record.isEh) fetchEh(page, File(folder, page.file)) else fetch(page.remote, File(folder, page.file))
+                        if (interval > 0) delay(interval)
+                        if (record.isEh) fetchEh(page, File(folder, page.file), attempts)
+                        else fetch(page.remote, File(folder, page.file), attempts)
                     }
                     if (ok) update(key) { it.copy(completed = it.completed + 1) } else failures++
                     if (System.currentTimeMillis() - lastSave > 2000) saveIndex()
@@ -471,9 +493,9 @@ object Downloads {
     }
 
     /** An E-Hentai page: its image link first, then the image (another node when it fails). */
-    private suspend fun fetchEh(page: DownloadPage, file: File): Boolean {
+    private suspend fun fetchEh(page: DownloadPage, file: File, attempts: Int): Boolean {
         var reloadKey: String? = null
-        repeat(3) { attempt ->
+        repeat(maxOf(1, attempts)) { attempt ->
             val image = try {
                 EhClient.imagePage(page.remote, reloadKey)
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -482,7 +504,8 @@ object Downloads {
                 delay(2000L * (attempt + 1))
                 return@repeat
             }
-            if (fetch(image.imageUrl, file, attempts = 1)) return true
+            val url = if (AppSettings.ehOriginalImages) image.originalUrl ?: image.imageUrl else image.imageUrl
+            if (fetch(url, file, attempts = 1)) return true
             reloadKey = image.reloadKey
         }
         return false
@@ -505,6 +528,53 @@ object Downloads {
             if (attempt < attempts - 1) delay(1000L * (attempt + 1))
         }
         false
+    }
+
+    /**
+     * The finished download as a CBZ (a zip of the pages in order, with a
+     * ComicInfo.xml), in the cache for sharing or saving.
+     */
+    suspend fun exportCbz(context: Context, key: GalleryKey): File? = withContext(Dispatchers.IO) {
+        val record = record(key) ?: return@withContext null
+        val folder = folder(key)
+        val dir = File(context.cacheDir, "shared").apply { mkdirs() }
+        val name = record.title.replace(Regex("""[\\/:*?"<>|]"""), "_").take(120).ifBlank { "${record.id}" }
+        val out = File(dir, "$name.cbz")
+        java.util.zip.ZipOutputStream(out.outputStream().buffered()).use { zip ->
+            val info = buildString {
+                append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo>\n")
+                append("  <Title>").append(xmlEscape(record.title)).append("</Title>\n")
+                append("  <PageCount>").append(record.pages.size).append("</PageCount>\n")
+                append("  <Web>").append(xmlEscape(if (record.isEh) "https://e-hentai.org/g/${record.id}/${record.token}/" else "https://nhentai.net/g/${record.id}/")).append("</Web>\n")
+                append("</ComicInfo>\n")
+            }
+            zip.putNextEntry(java.util.zip.ZipEntry("ComicInfo.xml"))
+            zip.write(info.toByteArray())
+            zip.closeEntry()
+            record.pages.sortedBy { it.number }.forEachIndexed { i, page ->
+                val file = File(folder, page.file)
+                if (!file.exists()) return@forEachIndexed
+                zip.putNextEntry(java.util.zip.ZipEntry("%04d.%s".format(i + 1, file.extension.ifEmpty { "jpg" })))
+                file.inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+            }
+        }
+        out
+    }
+
+    private fun xmlEscape(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    /** Copies a CBZ into the system Downloads folder (Android 10 and later). */
+    @androidx.annotation.RequiresApi(29)
+    suspend fun saveToDownloads(context: Context, file: File): Boolean = withContext(Dispatchers.IO) {
+        val values = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.Downloads.DISPLAY_NAME, file.name)
+            put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/vnd.comicbook+zip")
+            put(android.provider.MediaStore.Downloads.RELATIVE_PATH, "Download/AENHT")
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return@withContext false
+        resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } != null
     }
 
     private fun update(key: GalleryKey, change: (DownloadRecord) -> DownloadRecord) {

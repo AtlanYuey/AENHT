@@ -118,11 +118,15 @@ class EhApi internal constructor(
 
     /**
      * Cookies for an image on ExHentai's servers (covers and thumbnails on
-     * s.exhentai.org need the account, like the pages); null for any other host.
+     * s.exhentai.org need the account, like the pages) or an original image
+     * (e-hentai.org/fullimg); null for anything else.
      */
     fun imageCookieHeader(url: String): String? {
         val host = url.substringAfter("://").substringBefore('/').substringBefore(':').lowercase()
-        if (host != "exhentai.org" && !host.endsWith(".exhentai.org")) return null
+        val path = url.substringAfter("://").substringAfter('/', "")
+        // Original images (/fullimg/…) need the account on E-Hentai too.
+        val original = host == "e-hentai.org" && path.startsWith("fullimg")
+        if (host != "exhentai.org" && !host.endsWith(".exhentai.org") && !original) return null
         if (!isLoggedIn) return null
         val cookies = linkedMapOf(
             "ipb_member_id" to credentials.memberId!!,
