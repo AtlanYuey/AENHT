@@ -14,7 +14,8 @@ final class AppLock {
         didSet { UserDefaults.standard.set(isEnabled, forKey: "appLock") }
     }
     private(set) var locked: Bool
-    @ObservationIgnored private var prompting = false
+    /// The Face ID / passcode prompt is up (it makes the app inactive while it shows).
+    @ObservationIgnored private(set) var prompting = false
 
     private init() {
         let on = UserDefaults.standard.bool(forKey: "appLock")

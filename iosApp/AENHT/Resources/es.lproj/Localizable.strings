@@ -339,7 +339,6 @@
 "Select All" = "Seleccionar todo";
 "Downloading" = "Descargando";
 "Fade Page Turns" = "Pasar página con fundido";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.";
 "Pinned Rows" = "Filas fijas";
 "First Row" = "Primera fila";
 "Second Row" = "Segunda fila";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "Tus filtros ocultan todo lo que hay en estas páginas.";
 "The site limits requests. Continuing in %lld s." = "El sitio limita las solicitudes. Se continuará en %lld s.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "El archivo del servidor fue escrito por una versión más reciente de AENHT. Actualiza la app para sincronizar.";
+"Turn One Page at a Time" = "Pasar de una en una página";
+"Fade Follows the Finger" = "El fundido sigue el dedo";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido. Con «El fundido sigue el dedo», al deslizar las páginas no se mueven y la siguiente se descubre desde donde está el dedo; al soltar, pasa la página o vuelve atrás según cuánto y con qué rapidez deslizaste.";

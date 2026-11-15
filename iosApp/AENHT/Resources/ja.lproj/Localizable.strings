@@ -339,7 +339,6 @@
 "Select All" = "すべて選択";
 "Downloading" = "ダウンロード中";
 "Fade Page Turns" = "フェードでページ送り";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "フェードにすると、ページはスライドせずその場で次のページに切り替わり、速くめくっても目が疲れにくくなります。";
 "Pinned Rows" = "固定の行";
 "First Row" = "1 行目";
 "Second Row" = "2 行目";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "これらのページの内容はすべてフィルタで非表示になっています。";
 "The site limits requests. Continuing in %lld s." = "サイトがリクエスト数を制限しています。%lld 秒後に続行します。";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "サーバ上のファイルは新しいバージョンの AENHT で書き込まれています。同期するには App をアップデートしてください。";
+"Turn One Page at a Time" = "1ページずつめくる";
+"Fade Follows the Finger" = "指に合わせてフェード";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "フェードにすると、ページはスライドせずその場で次のページに切り替わり、速くめくっても目が疲れにくくなります。「指に合わせてフェード」をオンにすると、スワイプ中もページは動かず、指の位置から次のページが現れます。指を離すと、スワイプの距離と速さに応じてページをめくるか元に戻ります。";

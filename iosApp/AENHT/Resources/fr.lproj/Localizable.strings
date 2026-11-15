@@ -339,7 +339,6 @@
 "Select All" = "Tout sélectionner";
 "Downloading" = "Téléchargement";
 "Fade Page Turns" = "Fondu entre les pages";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite.";
 "Pinned Rows" = "Rangées épinglées";
 "First Row" = "Première rangée";
 "Second Row" = "Deuxième rangée";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "Vos filtres masquent tout le contenu de ces pages.";
 "The site limits requests. Continuing in %lld s." = "Le site limite les requêtes. Reprise dans %lld s.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.";
+"Turn One Page at a Time" = "Tourner une page à la fois";
+"Fade Follows the Finger" = "Le fondu suit le doigt";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite. Avec « Le fondu suit le doigt », les pages restent en place pendant le balayage et la suivante se dévoile à partir du doigt ; en relâchant, la page tourne ou revient selon la distance et la vitesse du balayage.";

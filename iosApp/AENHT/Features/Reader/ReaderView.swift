@@ -129,7 +129,8 @@ struct ReaderView: View {
         guard mode == .leftToRight || mode == .rightToLeft else { return nil }
         guard settings.doublePage == .always || (settings.doublePage == .landscape && isLandscape) else { return nil }
         let wide = Set(source.pages.enumerated().filter { $0.element.aspectRatio > 1.05 }.map { KotlinInt(int: Int32($0.offset)) })
-        return Spreads(pageCount: Int32(pageCount), cover: settings.doublePageCover, widePages: wide)
+        return Spreads(pageCount: Int32(pageCount), cover: settings.doublePageCover, widePages: wide,
+                       singleStep: settings.doublePageSingleStep)
     }
 
     /// What the paged reader turns: spreads of one or two pages.
@@ -306,7 +307,7 @@ struct ReaderView: View {
             }, onSwipe: { direction in
                 handleSwipe(direction)
             })
-            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.spreadGapOn ? Int(settings.spreadGap) : 0)")
+            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)-\(settings.spreadGapOn ? Int(settings.spreadGap) : 0)")
         } else {
             ScrollView(.vertical) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
@@ -644,6 +645,7 @@ struct ReadingSettingsSections: View {
                 }
                 if settings.doublePage != .off {
                     Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
+                    Toggle("Turn One Page at a Time", isOn: $settings.doublePageSingleStep)
                     Toggle("Gap Between Pages", isOn: $settings.spreadGapOn)
                     if settings.spreadGapOn {
                         // Like the gap of the continuous mode.
@@ -745,8 +747,9 @@ struct ReadingSettingsSections: View {
                 ForEach(TapZones.allCases) { Text($0.title).tag($0) }
             }
             Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
+            Toggle("Fade Follows the Finger", isOn: $settings.fadeFollowsFinger)
         } footer: {
-            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
+            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped.")
         }
         Section {
             // Across the tap zones: up and down with left and right zones.
@@ -883,6 +886,7 @@ struct PagedReader: UIViewControllerRepresentable {
         if let first = context.coordinator.controller(for: page) {
             controller.setViewControllers([first], direction: .forward, animated: false)
         }
+        context.coordinator.watchSwipes(in: controller)
         return controller
     }
 
@@ -892,10 +896,12 @@ struct PagedReader: UIViewControllerRepresentable {
         guard let current = (controller.viewControllers?.first as? PageController)?.index,
               current != page
         else { return }
-        // A turn of one page slides, or fades without the animation; a jump
-        // (the slider) shows the page at once.
+        // A turn of one page slides, or fades without the animation (and with
+        // Fade Follows the Finger, where pages never move); a jump (the
+        // slider) shows the page at once.
+        let settings = AppSettings.shared
         let turn: PageTurn = abs(page - current) != 1 ? .instant
-            : AppSettings.shared.animatePageTurns ? .slide : .fade
+            : settings.animatePageTurns && !settings.fadeFollowsFinger ? .slide : .fade
         coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
@@ -907,9 +913,127 @@ struct PagedReader: UIViewControllerRepresentable {
         /// Page controllers near the current page, reused so a tap shows
         /// the very page that was already laid out next to this one.
         private var cache: [Int: PageController] = [:]
+        /// Watches the page view controller's own scroll view while pages are swiped.
+        private var swipes: NSKeyValueObservation?
+        /// The pages changed for Fade Follows the Finger, to put back as they were.
+        private var revealed: [PageController] = []
+        private weak var pageScroll: UIScrollView?
+        /// How much the edge is held under the finger (0…1), when that was
+        /// last worked out, and whether the finger was down then.
+        private var grip: (value: CGFloat, time: CFTimeInterval, held: Bool) = (0, 0, false)
 
         init(_ parent: PagedReader) {
             self.parent = parent
+        }
+
+        // MARK: Fade Follows the Finger
+
+        /// The page view controller moves its pages in a scroll view of its
+        /// own: each change of its offset is a step of a swipe.
+        func watchSwipes(in pageController: UIPageViewController) {
+            guard swipes == nil,
+                  let scroll = pageController.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
+            pageScroll = scroll
+            swipes = scroll.observe(\.contentOffset) { [weak self, weak pageController] _, _ in
+                guard let self, let pageController else { return }
+                self.reveal(in: pageController)
+            }
+        }
+
+        /// While a page is swiped the pages stay where they are, and the later
+        /// of the two is uncovered (or covered again) from the side the next
+        /// page comes from, up to where the swipe has got to, with a soft
+        /// edge. Letting go is the page view controller's: it settles on the
+        /// next page or back, by how far and how fast the swipe went.
+        private func reveal(in pageController: UIPageViewController) {
+            guard AppSettings.shared.fadeFollowsFinger, running == nil, let container = pageController.view else {
+                if running == nil { endReveal() }
+                return
+            }
+            let vertical = parent.mode == .verticalPaged
+            let length = vertical ? container.bounds.height : container.bounds.width
+            let span = length + 16
+            guard length > 0 else { return }
+            // How far each page is from the place of the page shown.
+            var moving: [(page: PageController, distance: CGFloat)] = []
+            for page in cache.values where page.isViewLoaded {
+                guard let view = page.view, view.window != nil, let holder = view.superview else { continue }
+                let center = holder.convert(view.center, to: container)
+                let distance = vertical ? center.y - container.bounds.midY : center.x - container.bounds.midX
+                if abs(distance) < span - 0.5 { moving.append((page, distance)) }
+            }
+            // Two pages on the way: a turn. Otherwise (at rest, or pulling past
+            // the first or last page) everything is as usual.
+            guard moving.count == 2, let upper = moving.max(by: { $0.page.index < $1.page.index }),
+                  let lower = moving.min(by: { $0.page.index < $1.page.index }), abs(upper.distance) > 0.5 else {
+                endReveal()
+                return
+            }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for (page, distance) in [lower, upper] {
+                guard let view = page.view else { continue }
+                if !revealed.contains(where: { $0 === page }) { revealed.append(page) }
+                // The page view controller moved the page by this much: taken back, it stays in place.
+                view.transform = vertical ? CGAffineTransform(translationX: 0, y: -distance)
+                                          : CGAffineTransform(translationX: -distance, y: 0)
+                view.superview?.layer.zPosition = page === upper.page ? 1 : 0
+            }
+            lower.page.view.layer.mask = nil
+            // Kept: from the edge of the uncovered part on (see-through before it).
+            // The edge is where the turn has got to; while the finger drags, it
+            // goes under the finger (within a moment), and back when it lets go.
+            let soft = length * 0.14
+            let fraction = abs(upper.distance) / span
+            var edge = fraction * length
+            let now = CACurrentMediaTime()
+            let pan = pageScroll?.panGestureRecognizer
+            let held = pan?.state == .began || pan?.state == .changed
+            let elapsed = grip.time == 0 ? 0 : CGFloat(now - grip.time)
+            grip = (held ? min(1, grip.value + elapsed / 0.14) : max(0, grip.value - elapsed / 0.22), now, held)
+            if grip.value > 0, let pan {
+                let point = pan.location(in: container)
+                let along = vertical ? point.y : point.x
+                // Measured from the side the earlier page stays on; the soft edge is centred on the finger.
+                let touch = upper.distance > 0 ? along : length - along
+                let underFinger = (touch + soft / 2) * length / (length + soft)
+                edge = edge * (1 - grip.value) + underFinger * grip.value
+            }
+            edge = min(max(edge, 0), length)
+            let from = edge / length * (length + soft) - soft
+            let start = min(max(from / length, 0), 1)
+            let end = min(max((from + soft) / length, 0), 1)
+            let mask = (upper.page.view.layer.mask as? CAGradientLayer) ?? CAGradientLayer()
+            mask.frame = upper.page.view.bounds
+            let clear = UIColor.clear.cgColor
+            let opaque = UIColor.black.cgColor
+            if upper.distance > 0 {
+                // It comes from the right (or from below).
+                mask.colors = [clear, opaque]
+                mask.locations = [NSNumber(value: start), NSNumber(value: end)]
+            } else {
+                mask.colors = [opaque, clear]
+                mask.locations = [NSNumber(value: 1 - end), NSNumber(value: 1 - start)]
+            }
+            mask.startPoint = vertical ? CGPoint(x: 0.5, y: 0) : CGPoint(x: 0, y: 0.5)
+            mask.endPoint = vertical ? CGPoint(x: 0.5, y: 1) : CGPoint(x: 1, y: 0.5)
+            upper.page.view.layer.mask = mask
+            CATransaction.commit()
+        }
+
+        /// Puts the pages back as the page view controller laid them out.
+        private func endReveal() {
+            guard !revealed.isEmpty else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for page in revealed where page.isViewLoaded {
+                page.view.transform = .identity
+                page.view.layer.mask = nil
+                page.view.superview?.layer.zPosition = 0
+            }
+            CATransaction.commit()
+            revealed = []
+            grip = (0, 0, false)
         }
 
         func controller(for index: Int) -> PageController? {
@@ -939,6 +1063,7 @@ struct PagedReader: UIViewControllerRepresentable {
                 direction = forward ? .forward : .reverse
             }
             endTurn()
+            endReveal()
             let container = pageController.view!
             var cover: UIView?
             if style != .instant, let old = pageController.viewControllers?.first?.view,

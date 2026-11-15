@@ -339,7 +339,6 @@ T = [
     "Seleccionar todo",
     "Descargando",
     "Pasar página con fundido",
-    "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.",
     "Filas fijas",
     "Primera fila",
     "Segunda fila",
@@ -541,4 +540,7 @@ T = [
     "Tus filtros ocultan todo lo que hay en estas páginas.",
     "El sitio limita las solicitudes. Se continuará en %lld s.",
     "El archivo del servidor fue escrito por una versión más reciente de AENHT. Actualiza la app para sincronizar.",
+    "Pasar de una en una página",
+    "El fundido sigue el dedo",
+    "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido. Con «El fundido sigue el dedo», al deslizar las páginas no se mueven y la siguiente se descubre desde donde está el dedo; al soltar, pasa la página o vuelve atrás según cuánto y con qué rapidez deslizaste.",
 ]

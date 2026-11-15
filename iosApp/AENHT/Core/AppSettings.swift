@@ -372,6 +372,10 @@ final class AppSettings {
     var doublePageCover: Bool { didSet { save(doublePageCover, "doublePageCover") } }
     /// Double page: a gap between the two pages, in points.
     var spreadGapOn: Bool { didSet { save(spreadGapOn, "spreadGapOn") } }
+    /// Double page: a turn moves on by one page instead of two.
+    var doublePageSingleStep: Bool { didSet { save(doublePageSingleStep, "doublePageSingleStep") } }
+    /// Swiping reveals the next page from under the finger; the pages don't move.
+    var fadeFollowsFinger: Bool { didSet { save(fadeFollowsFinger, "fadeFollowsFinger") } }
     var spreadGap: Double { didSet { save(spreadGap, "spreadGap") } }
     /// Reader: plain white / black margins are cut off the pages (paged modes).
     var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
@@ -513,6 +517,8 @@ final class AppSettings {
         doublePage = DoublePage(rawValue: d.string(forKey: "doublePage") ?? "") ?? .landscape
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         spreadGapOn = d.object(forKey: "spreadGapOn") as? Bool ?? true
+        doublePageSingleStep = d.bool(forKey: "doublePageSingleStep")
+        fadeFollowsFinger = d.bool(forKey: "fadeFollowsFinger")
         spreadGap = d.object(forKey: "spreadGap") as? Double ?? 6
         autoCrop = d.bool(forKey: "autoCrop")
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,nh-week,eh-day,eh-popular"
@@ -616,6 +622,8 @@ final class AppSettings {
         values["doublePage"] = doublePage.rawValue
         values["doublePageCover"] = doublePageCover
         values["spreadGapOn"] = spreadGapOn
+        values["doublePageSingleStep"] = doublePageSingleStep
+        values["fadeFollowsFinger"] = fadeFollowsFinger
         values["spreadGap"] = spreadGap
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
@@ -706,6 +714,8 @@ final class AppSettings {
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
         case "spreadGapOn": set(\.spreadGapOn, number?.boolValue)
+        case "doublePageSingleStep": set(\.doublePageSingleStep, number?.boolValue)
+        case "fadeFollowsFinger": set(\.fadeFollowsFinger, number?.boolValue)
         case "spreadGap": set(\.spreadGap, number.map { min(max($0.doubleValue, 2), 60) })
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)

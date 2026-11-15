@@ -342,6 +342,8 @@ object AppSettings {
         deviceTranslation = p.getBoolean("deviceTranslation", true)
         doublePage = DoublePage.of(p.getString("doublePage", null))
         doublePageCover = p.getBoolean("doublePageCover", true)
+        doublePageSingleStep = p.getBoolean("doublePageSingleStep", false)
+        fadeFollowsFinger = p.getBoolean("fadeFollowsFinger", false)
         spreadGapOn = p.getBoolean("spreadGapOn", true)
         spreadGap = p.getFloat("spreadGap", 6f).toDouble()
         autoCrop = p.getBoolean("autoCrop", false)
@@ -491,6 +493,10 @@ object AppSettings {
     var doublePage by Pref(DoublePage.Landscape) { save("doublePage", it.raw) }
     /** Reader, double page: the first page (the cover) stays alone. */
     var doublePageCover by Pref(true) { save("doublePageCover", it) }
+    /** Double page: a turn moves on by one page instead of two. */
+    var doublePageSingleStep by Pref(false) { save("doublePageSingleStep", it) }
+    /** Swiping reveals the next page from under the finger; the pages don't move. */
+    var fadeFollowsFinger by Pref(false) { save("fadeFollowsFinger", it) }
     /** Double page: a gap between the two pages, in dp. */
     var spreadGapOn by Pref(true) { save("spreadGapOn", it) }
     var spreadGap by Pref(6.0) { save("spreadGap", it) }
@@ -655,6 +661,8 @@ object AppSettings {
         "deviceTranslation" to deviceTranslation,
         "doublePage" to doublePage.raw,
         "doublePageCover" to doublePageCover,
+        "doublePageSingleStep" to doublePageSingleStep,
+        "fadeFollowsFinger" to fadeFollowsFinger,
         "spreadGapOn" to spreadGapOn,
         "spreadGap" to spreadGap,
         "autoCrop" to autoCrop,
@@ -762,6 +770,8 @@ object AppSettings {
                 "deviceTranslation" -> bool?.let { deviceTranslation = it }
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }
+                "doublePageSingleStep" -> bool?.let { doublePageSingleStep = it }
+                "fadeFollowsFinger" -> bool?.let { fadeFollowsFinger = it }
                 "spreadGapOn" -> bool?.let { spreadGapOn = it }
                 "spreadGap" -> number?.let { spreadGap = it.toDouble().coerceIn(2.0, 60.0) }
                 "autoCrop" -> bool?.let { autoCrop = it }

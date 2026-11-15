@@ -381,7 +381,6 @@
 "Select All" = "全选";
 "Downloading" = "下载中";
 "Fade Page Turns" = "渐变翻页动画";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。";
 "Pinned Rows" = "首页固定推荐";
 "First Row" = "第一行";
 "Second Row" = "第二行";
@@ -583,3 +582,6 @@
 "Everything on these pages is hidden by your filters." = "这几页的内容都被你的过滤规则隐藏了。";
 "The site limits requests. Continuing in %lld s." = "站点限制了请求频率，%lld 秒后自动继续。";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "服务器上的文件是由更新版本的 AENHT 写入的。请更新 App 后再同步。";
+"Turn One Page at a Time" = "每次翻一页";
+"Fade Follows the Finger" = "渐变跟随手指";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。开启「渐变跟随手指」后，滑动时页面保持不动，下一页从手指的位置逐渐显现；松手时根据滑动的距离和速度决定翻页还是回到原页。";

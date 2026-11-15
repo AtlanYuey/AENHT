@@ -339,7 +339,6 @@ T = [
     "Tout sélectionner",
     "Téléchargement",
     "Fondu entre les pages",
-    "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite.",
     "Rangées épinglées",
     "Première rangée",
     "Deuxième rangée",
@@ -541,4 +540,7 @@ T = [
     "Vos filtres masquent tout le contenu de ces pages.",
     "Le site limite les requêtes. Reprise dans %lld s.",
     "Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.",
+    "Tourner une page à la fois",
+    "Le fondu suit le doigt",
+    "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite. Avec « Le fondu suit le doigt », les pages restent en place pendant le balayage et la suivante se dévoile à partir du doigt ; en relâchant, la page tourne ou revient selon la distance et la vitesse du balayage.",
 ]

@@ -185,6 +185,34 @@ class ScreenshotTest {
         }
     }
 
+    @Test fun readerReveal() {
+        // Fade Follows the Finger: a swipe uncovers the next page from the finger on; the pages stay in place.
+        AppSettings.fadeFollowsFinger = true
+        try {
+            val tabs = Tabs()
+            val source = ReaderSource(
+                500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
+                "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
+            )
+            tabs.home.push(ReaderScreen(source, 3))
+            shoot("46_reader_reveal_before", tabs, settle = 500)
+            compose.mainClock.autoAdvance = false
+            // The finger has gone 40 % of the width to the left and is still down.
+            compose.onRoot().performTouchInput {
+                down(androidx.compose.ui.geometry.Offset(width * 0.8f, centerY))
+                repeat(8) { moveBy(androidx.compose.ui.geometry.Offset(-width * 0.05f, 0f)) }
+            }
+            compose.mainClock.advanceTimeBy(300)
+            compose.onRoot().captureRoboImage("build/screens/47_reader_reveal_mid.png")
+            // Let go before half way and without speed: back to the page it was on.
+            compose.onRoot().performTouchInput { up() }
+            compose.mainClock.advanceTimeBy(1500)
+            compose.onRoot().captureRoboImage("build/screens/48_reader_reveal_back.png")
+        } finally {
+            AppSettings.fadeFollowsFinger = false
+        }
+    }
+
     @Test fun homeScrolled() {
         AppSettings.hideBarsOnScroll = true
         shoot("24_home_docked")

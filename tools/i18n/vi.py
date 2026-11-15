@@ -339,7 +339,6 @@ T = [
     "Chọn tất cả",
     "Đang tải",
     "Chuyển trang mờ dần",
-    "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh.",
     "Hàng ghim",
     "Hàng thứ nhất",
     "Hàng thứ hai",
@@ -541,4 +540,7 @@ T = [
     "Mọi thứ trên các trang này đều bị bộ lọc của bạn ẩn đi.",
     "Trang web giới hạn số yêu cầu. Tiếp tục sau %lld giây.",
     "Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.",
+    "Lật từng trang một",
+    "Mờ dần theo ngón tay",
+    "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh. Khi bật “Mờ dần theo ngón tay”, lúc vuốt các trang đứng yên và trang sau lộ dần từ vị trí ngón tay; khi thả tay, trang sẽ lật hoặc quay lại tùy theo khoảng cách và tốc độ vuốt.",
 ]

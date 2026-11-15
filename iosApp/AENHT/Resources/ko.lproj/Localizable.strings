@@ -339,7 +339,6 @@
 "Select All" = "모두 선택";
 "Downloading" = "다운로드 중";
 "Fade Page Turns" = "페이드 페이지 넘김";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "페이드로 넘기면 페이지가 밀리지 않고 그 자리에서 다음 페이지로 바뀌어 빠르게 넘길 때 눈이 편합니다.";
 "Pinned Rows" = "고정 행";
 "First Row" = "첫 번째 행";
 "Second Row" = "두 번째 행";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "이 페이지들의 내용은 모두 필터에 의해 숨겨졌습니다.";
 "The site limits requests. Continuing in %lld s." = "사이트가 요청 수를 제한하고 있습니다. %lld초 후에 계속합니다.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "서버의 파일은 더 새로운 버전의 AENHT가 작성했습니다. 동기화하려면 앱을 업데이트하세요.";
+"Turn One Page at a Time" = "한 페이지씩 넘기기";
+"Fade Follows the Finger" = "손가락을 따라 페이드";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "페이드로 넘기면 페이지가 밀리지 않고 그 자리에서 다음 페이지로 바뀌어 빠르게 넘길 때 눈이 편합니다. '손가락을 따라 페이드'를 켜면 쓸어넘길 때 페이지는 그대로 있고 손가락 위치에서 다음 페이지가 나타납니다. 손을 떼면 쓸어넘긴 거리와 속도에 따라 페이지를 넘기거나 원래 페이지로 돌아갑니다.";

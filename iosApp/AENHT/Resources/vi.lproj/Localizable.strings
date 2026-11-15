@@ -339,7 +339,6 @@
 "Select All" = "Chọn tất cả";
 "Downloading" = "Đang tải";
 "Fade Page Turns" = "Chuyển trang mờ dần";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh.";
 "Pinned Rows" = "Hàng ghim";
 "First Row" = "Hàng thứ nhất";
 "Second Row" = "Hàng thứ hai";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "Mọi thứ trên các trang này đều bị bộ lọc của bạn ẩn đi.";
 "The site limits requests. Continuing in %lld s." = "Trang web giới hạn số yêu cầu. Tiếp tục sau %lld giây.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.";
+"Turn One Page at a Time" = "Lật từng trang một";
+"Fade Follows the Finger" = "Mờ dần theo ngón tay";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh. Khi bật “Mờ dần theo ngón tay”, lúc vuốt các trang đứng yên và trang sau lộ dần từ vị trí ngón tay; khi thả tay, trang sẽ lật hoặc quay lại tùy theo khoảng cách và tốc độ vuốt.";

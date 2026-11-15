@@ -46,6 +46,11 @@ struct RootView: View {
     @State private var clipboardLink: ClipboardLink?
     @State private var lock = AppLock.shared
     @State private var openedFromClipboard: ClipboardLink?
+    /// The app is leaving the screen or off it: what In the Background says
+    /// to hide is hidden. Not while it comes back (the system reports it
+    /// "active" only when the unlock or app-switcher animation has ended:
+    /// the blur would stay that long), nor for the app's own Face ID prompt.
+    @State private var hidden = false
 
     var body: some View {
         // Search is on the Home page, so neither has a search tab.
@@ -57,21 +62,29 @@ struct RootView: View {
                 phoneTabs
             }
         }
-        .environment(\.privacyMode, scenePhase == .active ? .off : settings.backgroundPrivacy)
-        .blur(radius: scenePhase != .active && settings.backgroundPrivacy == .blurApp ? 30 : 0)
+        .environment(\.privacyMode, hidden ? settings.backgroundPrivacy : .off)
+        .blur(radius: hidden && settings.backgroundPrivacy == .blurApp ? 30 : 0)
         .overlay(alignment: .top) { RateNoticeBanner().padding(.top, 6) }
         .overlay {
             // Locked, or (with the lock on, or Cover the App) in the app switcher.
-            if lock.locked || ((lock.isEnabled || settings.backgroundPrivacy == .cover) && scenePhase != .active) {
+            if lock.locked || ((lock.isEnabled || settings.backgroundPrivacy == .cover) && hidden) {
                 LockCover(showsButton: lock.locked) { lock.unlock() }
             }
         }
         .onAppear { lock.unlock() }
+        // Unlocked: the content shows at once, though the prompt is still going away.
+        .onChange(of: lock.locked) { _, locked in if !locked { hidden = false } }
         .task {
             RateNotice.shared.watch(NHClient.shared.api.limiter)
             RateNotice.shared.watch(EhService.shared.api.limiter)
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { old, phase in
+            switch phase {
+            case .background: hidden = true
+            // Leaving the screen (app switcher, Control Center…), but not the lock's own prompt.
+            case .inactive: hidden = old == .active && !lock.prompting
+            default: hidden = false
+            }
             if phase == .background { lock.onBackground() }
             if phase == .active { lock.unlock() }
             if phase == .active { checkClipboard() }

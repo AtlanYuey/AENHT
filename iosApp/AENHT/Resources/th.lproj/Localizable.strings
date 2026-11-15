@@ -339,7 +339,6 @@
 "Select All" = "เลือกทั้งหมด";
 "Downloading" = "กำลังดาวน์โหลด";
 "Fade Page Turns" = "เปลี่ยนหน้าแบบจางลง";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "เมื่อเปลี่ยนหน้าแบบจางลง หน้าจะไม่เลื่อน หน้าถัดไปจะค่อยๆ ปรากฏในที่เดิม สบายตากว่าเมื่อเปลี่ยนหน้าเร็ว";
 "Pinned Rows" = "แถวที่ปักหมุด";
 "First Row" = "แถวแรก";
 "Second Row" = "แถวที่สอง";
@@ -541,3 +540,6 @@
 "Everything on these pages is hidden by your filters." = "ทุกรายการในหน้าเหล่านี้ถูกซ่อนโดยตัวกรองของคุณ";
 "The site limits requests. Continuing in %lld s." = "เว็บไซต์จำกัดจำนวนคำขอ จะดำเนินการต่อใน %lld วินาที";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "ไฟล์บนเซิร์ฟเวอร์ถูกเขียนโดย AENHT เวอร์ชันใหม่กว่า โปรดอัปเดตแอปเพื่อซิงค์";
+"Turn One Page at a Time" = "เปลี่ยนทีละหน้า";
+"Fade Follows the Finger" = "จางตามนิ้ว";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "เมื่อเปลี่ยนหน้าแบบจางลง หน้าจะไม่เลื่อน หน้าถัดไปจะค่อยๆ ปรากฏในที่เดิม สบายตากว่าเมื่อเปลี่ยนหน้าเร็ว เมื่อเปิด “จางตามนิ้ว” หน้าจะอยู่กับที่ขณะปัด และหน้าถัดไปจะค่อยๆ ปรากฏจากตำแหน่งนิ้ว เมื่อปล่อยนิ้วจะเปลี่ยนหน้าหรือกลับหน้าเดิมตามระยะและความเร็วที่ปัด";
