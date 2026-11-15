@@ -527,4 +527,6 @@ T = [
     "Model, pesan, streaming, alat, kredensial, dan jumlah respons dikelola oleh aplikasi.",
     "Gunakan hanya salah satu dari max_tokens dan max_completion_tokens.",
     "Jarak antarhalaman",
+    "Versi lain",
+    "Terjemahan dan edisi lain dari galeri ini",
 ]

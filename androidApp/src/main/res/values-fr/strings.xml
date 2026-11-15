@@ -528,9 +528,11 @@
     <string name="l_525">Le modèle, les messages, le streaming, les outils, les identifiants et le nombre de réponses sont gérés par l’app.</string>
     <string name="l_526">N’utilisez qu’un seul de max_tokens et max_completion_tokens.</string>
     <string name="l_527">Espace entre les pages</string>
-    <string name="l_528">Sauvegarde des réglages</string>
-    <string name="l_529">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_530">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_531">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_532">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_528">Autres versions</string>
+    <string name="l_529">Traductions et autres éditions de cette galerie</string>
+    <string name="l_530">Sauvegarde des réglages</string>
+    <string name="l_531">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_532">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_533">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_534">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

@@ -528,9 +528,11 @@
     <string name="l_525">Model, pesan, streaming, alat, kredensial, dan jumlah respons dikelola oleh aplikasi.</string>
     <string name="l_526">Gunakan hanya salah satu dari max_tokens dan max_completion_tokens.</string>
     <string name="l_527">Jarak antarhalaman</string>
-    <string name="l_528">Cadangan Pengaturan</string>
-    <string name="l_529">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_530">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_531">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_532">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_528">Versi lain</string>
+    <string name="l_529">Terjemahan dan edisi lain dari galeri ini</string>
+    <string name="l_530">Cadangan Pengaturan</string>
+    <string name="l_531">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_532">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_533">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_534">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

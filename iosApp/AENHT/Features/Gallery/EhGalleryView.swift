@@ -14,6 +14,10 @@ final class EhGalleryModel {
     var folder: Int?
     var rating: Double = 0
     var busy = false
+    /// Other versions of the gallery (translations, the original), found by its title.
+    private(set) var versions: [GalleryItem] = []
+    /// Galleries like it (E-Hentai has no list of its own): same artist, parody, tags.
+    private(set) var similar: [GalleryItem] = []
 
     init(route: EhGalleryRoute) {
         gid = route.gid
@@ -41,6 +45,41 @@ final class EhGalleryModel {
             if detail == nil { self.error = error.localizedDescription }
         }
         await EhSession.shared.loadFolders()
+        await loadRelated()
+    }
+
+    private func search(_ query: String) async -> [GalleryItem] {
+        (try? await EhService.shared.list(Bridge.shared.search(query: query, categoriesShown: 0), cursor: nil))?.items ?? []
+    }
+
+    /// Its other versions (same title once the bracketed parts are taken
+    /// away), then galleries like it, a few searches at most.
+    private func loadRelated() async {
+        guard let detail, versions.isEmpty, similar.isEmpty else { return }
+        let titles = [detail.title, detail.japaneseTitle].compactMap { $0 }
+        var found: [GalleryItem] = []
+        func add(_ items: [GalleryItem], check: Bool) {
+            for item in items where item.id != gid && !found.contains(where: { $0.id == item.id }) {
+                if !check || GalleryVersions.shared.isVersion(titles: titles, candidate: item.title) { found.append(item) }
+            }
+        }
+        let text = GalleryVersions.shared.searchText(title: detail.title)
+        if text.count >= 3 { add(await search("\"\(text)\""), check: true) }
+        // The Japanese title, as a phrase: translations usually keep it.
+        if let japanese = detail.japaneseTitle {
+            let jp = GalleryVersions.shared.searchText(title: japanese)
+            if jp.count >= 4, jp != text { add(await search("\"\(jp)\""), check: false) }
+        }
+        versions = Array(found.prefix(20))
+
+        var like: [GalleryItem] = []
+        for query in EhSimilar.shared.queries(detail: detail) where like.count < 12 {
+            for item in await search(query) where item.id != gid
+                && !versions.contains(where: { $0.id == item.id }) && !like.contains(where: { $0.id == item.id }) {
+                like.append(item)
+            }
+        }
+        similar = Array(like.prefix(20))
     }
 
     func setFolder(_ target: Int?) async -> String? {
@@ -114,6 +153,15 @@ struct EhGalleryView: View {
                     info(detail)
                     tags(detail)
                     previews(detail)
+                    // Its translations and other versions, then galleries like it.
+                    if !model.versions.isEmpty {
+                        SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
+                        PopularRow(items: model.versions)
+                    }
+                    if !model.similar.isEmpty {
+                        SectionTitle(title: "More Like This")
+                        PopularRow(items: model.similar)
+                    }
                     comments(detail)
                 } else if let error = model.error {
                     ContentUnavailableView {
@@ -129,7 +177,8 @@ struct EhGalleryView: View {
                     ProgressView().controlSize(.large).frame(maxWidth: .infinity).padding(.top, 60)
                 }
             }
-            .padding(.bottom, 32)
+            // Room under the comments, clear of the tab bar.
+            .padding(.bottom, 120)
             .background(alignment: .top) {
                 Backdrop(url: model.card?.thumbURL, height: sizeClass == .regular ? 420 : 320)
             }

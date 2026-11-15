@@ -569,3 +569,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "模型、消息、流式输出、工具、密钥和返回数量由 App 管理，请勿在此覆盖。";
 "Use only one of max_tokens and max_completion_tokens." = "max_tokens 与 max_completion_tokens 请只设置其中一个。";
 "Gap Between Pages" = "中间间距";
+"Other Versions" = "其他版本";
+"Translations and other editions of this gallery" = "这部作品的各语言翻译和其他版本";

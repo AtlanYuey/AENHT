@@ -527,4 +527,6 @@ T = [
     "Modell, Nachrichten, Streaming, Tools, Zugangsdaten und Antwortanzahl verwaltet die App.",
     "Verwende nur eines von max_tokens und max_completion_tokens.",
     "Abstand zwischen Seiten",
+    "Andere Versionen",
+    "Übersetzungen und andere Ausgaben dieser Galerie",
 ]

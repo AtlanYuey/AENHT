@@ -528,9 +528,11 @@
     <string name="l_525">模型、消息、流式输出、工具、密钥和返回数量由 App 管理，请勿在此覆盖。</string>
     <string name="l_526">max_tokens 与 max_completion_tokens 请只设置其中一个。</string>
     <string name="l_527">中间间距</string>
-    <string name="l_528">设置备份</string>
-    <string name="l_529">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_530">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_531">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_532">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_528">其他版本</string>
+    <string name="l_529">这部作品的各语言翻译和其他版本</string>
+    <string name="l_530">设置备份</string>
+    <string name="l_531">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_532">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_533">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_534">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

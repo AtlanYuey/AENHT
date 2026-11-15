@@ -528,9 +528,11 @@
     <string name="l_525">Mô hình, tin nhắn, truyền trực tiếp, công cụ, thông tin xác thực và số câu trả lời do ứng dụng quản lý.</string>
     <string name="l_526">Chỉ dùng một trong max_tokens và max_completion_tokens.</string>
     <string name="l_527">Khoảng cách giữa hai trang</string>
-    <string name="l_528">Sao lưu cài đặt</string>
-    <string name="l_529">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_530">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_531">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_532">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_528">Phiên bản khác</string>
+    <string name="l_529">Các bản dịch và phiên bản khác của tác phẩm này</string>
+    <string name="l_530">Sao lưu cài đặt</string>
+    <string name="l_531">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_532">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_533">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_534">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

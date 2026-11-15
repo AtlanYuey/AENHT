@@ -533,10 +533,12 @@ object L10nKeys {
         "Model, messages, stream, tools, credentials and response count are managed by the app." to R.string.l_525,
         "Use only one of max_tokens and max_completion_tokens." to R.string.l_526,
         "Gap Between Pages" to R.string.l_527,
-        "Settings Backup" to R.string.l_528,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_529,
-        "Android's own backup also keeps these settings." to R.string.l_530,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_531,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_532,
+        "Other Versions" to R.string.l_528,
+        "Translations and other editions of this gallery" to R.string.l_529,
+        "Settings Backup" to R.string.l_530,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_531,
+        "Android's own backup also keeps these settings." to R.string.l_532,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_533,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_534,
     )
 }

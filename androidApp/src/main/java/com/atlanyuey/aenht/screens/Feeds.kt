@@ -181,6 +181,16 @@ fun Modifier.bleed(horizontal: androidx.compose.ui.unit.Dp) = layout { measurabl
 }
 
 /** Horizontally scrolling row of covers. */
+/** The title of a gallery page's row of its other versions. */
+@Composable
+fun VersionsTitle() {
+    Column {
+        SectionTitle(tr("Other Versions"))
+        Txt(tr("Translations and other editions of this gallery"), Modifier.padding(start = 20.dp, end = 16.dp, bottom = 8.dp),
+            style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+    }
+}
+
 @Composable
 fun PopularRow(items: List<GallerySummary>) {
     val state = rememberLazyListState()

@@ -527,4 +527,6 @@ T = [
     "Le modèle, les messages, le streaming, les outils, les identifiants et le nombre de réponses sont gérés par l’app.",
     "N’utilisez qu’un seul de max_tokens et max_completion_tokens.",
     "Espace entre les pages",
+    "Autres versions",
+    "Traductions et autres éditions de cette galerie",
 ]

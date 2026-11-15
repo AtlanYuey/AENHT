@@ -527,3 +527,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "Modello, messaggi, streaming, strumenti, credenziali e numero di risposte sono gestiti dall’app.";
 "Use only one of max_tokens and max_completion_tokens." = "Usa solo uno tra max_tokens e max_completion_tokens.";
 "Gap Between Pages" = "Spazio tra le pagine";
+"Other Versions" = "Altre versioni";
+"Translations and other editions of this gallery" = "Traduzioni e altre edizioni di questa galleria";

@@ -528,9 +528,11 @@
     <string name="l_525">Modello, messaggi, streaming, strumenti, credenziali e numero di risposte sono gestiti dall’app.</string>
     <string name="l_526">Usa solo uno tra max_tokens e max_completion_tokens.</string>
     <string name="l_527">Spazio tra le pagine</string>
-    <string name="l_528">Backup impostazioni</string>
-    <string name="l_529">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_530">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_531">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_532">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_528">Altre versioni</string>
+    <string name="l_529">Traduzioni e altre edizioni di questa galleria</string>
+    <string name="l_530">Backup impostazioni</string>
+    <string name="l_531">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_532">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_533">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_534">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

@@ -528,9 +528,11 @@
     <string name="l_525">モデル、メッセージ、ストリーミング、ツール、認証情報、応答数は App が管理します。</string>
     <string name="l_526">max_tokens と max_completion_tokens はどちらか一方だけにしてください。</string>
     <string name="l_527">ページ間の余白</string>
-    <string name="l_528">設定のバックアップ</string>
-    <string name="l_529">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_530">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_531">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_532">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_528">ほかのバージョン</string>
+    <string name="l_529">この作品の各言語の翻訳とほかの版</string>
+    <string name="l_530">設定のバックアップ</string>
+    <string name="l_531">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_532">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_533">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_534">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

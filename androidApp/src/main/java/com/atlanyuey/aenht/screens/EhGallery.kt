@@ -140,6 +140,44 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
     private val summary: GallerySummary?
         get() = detail?.summary(preview) ?: preview
 
+    /** Other versions of the gallery (translations, the original), found by its title. */
+    private var versions by mutableStateOf(emptyList<GallerySummary>())
+    /** Galleries like it (E-Hentai has no list of its own): same artist, parody, tags. */
+    private var similar by mutableStateOf(emptyList<GallerySummary>())
+
+    private suspend fun search(query: String): List<GallerySummary> =
+        runCatching { EhClient.list(com.atlanyuey.aenht.shared.eh.EhListSource.Search(query)).galleries.map(GallerySummary::from) }.getOrDefault(emptyList())
+
+    /** Its other versions (same title once the bracketed parts are taken away), then galleries like it. */
+    private suspend fun loadRelated(d: EhGalleryDetail) {
+        if (versions.isNotEmpty() || similar.isNotEmpty()) return
+        val v = com.atlanyuey.aenht.shared.site.GalleryVersions
+        val titles = listOfNotNull(d.title, d.japaneseTitle)
+        val found = mutableListOf<GallerySummary>()
+        fun add(items: List<GallerySummary>, check: Boolean) {
+            for (item in items) {
+                if (item.key.id == gid || found.any { it.key.id == item.key.id }) continue
+                if (!check || v.isVersion(titles, item.title)) found += item
+            }
+        }
+        val text = v.searchText(d.title)
+        if (text.length >= 3) add(search("\"$text\""), check = true)
+        // The Japanese title, as a phrase: translations usually keep it.
+        d.japaneseTitle?.let { japanese ->
+            val jp = v.searchText(japanese)
+            if (jp.length >= 4 && jp != text) add(search("\"$jp\""), check = false)
+        }
+        versions = found.take(20)
+        val like = mutableListOf<GallerySummary>()
+        for (query in com.atlanyuey.aenht.shared.site.EhSimilar.queries(d)) {
+            if (like.size >= 12) break
+            for (item in search(query)) {
+                if (item.key.id != gid && versions.none { it.key.id == item.key.id } && like.none { it.key.id == item.key.id }) like += item
+            }
+        }
+        similar = like.take(20)
+    }
+
     private suspend fun load() {
         error = null
         try {
@@ -162,6 +200,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             }
         }
         pulling = false
+        detail?.let { scope.launch { loadRelated(it) } }
         EhFolders.load()
     }
 
@@ -253,7 +292,8 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 LazyColumn(
                     Modifier.fillMaxSize(),
                     state = list,
-                    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
+                    // Room under the comments, clear of the tab bar.
+                    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
                 ) {
                     item("header") { Header() }
                     val d = detail
@@ -262,6 +302,15 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         item("info") { Info(d) }
                         item("tags") { Tags(d) }
                         item("pages") { Previews(d) }
+                        // Its translations and other versions, then galleries like it.
+                        if (versions.isNotEmpty()) {
+                            item("versionsTitle") { VersionsTitle() }
+                            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions) } }
+                        }
+                        if (similar.isNotEmpty()) {
+                            item("similarTitle") { SectionTitle(tr("More Like This")) }
+                            item("similar") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(similar) } }
+                        }
                         item("comments") { Comments(d) }
                     } else if (error != null) {
                         item("error") {

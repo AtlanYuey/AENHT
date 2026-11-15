@@ -528,9 +528,11 @@
     <string name="l_525">Modell, Nachrichten, Streaming, Tools, Zugangsdaten und Antwortanzahl verwaltet die App.</string>
     <string name="l_526">Verwende nur eines von max_tokens und max_completion_tokens.</string>
     <string name="l_527">Abstand zwischen Seiten</string>
-    <string name="l_528">Einstellungen sichern</string>
-    <string name="l_529">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_530">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_531">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_532">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_528">Andere Versionen</string>
+    <string name="l_529">Übersetzungen und andere Ausgaben dieser Galerie</string>
+    <string name="l_530">Einstellungen sichern</string>
+    <string name="l_531">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_532">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_533">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_534">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

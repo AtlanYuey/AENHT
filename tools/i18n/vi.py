@@ -527,4 +527,6 @@ T = [
     "Mô hình, tin nhắn, truyền trực tiếp, công cụ, thông tin xác thực và số câu trả lời do ứng dụng quản lý.",
     "Chỉ dùng một trong max_tokens và max_completion_tokens.",
     "Khoảng cách giữa hai trang",
+    "Phiên bản khác",
+    "Các bản dịch và phiên bản khác của tác phẩm này",
 ]

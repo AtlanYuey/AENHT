@@ -94,3 +94,22 @@ class CommentFilterTest {
         kotlin.test.assertTrue(!f.hidesComment("trolley", "nice work"))
     }
 }
+
+class VersionsTest {
+    @Test
+    fun theCoreLeavesOutTheBracketedParts() {
+        val core = com.atlanyuey.aenht.shared.site.GalleryVersions.core("(C104) [Circle (Artist)] Summer Days (Original) [Chinese] [Digital]")
+        kotlin.test.assertEquals("Summer Days", core)
+        kotlin.test.assertEquals("Summer Days", com.atlanyuey.aenht.shared.site.GalleryVersions.searchText("[A] 夏の日 | Summer Days [English]"))
+    }
+
+    @Test
+    fun translationsAreVersionsOtherWorksAreNot() {
+        val v = com.atlanyuey.aenht.shared.site.GalleryVersions
+        val titles = listOf("(C104) [Circle] Summer Days [Chinese]", "(C104) [サークル] 夏の日")
+        kotlin.test.assertTrue(v.isVersion(titles, "[Circle] Summer Days [English] [Decensored]"))
+        kotlin.test.assertTrue(v.isVersion(titles, "(C104) [サークル] 夏の日"))
+        kotlin.test.assertTrue(!v.isVersion(titles, "[Circle] Summer Days 2 [Chinese]"))
+        kotlin.test.assertTrue(!v.isVersion(listOf("[A] (B)"), "[A] (B)")) // nothing left to compare
+    }
+}

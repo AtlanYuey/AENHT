@@ -527,3 +527,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "모델, 메시지, 스트리밍, 도구, 인증 정보, 응답 수는 앱이 관리합니다.";
 "Use only one of max_tokens and max_completion_tokens." = "max_tokens와 max_completion_tokens 중 하나만 사용하세요.";
 "Gap Between Pages" = "페이지 사이 간격";
+"Other Versions" = "다른 버전";
+"Translations and other editions of this gallery" = "이 작품의 다른 언어 번역과 다른 판";

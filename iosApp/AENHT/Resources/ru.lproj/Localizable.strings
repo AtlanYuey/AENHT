@@ -527,3 +527,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "Модель, сообщения, потоковый вывод, инструменты, ключи и число ответов задаёт приложение.";
 "Use only one of max_tokens and max_completion_tokens." = "Используйте только одно из max_tokens и max_completion_tokens.";
 "Gap Between Pages" = "Промежуток между страницами";
+"Other Versions" = "Другие версии";
+"Translations and other editions of this gallery" = "Переводы и другие издания этой галереи";

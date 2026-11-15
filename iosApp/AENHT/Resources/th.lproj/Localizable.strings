@@ -527,3 +527,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "โมเดล ข้อความ สตรีม เครื่องมือ ข้อมูลรับรอง และจำนวนคำตอบ จัดการโดยแอป";
 "Use only one of max_tokens and max_completion_tokens." = "ใช้เพียงหนึ่งใน max_tokens และ max_completion_tokens";
 "Gap Between Pages" = "ระยะห่างระหว่างหน้า";
+"Other Versions" = "เวอร์ชันอื่น";
+"Translations and other editions of this gallery" = "คำแปลและฉบับอื่นของผลงานนี้";

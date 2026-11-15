@@ -526,5 +526,7 @@
  "Enter a JSON object of at most 16 KB.",
  "Model, messages, stream, tools, credentials and response count are managed by the app.",
  "Use only one of max_tokens and max_completion_tokens.",
- "Gap Between Pages"
+ "Gap Between Pages",
+ "Other Versions",
+ "Translations and other editions of this gallery"
 ]

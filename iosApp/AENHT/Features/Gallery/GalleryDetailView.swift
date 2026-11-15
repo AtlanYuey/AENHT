@@ -12,6 +12,8 @@ final class GalleryModel {
     private(set) var data: Data?
     private(set) var error: String?
     private(set) var comments: [GalleryComment] = []
+    /// Other versions of the gallery (translations, the original), found by its title.
+    private(set) var versions: [GalleryItem] = []
     var isFavorited = false
     var numFavorites = 0
     var isTogglingFavorite = false
@@ -43,6 +45,28 @@ final class GalleryModel {
             }
         }
         comments = (try? await NHClient.shared.comments(id)) ?? comments
+        await loadVersions()
+    }
+
+    /// Galleries with the same title once its bracketed parts are taken
+    /// away: its translations, the original, other editions.
+    private func loadVersions() async {
+        guard let detail, versions.isEmpty else { return }
+        let titles = [detail.title.english, detail.title.japanese, detail.title.pretty].compactMap { $0 }
+        let searches = Set([detail.title.pretty, detail.title.english, detail.title.japanese].compactMap { $0 }
+            .map { GalleryVersions.shared.searchText(title: $0) }
+            .filter { $0.count >= 3 })
+        var found: [GalleryItem] = []
+        for text in searches.sorted() {
+            guard let page = try? await NHClient.shared.galleries(query: text, sort: .popular, page: 1) else { continue }
+            for item in page.result where item.id != id && !found.contains(where: { $0.id == item.id }) {
+                let candidates = [item.title, item.japaneseTitle].compactMap { $0 }
+                if candidates.contains(where: { GalleryVersions.shared.isVersion(titles: titles, candidate: $0) }) {
+                    found.append(item)
+                }
+            }
+        }
+        versions = found
     }
 
     func toggleFavorite() async {
@@ -97,9 +121,14 @@ struct GalleryDetailView: View {
                     InfoStrip(detail: detail, favorites: model.numFavorites)
                     TagsSection(detail: detail)
                     PreviewSection(detail: detail)
+                    // Its translations and other versions, then galleries like it.
+                    if !model.versions.isEmpty {
+                        SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
+                        PopularRow(items: model.versions)
+                    }
                     if !detail.related.isEmpty {
                         SectionTitle(title: "More Like This")
-                        PopularRow(items: detail.related)
+                        PopularRow(items: detail.related.filter { item in !model.versions.contains { $0.id == item.id } })
                     }
                     CommentsPreview(detail: detail, comments: model.comments)
                 } else if let error = model.error {
@@ -119,7 +148,8 @@ struct GalleryDetailView: View {
                         .padding(.top, 60)
                 }
             }
-            .padding(.bottom, 32)
+            // Room under the comments, clear of the tab bar.
+            .padding(.bottom, 120)
             .background(alignment: .top) {
                 Backdrop(url: item?.thumbURL, height: sizeClass == .regular ? 420 : 320)
             }

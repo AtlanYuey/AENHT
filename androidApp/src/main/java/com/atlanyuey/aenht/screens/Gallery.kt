@@ -204,6 +204,27 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
     /** Height of the cover in pixels; a collapsed title is cut to fit next to it. */
     private var coverHeight by mutableIntStateOf(0)
     private var titleExpanded by mutableStateOf(false)
+    /** Other versions of the gallery (translations, the original), found by its title. */
+    private var versions by mutableStateOf(emptyList<GallerySummary>())
+
+    /**
+     * Galleries with the same title once its bracketed parts are taken
+     * away: its translations, the original, other editions.
+     */
+    private suspend fun loadVersions(d: GalleryDetail) {
+        if (versions.isNotEmpty()) return
+        val v = com.atlanyuey.aenht.shared.site.GalleryVersions
+        val titles = listOfNotNull(d.englishTitle, d.japaneseTitle, d.prettyTitle)
+        val found = mutableListOf<GallerySummary>()
+        for (text in titles.map { v.searchText(it) }.filter { it.length >= 3 }.distinct()) {
+            val page = runCatching { NHClient.galleries(text, com.atlanyuey.aenht.core.SearchSort.Popular, 1) }.getOrNull() ?: continue
+            for (item in page.result) {
+                if (item.id == galleryId || found.any { it.key.id == item.id.toLong() }) continue
+                if (listOfNotNull(item.englishTitle, item.japaneseTitle).any { v.isVersion(titles, it) }) found += GallerySummary.from(item)
+            }
+        }
+        versions = found
+    }
 
     private suspend fun load() {
         error = null
@@ -229,6 +250,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 error = e.localizedMessage
             }
         }
+        detail?.let { scope.launch { loadVersions(it) } }
         runCatching { NHClient.comments(galleryId) }.getOrNull()?.let {
             comments.clear()
             comments.addAll(it)
@@ -274,7 +296,8 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 LazyColumn(
                     Modifier.fillMaxSize(),
                     state = list,
-                    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
+                    // Room under the comments, clear of the tab bar.
+                    contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
                 ) {
                     item("header") { Header() }
                     val d = detail
@@ -283,9 +306,15 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         item("info") { InfoStrip(d, numFavorites) }
                         item("tags") { TagsSection(d) }
                         item("pages") { PreviewSection(d) }
-                        if (d.related.isNotEmpty()) {
+                        // Its translations and other versions, then galleries like it.
+                        if (versions.isNotEmpty()) {
+                            item("versionsTitle") { VersionsTitle() }
+                            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions) } }
+                        }
+                        val related = d.related.filter { r -> versions.none { it.key.id == r.id.toLong() } }
+                        if (related.isNotEmpty()) {
                             item("relatedTitle") { SectionTitle(tr("More Like This")) }
-                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(d.related.map(GallerySummary::from)) } }
+                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(related.map(GallerySummary::from)) } }
                         }
                         item("comments") { CommentsPreview(d) }
                     } else if (error != null) {

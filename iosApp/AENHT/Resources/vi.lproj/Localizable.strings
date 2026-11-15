@@ -527,3 +527,5 @@
 "Model, messages, stream, tools, credentials and response count are managed by the app." = "Mô hình, tin nhắn, truyền trực tiếp, công cụ, thông tin xác thực và số câu trả lời do ứng dụng quản lý.";
 "Use only one of max_tokens and max_completion_tokens." = "Chỉ dùng một trong max_tokens và max_completion_tokens.";
 "Gap Between Pages" = "Khoảng cách giữa hai trang";
+"Other Versions" = "Phiên bản khác";
+"Translations and other editions of this gallery" = "Các bản dịch và phiên bản khác của tác phẩm này";
