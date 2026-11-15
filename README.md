@@ -329,8 +329,8 @@ flowchart LR
 | Android | `.apk` | Android 8.0 及以上 |
 | iPhone / iPad | `.ipa` | iOS / iPadOS 18 及以上（推荐 26） |
 
-- **Android**：下载 APK 后直接安装。
-- **iOS**：这个 IPA 是用开发证书签名的，只能装在证书登记过的设备上。其他设备请用 AltStore、SideStore、Sideloadly 等工具，以自己的 Apple ID 重新签名后安装。
+- **Android**：下载 APK 后直接安装。正式版使用固定证书签名，以后可以直接覆盖升级；如果装过 0.1.0 之前的测试版，需要先卸载一次。
+- **iOS**：IPA 未签名。请用 AltStore、SideStore、Sideloadly 等工具，以自己的 Apple ID 签名后安装。
 
 ### 第一次使用
 
