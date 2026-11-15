@@ -537,3 +537,7 @@
 "Locations" = "สถานที่";
 "Reclassified" = "จัดหมวดใหม่";
 "Temporary" = "ชั่วคราว";
+"Load More" = "โหลดเพิ่ม";
+"Everything on these pages is hidden by your filters." = "ทุกรายการในหน้าเหล่านี้ถูกซ่อนโดยตัวกรองของคุณ";
+"The site limits requests. Continuing in %lld s." = "เว็บไซต์จำกัดจำนวนคำขอ จะดำเนินการต่อใน %lld วินาที";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "ไฟล์บนเซิร์ฟเวอร์ถูกเขียนโดย AENHT เวอร์ชันใหม่กว่า โปรดอัปเดตแอปเพื่อซิงค์";

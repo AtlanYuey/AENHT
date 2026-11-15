@@ -69,7 +69,9 @@ final class WebDavService {
     private func message(_ error: Error) -> String {
         let kotlin = (error as NSError).userInfo["KotlinException"]
         if let e = kotlin as? WebDavException {
-            return e.unauthorized ? String(localized: "The server refused the user name or password.") : (e.message ?? String(localized: "Couldn't connect to the server."))
+            if e.unauthorized { return String(localized: "The server refused the user name or password.") }
+            if e.newerVersion { return String(localized: "The file on the server was written by a newer version of AENHT. Update the app to sync.") }
+            return e.message ?? String(localized: "Couldn't connect to the server.")
         }
         return (kotlin as? KotlinThrowable)?.message ?? error.localizedDescription
     }

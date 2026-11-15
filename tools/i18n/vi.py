@@ -537,4 +537,8 @@ T = [
     "Địa điểm",
     "Phân loại lại",
     "Tạm thời",
+    "Tải thêm",
+    "Mọi thứ trên các trang này đều bị bộ lọc của bạn ẩn đi.",
+    "Trang web giới hạn số yêu cầu. Tiếp tục sau %lld giây.",
+    "Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.",
 ]

@@ -50,20 +50,48 @@ object EhSession {
         hasExHentai = isLoggedIn && !EhAuth.igneous.isNullOrEmpty() && EhAuth.igneous != "mystery"
     }
 
-    /** Saves cookies from the login page or typed by the user, then checks them with the site. */
+    /** Why the last [login] failed when the site couldn't be reached (null: the site refused the cookies). */
+    var loginError by mutableStateOf<String?>(null)
+        private set
+
+    /**
+     * Checks cookies from the login page or typed by the user with the site
+     * and logs in with them. When they are refused, or the site can't be
+     * reached, the login there was before stays.
+     */
     suspend fun login(memberId: String, passHash: String, igneous: String?): Boolean {
+        val before = Triple(EhAuth.memberId, EhAuth.passHash, EhAuth.igneous)
+        loginError = null
         EhAuth.save(memberId.trim(), passHash.trim(), igneous?.trim()?.takeIf { it.isNotEmpty() })
-        val ok = runCatching { EhClient.api.verifyLogin() }.getOrDefault(false)
-        if (!ok) EhAuth.clear()
+        val ok = try {
+            EhClient.api.verifyLogin()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            restore(before)
+            throw e
+        } catch (e: Exception) {
+            loginError = EhClient.localized(e)
+            false
+        }
+        if (!ok) restore(before)
         refresh()
-        if (ok) AccountBook.rememberEh()
+        if (ok) {
+            AccountBook.rememberEh()
+            FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
+        }
         return ok
+    }
+
+    private fun restore(login: Triple<String?, String?, String?>) {
+        EhAuth.clear()
+        val (member, hash, igneous) = login
+        if (!member.isNullOrEmpty() && !hash.isNullOrEmpty()) EhAuth.save(member, hash, igneous)
     }
 
     fun logout() {
         AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
         EhClient.api.logout()
         refresh()
+        FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
     }
 }
 
@@ -71,7 +99,10 @@ object EhSession {
 object EhClient {
     val api: EhApi by lazy {
         AndroidHttp.client = Net.client
-        EhApi(EhAuth).also { it.useExHentai = AppSettings.useExHentai }
+        EhApi(EhAuth).also {
+            it.useExHentai = AppSettings.useExHentai
+            RateNotice.watch(it.limiter)
+        }
     }
 
     fun localized(e: Throwable): String = when (e) {

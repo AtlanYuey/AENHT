@@ -120,12 +120,16 @@ class NhApi internal constructor(
     suspend fun loginWithApiKey(key: String): CurrentUser {
         val previousAccess = tokens.accessToken
         val previousRefresh = tokens.refreshToken
+        // Cleared first: saving without a refresh token keeps the one there is,
+        // and the previous login's must not stay with the key.
+        tokens.clear()
         tokens.save(API_KEY_PREFIX + key.trim(), null)
         checkingKey = true
         try {
             return currentUser()
         } catch (e: Exception) {
-            if (previousAccess != null) tokens.save(previousAccess, previousRefresh) else tokens.clear()
+            tokens.clear()
+            if (previousAccess != null) tokens.save(previousAccess, previousRefresh)
             throw e
         } finally {
             checkingKey = false
@@ -230,7 +234,7 @@ class NhApi internal constructor(
     suspend fun galleryJsonText(id: Int): String = galleryJson(id).toString()
 
     @Throws(NhException::class, CancellationException::class)
-    suspend fun commentsJson(id: Int): String = commentsElement(id).toString()
+    suspend fun commentsJson(id: Int, page: Int): String = commentsElement(id, page).toString()
 
     @Throws(NhException::class, CancellationException::class)
     suspend fun favoritesJson(page: Int, query: String): String = favoritesElement(page, query).toString()
@@ -296,19 +300,23 @@ class NhApi internal constructor(
     }
 
     @Throws(NhException::class, CancellationException::class)
-    suspend fun comments(id: Int): List<GalleryComment> =
-        PageResponse.parse(commentsElement(id).objOrThrow(), GalleryComment::parse).result
+    suspend fun comments(id: Int, page: Int = 1): PageResponse<GalleryComment> =
+        PageResponse.parse(commentsElement(id, page).objOrThrow(), GalleryComment::parse)
 
-    private suspend fun commentsElement(id: Int): JsonElement = send(
+    private suspend fun commentsElement(id: Int, page: Int): JsonElement = send(
         "galleries/$id/comments", "comments", if (isLoggedIn) Limits.comments else Limits.commentsAnon,
-        query = listOf("page" to "1", "per_page" to "50"),
+        query = listOf("page" to "${maxOf(1, page)}", "per_page" to "50"),
     )
 
     // MARK: Account
 
     @Throws(NhException::class, CancellationException::class)
-    suspend fun favorites(page: Int, query: String = ""): PageResponse<GalleryItem> =
-        PageResponse.parse(favoritesElement(page, query).objOrThrow(), GalleryItem::parse)
+    suspend fun favorites(page: Int, query: String = ""): PageResponse<GalleryItem> {
+        val o = favoritesElement(page, query).objOrThrow()
+        // Without a list this isn't the favorites (the copy on the device must not be emptied by it).
+        if (o["result"].arr() == null) throw NhException.InvalidResponse()
+        return PageResponse.parse(o, GalleryItem::parse)
+    }
 
     private suspend fun favoritesElement(page: Int, query: String): JsonElement {
         if (!isLoggedIn) throw NhException.NotLoggedIn()

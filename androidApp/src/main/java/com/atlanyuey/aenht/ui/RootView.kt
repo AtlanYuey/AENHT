@@ -250,6 +250,7 @@ fun RootView(
                     }
                 }
             }
+            com.atlanyuey.aenht.core.RateNotice.Banner()
             OverlayHost(overlays, backdrop)
         }
     }

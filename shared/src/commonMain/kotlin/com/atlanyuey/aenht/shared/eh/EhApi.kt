@@ -242,7 +242,13 @@ class EhApi internal constructor(
             getPage(URLBuilder("$host/").apply { parameters.append("inline_set", "dm_l") }.buildString())
             html = getPage(url)
         }
-        return EhParser.parseList(html)
+        val page = EhParser.parseList(html)
+        // A page without galleries is only "no favorites" when it is the favorites
+        // page (it has the folder tabs): a login or error page must not empty the copy.
+        if (source is EhListSource.Favorites && page.galleries.isEmpty() && !html.contains("class=\"fp")) {
+            throw EhException.Parse("favorites")
+        }
+        return page
     }
 
     // MARK: Galleries

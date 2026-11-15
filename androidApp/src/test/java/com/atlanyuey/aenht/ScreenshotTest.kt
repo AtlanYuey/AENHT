@@ -119,7 +119,8 @@ class ScreenshotTest {
         settle: Long = 1500,
         overlays: com.atlanyuey.aenht.ui.components.OverlayController = com.atlanyuey.aenht.ui.components.OverlayController(),
     ) {
-        compose.setContent { AppTheme { RootView(mutableStateOf(null), tabs, tab, overlays) } }
+        val linkedGallery = mutableStateOf<com.atlanyuey.aenht.shared.site.GalleryLink?>(null)
+        compose.setContent { AppTheme { RootView(linkedGallery, tabs, tab, overlays) } }
         compose.waitForIdle()
         Thread.sleep(300)
         compose.mainClock.advanceTimeBy(settle)
@@ -297,7 +298,7 @@ class ScreenshotTest {
 
     @Test fun searchHistory() {
         AppSettings.clearRecentSearches()
-        listOf("glasses", "artist:sample", "500001", "beach").forEach { AppSettings.addRecentSearch(it) }
+        listOf("glasses", "artist:sample", "500001", "beach").forEach { AppSettings.addRecentSearch(com.atlanyuey.aenht.shared.site.Site.NHENTAI, it) }
         shoot("21_search_history")
         compose.onNodeWithContentDescription("Search").performClick()
         compose.mainClock.advanceTimeBy(800)

@@ -537,4 +537,8 @@ T = [
     "Lugares",
     "Reclasificado",
     "Temporal",
+    "Cargar más",
+    "Tus filtros ocultan todo lo que hay en estas páginas.",
+    "El sitio limita las solicitudes. Se continuará en %lld s.",
+    "El archivo del servidor fue escrito por una versión más reciente de AENHT. Actualiza la app para sincronizar.",
 ]

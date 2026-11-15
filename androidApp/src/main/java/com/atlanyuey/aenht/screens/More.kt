@@ -897,7 +897,8 @@ class LanguageScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         var selection by remember { mutableStateOf(AppLanguage.selected(context)) }
-        val current = Locale.getDefault()
+        // From the configuration, so the list follows a language change.
+        val current = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
         fun choose(code: String) {
             if (code == selection) return
             selection = code

@@ -247,7 +247,7 @@ class EhLoginScreen : Screen() {
                                         navigator.pop()
                                     } else {
                                         done = false
-                                        overlays.alert(failedTitle, failedMessage)
+                                        overlays.alert(failedTitle, EhSession.loginError ?: failedMessage)
                                     }
                                 }
                             }
@@ -285,7 +285,7 @@ class EhCookieLoginScreen : Screen() {
                     scope.launch {
                         val ok = EhSession.login(memberId, passHash, igneous)
                         working = false
-                        if (ok) navigator.popTo { it is AccountsScreen || it is MoreScreen } else overlays.alert(failedTitle, failedMessage)
+                        if (ok) navigator.popTo { it is AccountsScreen || it is MoreScreen } else overlays.alert(failedTitle, EhSession.loginError ?: failedMessage)
                     }
                 }, enabled = !working && memberId.isNotBlank() && passHash.isNotBlank(), last = true)
             }

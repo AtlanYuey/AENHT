@@ -579,3 +579,7 @@
 "Locations" = "地点";
 "Reclassified" = "重新分类";
 "Temporary" = "临时";
+"Load More" = "加载更多";
+"Everything on these pages is hidden by your filters." = "这几页的内容都被你的过滤规则隐藏了。";
+"The site limits requests. Continuing in %lld s." = "站点限制了请求频率，%lld 秒后自动继续。";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "服务器上的文件是由更新版本的 AENHT 写入的。请更新 App 后再同步。";

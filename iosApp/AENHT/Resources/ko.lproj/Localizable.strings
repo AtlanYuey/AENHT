@@ -537,3 +537,7 @@
 "Locations" = "장소";
 "Reclassified" = "재분류";
 "Temporary" = "임시";
+"Load More" = "더 불러오기";
+"Everything on these pages is hidden by your filters." = "이 페이지들의 내용은 모두 필터에 의해 숨겨졌습니다.";
+"The site limits requests. Continuing in %lld s." = "사이트가 요청 수를 제한하고 있습니다. %lld초 후에 계속합니다.";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "서버의 파일은 더 새로운 버전의 AENHT가 작성했습니다. 동기화하려면 앱을 업데이트하세요.";

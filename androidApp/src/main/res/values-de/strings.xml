@@ -538,9 +538,13 @@
     <string name="l_535">Orte</string>
     <string name="l_536">Neu eingeordnet</string>
     <string name="l_537">Vorläufig</string>
-    <string name="l_538">Einstellungen sichern</string>
-    <string name="l_539">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_540">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_541">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_542">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_538">Mehr laden</string>
+    <string name="l_539">Deine Filter blenden alles auf diesen Seiten aus.</string>
+    <string name="l_540">Die Seite begrenzt Anfragen. Weiter in %d s.</string>
+    <string name="l_541">Die Datei auf dem Server wurde von einer neueren AENHT-Version geschrieben. Aktualisiere die App, um zu synchronisieren.</string>
+    <string name="l_542">Einstellungen sichern</string>
+    <string name="l_543">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_544">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_545">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_546">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

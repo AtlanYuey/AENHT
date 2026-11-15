@@ -537,4 +537,8 @@ T = [
     "Orte",
     "Neu eingeordnet",
     "Vorläufig",
+    "Mehr laden",
+    "Deine Filter blenden alles auf diesen Seiten aus.",
+    "Die Seite begrenzt Anfragen. Weiter in %lld s.",
+    "Die Datei auf dem Server wurde von einer neueren AENHT-Version geschrieben. Aktualisiere die App, um zu synchronisieren.",
 ]

@@ -537,4 +537,8 @@ T = [
     "Lieux",
     "Reclassé",
     "Temporaire",
+    "Charger plus",
+    "Vos filtres masquent tout le contenu de ces pages.",
+    "Le site limite les requêtes. Reprise dans %lld s.",
+    "Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.",
 ]

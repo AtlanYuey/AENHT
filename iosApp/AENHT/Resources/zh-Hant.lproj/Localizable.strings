@@ -537,3 +537,7 @@
 "Locations" = "地點";
 "Reclassified" = "重新分類";
 "Temporary" = "臨時";
+"Load More" = "載入更多";
+"Everything on these pages is hidden by your filters." = "這幾頁的內容都被你的過濾規則隱藏了。";
+"The site limits requests. Continuing in %lld s." = "站點限制了請求頻率，%lld 秒後自動繼續。";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "伺服器上的檔案是由較新版本的 AENHT 寫入的。請更新 App 後再同步。";

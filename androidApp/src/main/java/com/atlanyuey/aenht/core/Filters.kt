@@ -18,10 +18,17 @@ object Filters {
     private var nhBlacklist by mutableStateOf<Set<Int>>(emptySet())
     private var lastBlacklistLoad = 0L
 
+    /** Counts changes of what is hidden (rules, blacklist, tag names): loaded lists filter again. */
+    var version by mutableStateOf(0)
+        private set
+
+    fun changed() { version++ }
+
     val rules: List<FilterRule> get() = ContentFilter.decode(AppSettings.filterRules)
 
     private fun save(rules: List<FilterRule>) {
         AppSettings.filterRules = ContentFilter.encode(rules)
+        changed()
     }
 
     fun add(target: String, pattern: String, regex: Boolean) {
@@ -55,10 +62,25 @@ object Filters {
         if (!Session.isLoggedIn || !AppSettings.useNhBlacklist) return
         val now = System.currentTimeMillis()
         if (!force && now - lastBlacklistLoad < 30 * 60 * 1000L) return
+        // Kept from being asked for by every list at once; a failure is tried again soon.
         lastBlacklistLoad = now
         AppScope.launch {
-            runCatching { NHClient.api.blacklistIds() }.getOrNull()?.let { nhBlacklist = it.toSet() }
+            val ids = runCatching { NHClient.api.blacklistIds() }.getOrNull()
+            if (ids == null) {
+                lastBlacklistLoad = now - 29 * 60 * 1000L
+            } else if (ids.toSet() != nhBlacklist) {
+                nhBlacklist = ids.toSet()
+                changed()
+            }
         }
+    }
+
+    /** Another nhentai account (or none): the blacklist was the previous account's. */
+    fun accountChanged() {
+        nhBlacklist = emptySet()
+        lastBlacklistLoad = 0
+        changed()
+        refreshNhBlacklist()
     }
 
     val nhBlacklistCount: Int get() = nhBlacklist.size

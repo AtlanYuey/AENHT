@@ -79,6 +79,7 @@ object WebDavService {
 
     private fun message(e: Throwable): String = when {
         e is WebDavException && e.unauthorized -> L10n.string("The server refused the user name or password.")
+        e is WebDavException && e.newerVersion -> L10n.string("The file on the server was written by a newer version of AENHT. Update the app to sync.")
         else -> e.message ?: L10n.string("Couldn't connect to the server.")
     }
 

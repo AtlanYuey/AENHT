@@ -538,9 +538,13 @@
     <string name="l_535">Địa điểm</string>
     <string name="l_536">Phân loại lại</string>
     <string name="l_537">Tạm thời</string>
-    <string name="l_538">Sao lưu cài đặt</string>
-    <string name="l_539">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_540">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_541">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_542">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_538">Tải thêm</string>
+    <string name="l_539">Mọi thứ trên các trang này đều bị bộ lọc của bạn ẩn đi.</string>
+    <string name="l_540">Trang web giới hạn số yêu cầu. Tiếp tục sau %d giây.</string>
+    <string name="l_541">Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.</string>
+    <string name="l_542">Sao lưu cài đặt</string>
+    <string name="l_543">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_544">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_545">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_546">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

@@ -375,7 +375,9 @@ class HomeScreen : Screen(), TabRoot {
             searchPanel.Effects()
             BackHandler { endSearch() }
         }
-        val pinned = AppSettings.homeRows(site).mapNotNull { row -> rows[row]?.takeIf { it.isNotEmpty() }?.let { row to it } }
+        val pinned = AppSettings.homeRows(site).mapNotNull { row ->
+            rows[row]?.let { com.atlanyuey.aenht.core.Filters.visible(it) }?.takeIf { it.isNotEmpty() }?.let { row to it }
+        }
         // The feed's header (site, sort, language, search) has scrolled under the
         // navigation bar: its buttons show in the bar instead.
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -1129,7 +1131,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
         LaunchedEffect(state.submitCount) {
             val query = state.query
             if (query.isEmpty()) return@LaunchedEffect
-            AppSettings.addRecentSearch(query)
+            AppSettings.addRecentSearch(state.site, query)
         }
     }
 
@@ -1188,17 +1190,23 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                         TextButton(tr("Clear"), { AppSettings.clearRecentSearches() })
                     }
                 }
-                items(recents.toList(), key = { it }) { term ->
-                    SwipeToDelete(onDelete = { AppSettings.removeRecentSearch(term) }) {
+                items(recents.toList(), key = { it }) { entry ->
+                    // An entry is a search on a site (shown at its end): tapping it searches there.
+                    val term = com.atlanyuey.aenht.shared.site.SearchHistory.query(entry)
+                    val entrySite = com.atlanyuey.aenht.shared.site.SearchHistory.site(entry)
+                    SwipeToDelete(onDelete = { AppSettings.removeRecentSearch(entry) }) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
                                 .background(AppTheme.colors.background)
                                 .combinedClickable(
-                                    onClick = { state.submit(term) },
+                                    onClick = {
+                                        if (entrySite != null && entrySite in AppSettings.enabledSites) state.site = entrySite
+                                        state.submit(term)
+                                    },
                                     onLongClick = {
                                         overlays.actionSheet(term, null, listOf(
-                                            DialogButton(deleteLabel, ButtonRole.Destructive) { AppSettings.removeRecentSearch(term) },
+                                            DialogButton(deleteLabel, ButtonRole.Destructive) { AppSettings.removeRecentSearch(entry) },
                                         ))
                                     },
                                 )
@@ -1208,6 +1216,9 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                         ) {
                             AppIcon(Icons.Clock, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
                             Txt(term, Modifier.weight(1f), maxLines = 1)
+                            if (entrySite != null && AppSettings.enabledSites.size > 1) {
+                                Txt(entrySite.badge, style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                            }
                         }
                     }
                 }

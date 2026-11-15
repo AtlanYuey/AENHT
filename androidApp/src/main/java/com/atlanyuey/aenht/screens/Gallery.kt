@@ -148,6 +148,9 @@ class ReaderSource(
     /** The gallery as a card (history). */
     val summary: GallerySummary,
 ) {
+    /** The gallery on its site ("nh:123", "eh:123"): what its page thumbnails are found by. */
+    val thumbsKey: String get() = "${summary.key.site.key}:${summary.key.id}"
+
     companion object {
         fun from(detail: GalleryDetail) = ReaderSource(
             id = detail.id,
@@ -583,7 +586,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 SectionTitle(tr("Pages"), Modifier.clickable(interactionSource = null, indication = null, onClick = jump)) {
                     if (d.pages.size > 1) TextButton(tr("See All"), { navigator.push(PagesScreen(d)) })
                 }
-                com.atlanyuey.aenht.ui.components.FollowReader(d.id, rowState, d.pages.size)
+                com.atlanyuey.aenht.ui.components.FollowReader("nh:${d.id}", rowState, d.pages.size)
                 LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(d.pages, key = { it.number }) { page ->
                         Column(
@@ -595,7 +598,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                                 Downloads.localFile(d.id, page.number - 1) ?: page.thumbUrl,
                                 Modifier
                                     .size(width = height * page.aspectRatio.coerceIn(0.5f, 1.5f), height = height)
-                                    .readerThumb(d.id, page.number - 1)
+                                    .readerThumb("nh:${d.id}", page.number - 1)
                                     .clip(RoundedCornerShape(8.dp)),
                                 targetWidth = 240.dp,
                             )
@@ -657,7 +660,7 @@ class PagesScreen(private val detail: GalleryDetail) : Screen() {
                     ) {
                         RemoteImage(
                             Downloads.localFile(detail.id, page.number - 1) ?: page.thumbUrl,
-                            Modifier.fillMaxWidth().height(130.dp).readerThumb(detail.id, page.number - 1).clip(RoundedCornerShape(8.dp)),
+                            Modifier.fillMaxWidth().height(130.dp).readerThumb("nh:${detail.id}", page.number - 1).clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Fit,
                             targetWidth = 240.dp,
                         )
@@ -709,12 +712,47 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
     private var posting by mutableStateOf(false)
     private var pulling by mutableStateOf(false)
 
+    /** The last page read and how many the site has (50 comments each). */
+    private var page by mutableStateOf(1)
+    private var pageCount by mutableStateOf(1)
+    private var loadingMore by mutableStateOf(false)
+    /** Why the comments couldn't be read (shown instead of "No Comments" when there are none to show). */
+    private var error by mutableStateOf<String?>(null)
+
     private suspend fun load() {
-        runCatching { NHClient.comments(galleryId) }.getOrNull()?.let {
+        try {
+            val first = NHClient.commentsPage(galleryId, 1)
             comments.clear()
-            comments.addAll(it)
+            comments.addAll(first.result)
+            page = 1
+            pageCount = first.numPages
+            error = null
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            error = e.localizedMessage ?: ""
         }
         pulling = false
+    }
+
+    private fun loadMore() {
+        if (loadingMore || page >= pageCount) return
+        loadingMore = true
+        scope.launch {
+            try {
+                val more = NHClient.commentsPage(galleryId, page + 1)
+                val known = comments.map { it.id }.toSet()
+                comments.addAll(more.result.filter { it.id !in known })
+                page++
+                pageCount = more.numPages
+                error = null
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = e.localizedMessage ?: ""
+            }
+            loadingMore = false
+        }
     }
 
     @Composable
@@ -753,8 +791,26 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                     ),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
-                    if (comments.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
+                    if (comments.isEmpty()) item {
+                        val failed = error
+                        if (failed != null) {
+                            EmptyState(Icons.Offline, tr("Couldn't Load"), message = failed, action = tr("Try Again") to { scope.launch { load() } })
+                        } else {
+                            EmptyState(Icons.Comment, tr("No Comments"))
+                        }
+                    }
                     items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }, key = { it.id }) { CommentBubble(it) }
+                    // More pages: the next one loads when the end shows.
+                    if (comments.isNotEmpty() && page < pageCount) item(key = "more") {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                            if (error != null && !loadingMore) {
+                                com.atlanyuey.aenht.ui.components.GlassCapsuleButton({ loadMore() }, height = 36.dp) { Txt(tr("Retry"), style = Type.subheadline) }
+                            } else {
+                                LaunchedEffect(page) { loadMore() }
+                                ActivityIndicator()
+                            }
+                        }
+                    }
                 }
             }
         }

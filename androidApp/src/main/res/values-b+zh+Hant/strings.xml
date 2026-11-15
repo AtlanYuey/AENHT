@@ -538,9 +538,13 @@
     <string name="l_535">地點</string>
     <string name="l_536">重新分類</string>
     <string name="l_537">臨時</string>
-    <string name="l_538">設定備份</string>
-    <string name="l_539">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_540">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_541">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_542">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_538">載入更多</string>
+    <string name="l_539">這幾頁的內容都被你的過濾規則隱藏了。</string>
+    <string name="l_540">站點限制了請求頻率，%d 秒後自動繼續。</string>
+    <string name="l_541">伺服器上的檔案是由較新版本的 AENHT 寫入的。請更新 App 後再同步。</string>
+    <string name="l_542">設定備份</string>
+    <string name="l_543">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_544">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_545">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_546">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

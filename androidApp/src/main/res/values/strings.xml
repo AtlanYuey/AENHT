@@ -538,9 +538,13 @@
     <string name="l_535">Locations</string>
     <string name="l_536">Reclassified</string>
     <string name="l_537">Temporary</string>
-    <string name="l_538">Settings Backup</string>
-    <string name="l_539">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_540">Android\'s own backup also keeps these settings.</string>
-    <string name="l_541">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_542">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_538">Load More</string>
+    <string name="l_539">Everything on these pages is hidden by your filters.</string>
+    <string name="l_540">The site limits requests. Continuing in %d s.</string>
+    <string name="l_541">The file on the server was written by a newer version of AENHT. Update the app to sync.</string>
+    <string name="l_542">Settings Backup</string>
+    <string name="l_543">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_544">Android\'s own backup also keeps these settings.</string>
+    <string name="l_545">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_546">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

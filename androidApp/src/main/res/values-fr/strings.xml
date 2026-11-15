@@ -538,9 +538,13 @@
     <string name="l_535">Lieux</string>
     <string name="l_536">Reclassé</string>
     <string name="l_537">Temporaire</string>
-    <string name="l_538">Sauvegarde des réglages</string>
-    <string name="l_539">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_540">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_541">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_542">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_538">Charger plus</string>
+    <string name="l_539">Vos filtres masquent tout le contenu de ces pages.</string>
+    <string name="l_540">Le site limite les requêtes. Reprise dans %d s.</string>
+    <string name="l_541">Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.</string>
+    <string name="l_542">Sauvegarde des réglages</string>
+    <string name="l_543">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_544">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_545">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_546">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

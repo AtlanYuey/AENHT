@@ -19,31 +19,32 @@ import kotlinx.coroutines.launch
  * of the page it's on, and the row of pages behind it stays on that page.
  */
 object ReaderThumbs {
-    private val rects = mutableStateMapOf<Pair<Int, Int>, Rect>()
-    private val pages = mutableStateMapOf<Int, Int>()
+    // Galleries by their storage key ("nh:123", "eh:123:token"): the two sites' numbers overlap.
+    private val rects = mutableStateMapOf<Pair<String, Int>, Rect>()
+    private val pages = mutableStateMapOf<String, Int>()
 
     /** Where the thumbnail of [page] is (window coordinates), if it's laid out. */
-    fun rect(gallery: Int, page: Int): Rect? = rects[gallery to page]
+    fun rect(gallery: String, page: Int): Rect? = rects[gallery to page]
 
-    fun page(gallery: Int): Int? = pages[gallery]
+    fun page(gallery: String): Int? = pages[gallery]
 
-    fun setPage(gallery: Int, page: Int) {
+    fun setPage(gallery: String, page: Int) {
         if (pages[gallery] != page) pages[gallery] = page
     }
 
-    internal fun put(gallery: Int, page: Int, rect: Rect?) {
+    internal fun put(gallery: String, page: Int, rect: Rect?) {
         val key = gallery to page
         if (rect == null || rect.isEmpty) rects.remove(key) else if (rects[key] != rect) rects[key] = rect
     }
 }
 
 /** Marks a page thumbnail as where the reader zooms from and back to. */
-fun Modifier.readerThumb(gallery: Int, page: Int): Modifier =
+fun Modifier.readerThumb(gallery: String, page: Int): Modifier =
     onGloballyPositioned { ReaderThumbs.put(gallery, page, it.boundsInWindow()) }
 
 /** Keeps a row of pages (item index = page index) on the page the reader is on, centred. */
 @Composable
-fun FollowReader(gallery: Int, state: LazyListState, count: Int) {
+fun FollowReader(gallery: String, state: LazyListState, count: Int) {
     LaunchedEffect(gallery, count) {
         snapshotFlow { ReaderThumbs.page(gallery) }.filterNotNull().collect { page ->
             if (page !in 0 until count) return@collect

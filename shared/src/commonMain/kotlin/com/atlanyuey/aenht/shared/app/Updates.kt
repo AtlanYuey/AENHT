@@ -28,16 +28,23 @@ data class ReleaseInfo(
 /** What is newer than the app: the latest version and the latest test build, with the release notes. */
 data class UpdateInfo(val latest: ReleaseInfo?, val testBuild: ReleaseInfo?, val releases: List<ReleaseInfo>, val updateAvailable: Boolean)
 
+/** The releases couldn't be read (no network, or GitHub refused). */
+class UpdateCheckException(message: String) : Exception(message)
+
 /** Checks the project's releases (Settings › About › Check for Updates). */
 class UpdateChecker internal constructor(private val http: HttpClient) {
     constructor() : this(buildHttpClient())
 
     @Throws(Exception::class)
     suspend fun check(currentVersion: String): UpdateInfo = withContext(Dispatchers.IO) {
-        val text = http.get("https://api.github.com/repos/AtlanYuey/AENHT/releases?per_page=15") {
+        val response = http.get("https://api.github.com/repos/AtlanYuey/AENHT/releases?per_page=15") {
             header("Accept", "application/vnd.github+json")
-        }.bodyAsText()
-        val list = (lenientJson.parseToJsonElement(text) as? JsonArray)?.mapNotNull { it as? JsonObject } ?: emptyList()
+        }
+        // An error (GitHub limits unsigned requests per hour) is not "no releases".
+        if (response.status.value !in 200..299) throw UpdateCheckException("GitHub: HTTP ${response.status.value}")
+        val array = runCatching { lenientJson.parseToJsonElement(response.bodyAsText()) as? JsonArray }.getOrNull()
+            ?: throw UpdateCheckException("GitHub: unexpected answer")
+        val list = array.mapNotNull { it as? JsonObject }
         val releases = list.map { o ->
             fun s(key: String) = (o[key] as? JsonPrimitive)?.content.orEmpty()
             val assetDate = (o["assets"] as? JsonArray)?.mapNotNull { (it as? JsonObject)?.get("updated_at")?.let { d -> (d as? JsonPrimitive)?.content } }?.maxOrNull()

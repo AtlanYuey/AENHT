@@ -567,17 +567,15 @@ object AppSettings {
         }
     }
 
-    /** Recent search terms, newest first. */
+    /** Recent searches, newest first: entries of [SearchHistory] (the search and its site). */
     val recentSearches = mutableStateListOf<String>()
     private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
 
-    /** Puts [term] first in the search history (when history is on). */
-    fun addRecentSearch(term: String) {
+    /** Puts the search of [term] on [site] first in the search history (when history is on). */
+    fun addRecentSearch(site: Site, term: String) {
         if (!saveSearchHistory) return
-        recentSearches.remove(term)
-        recentSearches.add(0, term)
-        while (recentSearches.size > RECENT_SEARCH_LIMIT) recentSearches.removeAt(recentSearches.lastIndex)
-        saveRecentSearches()
+        val entry = com.atlanyuey.aenht.shared.site.SearchHistory.entry(site, term)
+        setRecentSearches(com.atlanyuey.aenht.shared.site.SearchHistory.adding(recentSearches.toList(), entry, RECENT_SEARCH_LIMIT))
     }
 
     fun removeRecentSearch(term: String) {
@@ -598,6 +596,8 @@ object AppSettings {
 
     private fun saveRecentSearches() {
         if (!::prefs.isInitialized || loading) return
+        // The history travels with the settings: a new search is a change to sync.
+        if (!applyingSync) prefs.edit().putLong("settingsChangedAt", System.currentTimeMillis()).apply()
         prefs.edit().putString("recentSearches", json.encodeToString(ListSerializer(String.serializer()), recentSearches.toList())).apply()
     }
 

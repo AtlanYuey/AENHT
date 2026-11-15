@@ -537,3 +537,7 @@
 "Locations" = "場所";
 "Reclassified" = "再分類";
 "Temporary" = "一時";
+"Load More" = "さらに読み込む";
+"Everything on these pages is hidden by your filters." = "これらのページの内容はすべてフィルタで非表示になっています。";
+"The site limits requests. Continuing in %lld s." = "サイトがリクエスト数を制限しています。%lld 秒後に続行します。";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "サーバ上のファイルは新しいバージョンの AENHT で書き込まれています。同期するには App をアップデートしてください。";

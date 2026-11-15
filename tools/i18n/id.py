@@ -537,4 +537,8 @@ T = [
     "Lokasi",
     "Diklasifikasi ulang",
     "Sementara",
+    "Muat Lagi",
+    "Semua isi halaman ini disembunyikan oleh filter Anda.",
+    "Situs membatasi permintaan. Melanjutkan dalam %lld dtk.",
+    "File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.",
 ]

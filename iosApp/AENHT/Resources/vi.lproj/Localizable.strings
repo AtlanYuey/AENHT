@@ -537,3 +537,7 @@
 "Locations" = "Địa điểm";
 "Reclassified" = "Phân loại lại";
 "Temporary" = "Tạm thời";
+"Load More" = "Tải thêm";
+"Everything on these pages is hidden by your filters." = "Mọi thứ trên các trang này đều bị bộ lọc của bạn ẩn đi.";
+"The site limits requests. Continuing in %lld s." = "Trang web giới hạn số yêu cầu. Tiếp tục sau %lld giây.";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.";

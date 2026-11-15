@@ -19,7 +19,6 @@ object AppLock {
     var locked by mutableStateOf(false)
         private set
     private var prompting = false
-    const val REQUEST = 4711
 
     /** The device has a screen lock (otherwise there is nothing to ask for). */
     fun available(context: Context): Boolean =
@@ -42,15 +41,14 @@ object AppLock {
             return
         }
         prompting = true
-        val title = L10n.string("Unlock AENHT")
-        if (Build.VERSION.SDK_INT >= 28) {
-            val builder = BiometricPrompt.Builder(activity).setTitle(title)
-            if (Build.VERSION.SDK_INT >= 30) {
-                builder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
-            } else {
-                @Suppress("DEPRECATION")
-                builder.setDeviceCredentialAllowed(true)
-            }
+        val builder = BiometricPrompt.Builder(activity).setTitle(L10n.string("Unlock AENHT"))
+        if (Build.VERSION.SDK_INT >= 30) {
+            builder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+        } else {
+            @Suppress("DEPRECATION")
+            builder.setDeviceCredentialAllowed(true)
+        }
+        try {
             builder.build().authenticate(CancellationSignal(), activity.mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
                     prompting = false
@@ -61,22 +59,10 @@ object AppLock {
                     prompting = false
                 }
             })
-        } else {
-            @Suppress("DEPRECATION")
-            val intent = activity.getSystemService(KeyguardManager::class.java)?.createConfirmDeviceCredentialIntent(title, null)
-            if (intent == null) {
-                prompting = false
-                locked = false
-                return
-            }
-            @Suppress("DEPRECATION")
-            activity.startActivityForResult(intent, REQUEST)
+        } catch (e: Exception) {
+            // The prompt couldn't be shown: the app stays locked (tapping Unlock asks again).
+            prompting = false
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("applock", e.message ?: e.toString())
         }
-    }
-
-    /** The answer of the device credential screen (Android 8). */
-    fun onResult(ok: Boolean) {
-        prompting = false
-        if (ok) locked = false
     }
 }

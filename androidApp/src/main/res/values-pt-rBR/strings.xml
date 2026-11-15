@@ -538,9 +538,13 @@
     <string name="l_535">Locais</string>
     <string name="l_536">Reclassificado</string>
     <string name="l_537">Temporário</string>
-    <string name="l_538">Backup dos ajustes</string>
-    <string name="l_539">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_540">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_541">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_542">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_538">Carregar mais</string>
+    <string name="l_539">Seus filtros ocultam tudo o que há nestas páginas.</string>
+    <string name="l_540">O site limita as solicitações. Continuando em %d s.</string>
+    <string name="l_541">O arquivo no servidor foi gravado por uma versão mais recente do AENHT. Atualize o app para sincronizar.</string>
+    <string name="l_542">Backup dos ajustes</string>
+    <string name="l_543">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_544">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_545">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_546">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

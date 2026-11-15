@@ -536,5 +536,9 @@
  "Other",
  "Locations",
  "Reclassified",
- "Temporary"
+ "Temporary",
+ "Load More",
+ "Everything on these pages is hidden by your filters.",
+ "The site limits requests. Continuing in %lld s.",
+ "The file on the server was written by a newer version of AENHT. Update the app to sync."
 ]

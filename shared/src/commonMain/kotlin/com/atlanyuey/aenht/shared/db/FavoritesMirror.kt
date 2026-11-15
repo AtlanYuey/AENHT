@@ -63,6 +63,16 @@ class FavoritesMirror internal constructor(
         db.tombstones().upsert(listOf(Tombstone(Tombstone.FAVORITE, key.storageKey, now())))
     }
 
+    /**
+     * Forgets the copy of [site]'s favorites: its account was switched or
+     * logged out, and the copy belonged to that account. Nothing changes on
+     * the site, and no deletion is synced.
+     */
+    @Throws(CancellationException::class)
+    suspend fun clear(site: Site) = lock.withLock {
+        db.favorites().bySite(site.key).forEach { db.favorites().delete(it.key) }
+    }
+
     /** Reads all of a site's favorites and updates the copy (galleries no longer favorited are removed). */
     @Throws(Exception::class)
     suspend fun sync(site: Site, progress: SyncProgress?) {

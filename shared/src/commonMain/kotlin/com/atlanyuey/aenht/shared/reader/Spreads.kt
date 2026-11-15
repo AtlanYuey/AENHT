@@ -6,13 +6,17 @@ package com.atlanyuey.aenht.shared.reader
  * (already a spread) is always alone, and so is a page left without a
  * partner before it.
  */
-class Spreads(val pageCount: Int, val cover: Boolean, widePages: Set<Int>) {
+class Spreads(pageCount: Int, val cover: Boolean, widePages: Set<Int>) {
+    /** Never negative: a gallery without pages has no spreads. */
+    val pageCount: Int = maxOf(0, pageCount)
+
     private val slots: List<IntArray>
     private val slotOfPage: IntArray
 
     init {
         val list = mutableListOf<IntArray>()
         var i = 0
+        val pageCount = this.pageCount
         if (cover && pageCount > 0) { list += intArrayOf(0); i = 1 }
         while (i < pageCount) {
             val pairable = i + 1 < pageCount && i !in widePages && (i + 1) !in widePages
@@ -26,8 +30,8 @@ class Spreads(val pageCount: Int, val cover: Boolean, widePages: Set<Int>) {
     /** How many spreads there are (the pager's page count). */
     val count: Int get() = slots.size
 
-    /** The spread showing [page]. */
-    fun slotOf(page: Int): Int = slotOfPage[page.coerceIn(0, maxOf(0, pageCount - 1))].takeIf { pageCount > 0 } ?: 0
+    /** The spread showing [page] (0 when there are no pages). */
+    fun slotOf(page: Int): Int = if (pageCount == 0) 0 else slotOfPage[page.coerceIn(0, pageCount - 1)]
 
     /** The first (lower) page of a spread. */
     fun firstPage(slot: Int): Int = slots.getOrNull(slot)?.first() ?: 0

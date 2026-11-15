@@ -27,7 +27,13 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
-class WebDavException(message: String, /** The server refused the user name or password. */ val unauthorized: Boolean = false) : Exception(message)
+class WebDavException(
+    message: String,
+    /** The server refused the user name or password. */
+    val unauthorized: Boolean = false,
+    /** The server's file was written by a newer version of the app: this one must not rewrite it. */
+    val newerVersion: Boolean = false,
+) : Exception(message)
 
 /** What one sync changed on this device. */
 data class WebDavResult(
@@ -41,7 +47,7 @@ data class WebDavResult(
 /** The file kept on the server (`AENHT/sync.json`). */
 @Serializable
 internal data class SyncFile(
-    val version: Int = 1,
+    val version: Int = VERSION,
     val device: String = "",
     val updatedAt: Long = 0,
     val settings: JsonObject? = null,
@@ -49,7 +55,12 @@ internal data class SyncFile(
     val history: List<HistoryRecord> = emptyList(),
     val favorites: List<FavoriteRecord> = emptyList(),
     val tombstones: List<Tombstone> = emptyList(),
-)
+) {
+    companion object {
+        /** The newest file format this version reads and writes. */
+        const val VERSION = 1
+    }
+}
 
 /**
  * Sync through the user's own WebDAV server (Nextcloud, a NAS, Jianguoyun…),
@@ -66,7 +77,10 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
 
     private fun folder(base: String) = base.trimEnd('/') + "/AENHT/"
 
-    private suspend fun send(method: HttpMethod, url: String, user: String, password: String, body: String? = null, depth: String? = null): HttpResponse =
+    private suspend fun send(
+        method: HttpMethod, url: String, user: String, password: String,
+        body: String? = null, depth: String? = null, condition: Pair<String, String>? = null,
+    ): HttpResponse =
         withContext(Dispatchers.IO) {
             try {
                 http.request(url) {
@@ -74,6 +88,7 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
                     val credentials = Base64.encode("$user:$password".encodeToByteArray())
                     header(HttpHeaders.Authorization, "Basic $credentials")
                     depth?.let { header("Depth", it) }
+                    condition?.let { header(it.first, it.second) }
                     body?.let { contentType(ContentType.Application.Json); setBody(it) }
                 }
             } catch (e: CancellationException) {
@@ -103,42 +118,77 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
      * Downloads the server's copy, merges it into this device, and uploads
      * the merged copy. [settings] is this device's settings as JSON and
      * [settingsChangedAt] when they last changed.
+     *
+     * The upload only replaces the copy that was downloaded (its ETag): when
+     * another device uploaded in between, the server answers 412 and the
+     * sync starts over with that newer copy, so neither device's changes
+     * are overwritten.
      */
     @Throws(WebDavException::class, CancellationException::class)
     suspend fun sync(baseUrl: String, user: String, password: String, device: String, settings: String, settingsChangedAt: Long): WebDavResult =
         lock.withLock {
             val url = folder(baseUrl) + "sync.json"
-            val response = send(HttpMethod.Get, url, user, password)
-            val remote: SyncFile? = when (response.status.value) {
-                404 -> {
-                    check(send(HttpMethod("MKCOL"), folder(baseUrl), user, password), allowed = setOf(405))
-                    null
-                }
-                in 200..299 -> runCatching { json.decodeFromString(SyncFile.serializer(), response.bodyAsText()) }.getOrNull()
-                    ?: throw WebDavException("The file on the server can't be read.")
-                else -> { check(response); null }
-            }
             val local = runCatching { json.parseToJsonElement(settings) as? JsonObject }.getOrNull()
-            val result = merge(remote, settingsChangedAt)
-            val takeRemoteSettings = remote?.settings != null && remote.settingsChangedAt > settingsChangedAt
-            val upload = SyncFile(
-                device = device,
-                updatedAt = now(),
-                settings = if (takeRemoteSettings) remote.settings else local,
-                settingsChangedAt = if (takeRemoteSettings) remote.settingsChangedAt else settingsChangedAt,
-                history = db.history().all(),
-                favorites = db.favorites().all(),
-                tombstones = db.tombstones().all(),
-            )
-            check(send(HttpMethod.Put, url, user, password, body = json.encodeToString(SyncFile.serializer(), upload)))
-            result.copy(settings = if (takeRemoteSettings) remote.settings.toString() else null)
+            var historyChanged = 0
+            var favoritesAdded = 0
+            for (attempt in 1..CONFLICT_RETRIES + 1) {
+                val response = send(HttpMethod.Get, url, user, password)
+                val remote: SyncFile? = when (response.status.value) {
+                    404 -> {
+                        check(send(HttpMethod("MKCOL"), folder(baseUrl), user, password), allowed = setOf(405))
+                        null
+                    }
+                    in 200..299 -> runCatching { json.decodeFromString(SyncFile.serializer(), response.bodyAsText()) }.getOrNull()
+                        ?: throw WebDavException("The file on the server can't be read.")
+                    else -> { check(response); null }
+                }
+                // A newer app's file may hold what this version doesn't know: leave it alone.
+                if (remote != null && remote.version > SyncFile.VERSION) {
+                    throw WebDavException("The file on the server was written by a newer version of AENHT.", newerVersion = true)
+                }
+                val merged = merge(remote, settingsChangedAt)
+                historyChanged += merged.historyChanged
+                favoritesAdded += merged.favoritesAdded
+                val takeRemoteSettings = remote?.settings != null && remote.settingsChangedAt > settingsChangedAt
+                val upload = SyncFile(
+                    device = device,
+                    updatedAt = now(),
+                    settings = if (takeRemoteSettings) remote.settings else local,
+                    settingsChangedAt = if (takeRemoteSettings) remote.settingsChangedAt else settingsChangedAt,
+                    history = db.history().all(),
+                    favorites = db.favorites().all(),
+                    tombstones = db.tombstones().all(),
+                )
+                // Weak ETags can't be used with If-Match; servers without ETags get a plain upload.
+                val etag = response.headers[HttpHeaders.ETag]?.takeIf { remote != null && !it.startsWith("W/") }
+                val condition = when {
+                    attempt > CONFLICT_RETRIES -> null // Still changing after the retries: upload what was merged.
+                    remote == null -> HttpHeaders.IfNoneMatch to "*"
+                    etag != null -> HttpHeaders.IfMatch to etag
+                    else -> null
+                }
+                val put = send(HttpMethod.Put, url, user, password, body = json.encodeToString(SyncFile.serializer(), upload), condition = condition)
+                if (put.status.value == 412 && condition != null) continue
+                check(put)
+                return@withLock WebDavResult(
+                    settings = if (takeRemoteSettings) remote.settings.toString() else null,
+                    settingsChangedAt = if (takeRemoteSettings) remote.settingsChangedAt else settingsChangedAt,
+                    historyChanged = historyChanged,
+                    favoritesAdded = favoritesAdded,
+                )
+            }
+            throw WebDavException("The file on the server keeps changing.")
         }
 
     internal suspend fun merge(remote: SyncFile?, settingsChangedAt: Long): WebDavResult {
         val keepSince = now() - TOMBSTONE_DAYS * 86_400_000L
         db.tombstones().prune(keepSince)
         if (remote == null) return WebDavResult(null, settingsChangedAt, 0, 0)
-        db.tombstones().upsert(remote.tombstones.filter { it.deletedAt >= keepSince })
+        // A deletion only ever moves forward in time: an older one from the
+        // server must not replace a newer one made here (the gallery read in
+        // between would come back).
+        val mine = db.tombstones().all().associate { (it.kind to it.key) to it.deletedAt }
+        db.tombstones().upsert(remote.tombstones.filter { it.deletedAt >= keepSince && it.deletedAt > (mine[it.kind to it.key] ?: Long.MIN_VALUE) })
         val tombstones = db.tombstones().all()
         val deleted = tombstones.filter { it.kind == Tombstone.HISTORY }.associate { it.key to it.deletedAt }
         val clearedAt = deleted[Tombstone.ALL] ?: 0L
@@ -168,5 +218,8 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
     companion object {
         /** Deletions are remembered this long for devices that sync rarely. */
         const val TOMBSTONE_DAYS = 180
+
+        /** How often a sync starts over when another device uploaded in between. */
+        const val CONFLICT_RETRIES = 3
     }
 }

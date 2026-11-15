@@ -211,8 +211,9 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         folder = target
         scope.launch {
             try {
-                // Moving between folders keeps the note.
-                val note = if (target != null && before != null) runCatching { EhClient.favoriteNote(gid, token) }.getOrDefault("") else ""
+                // Moving between folders keeps the note: when it can't be read the move
+                // stops here (sending an empty note would erase it on the site).
+                val note = if (target != null && before != null) EhClient.favoriteNote(gid, token) else ""
                 EhClient.setFavorite(gid, token, target, note)
                 val card = summary
                 if (target != null) card?.let { FavoritesStore.added(it, target) } else FavoritesStore.removed(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token))
@@ -228,7 +229,15 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
     private fun editNote(overlays: com.atlanyuey.aenht.ui.components.OverlayController, labels: List<String>) {
         val current = folder ?: return
         scope.launch {
-            val note = runCatching { EhClient.favoriteNote(gid, token) }.getOrDefault("")
+            // Without the note as it is, saving would erase it: the editor doesn't open.
+            val note = try {
+                EhClient.favoriteNote(gid, token)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                overlays.alert(labels[5], e.localizedMessage)
+                return@launch
+            }
             overlays.prompt(labels[2], initial = note, confirm = labels[3], cancel = labels[4], singleLine = false) { text ->
                 scope.launch {
                     try {
@@ -565,7 +574,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             SectionTitle(tr("Pages"), Modifier.clickable(interactionSource = null, indication = null, onClick = jump)) {
                 if (d.pages > 1) TextButton(tr("See All"), { navigator.push(EhPagesScreen(d, card)) })
             }
-            com.atlanyuey.aenht.ui.components.FollowReader(d.gid.toInt(), rowState, d.thumbnails.size)
+            com.atlanyuey.aenht.ui.components.FollowReader("eh:${d.gid}", rowState, d.thumbnails.size)
             LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(d.thumbnails, key = { it.page }) { thumb ->
                     Column(
@@ -575,7 +584,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     ) {
                         val ratio = if (thumb.width > 0 && thumb.height > 0) thumb.width.toFloat() / thumb.height else 0.7f
                         EhThumbnailImage(thumb, Modifier.size(width = 160.dp * ratio.coerceIn(0.5f, 1.5f), height = 160.dp)
-                            .readerThumb(d.gid.toInt(), thumb.page - 1).clip(RoundedCornerShape(8.dp)))
+                            .readerThumb("eh:${d.gid}", thumb.page - 1).clip(RoundedCornerShape(8.dp)))
                         Txt("${thumb.page}", style = Type.caption1, color = AppTheme.colors.secondaryLabel)
                     }
                 }
@@ -966,7 +975,7 @@ class EhPagesScreen(private val detail: EhGalleryDetail, private val card: Galle
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).readerThumb(detail.gid.toInt(), thumb.page - 1).clip(RoundedCornerShape(8.dp)))
+                        EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).readerThumb("eh:${detail.gid}", thumb.page - 1).clip(RoundedCornerShape(8.dp)))
                         Txt("${thumb.page}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
                     }
                 }

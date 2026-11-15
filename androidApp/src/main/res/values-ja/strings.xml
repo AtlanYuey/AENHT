@@ -538,9 +538,13 @@
     <string name="l_535">場所</string>
     <string name="l_536">再分類</string>
     <string name="l_537">一時</string>
-    <string name="l_538">設定のバックアップ</string>
-    <string name="l_539">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_540">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_541">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_542">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_538">さらに読み込む</string>
+    <string name="l_539">これらのページの内容はすべてフィルタで非表示になっています。</string>
+    <string name="l_540">サイトがリクエスト数を制限しています。%d 秒後に続行します。</string>
+    <string name="l_541">サーバ上のファイルは新しいバージョンの AENHT で書き込まれています。同期するには App をアップデートしてください。</string>
+    <string name="l_542">設定のバックアップ</string>
+    <string name="l_543">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_544">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_545">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_546">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

@@ -187,7 +187,7 @@ private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
 
 class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** Opens out of, and closes into, the thumbnail of the page it's on (when it's on screen). */
-    override fun zoomTarget() = com.atlanyuey.aenht.ui.components.ReaderThumbs.rect(source.id, page)
+    override fun zoomTarget() = com.atlanyuey.aenht.ui.components.ReaderThumbs.rect(source.thumbsKey, page)
 
     override val hidesTabBar: Boolean get() = true
 
@@ -417,7 +417,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
         LaunchedEffect(page) { prefetch(context, page) }
-        LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.id, page) }
+        LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.thumbsKey, page) }
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
@@ -991,7 +991,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row {
                 Txt(tr("Auto Read Interval"), Modifier.weight(1f))
-                Txt(String.format(java.util.Locale.getDefault(), "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
+                Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
             }
             GlassSlider(
                 AppSettings.autoReadInterval.toFloat(),

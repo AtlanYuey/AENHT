@@ -29,9 +29,18 @@ object Diagnostics {
     fun clear() = lines.store(emptyList())
 
     private val secrets = listOf(
-        Regex("""(Authorization:\s*(?:User|Key|Bearer)\s+)\S+""", RegexOption.IGNORE_CASE) to "$1•••",
+        // Whole credential headers, whatever the scheme (Basic, Bearer, Key, …).
+        Regex("""((?:Proxy-)?Authorization\s*[:=]\s*)[^\r\n]+""", RegexOption.IGNORE_CASE) to "$1•••",
+        Regex("""((?:Set-)?Cookie\s*:\s*)[^\r\n]+""", RegexOption.IGNORE_CASE) to "$1•••",
         Regex("""((?:ipb_member_id|ipb_pass_hash|igneous|ipb_session_id|sk|star)=)[^;&\s]+""") to "$1•••",
-        Regex(""""(apikey|api_key|access_token|refresh_token|token|password)"\s*:\s*"[^"]*"""", RegexOption.IGNORE_CASE) to "\"$1\":\"•••\"",
+        // user:password@ in a URL.
+        Regex("""(://)[^/\s:@]+:[^/\s@]+@""") to "$1•••@",
+        // Secrets as URL or form parameters.
+        Regex(
+            """((?:^|[?&;\s])(?:api[_-]?key|key|token|access[_-]?token|refresh[_-]?token|id[_-]?token|auth|password|passwd|pwd|secret|sig|signature|session)=)[^&#\s]+""",
+            RegexOption.IGNORE_CASE,
+        ) to "$1•••",
+        Regex(""""(apikey|api_key|api-key|access_token|refresh_token|id_token|token|password|secret|authorization)"\s*:\s*"[^"]*"""", RegexOption.IGNORE_CASE) to "\"$1\":\"•••\"",
         Regex("""\bsk-[A-Za-z0-9_-]{8,}""") to "sk-•••",
         Regex("""key:[A-Za-z0-9_-]{6,}""") to "key:•••",
         Regex("""[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}""") to "•••@•••",

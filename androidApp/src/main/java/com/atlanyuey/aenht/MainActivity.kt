@@ -78,13 +78,6 @@ class MainActivity : ComponentActivity() {
         if (!isChangingConfigurations) com.atlanyuey.aenht.core.AppLock.onBackground()
     }
 
-    @Deprecated("Device credential screen of Android 8")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
-        @Suppress("DEPRECATION")
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == com.atlanyuey.aenht.core.AppLock.REQUEST) com.atlanyuey.aenht.core.AppLock.onResult(resultCode == RESULT_OK)
-    }
-
     /** The volume keys turn pages in the reader (when that setting is on). */
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
         val handler = com.atlanyuey.aenht.screens.ReaderKeys.handler

@@ -61,7 +61,10 @@ object NHClient {
     val api: NhApi by lazy {
         AppInfo.version = BuildConfig.VERSION_NAME
         AndroidHttp.client = Net.client
-        NhApi(Auth).also { it.onNeedsVerification = { Session.needsVerification = true } }
+        NhApi(Auth).also {
+            it.onNeedsVerification = { Session.needsVerification = true }
+            RateNotice.watch(it.limiter)
+        }
     }
 
     private suspend fun <T> call(block: suspend NhApi.() -> T): T = try {
@@ -83,7 +86,9 @@ object NHClient {
     suspend fun randomId() = call { randomGalleryId() }
     suspend fun gallery(id: Int) = call { gallery(id) }
     suspend fun galleryJson(id: Int): JsonObject = call { galleryJson(id) }
-    suspend fun comments(id: Int) = call { comments(id) }
+    /** The newest comments (the first page). */
+    suspend fun comments(id: Int) = call { comments(id).result }
+    suspend fun commentsPage(id: Int, page: Int) = call { comments(id, page) }
     suspend fun favorites(page: Int, query: String = "") = call { favorites(page, query) }
     suspend fun setFavorite(id: Int, favorite: Boolean) = call { setFavorite(id, favorite) }
     suspend fun currentUser() = call { currentUser() }
@@ -106,7 +111,17 @@ class SecureStore(private val keyAlias: String) {
         prefs.getString(name, null)?.let { decrypt(it) }?.takeIf { it.isNotEmpty() }
 
     operator fun set(name: String, value: String?) {
-        prefs.edit().apply { if (value.isNullOrEmpty()) remove(name) else putString(name, encrypt(value)) }.apply()
+        if (value.isNullOrEmpty()) {
+            prefs.edit().remove(name).apply()
+            return
+        }
+        val encrypted = encrypt(value)
+        if (encrypted == null) {
+            // The Keystore refused: what was saved stays rather than being erased.
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't save \"$name\"")
+            return
+        }
+        prefs.edit().putString(name, encrypted).apply()
     }
 
     fun clear() {
@@ -155,8 +170,11 @@ object Auth : TokenStorage {
     val isLoggedIn: Boolean get() = accessToken != null
 
     override fun save(access: String, refresh: String?) {
+        val previous = accessToken
         store["access"] = access
         if (!refresh.isNullOrEmpty()) store["refresh"] = refresh
+        // A renewed login: the saved account gets the new tokens (it stays the active one).
+        if (previous != null && previous != access) AccountBook.tokensRenewed(previous, access, refreshToken)
     }
 
     override fun clear() = store.clear()
@@ -196,12 +214,23 @@ object Session {
         isLoggedIn = true
         needsVerification = false
         AccountBook.rememberNh()
+        accountChanged()
+    }
+
+    /** What belonged to the previous login (favorites copy, blacklist) follows the new one. */
+    private fun accountChanged() {
+        Filters.accountChanged()
+        FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.NHENTAI)
     }
 
     suspend fun login(access: String, refresh: String?) {
+        // Nothing of the login before stays: not its refresh token, not its user.
+        Auth.clear()
+        user = null
         Auth.save(access, refresh)
         needsVerification = false
         reload()
+        accountChanged()
     }
 
     fun logout() {
@@ -210,5 +239,6 @@ object Session {
         user = null
         isLoggedIn = false
         needsVerification = false
+        accountChanged()
     }
 }

@@ -47,6 +47,18 @@ object AccountBook {
         else -> account.values["member"] == EhAuth.memberId
     }
 
+    /** The nhentai login was renewed: its saved account keeps up, or switching back to it would use dead tokens. */
+    fun tokensRenewed(previousAccess: String, access: String, refresh: String?) {
+        if (accounts.none { it.site == Site.NHENTAI.key && it.values["access"] == previousAccess }) return
+        save(accounts.map { account ->
+            if (account.site == Site.NHENTAI.key && account.values["access"] == previousAccess) {
+                account.copy(values = buildMap { put("access", access); refresh?.let { put("refresh", it) } })
+            } else {
+                account
+            }
+        })
+    }
+
     private fun upsert(account: SavedAccount) {
         save(accounts.filter { it.id != account.id } + account)
     }
@@ -90,7 +102,8 @@ object AccountBook {
                 com.atlanyuey.aenht.screens.EhFolders.load()
             }
         }
-        FavoritesStore.accountChanged(Site.fromKey(account.site) ?: Site.NHENTAI)
+        // nhentai's login above already told the favorites copy.
+        if (account.site != Site.NHENTAI.key) FavoritesStore.accountChanged(Site.EHENTAI)
     }
 
     fun forget(account: SavedAccount) = save(accounts.filter { it.id != account.id })

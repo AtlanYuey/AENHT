@@ -537,3 +537,7 @@
 "Locations" = "Lokasi";
 "Reclassified" = "Diklasifikasi ulang";
 "Temporary" = "Sementara";
+"Load More" = "Muat Lagi";
+"Everything on these pages is hidden by your filters." = "Semua isi halaman ini disembunyikan oleh filter Anda.";
+"The site limits requests. Continuing in %lld s." = "Situs membatasi permintaan. Melanjutkan dalam %lld dtk.";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.";

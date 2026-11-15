@@ -318,11 +318,15 @@ object EhParser {
 
     /** The gallery a link points to (`/g/<gid>/<token>/`), or null. */
     fun galleryKey(url: String): Pair<Long, String>? =
-        galleryUrl.find(url)?.let { it.groupValues[1].toLong() to it.groupValues[2] }
+        galleryUrl.find(url)?.let { m -> m.groupValues[1].toLongOrNull()?.let { it to m.groupValues[2] } }
 
     /** An image page link (`/s/<pagetoken>/<gid>-<page>`) as (pagetoken, gid, page). */
     fun imagePageKey(url: String): Triple<String, Long, Int>? =
-        pageUrl.find(url)?.let { Triple(it.groupValues[1], it.groupValues[2].toLong(), it.groupValues[3].toInt()) }
+        pageUrl.find(url)?.let { m ->
+            val gid = m.groupValues[2].toLongOrNull() ?: return@let null
+            val page = m.groupValues[3].toIntOrNull() ?: return@let null
+            Triple(m.groupValues[1], gid, page)
+        }
 }
 
 /** Why an E-Hentai request failed. [kind] is readable from Swift. */

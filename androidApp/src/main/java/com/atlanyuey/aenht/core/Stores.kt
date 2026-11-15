@@ -260,11 +260,10 @@ object Downloads {
 
     fun init(context: Context) {
         root = File(context.filesDir, "Downloads")
-        val loaded = try {
-            Net.json.decodeFromString(ListSerializer(DownloadRecord.serializer()), File(root, "index.json").readText())
-        } catch (_: Exception) {
-            emptyList()
-        }
+        // The list of downloads, or the copy before its last save when it can't be read.
+        val loaded = listOf(indexFile, indexBackup).firstNotNullOfOrNull { file ->
+            runCatching { Net.json.decodeFromString(ListSerializer(DownloadRecord.serializer()), file.readText()) }.getOrNull()
+        } ?: emptyList()
         // Downloads interrupted by the app being closed resume as paused.
         records.addAll(loaded.map {
             if (it.state == DownloadRecord.DOWNLOADING || it.state == DownloadRecord.QUEUED) {
@@ -274,6 +273,13 @@ object Downloads {
             }
         })
     }
+
+    private val indexFile get() = File(root, "index.json")
+    private val indexBackup get() = File(root, "index.json.bak")
+
+    /** Saves of the list run one after the other, in the order they were asked for. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val indexWriter = Dispatchers.IO.limitedParallelism(1)
 
     fun record(key: GalleryKey): DownloadRecord? =
         records.firstOrNull { it.site == key.site.key && it.id.toLong() == key.id }
@@ -444,7 +450,8 @@ object Downloads {
         val folder = folder(key)
         val pending = withContext(Dispatchers.IO) {
             folder.mkdirs()
-            record.pages.filter { !File(folder, it.file).exists() }
+            // A file that isn't a picture (an error page saved by an earlier version) is downloaded again.
+            record.pages.filter { imageExtension(File(folder, it.file)) == null }
         }
         update(key) { it.copy(completed = it.pages.size - pending.size) }
         var failures = 0
@@ -528,7 +535,9 @@ object Downloads {
                     if (response.code != 200) return@use false
                     val temp = File(file.parentFile, file.name + ".part")
                     temp.outputStream().use { out -> response.body.byteStream().copyTo(out) }
-                    temp.length() > 0 && temp.renameTo(file)
+                    // An answer that isn't a picture (an error page with status 200) is not the page.
+                    if (imageExtension(temp) == null) { temp.delete(); return@use false }
+                    temp.renameTo(file)
                 }
                 if (ok) return@withContext true
             } catch (_: Exception) {
@@ -552,7 +561,7 @@ object Downloads {
             val info = buildString {
                 append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo>\n")
                 append("  <Title>").append(xmlEscape(record.title)).append("</Title>\n")
-                append("  <PageCount>").append(record.pages.size).append("</PageCount>\n")
+                append("  <PageCount>").append(record.pages.count { imageExtension(File(folder, it.file)) != null }).append("</PageCount>\n")
                 append("  <Web>").append(xmlEscape(if (record.isEh) "https://e-hentai.org/g/${record.id}/${record.token}/" else "https://nhentai.net/g/${record.id}/")).append("</Web>\n")
                 append("</ComicInfo>\n")
             }
@@ -561,8 +570,9 @@ object Downloads {
             zip.closeEntry()
             record.pages.sortedBy { it.number }.forEachIndexed { i, page ->
                 val file = File(folder, page.file)
-                if (!file.exists()) return@forEachIndexed
-                zip.putNextEntry(java.util.zip.ZipEntry("%04d.%s".format(i + 1, file.extension.ifEmpty { "jpg" })))
+                // Named by what the file is (E-Hentai pages are stored without their type).
+                val extension = imageExtension(file) ?: return@forEachIndexed
+                zip.putNextEntry(java.util.zip.ZipEntry("%04d.%s".format(java.util.Locale.ROOT, i + 1, extension)))
                 file.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
             }
@@ -593,18 +603,46 @@ object Downloads {
     private fun saveIndex() {
         lastSave = System.currentTimeMillis()
         val snapshot = records.toList()
-        AppScope.launch(Dispatchers.IO) {
+        // One writer, in order: an older list never lands after a newer one. Written
+        // beside the file and moved over it, keeping the previous list as a backup.
+        AppScope.launch(indexWriter) {
             runCatching {
                 root.mkdirs()
-                File(root, "index.json").writeText(
-                    Net.json.encodeToString(ListSerializer(DownloadRecord.serializer()), snapshot),
-                )
-            }
+                val temp = File(root, "index.json.tmp")
+                temp.writeText(Net.json.encodeToString(ListSerializer(DownloadRecord.serializer()), snapshot))
+                if (indexFile.exists()) indexFile.copyTo(indexBackup, overwrite = true)
+                if (!temp.renameTo(indexFile)) temp.copyTo(indexFile, overwrite = true)
+            }.onFailure { com.atlanyuey.aenht.shared.app.Diagnostics.log("downloads", "Saving the list: ${it.message}") }
         }
     }
 
     /** Bytes used by downloads. */
     fun diskUsage(): Long = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+}
+
+/**
+ * The type of a picture file by its first bytes ("jpg", "png", "gif",
+ * "webp", "avif", "bmp"), or null when it is missing or isn't a picture.
+ */
+fun imageExtension(file: File): String? {
+    val head = ByteArray(12)
+    val read = try {
+        file.inputStream().use { it.read(head) }
+    } catch (_: Exception) {
+        return null
+    }
+    if (read < 12) return null
+    fun at(offset: Int, text: String) = text.indices.all { head[offset + it] == text[it].code.toByte() }
+    return when {
+        head[0] == 0xFF.toByte() && head[1] == 0xD8.toByte() && head[2] == 0xFF.toByte() -> "jpg"
+        head[0] == 0x89.toByte() && at(1, "PNG") -> "png"
+        at(0, "GIF8") -> "gif"
+        at(0, "RIFF") && at(8, "WEBP") -> "webp"
+        at(4, "ftyp") && (at(8, "avif") || at(8, "avis")) -> "avif"
+        at(4, "ftyp") && (at(8, "heic") || at(8, "heix") || at(8, "mif1")) -> "heic"
+        at(0, "BM") -> "bmp"
+        else -> null
+    }
 }
 
 // MARK: - Tags
@@ -759,10 +797,12 @@ object TagStore {
     private fun apply(snapshot: TagSnapshot) {
         if (snapshot.tags.isNotEmpty()) tags = snapshot.tags
         if (snapshot.translations.isNotEmpty()) translations = snapshot.translations
-        lastUpdated = snapshot.date
+        lastUpdated = snapshot.date.takeIf { it > 0 }
         tagCount = tags.size
         translationCount = translations.values.sumOf { it.size }
         revision++
+        // Tag rules match by name: lists loaded before the names were there filter again.
+        Filters.changed()
     }
 
     private fun readCache(): TagSnapshot? = try {
@@ -821,8 +861,13 @@ object TagStore {
                 }
             }
         }
-        if (translated.isEmpty()) readCache()?.translations?.let { translated.putAll(it) }
-        val snapshot = TagSnapshot(result, translated, System.currentTimeMillis())
+        // Without the translations this update is half done: the old ones stay and the
+        // date isn't moved forward, so the next start tries again instead of waiting a week.
+        val fetched = translated.isNotEmpty()
+        val previous = if (fetched) null else readCache()
+        previous?.translations?.let { translated.putAll(it) }
+        val date = if (fetched) System.currentTimeMillis() else previous?.date ?: 0L
+        val snapshot = TagSnapshot(result, translated, date)
         runCatching {
             cacheFile.parentFile?.mkdirs()
             cacheFile.writeText(Net.json.encodeToString(TagSnapshot.serializer(), snapshot))
@@ -878,8 +923,15 @@ class GalleryFeed(
     var total by mutableStateOf<Int?>(null)
         private set
 
+    /** The filters hid whole pages in a row and more remain: the list offers to keep looking. */
+    var skippedHidden by mutableStateOf(false)
+        private set
+
     private var next: String? = null
     private val seen = HashSet<String>()
+    /** Everything loaded, before the filters (shown again when the rules change). */
+    private val loaded = ArrayList<GallerySummary>()
+    private var filterVersion = 0
     private var generation = 0
     private var job: Job? = null
 
@@ -896,11 +948,11 @@ class GalleryFeed(
             try {
                 val response = fetch(null)
                 if (current != generation) return@launch
-                next = response.next
                 total = response.total
                 seen.clear()
+                loaded.clear()
                 items.clear()
-                items.addAll(unique(response.items))
+                take(response, current)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -922,12 +974,12 @@ class GalleryFeed(
         if (!canLoadMore || isLoading || cursor == null) return
         val current = generation
         isLoading = true
+        error = null
         job = scope.launch {
             try {
                 val response = fetch(cursor)
                 if (current != generation) return@launch
-                next = response.next
-                items.addAll(unique(response.items))
+                take(response, current)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -937,8 +989,45 @@ class GalleryFeed(
         }
     }
 
-    private fun unique(list: List<GallerySummary>): List<GallerySummary> {
-        val fresh = list.filter { seen.add(it.key.storageKey) }
-        return if (filtered) Filters.visible(fresh) else fresh
+    /**
+     * Adds a page. When the filters hide all of it, the next pages are read
+     * too, a few at most (each is a request to the site): a hidden page
+     * doesn't end the list.
+     */
+    private suspend fun take(first: FeedPage, current: Int) {
+        var page = first
+        var skipped = 0
+        while (true) {
+            next = page.next
+            val fresh = page.items.filter { seen.add(it.key.storageKey) }
+            loaded += fresh
+            filterVersion = Filters.version
+            val visible = if (filtered) Filters.visible(fresh) else fresh
+            items.addAll(visible)
+            val cursor = next
+            val hidden = fresh.isNotEmpty() && visible.isEmpty() && cursor != null
+            if (!hidden || skipped >= MAX_HIDDEN_PAGES) {
+                skippedHidden = hidden
+                return
+            }
+            skipped++
+            page = fetch(cursor!!)
+            if (current != generation) return
+        }
+    }
+
+    /** Applies the filters again to what is loaded (the rules or the account's blacklist changed). */
+    fun refilter() {
+        if (!filtered || filterVersion == Filters.version) return
+        filterVersion = Filters.version
+        val visible = Filters.visible(loaded)
+        if (visible.map { it.key } != items.map { it.key }) {
+            items.clear()
+            items.addAll(visible)
+        }
+    }
+
+    private companion object {
+        const val MAX_HIDDEN_PAGES = 4
     }
 }

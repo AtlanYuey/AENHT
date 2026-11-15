@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,7 @@ import coil3.size.Dimension
 import coil3.size.Size
 import com.atlanyuey.aenht.core.AppSettings
 import com.atlanyuey.aenht.core.Downloads
+import com.atlanyuey.aenht.core.Filters
 import com.atlanyuey.aenht.core.GalleryFeed
 import com.atlanyuey.aenht.core.GalleryItem
 import com.atlanyuey.aenht.shared.site.GallerySummary
@@ -510,6 +512,8 @@ fun LazyStaggeredGridScope.fullLine(key: Any? = null, content: @Composable () ->
 /** Footer of an infinite list: spinner while loading, error with retry. */
 fun LazyStaggeredGridScope.feedFooter(feed: GalleryFeed, empty: Pair<String, ImageVector>) {
     fullLine("footer") {
+        // The rules or the account's blacklist changed: what is loaded is filtered again.
+        LaunchedEffect(Filters.version) { feed.refilter() }
         when {
             !feed.hasLoaded || (feed.isLoading && feed.items.isEmpty()) ->
                 Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
@@ -520,6 +524,12 @@ fun LazyStaggeredGridScope.feedFooter(feed: GalleryFeed, empty: Pair<String, Ima
                 title = tr("Couldn't Load"),
                 message = feed.error,
                 action = tr("Try Again") to { feed.reload() },
+            )
+            feed.items.isEmpty() && feed.skippedHidden -> EmptyState(
+                icon = empty.second,
+                title = empty.first,
+                message = tr("Everything on these pages is hidden by your filters."),
+                action = tr("Load More") to { feed.loadMore() },
             )
             feed.items.isEmpty() -> EmptyState(icon = empty.second, title = empty.first)
             feed.isLoading -> Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
@@ -532,6 +542,9 @@ fun LazyStaggeredGridScope.feedFooter(feed: GalleryFeed, empty: Pair<String, Ima
             ) {
                 Txt(feed.error ?: "", style = Type.footnote, color = AppTheme.colors.secondaryLabel, align = TextAlign.Center)
                 GlassCapsuleButton({ feed.loadMore() }, height = 36.dp) { Txt(tr("Retry"), style = Type.subheadline) }
+            }
+            feed.skippedHidden -> Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                GlassCapsuleButton({ feed.loadMore() }, height = 36.dp) { Txt(tr("Load More"), style = Type.subheadline) }
             }
             else -> Spacer(Modifier.height(8.dp))
         }

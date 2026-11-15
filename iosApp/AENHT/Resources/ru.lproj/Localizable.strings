@@ -537,3 +537,7 @@
 "Locations" = "Места";
 "Reclassified" = "Переклассифицировано";
 "Temporary" = "Временные";
+"Load More" = "Загрузить ещё";
+"Everything on these pages is hidden by your filters." = "Всё на этих страницах скрыто вашими фильтрами.";
+"The site limits requests. Continuing in %lld s." = "Сайт ограничивает число запросов. Продолжение через %lld с.";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "Файл на сервере записан более новой версией AENHT. Обновите приложение, чтобы синхронизировать.";

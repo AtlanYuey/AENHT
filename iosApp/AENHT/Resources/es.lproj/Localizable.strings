@@ -537,3 +537,7 @@
 "Locations" = "Lugares";
 "Reclassified" = "Reclasificado";
 "Temporary" = "Temporal";
+"Load More" = "Cargar más";
+"Everything on these pages is hidden by your filters." = "Tus filtros ocultan todo lo que hay en estas páginas.";
+"The site limits requests. Continuing in %lld s." = "El sitio limita las solicitudes. Se continuará en %lld s.";
+"The file on the server was written by a newer version of AENHT. Update the app to sync." = "El archivo del servidor fue escrito por una versión más reciente de AENHT. Actualiza la app para sincronizar.";

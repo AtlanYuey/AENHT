@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Back up settings and history; never the login tokens or downloads. -->
+<!--
+  Back up the settings only. Never the login tokens or the downloads; the
+  reading history and the favorites copy are in the database, which is
+  synced through WebDAV instead (a database copied while it is open, without
+  its journal, may not open again).
+-->
 <full-backup-content>
     <include domain="sharedpref" path="settings.xml" />
-    <include domain="file" path="history.json" />
 </full-backup-content>

@@ -538,9 +538,13 @@
     <string name="l_535">Lokasi</string>
     <string name="l_536">Diklasifikasi ulang</string>
     <string name="l_537">Sementara</string>
-    <string name="l_538">Cadangan Pengaturan</string>
-    <string name="l_539">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_540">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_541">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_542">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_538">Muat Lagi</string>
+    <string name="l_539">Semua isi halaman ini disembunyikan oleh filter Anda.</string>
+    <string name="l_540">Situs membatasi permintaan. Melanjutkan dalam %d dtk.</string>
+    <string name="l_541">File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.</string>
+    <string name="l_542">Cadangan Pengaturan</string>
+    <string name="l_543">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_544">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_545">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_546">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>
