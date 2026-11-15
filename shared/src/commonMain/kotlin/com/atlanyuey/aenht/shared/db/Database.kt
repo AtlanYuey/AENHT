@@ -45,6 +45,9 @@ data class HistoryRecord(
     val tagIds: String = "",
     /** E-Hentai's rating when last seen (0: none), for the card. */
     @ColumnInfo(defaultValue = "0") val rating: Double = 0.0,
+    /** E-Hentai: the cover's language badge ("JP", "ZH"…) and category label, for the card. */
+    @ColumnInfo(defaultValue = "") val language: String = "",
+    @ColumnInfo(defaultValue = "") val category: String = "",
 ) {
     val galleryKey: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, galleryId, token)
     val tagIdList: List<Int> get() = tagIds.split(',').mapNotNull { it.toIntOrNull() }
@@ -87,6 +90,9 @@ data class FavoriteRecord(
     val tagIds: String = "",
     /** E-Hentai's rating when last seen (0: none), for the card. */
     @ColumnInfo(defaultValue = "0") val rating: Double = 0.0,
+    /** E-Hentai: the cover's language badge ("JP", "ZH"…) and category label, for the card. */
+    @ColumnInfo(defaultValue = "") val language: String = "",
+    @ColumnInfo(defaultValue = "") val category: String = "",
 )
 
 @Dao
@@ -175,8 +181,8 @@ interface TombstoneDao {
 
 @Database(
     entities = [HistoryRecord::class, SearchHistoryRecord::class, FavoriteRecord::class, Tombstone::class],
-    version = 3,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    version = 4,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 @ConstructedBy(AenhtDatabaseConstructor::class)
 abstract class AenhtDatabase : RoomDatabase() {

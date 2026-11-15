@@ -530,9 +530,17 @@
     <string name="l_527">Gap Between Pages</string>
     <string name="l_528">Other Versions</string>
     <string name="l_529">Translations and other editions of this gallery</string>
-    <string name="l_530">Settings Backup</string>
-    <string name="l_531">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_532">Android\'s own backup also keeps these settings.</string>
-    <string name="l_533">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_534">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_530">Cosplayers</string>
+    <string name="l_531">Male</string>
+    <string name="l_532">Female</string>
+    <string name="l_533">Mixed</string>
+    <string name="l_534">Other</string>
+    <string name="l_535">Locations</string>
+    <string name="l_536">Reclassified</string>
+    <string name="l_537">Temporary</string>
+    <string name="l_538">Settings Backup</string>
+    <string name="l_539">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_540">Android\'s own backup also keeps these settings.</string>
+    <string name="l_541">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_542">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

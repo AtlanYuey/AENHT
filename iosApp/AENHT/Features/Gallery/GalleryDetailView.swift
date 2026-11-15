@@ -428,22 +428,15 @@ private struct InfoStrip: View {
         VStack(spacing: 0) {
             Divider()
             HStack(spacing: 0) {
-                item("Pages") { Text("\(detail.numPages)") }
+                InfoCell(title: "Pages") { Text("\(detail.numPages)") }
                 Divider().frame(height: 34)
-                item("Favorites") {
-                    Label {
-                        Text(favorites.formatted(.number.notation(.compactName)))
-                    } icon: {
-                        Image(systemName: "heart.fill").font(.caption)
-                    }
-                    .labelStyle(.titleAndIcon)
-                }
+                InfoCell(title: "Favorites") { FavoritesCount(count: favorites) }
                 Divider().frame(height: 34)
-                item("Uploaded") {
+                InfoCell(title: "Uploaded") {
                     Text(detail.uploaded.map { Self.dateFormatter.string(from: $0) } ?? "-")
                 }
                 Divider().frame(height: 34)
-                item("ID") { Text(verbatim: "#\(detail.id)") }
+                InfoCell(title: "ID") { Text(verbatim: "#\(detail.id)") }
             }
             .padding(.vertical, 12)
             Divider()
@@ -458,11 +451,19 @@ private struct InfoStrip: View {
         return formatter
     }()
 
-    private func item<Value: View>(_ title: LocalizedStringKey, @ViewBuilder value: () -> Value) -> some View {
+}
+
+/// A cell of a gallery page's info strip (both sites).
+struct InfoCell<Value: View>: View {
+    let title: LocalizedStringKey
+    @ViewBuilder let value: () -> Value
+
+    var body: some View {
         VStack(spacing: 6) {
             Text(title)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             value()
                 .font(.headline)
                 .lineLimit(1)
@@ -472,10 +473,25 @@ private struct InfoStrip: View {
     }
 }
 
+/// The favorites count with a heart (both sites' info strips).
+struct FavoritesCount: View {
+    let count: Int
+
+    var body: some View {
+        Label {
+            Text(count.formatted(.number.notation(.compactName)))
+        } icon: {
+            Image(systemName: "heart.fill").font(.caption)
+        }
+        .labelStyle(.titleAndIcon)
+    }
+}
+
 // MARK: - Tags
 
 private struct TagsSection: View {
     let detail: GalleryDetail
+    @Environment(TagStore.self) private var tagStore
 
     /// Order used by the site.
     private let order: [TagGroup] = [.category, .language, .tag, .parody, .character, .artist, .group]
@@ -490,7 +506,10 @@ private struct TagsSection: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal)
-                        TagRow(tags: detail.tags(in: group))
+                        TagRow(items: detail.tags(in: group).map { tag in
+                            TagRowItem(id: "\(tag.id)", name: tagStore.displayName(tag.name, type: tag.type), count: tag.count,
+                                       route: SearchRoute(query: tag.query, title: tag.name), copy: tag.name)
+                        })
                     }
                 }
             }
@@ -499,16 +518,26 @@ private struct TagsSection: View {
     }
 }
 
+/// A tag of a [TagRow]: its name (translated), count and search.
+struct TagRowItem<Route: Hashable>: Identifiable {
+    let id: String
+    let name: String
+    var count: Int? = nil
+    let route: Route
+    /// What Copy puts on the clipboard.
+    let copy: String
+}
+
 /// One line of tags that scrolls sideways. When they don't fit, a button at
 /// the end of the line shows them all, wrapped onto as many lines as needed.
-private struct TagRow: View {
-    let tags: [GalleryTag]
+/// The same on both sites' gallery pages.
+struct TagRow<Route: Hashable>: View {
+    let items: [TagRowItem<Route>]
 
     @State private var expanded = false
     @State private var tagsWidth: CGFloat = 0
     @State private var rowWidth: CGFloat = 0
     @Namespace private var namespace
-    @Environment(TagStore.self) private var tagStore
 
     private let margin: CGFloat = 16
     private let buttonSize: CGFloat = 34
@@ -570,12 +599,15 @@ private struct TagRow: View {
     }
 
     private var chips: some View {
-        ForEach(Array(tags.enumerated()), id: \.offset) { index, tag in
-            NavigationLink(value: SearchRoute(query: tag.query, title: tag.name)) {
-                TagChip(name: tagStore.displayName(tag.name, type: tag.type), count: tag.count)
+        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+            NavigationLink(value: item.route) {
+                TagChip(name: item.name, count: item.count)
                     .privacyText()
             }
             .buttonStyle(.plain)
+            .contextMenu {
+                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = item.copy }
+            }
             .matchedGeometryEffect(id: index, in: namespace)
         }
     }
@@ -619,19 +651,11 @@ private struct PreviewSection: View {
         let source = ReaderSource(detail: detail)
         let height: CGFloat = sizeClass == .regular ? 220 : 160
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                // Tapped: the row goes to the first page; again: back to where it was.
-                SectionTitle(title: "Pages")
-                    .fixedSize()
-                    .contentShape(Rectangle())
-                    .onTapGesture { pagesTitleTapped() }
-                Spacer()
+            // Tapped: the row goes to the first page; again: back to where it was.
+            SectionHeader(title: "Pages", onTitleTap: pagesTitleTapped) {
                 if detail.pages.count > 1 {
                     // By value: the reader it opens must show above it.
-                    NavigationLink(value: PagesRoute(detail: detail)) {
-                        Text("See All")
-                    }
-                    .padding(.trailing)
+                    NavigationLink("See All", value: PagesRoute(detail: detail))
                 }
             }
             // A row of every page, swiped sideways (like the previous version).
@@ -736,15 +760,12 @@ private struct CommentsPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                SectionTitle(title: "Comments")
-                Spacer()
+            SectionHeader(title: "Comments") {
                 NavigationLink {
                     CommentsView(galleryID: detail.id, initial: comments)
                 } label: {
-                    Text(comments.isEmpty ? "Write" : ("See All (\(comments.count))" as LocalizedStringKey))
+                    Text(comments.isEmpty ? "Add a comment…" : ("See All (\(comments.count))" as LocalizedStringKey))
                 }
-                .padding(.trailing)
             }
             if comments.isEmpty {
                 Text("No comments yet")
@@ -756,7 +777,7 @@ private struct CommentsPreview: View {
                     LazyHStack(alignment: .top, spacing: 12) {
                         ForEach(comments.filter { !Filters.shared.hidesComment(author: $0.poster?.username ?? "", text: $0.body) }.prefix(10)) { comment in
                             CommentBubble(comment: comment, lineLimit: 5)
-                                .frame(width: 280, alignment: .leading)
+                                .frame(width: 290, alignment: .topLeading)
                                 .padding(14)
                                 .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }

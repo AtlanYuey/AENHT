@@ -102,8 +102,11 @@ struct FavoritesView: View {
                 .hidesBarsOnScroll()
             }
         }
+        // The system title menu, like Home's (not a tinted button).
         .navigationTitle("Favorites")
+        .modifier(NavigationSubtitle(text: subtitle))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleMenu { titleMenuItems }
         .alert("Search Favorites", isPresented: $askQuery) {
             TextField("Search", text: $draftQuery)
             Button("Search") { applyQuery(draftQuery) }
@@ -111,7 +114,6 @@ struct FavoritesView: View {
             Button("Cancel", role: .cancel) {}
         }
         .toolbar {
-            ToolbarItem(placement: .principal) { titleMenu }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     draftQuery = query
@@ -150,9 +152,8 @@ struct FavoritesView: View {
         }
     }
 
-    /// "Favorites ▾" with the site / folder below it.
-    private var titleMenu: some View {
-        Menu {
+    /// The title menu: the site, and E-Hentai's folders.
+    @ViewBuilder private var titleMenuItems: some View {
             if settings.enabledSites.count > 1 {
                 Button { site = nil } label: { checked("All", site == nil) }
             }
@@ -173,16 +174,6 @@ struct FavoritesView: View {
                 Divider()
                 Button("E-Hentai Folders Shown in All", systemImage: "folder") { pickFolders = true }
             }
-        } label: {
-            VStack(spacing: 0) {
-                HStack(spacing: 4) {
-                    Text("Favorites").font(.headline)
-                    Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                }
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
-            }
-            .foregroundStyle(.primary)
-        }
     }
 
     private var subtitle: String {

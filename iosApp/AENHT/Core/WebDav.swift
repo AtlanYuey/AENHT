@@ -131,7 +131,7 @@ final class WebDavService {
                 numPages: Int32(e.numPages), lastPage: Int32(e.lastPage),
                 readAt: Int64(e.lastRead.timeIntervalSince1970 * 1000),
                 tagIds: e.tagIDs.map(String.init).joined(separator: ","),
-                rating: e.rating
+                rating: e.rating, language: e.ehLanguage, category: e.ehCategory
             )
         }
         try await history.put(records: records)
@@ -157,12 +157,20 @@ final class WebDavService {
                 if r.numPages > 0 { e.numPages = Int(r.numPages) }
                 if !tags.isEmpty { e.tagIDs = tags }
                 if r.rating > 0 { e.rating = r.rating }
+                if !r.language.isEmpty { e.ehLanguage = r.language }
+                if !r.category.isEmpty { e.ehCategory = r.category }
             } else {
                 context.insert(HistoryEntry(
                     key: r.key, gid: Int(r.galleryId), site: r.site, token: r.token, mediaID: r.mediaId, title: r.title,
                     thumbnail: r.thumbnail, thumbWidth: Int(r.thumbWidth), thumbHeight: Int(r.thumbHeight),
                     numPages: Int(r.numPages), tagIDs: tags, lastPage: Int(r.lastPage), lastRead: date
                 ))
+                let addedKey = r.key
+                if let added = try? context.fetch(FetchDescriptor<HistoryEntry>(predicate: #Predicate { $0.key == addedKey })).first {
+                    added.rating = r.rating
+                    added.ehLanguage = r.language
+                    added.ehCategory = r.category
+                }
                 byKey[r.key] = nil
             }
         }

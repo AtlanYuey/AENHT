@@ -529,4 +529,12 @@ T = [
     "Espace entre les pages",
     "Autres versions",
     "Traductions et autres éditions de cette galerie",
+    "Cosplayeurs",
+    "Masculin",
+    "Féminin",
+    "Mixte",
+    "Autres",
+    "Lieux",
+    "Reclassé",
+    "Temporaire",
 ]

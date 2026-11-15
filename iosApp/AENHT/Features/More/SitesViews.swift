@@ -70,6 +70,7 @@ struct AccountsView: View {
             }
         }
         .navigationTitle("Accounts")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogin) { LoginView() }
         .sheet(isPresented: $showEhLogin) { EhLoginView() }
         .alert("Log In with API Key", isPresented: $askKey) {
@@ -185,6 +186,7 @@ struct EhAccountView: View {
             }
         }
         .navigationTitle("E-Hentai")
+        .navigationBarTitleDisplayMode(.inline)
         .task { limit = try? await EhService.shared.imageLimit() }
         .confirmationDialog("Log out of E-Hentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
             Button("Log Out", role: .destructive) {
@@ -325,6 +327,7 @@ struct EhCookieLoginView: View {
             }
         }
         .navigationTitle("Log In with Cookies")
+        .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't Log In", isPresented: $failed) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -403,6 +406,7 @@ struct SitesSettingsView: View {
             }
         }
         .navigationTitle("Sites")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -493,6 +497,7 @@ struct FiltersSettingsView: View {
             }
         }
         .navigationTitle("Filters")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await filters.refreshNhBlacklist(force: true) }
     }
 }

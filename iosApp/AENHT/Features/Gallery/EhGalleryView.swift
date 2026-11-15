@@ -348,7 +348,7 @@ struct EhGalleryView: View {
             } label: {
                 Image(systemName: model.folder != nil ? "heart.fill" : "heart")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(model.folder.map { EhSession.folderColors[$0] == .black ? Color.pink : EhSession.folderColors[$0] } ?? .accentColor)
+                    .foregroundStyle(model.folder.map { EhSession.folderColors[$0] == .black ? Color.pink : EhSession.folderColors[$0] } ?? Color.accentColor)
                     .frame(width: 44, height: 44)
             } primaryAction: {
                 if !EhSession.shared.isLoggedIn { showLogin = true }
@@ -381,14 +381,19 @@ struct EhGalleryView: View {
     // MARK: Info
 
     private func info(_ detail: EhGalleryDetail) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // The same strip as nhentai's gallery page.
+        VStack(spacing: 0) {
             Divider()
-            HStack {
-                infoCell("Pages", "\(detail.pages)")
-                infoCell("Favorites", Int(detail.favoritedCount).formatted(.number.notation(.compactName)))
-                infoCell("Posted", String(detail.posted.split(separator: " ").first ?? ""))
-                infoCell("Size", detail.fileSize ?? "-")
+            HStack(spacing: 0) {
+                InfoCell(title: "Pages") { Text("\(detail.pages)") }
+                Divider().frame(height: 34)
+                InfoCell(title: "Favorites") { FavoritesCount(count: Int(detail.favoritedCount)) }
+                Divider().frame(height: 34)
+                InfoCell(title: "Posted") { Text(String(detail.posted.split(separator: " ").first ?? "")) }
+                Divider().frame(height: 34)
+                InfoCell(title: "Size") { Text(detail.fileSize ?? "-") }
             }
+            .padding(.vertical, 12)
             Divider()
         }
         .padding(.horizontal)
@@ -420,39 +425,25 @@ struct EhGalleryView: View {
         .buttonStyle(.plain)
     }
 
-    private func infoCell(_ title: LocalizedStringKey, _ value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary).lineLimit(1)
-            Text(value).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
     // MARK: Tags
 
+    /// The tags by namespace, laid out like nhentai's (one line each, which
+    /// opens to show them all).
     private func tags(_ detail: EhGalleryDetail) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(Bridge.shared.tagNamespaces(detail: detail), id: \.self) { namespace in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(namespace.capitalized)
+                    Text(EhNamespace.title(namespace))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    FlowLayout(spacing: 8) {
-                        ForEach(Bridge.shared.tags(detail: detail, namespace: namespace), id: \.full) { tag in
-                            let name = tagStore.displayName(tag.name, type: namespace)
-                            NavigationLink(value: EhSearchRoute(query: tag.query, title: name)) {
-                                TagChip(name: name).privacyText()
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = tag.full }
-                            }
-                        }
-                    }
+                        .padding(.horizontal)
+                    TagRow(items: Bridge.shared.tags(detail: detail, namespace: namespace).map { tag in
+                        let name = tagStore.displayName(tag.name, type: namespace)
+                        return TagRowItem(id: tag.full, name: name, route: EhSearchRoute(query: tag.query, title: name), copy: tag.full)
+                    })
                 }
             }
         }
-        .padding(.horizontal)
         .padding(.top, 18)
     }
 
@@ -461,36 +452,33 @@ struct EhGalleryView: View {
     private func previews(_ detail: EhGalleryDetail) -> some View {
         let card = model.card ?? GalleryItem(ehDetail: detail, preview: nil)
         return VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                // Tapped: the row goes to the first page; again: back to where it was.
-                SectionTitle(title: "Pages")
-                    .fixedSize()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.smooth) {
-                            if let saved = savedPage {
-                                savedPage = nil
-                                centeredPage = saved
-                            } else {
-                                savedPage = centeredPage ?? 0
-                                centeredPage = 0
-                            }
-                        }
+            // Tapped: the row goes to the first page; again: back to where it was.
+            SectionHeader(title: "Pages", onTitleTap: {
+                withAnimation(.smooth) {
+                    if let saved = savedPage {
+                        savedPage = nil
+                        centeredPage = saved
+                    } else {
+                        savedPage = centeredPage ?? 0
+                        centeredPage = 0
                     }
+                }
+            }) {
                 if detail.pages > 1 {
                     NavigationLink("See All", value: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card))
-                        .padding(.trailing)
                 }
             }
             ScrollView(.horizontal) {
-                LazyHStack(spacing: 10) {
+                LazyHStack(alignment: .top, spacing: 10) {
                     ForEach(detail.thumbnails.map(IndexedThumb.init)) { item in
                         let thumb = item.thumb
                         NavigationLink(value: ReaderRoute(source: ReaderSource(eh: detail, card: card), page: item.id)) {
                             VStack(spacing: 6) {
                                 let ratio = thumb.width > 0 && thumb.height > 0 ? CGFloat(thumb.width) / CGFloat(thumb.height) : 0.7
+                                // The same size as nhentai's row of pages.
+                                let height: CGFloat = sizeClass == .regular ? 220 : 160
                                 EhThumbnailView(thumb: thumb)
-                                    .frame(width: 160 * min(max(ratio, 0.5), 1.5), height: 160)
+                                    .frame(width: height * min(max(ratio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                     .readerThumbSource(gallery: Int(detail.gid), page: item.id, namespace)
                                 Text("\(thumb.page)").font(.caption).foregroundStyle(.secondary)
@@ -500,9 +488,10 @@ struct EhGalleryView: View {
                     }
                 }
                 .scrollTargetLayout()
-                .padding(.horizontal)
             }
+            .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
             .followsReader(gallery: Int(detail.gid), position: $centeredPage)
             .onScrollPhaseChange { _, phase in
                 if phase == .interacting { savedPage = nil }
@@ -514,21 +503,17 @@ struct EhGalleryView: View {
 
     private func comments(_ detail: EhGalleryDetail) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                SectionTitle(title: "Comments")
+            SectionHeader(title: "Comments") {
                 if !detail.comments.isEmpty || EhSession.shared.isLoggedIn {
                     NavigationLink {
                         EhCommentsView(detail: detail)
                     } label: {
                         if detail.comments.isEmpty { Text("Add a comment…") } else { Text("See All (\(detail.comments.count))") }
                     }
-                    .font(.subheadline)
-                    .padding(.trailing)
-                    .fixedSize()
                 }
             }
             if detail.comments.isEmpty {
-                Text("No comments yet").font(.subheadline).foregroundStyle(.secondary).padding(.horizontal, 20)
+                Text("No comments yet").font(.subheadline).foregroundStyle(.secondary).padding(.horizontal)
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: 12) {
@@ -536,7 +521,7 @@ struct EhGalleryView: View {
                             !settings.blockedCommenterSet.contains($0.author) && !Filters.shared.hidesComment(author: $0.author, text: $0.text)
                         }, id: \.id) { comment in
                             EhCommentBubble(comment: comment, lineLimit: 5)
-                                .frame(width: 300, alignment: .topLeading)
+                                .frame(width: 290, alignment: .topLeading)
                                 .padding(14)
                                 .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
@@ -545,6 +530,28 @@ struct EhGalleryView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+        }
+    }
+}
+
+/// The names of E-Hentai's tag namespaces, in the app's language.
+enum EhNamespace {
+    static func title(_ namespace: String) -> String {
+        switch namespace {
+        case "language": String(localized: "Languages")
+        case "parody": String(localized: "Parodies")
+        case "character": String(localized: "Characters")
+        case "group": String(localized: "Groups")
+        case "artist": String(localized: "Artists")
+        case "cosplayer": String(localized: "Cosplayers")
+        case "male": String(localized: "Male")
+        case "female": String(localized: "Female")
+        case "mixed": String(localized: "Mixed")
+        case "other": String(localized: "Other")
+        case "location": String(localized: "Locations")
+        case "reclass": String(localized: "Reclassified")
+        case "temp": String(localized: "Temporary")
+        default: namespace.capitalized
         }
     }
 }
@@ -611,6 +618,7 @@ struct EhPagesView: View {
             .padding()
         }
         .navigationTitle("Pages")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             if detail == nil {
                 detail = try? await EhService.shared.gallery(gid: route.gid, token: route.token)
@@ -644,30 +652,16 @@ struct EhPagesView: View {
 }
 
 /// An E-Hentai list opened from a gallery (a tag or an uploader).
+/// An E-Hentai search (a tag, an uploader): the same results page as
+/// nhentai's tag searches, on E-Hentai first.
 struct EhListView: View {
     let route: EhSearchRoute
-    @State private var feed: GalleryFeed
-
-    init(route: EhSearchRoute) {
-        self.route = route
-        let query = route.query
-        _feed = State(initialValue: GalleryFeed.eh { Bridge.shared.search(query: query, categoriesShown: 0) })
-    }
+    @State private var site: SiteKind = .ehentai
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                GalleryCollection(items: feed.items) { item in
-                    Task { await feed.loadMoreIfNeeded(after: item) }
-                }
-                .padding(.top, 8)
-                FeedPlaceholder(feed: feed)
-                FeedFooter(feed: feed)
-            }
-        }
-        .navigationTitle(route.title)
-        .refreshable { await feed.reload() }
-        .task { if !feed.hasLoaded { await feed.reload() } }
+        SearchResults(query: route.query, site: $site)
+            .navigationTitle(route.title)
+            .navigationBarTitleDisplayMode(.inline)
     }
 }
 

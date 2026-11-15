@@ -100,9 +100,11 @@ object Bridge {
     fun summary(
         site: Site, id: Long, token: String?, title: String, thumbnail: String?, thumbWidth: Int, thumbHeight: Int,
         pages: Int, mediaId: String, tagIds: List<Int>, rating: Double,
+        /** E-Hentai: the cover's language badge and category label. */
+        language: String, category: String,
     ): GallerySummary = GallerySummary(
         key = GalleryKey(site, id, token), title = title, thumbnail = thumbnail, thumbWidth = thumbWidth,
-        thumbHeight = thumbHeight, pages = pages, languageBadge = null, nhTagIds = tagIds, mediaId = mediaId,
-        rating = rating.takeIf { it > 0 },
+        thumbHeight = thumbHeight, pages = pages, languageBadge = language.ifEmpty { null }, nhTagIds = tagIds, mediaId = mediaId,
+        rating = rating.takeIf { it > 0 }, category = com.atlanyuey.aenht.shared.eh.EhCategory.fromLabel(category),
     )
 }

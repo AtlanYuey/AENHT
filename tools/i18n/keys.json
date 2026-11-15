@@ -528,5 +528,13 @@
  "Use only one of max_tokens and max_completion_tokens.",
  "Gap Between Pages",
  "Other Versions",
- "Translations and other editions of this gallery"
+ "Translations and other editions of this gallery",
+ "Cosplayers",
+ "Male",
+ "Female",
+ "Mixed",
+ "Other",
+ "Locations",
+ "Reclassified",
+ "Temporary"
 ]

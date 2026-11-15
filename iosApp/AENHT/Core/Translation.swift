@@ -314,6 +314,7 @@ struct TranslationSettingsView: View {
         }
         .environment(\.editMode, $editMode)
         .navigationTitle("Translation")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $adding) {
             NavigationStack { LlmPresetPicker() }
         }

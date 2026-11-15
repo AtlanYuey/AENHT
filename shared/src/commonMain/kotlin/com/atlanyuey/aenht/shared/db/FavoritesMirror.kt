@@ -46,6 +46,8 @@ class FavoritesMirror internal constructor(
         folder = folder, source = "account", favoritedAt = time, exactTime = exact,
         tagIds = card.nhTagIds.joinToString(","),
         rating = card.rating ?: 0.0,
+        language = if (card.site == Site.EHENTAI) card.languageBadge.orEmpty() else "",
+        category = card.category?.label.orEmpty(),
     )
 
     /** Favorited (or moved to [folder]) in the app: the time is known. */

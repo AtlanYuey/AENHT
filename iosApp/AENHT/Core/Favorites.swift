@@ -90,6 +90,28 @@ extension GalleryItem {
         absoluteThumb = r.thumbnail
         favoriteFolder = Int(r.folder)
         rating = r.rating > 0 ? r.rating : nil
+        restoreEh(language: r.language, category: r.category)
+    }
+
+    /// E-Hentai's language and category kept with history and favorites (cards).
+    mutating func restoreEh(language: String, category: String) {
+        guard site == .ehentai else { return }
+        if !language.isEmpty { ehLanguage = Self.ehLanguageName(badge: language) }
+        if let found = EhCategory.companion.fromLabel(label: category) { self.category = CategoryInfo(found) }
+    }
+
+    /// The E-Hentai language of a badge ("ZH" → "chinese"), the reverse of languageBadge.
+    static func ehLanguageName(badge: String) -> String {
+        let known = ["JP": "japanese", "ZH": "chinese", "EN": "english", "KO": "korean", "ES": "spanish",
+                     "FR": "french", "DE": "german", "IT": "italian", "PT": "portuguese", "RU": "russian",
+                     "VI": "vietnamese", "TH": "thai", "ID": "indonesian", "PL": "polish"]
+        return known[badge] ?? badge.lowercased()
+    }
+
+    /// What history and favorites keep for an E-Hentai card: its badge and category.
+    var ehKept: (language: String, category: String) {
+        guard site == .ehentai else { return ("", "") }
+        return (languageBadge ?? "", category?.label ?? "")
     }
 
     var kotlinKey: GalleryKey {
@@ -101,6 +123,7 @@ extension GalleryItem {
         Bridge.shared.summary(site: site.kotlin, id: Int64(id), token: token, title: title,
                               thumbnail: thumbURL?.absoluteString, thumbWidth: Int32(thumbnailWidth),
                               thumbHeight: Int32(thumbnailHeight), pages: Int32(numPages), mediaId: mediaID,
-                              tagIds: tagIDs.map { KotlinInt(int: Int32($0)) }, rating: rating ?? 0)
+                              tagIds: tagIDs.map { KotlinInt(int: Int32($0)) }, rating: rating ?? 0,
+                              language: ehKept.language, category: ehKept.category)
     }
 }

@@ -530,9 +530,17 @@
     <string name="l_527">Espace entre les pages</string>
     <string name="l_528">Autres versions</string>
     <string name="l_529">Traductions et autres éditions de cette galerie</string>
-    <string name="l_530">Sauvegarde des réglages</string>
-    <string name="l_531">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_532">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_533">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_534">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_530">Cosplayeurs</string>
+    <string name="l_531">Masculin</string>
+    <string name="l_532">Féminin</string>
+    <string name="l_533">Mixte</string>
+    <string name="l_534">Autres</string>
+    <string name="l_535">Lieux</string>
+    <string name="l_536">Reclassé</string>
+    <string name="l_537">Temporaire</string>
+    <string name="l_538">Sauvegarde des réglages</string>
+    <string name="l_539">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_540">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_541">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_542">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

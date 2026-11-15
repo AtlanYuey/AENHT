@@ -530,9 +530,17 @@
     <string name="l_527">中間間距</string>
     <string name="l_528">其他版本</string>
     <string name="l_529">這部作品的各語言翻譯和其他版本</string>
-    <string name="l_530">設定備份</string>
-    <string name="l_531">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_532">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_533">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_534">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_530">Coser</string>
+    <string name="l_531">男性</string>
+    <string name="l_532">女性</string>
+    <string name="l_533">混合</string>
+    <string name="l_534">其他</string>
+    <string name="l_535">地點</string>
+    <string name="l_536">重新分類</string>
+    <string name="l_537">臨時</string>
+    <string name="l_538">設定備份</string>
+    <string name="l_539">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_540">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_541">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_542">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

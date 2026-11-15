@@ -86,7 +86,8 @@ data class GallerySummary(
             thumbWidth = r.thumbWidth,
             thumbHeight = r.thumbHeight,
             pages = r.numPages,
-            languageBadge = if (r.site == Site.NHENTAI.key) GalleryLanguage.from(r.tagIdList)?.badge else null,
+            languageBadge = if (r.site == Site.NHENTAI.key) GalleryLanguage.from(r.tagIdList)?.badge else r.language.ifEmpty { null },
+            category = EhCategory.fromLabel(r.category),
             nhTagIds = r.tagIdList,
             mediaId = r.mediaId,
             rating = r.rating.takeIf { it > 0 },
@@ -99,10 +100,14 @@ data class GallerySummary(
             thumbWidth = r.thumbWidth,
             thumbHeight = r.thumbHeight,
             pages = r.numPages,
-            languageBadge = null,
+            languageBadge = if (r.site == Site.NHENTAI.key) GalleryLanguage.from(tagIdsOf(r.tagIds))?.badge else r.language.ifEmpty { null },
+            category = EhCategory.fromLabel(r.category),
+            nhTagIds = tagIdsOf(r.tagIds),
             mediaId = r.mediaId,
             favoriteFolder = r.folder,
             rating = r.rating.takeIf { it > 0 },
         )
+
+        private fun tagIdsOf(text: String) = text.split(',').mapNotNull { it.toIntOrNull() }
     }
 }

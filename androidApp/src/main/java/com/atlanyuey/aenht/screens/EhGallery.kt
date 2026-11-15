@@ -401,7 +401,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         (detail?.uploader ?: preview?.uploader)?.let { uploader ->
                             Txt(
                                 uploader,
-                                Modifier.clickable { navigator.push(EhSearchScreen(EhListSource.Search("uploader:\"$uploader\""), uploader)) },
+                                Modifier.clickable { navigator.push(SearchResultsScreen("uploader:\"$uploader\"", uploader, com.atlanyuey.aenht.shared.site.Site.EHENTAI)) },
                                 style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
                                 color = AppTheme.tint, maxLines = 1,
                             )
@@ -516,23 +516,19 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
     @Composable
     private fun Info(d: EhGalleryDetail) {
         val colors = AppTheme.colors
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // The same strip as nhentai's gallery page.
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp)) {
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                InfoCell(tr("Pages"), "${d.pages}")
-                InfoCell(tr("Favorites"), compactCount(d.favoritedCount))
-                InfoCell(tr("Posted"), d.posted.substringBefore(' '))
-                InfoCell(tr("Size"), d.fileSize ?: "-")
+            Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                GalleryInfoItem(tr("Pages"), "${d.pages}")
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("Favorites"), compactCount(d.favoritedCount), Icons.HeartFill)
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("Posted"), d.posted.substringBefore(' '))
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("Size"), d.fileSize ?: "-")
             }
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
-        }
-    }
-
-    @Composable
-    private fun RowScope.InfoCell(title: String, value: String) {
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Txt(title, style = Type.caption1.copy(fontWeight = FontWeight.Medium), color = AppTheme.colors.secondaryLabel, maxLines = 1)
-            Txt(value, style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
         }
     }
 
@@ -544,13 +540,14 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             d.tags.forEach { (namespace, tags) ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Txt(
-                        TagStore.displayName(namespace, "rows").let { if (it == namespace) namespace.replaceFirstChar { c -> c.uppercase() } else it },
+                        ehNamespaceTitle(namespace),
                         Modifier.padding(horizontal = 16.dp),
                         style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
                         color = AppTheme.colors.secondaryLabel,
                     )
                     TagRow(tags.map { it to TagStore.displayName(it.name, it.namespace) }) { tag: EhTag ->
-                        navigator.push(EhSearchScreen(EhListSource.Search(tag.query), TagStore.displayName(tag.name, tag.namespace)))
+                        // The same results page as nhentai's tag searches, on E-Hentai first.
+                        navigator.push(SearchResultsScreen(tag.query, TagStore.displayName(tag.name, tag.namespace), com.atlanyuey.aenht.shared.site.Site.EHENTAI))
                     }
                 }
             }

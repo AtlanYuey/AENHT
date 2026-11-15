@@ -529,4 +529,12 @@ T = [
     "Abstand zwischen Seiten",
     "Andere Versionen",
     "Übersetzungen und andere Ausgaben dieser Galerie",
+    "Cosplayer",
+    "Männlich",
+    "Weiblich",
+    "Gemischt",
+    "Sonstiges",
+    "Orte",
+    "Neu eingeordnet",
+    "Vorläufig",
 ]

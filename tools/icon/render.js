@@ -125,6 +125,9 @@ async function main() {
     await render(page, svg(variant, 'full'), 1024, path.join(ios, 'AppIcon.png'));
     await render(page, svg(variant, 'full'), 1024, path.join(ios, 'AppIcon-Dark.png'));
     await render(page, svg(variant, 'tinted'), 1024, path.join(ios, 'AppIcon-Tinted.png'));
+    // The icon on the About pages (shown at 88 pt / dp).
+    await render(page, svg(variant, 'full'), 264, path.join(ROOT, 'iosApp/AENHT/Resources/Assets.xcassets/AboutIcon.imageset/AboutIcon.png'));
+    await render(page, svg(variant, 'full'), 264, path.join(ROOT, 'androidApp/src/main/res/drawable-nodpi/about_icon.png'));
     const densities = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
     for (const [density, size] of Object.entries(densities)) {
       for (const layer of ['background', 'foreground', 'monochrome']) {

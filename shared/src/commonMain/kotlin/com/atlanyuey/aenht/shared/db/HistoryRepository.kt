@@ -28,6 +28,9 @@ class HistoryRepository internal constructor(private val db: AenhtDatabase, priv
         page: Int? = null,
         tagIds: List<Int> = emptyList(),
         rating: Double = 0.0,
+        /** E-Hentai: the cover's language badge and category label (cards). */
+        language: String = "",
+        category: String = "",
     ): HistoryRecord {
         val previous = db.history().get(key.storageKey)
         val record = HistoryRecord(
@@ -45,6 +48,8 @@ class HistoryRepository internal constructor(private val db: AenhtDatabase, priv
             readAt = now(),
             tagIds = tagIds.takeIf { it.isNotEmpty() }?.joinToString(",") ?: previous?.tagIds ?: "",
             rating = if (rating > 0) rating else previous?.rating ?: 0.0,
+            language = language.ifEmpty { previous?.language ?: "" },
+            category = category.ifEmpty { previous?.category ?: "" },
         )
         db.history().upsert(record)
         return record

@@ -136,7 +136,21 @@ struct CoverView: View {
     var targetWidth: CGFloat = 360
 
     @Environment(AppSettings.self) private var settings
+    @Environment(TagStore.self) private var tagStore
     @Environment(\.showsSiteBadge) private var showsSiteBadge
+
+    /// The badge's color: the category on both sites (nhentai's category
+    /// tag, in E-Hentai's category colors).
+    private var categoryColor: Color? {
+        if let category = item.category { return category.swiftColor }
+        guard item.site == .nhentai else { return nil }
+        for id in item.tagIDs {
+            if let tag = tagStore.tag(id), tag.type == "category", let category = EhCategory.companion.fromLabel(label: tag.name) {
+                return CategoryInfo(category).swiftColor
+            }
+        }
+        return nil
+    }
 
     var body: some View {
         Color.clear
@@ -149,7 +163,7 @@ struct CoverView: View {
             }
             .overlay(alignment: .topLeading) {
                 if let badge = item.languageBadge {
-                    LanguageBadge(text: badge, tint: item.category?.swiftColor).padding(6)
+                    LanguageBadge(text: badge, tint: categoryColor).padding(6)
                 } else if let category = item.category {
                     Circle().fill(category.swiftColor).frame(width: 10, height: 10).padding(8)
                 }

@@ -181,7 +181,11 @@ struct PadRootView: View {
         }
         .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar, collapsed: barsHidden) {
             PadTabBar(selection: $selection)
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { barFrame = $0 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                    barFrame = frame
+                    // Pages keep their content clear of the bar (pushed ones too).
+                    if frame.height > 0 { TabNavigators.shared.bottomInset = frame.height + 6 }
+                }
                 .padding(.horizontal, isPad ? 20 : 16)
                 .padding(.bottom, 6)
         })
@@ -193,6 +197,7 @@ struct PadRootView: View {
             hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })
         .onChange(of: selection) { chrome.barsHidden = false }
+        .onChange(of: chrome.hidesTabBar, initial: true) { _, hidden in TabNavigators.shared.barHidden = hidden }
         .animation(.spring(duration: settings.followSpeed.duration, bounce: 0.15), value: alignment)
         .animation(.smooth(duration: 0.25), value: chrome.hidesTabBar)
     }
@@ -226,6 +231,7 @@ struct PadRootView: View {
         let selected = selection == value || (value == .home && selection == .search)
         return NavigationStack {
             content().galleryDestinations()
+                .background(TabNavigationFinder(tab: value).frame(width: 0, height: 0))
         }
         .opacity(selected ? 1 : 0)
         .allowsHitTesting(selected)
@@ -234,21 +240,18 @@ struct PadRootView: View {
     }
 }
 
-/// The bar as a bottom bar of the content (iOS 26 safe area bar, so scroll
-/// edges blur under it), or a safe area inset before. [collapsed] slides
-/// the bar away but keeps its space, so the lists don't move.
+/// The bar over the bottom of the content. [collapsed] slides the bar away
+/// but keeps its space, so the lists don't move.
 private struct BottomBar<Bar: View>: ViewModifier {
     let alignment: HorizontalAlignment
     let visible: Bool
     let collapsed: Bool
     @ViewBuilder let bar: () -> Bar
 
+    // Over the pages: the room under it is the navigation controllers'
+    // own safe area (TabNavigators.bottomInset), which pushed pages keep.
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.safeAreaBar(edge: .bottom, alignment: alignment, spacing: 0) { placedBar }
-        } else {
-            content.safeAreaInset(edge: .bottom, alignment: alignment, spacing: 0) { placedBar }
-        }
+        content.overlay(alignment: Alignment(horizontal: alignment, vertical: .bottom)) { placedBar }
     }
 
     @ViewBuilder private var placedBar: some View {

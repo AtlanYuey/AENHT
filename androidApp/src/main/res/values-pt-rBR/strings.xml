@@ -530,9 +530,17 @@
     <string name="l_527">Espaço entre páginas</string>
     <string name="l_528">Outras versões</string>
     <string name="l_529">Traduções e outras edições desta galeria</string>
-    <string name="l_530">Backup dos ajustes</string>
-    <string name="l_531">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_532">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_533">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_534">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_530">Cosplayers</string>
+    <string name="l_531">Masculino</string>
+    <string name="l_532">Feminino</string>
+    <string name="l_533">Misto</string>
+    <string name="l_534">Outros</string>
+    <string name="l_535">Locais</string>
+    <string name="l_536">Reclassificado</string>
+    <string name="l_537">Temporário</string>
+    <string name="l_538">Backup dos ajustes</string>
+    <string name="l_539">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_540">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_541">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_542">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

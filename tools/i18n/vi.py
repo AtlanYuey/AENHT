@@ -529,4 +529,12 @@ T = [
     "Khoảng cách giữa hai trang",
     "Phiên bản khác",
     "Các bản dịch và phiên bản khác của tác phẩm này",
+    "Cosplayer",
+    "Nam",
+    "Nữ",
+    "Hỗn hợp",
+    "Khác",
+    "Địa điểm",
+    "Phân loại lại",
+    "Tạm thời",
 ]

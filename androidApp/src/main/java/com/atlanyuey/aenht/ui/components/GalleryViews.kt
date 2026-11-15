@@ -158,7 +158,13 @@ fun CoverView(
             // Without the network, a downloaded gallery shows its first page.
             Downloads.localFile(item.key, 0)
         }
-        val categoryTint = item.category?.let { Color(it.color) }
+        // The badge is colored by the category on both sites (nhentai's
+        // category tag, in E-Hentai's category colors).
+        val category = item.category ?: item.nhTagIds.firstNotNullOfOrNull { id ->
+            com.atlanyuey.aenht.core.TagStore.tag(id)?.takeIf { it.type == "category" }
+                ?.let { com.atlanyuey.aenht.shared.eh.EhCategory.fromLabel(it.name) }
+        }
+        val categoryTint = category?.let { Color(it.color) }
         val language = item.languageBadge ?: item.category?.let { "" }
         if (!language.isNullOrEmpty()) {
             CoverBadge(language, Modifier.padding(6.dp).align(Alignment.TopStart), tint = categoryTint)

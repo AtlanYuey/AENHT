@@ -22,6 +22,9 @@ final class HistoryEntry {
     var tagIDs: [Int] = []
     /// E-Hentai's rating when last seen (0: none), for the card.
     var rating: Double = 0
+    /// E-Hentai: the cover's language badge and category label, for the card.
+    var ehLanguage: String = ""
+    var ehCategory: String = ""
 
     init(key: String, gid: Int, site: String, token: String?, mediaID: String, title: String, thumbnail: String?,
          thumbWidth: Int, thumbHeight: Int, numPages: Int, tagIDs: [Int] = [],
@@ -53,6 +56,7 @@ final class HistoryEntry {
             item.absoluteThumb = thumbnail
         }
         if rating > 0 { item.rating = rating }
+        item.restoreEh(language: ehLanguage, category: ehCategory)
         return item
     }
 }
@@ -73,6 +77,8 @@ extension ModelContext {
             if numPages > 0 { entry.numPages = numPages }
             if !item.tagIDs.isEmpty { entry.tagIDs = item.tagIDs }
             if let rating = item.rating, rating > 0 { entry.rating = rating }
+            if !item.ehKept.language.isEmpty { entry.ehLanguage = item.ehKept.language }
+            if !item.ehKept.category.isEmpty { entry.ehCategory = item.ehKept.category }
             if let page { entry.lastPage = page }
         } else {
             insert(HistoryEntry(
@@ -82,8 +88,11 @@ extension ModelContext {
                 thumbHeight: item.thumbnailHeight, numPages: numPages,
                 tagIDs: item.tagIDs, lastPage: page ?? 0
             ))
-            if let rating = item.rating, rating > 0,
-               let entry = try? fetch(descriptor).first { entry.rating = rating }
+            if let entry = try? fetch(descriptor).first {
+                if let rating = item.rating, rating > 0 { entry.rating = rating }
+                entry.ehLanguage = item.ehKept.language
+                entry.ehCategory = item.ehKept.category
+            }
         }
         try? save()
     }

@@ -21,6 +21,22 @@ final class TabNavigators {
 
     func set(_ controller: UINavigationController?, for tab: AppTab) {
         controllers[tab] = WeakNavigation(controller)
+        controller?.additionalSafeAreaInsets.bottom = effectiveInset
+    }
+
+    /// Room for the floating tab bar (iPad): every page of every tab, pushed
+    /// ones included, keeps its content clear of it.
+    var bottomInset: CGFloat = 0 { didSet { apply() } }
+    /// The bar is hidden (the reader): no room kept, so the reader's own
+    /// controls sit at the bottom.
+    var barHidden = false { didSet { apply() } }
+
+    private var effectiveInset: CGFloat { barHidden ? 0 : bottomInset }
+
+    private func apply() {
+        for entry in controllers.values where entry.value?.additionalSafeAreaInsets.bottom != effectiveInset {
+            entry.value?.additionalSafeAreaInsets.bottom = effectiveInset
+        }
     }
 
     func controller(for tab: AppTab) -> UINavigationController? { controllers[tab]?.value }

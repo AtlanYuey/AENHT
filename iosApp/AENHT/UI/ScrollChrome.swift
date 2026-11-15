@@ -77,3 +77,16 @@ extension View {
         modifier(HidesBarsOnScroll())
     }
 }
+
+/// The navigation bar's subtitle under the title (iOS 26; none before).
+struct NavigationSubtitle: ViewModifier {
+    let text: String
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.navigationSubtitle(text)
+        } else {
+            content
+        }
+    }
+}

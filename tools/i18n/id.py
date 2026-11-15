@@ -529,4 +529,12 @@ T = [
     "Jarak antarhalaman",
     "Versi lain",
     "Terjemahan dan edisi lain dari galeri ini",
+    "Cosplayer",
+    "Pria",
+    "Wanita",
+    "Campuran",
+    "Lainnya",
+    "Lokasi",
+    "Diklasifikasi ulang",
+    "Sementara",
 ]

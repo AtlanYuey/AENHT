@@ -530,9 +530,17 @@
     <string name="l_527">Spazio tra le pagine</string>
     <string name="l_528">Altre versioni</string>
     <string name="l_529">Traduzioni e altre edizioni di questa galleria</string>
-    <string name="l_530">Backup impostazioni</string>
-    <string name="l_531">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_532">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_533">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_534">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_530">Cosplayer</string>
+    <string name="l_531">Maschile</string>
+    <string name="l_532">Femminile</string>
+    <string name="l_533">Misto</string>
+    <string name="l_534">Altro</string>
+    <string name="l_535">Luoghi</string>
+    <string name="l_536">Riclassificato</string>
+    <string name="l_537">Temporaneo</string>
+    <string name="l_538">Backup impostazioni</string>
+    <string name="l_539">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_540">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_541">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_542">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

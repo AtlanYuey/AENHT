@@ -139,9 +139,12 @@ struct HomeView: View {
             for row in wanted {
                 group.addTask { (row, try? await Self.load(row)) }
             }
+            // All rows show together, not one after the other.
+            var loaded: [HomeRow: [GalleryItem]] = [:]
             for await (row, items) in group {
-                if let items { rows[row] = items }
+                if let items { loaded[row] = items }
             }
+            withAnimation(.smooth(duration: 0.25)) { rows.merge(loaded) { _, new in new } }
         }
     }
 
@@ -275,6 +278,28 @@ private struct OptionalCircleGlass: ViewModifier {
 }
 
 /// Section heading in the style of the App Store / Music.
+/// A section title with a link on the right ("See All"), the same on
+/// every page. Tapping the title itself runs [onTitleTap] when given.
+struct SectionHeader<Trailing: View>: View {
+    let title: LocalizedStringKey
+    var onTitleTap: (() -> Void)? = nil
+    @ViewBuilder let trailing: () -> Trailing
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            SectionTitle(title: title)
+                .fixedSize()
+                .contentShape(Rectangle())
+                .onTapGesture { onTitleTap?() }
+            Spacer(minLength: 8)
+            trailing()
+                .font(.subheadline.weight(.medium))
+                .lineLimit(1)
+                .padding(.trailing)
+        }
+    }
+}
+
 struct SectionTitle: View {
     let title: LocalizedStringKey
     var subtitle: String? = nil

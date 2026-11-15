@@ -65,6 +65,9 @@ data class HistoryEntry(
     val site: String = Site.NHENTAI.key,
     val token: String? = null,
     val rating: Double = 0.0,
+    /** E-Hentai: the cover's language badge and category label (cards). */
+    val language: String = "",
+    val category: String = "",
 ) {
     val key: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, gid.toLong(), token)
 
@@ -78,7 +81,8 @@ data class HistoryEntry(
     val summary: GallerySummary
         get() = if (site == Site.NHENTAI.key) GallerySummary.from(item) else GallerySummary(
             key = key, title = title, thumbnail = thumbnail, thumbWidth = thumbWidth, thumbHeight = thumbHeight,
-            pages = numPages, languageBadge = null, rating = rating.takeIf { it > 0 },
+            pages = numPages, languageBadge = language.ifEmpty { null }, rating = rating.takeIf { it > 0 },
+            category = com.atlanyuey.aenht.shared.eh.EhCategory.fromLabel(category),
         )
 
     companion object {
@@ -87,6 +91,7 @@ data class HistoryEntry(
             thumbnail = record.thumbnail, thumbWidth = record.thumbWidth, thumbHeight = record.thumbHeight,
             numPages = record.numPages, lastPage = record.lastPage, lastRead = record.readAt,
             tagIds = record.tagIdList, site = record.site, token = record.token, rating = record.rating,
+            language = record.language, category = record.category,
         )
     }
 }
@@ -137,6 +142,8 @@ object HistoryStore {
             site = key.site.key,
             token = key.token ?: previous?.token,
             rating = item.rating ?: previous?.rating ?: 0.0,
+            language = (if (key.site == Site.EHENTAI) item.languageBadge else null) ?: previous?.language ?: "",
+            category = item.category?.label ?: previous?.category ?: "",
         )
         if (index >= 0) entries.removeAt(index)
         entries.add(0, entry)
@@ -144,6 +151,7 @@ object HistoryStore {
             repo.record(
                 entry.key, entry.title, entry.mediaId, entry.thumbnail,
                 entry.thumbWidth, entry.thumbHeight, entry.numPages, entry.lastPage, entry.tagIds, entry.rating,
+                entry.language, entry.category,
             )
         }
     }

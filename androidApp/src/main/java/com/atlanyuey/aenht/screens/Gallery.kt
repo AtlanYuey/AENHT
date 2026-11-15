@@ -536,37 +536,16 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
         Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 22.dp)) {
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
             Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                InfoItem(tr("Pages"), "${d.numPages}")
-                Divider()
-                InfoItem(tr("Favorites"), compactCount(favorites), Icons.HeartFill)
-                Divider()
-                InfoItem(tr("Uploaded"), date)
-                Divider()
-                InfoItem(tr("ID"), "#${d.id}")
+                GalleryInfoItem(tr("Pages"), "${d.numPages}")
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("Favorites"), compactCount(favorites), Icons.HeartFill)
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("Uploaded"), date)
+                GalleryInfoDivider()
+                GalleryInfoItem(tr("ID"), "#${d.id}")
             }
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(colors.separator))
         }
-    }
-
-    @Composable
-    private fun androidx.compose.foundation.layout.RowScope.InfoItem(title: String, value: String, icon: ImageVector? = null) {
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Txt(title, style = Type.caption1.copy(fontWeight = FontWeight.Medium), color = AppTheme.colors.secondaryLabel, maxLines = 1)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                icon?.let { AppIcon(it, null, size = 12.dp) }
-                androidx.compose.foundation.text.BasicText(
-                    value,
-                    style = Type.headline.copy(color = AppTheme.colors.label),
-                    maxLines = 1,
-                    autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = 17.sp),
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun Divider() {
-        Box(Modifier.width(0.5.dp).height(34.dp).background(AppTheme.colors.separator))
     }
 
     @Composable
@@ -931,4 +910,47 @@ private fun TagFlow(modifier: Modifier, spacing: Dp, firstLineEnd: Dp, content: 
         }
         layout(width, y + lineHeight) { placeables.forEachIndexed { i, p -> p.place(positions[i]) } }
     }
+}
+
+
+/** A cell of a gallery page's info strip (both sites). */
+@Composable
+internal fun androidx.compose.foundation.layout.RowScope.GalleryInfoItem(title: String, value: String, icon: ImageVector? = null) {
+    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Txt(title, style = Type.caption1.copy(fontWeight = FontWeight.Medium), color = AppTheme.colors.secondaryLabel, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            icon?.let { AppIcon(it, null, size = 12.dp) }
+            androidx.compose.foundation.text.BasicText(
+                value,
+                style = Type.headline.copy(color = AppTheme.colors.label),
+                maxLines = 1,
+                autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = 17.sp),
+            )
+        }
+    }
+}
+
+/** The line between cells of an info strip. */
+@Composable
+internal fun GalleryInfoDivider() {
+    Box(Modifier.width(0.5.dp).height(34.dp).background(AppTheme.colors.separator))
+}
+
+/** The names of E-Hentai's tag namespaces, in the app's language. */
+@Composable
+internal fun ehNamespaceTitle(namespace: String): String = when (namespace) {
+    "language" -> tr("Languages")
+    "parody" -> tr("Parodies")
+    "character" -> tr("Characters")
+    "group" -> tr("Groups")
+    "artist" -> tr("Artists")
+    "cosplayer" -> tr("Cosplayers")
+    "male" -> tr("Male")
+    "female" -> tr("Female")
+    "mixed" -> tr("Mixed")
+    "other" -> tr("Other")
+    "location" -> tr("Locations")
+    "reclass" -> tr("Reclassified")
+    "temp" -> tr("Temporary")
+    else -> namespace.replaceFirstChar { it.uppercase() }
 }
