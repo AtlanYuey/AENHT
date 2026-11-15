@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/AtlanYuey/AENHT/releases/tag/dev-latest">下载测试版</a> ·
+  <a href="https://github.com/AtlanYuey/AENHT/releases/latest">下载</a> ·
   <a href="#功能一览">功能</a> ·
   <a href="#设计思路">设计思路</a> ·
   <a href="#使用方法">使用方法</a> ·
@@ -19,7 +19,7 @@
 </p>
 
 > [!WARNING]
-> 项目仍在开发中，尚未发布正式版本，目前只有自动构建的测试版。仅供 18 岁以上用户使用。
+> 0.1.0 是第一个版本，项目仍在积极开发中。仅供 18 岁以上用户使用。
 > 本项目与 nhentai、E-Hentai 均无关联。
 
 <p align="center">
@@ -322,12 +322,12 @@ flowchart LR
 
 ### 安装
 
-最新测试版在 [dev-latest](https://github.com/AtlanYuey/AENHT/releases/tag/dev-latest)，每次推送代码后自动更新：
+正式版在 [Releases](https://github.com/AtlanYuey/AENHT/releases/latest)。想尝鲜的话，最新测试版在 [dev-latest](https://github.com/AtlanYuey/AENHT/releases/tag/dev-latest)，每次推送代码后自动更新。「关于 › 检查更新」会同时显示这两种版本。
 
 | 平台 | 文件 | 要求 |
 | --- | --- | --- |
-| Android | `AENHT-debug.apk` | Android 8.0 及以上 |
-| iPhone / iPad | `AENHT.ipa` | iOS / iPadOS 18 及以上（推荐 26） |
+| Android | `.apk` | Android 8.0 及以上 |
+| iPhone / iPad | `.ipa` | iOS / iPadOS 18 及以上（推荐 26） |
 
 - **Android**：下载 APK 后直接安装。
 - **iOS**：这个 IPA 是用开发证书签名的，只能装在证书登记过的设备上。其他设备请用 AltStore、SideStore、Sideloadly 等工具，以自己的 Apple ID 重新签名后安装。
