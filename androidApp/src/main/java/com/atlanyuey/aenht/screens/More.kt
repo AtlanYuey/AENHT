@@ -362,7 +362,9 @@ class DownloadsScreen : Screen() {
                     GalleryGrid(
                         records.map { it.summary }, grid, padding,
                         header = {
+                            // The same space under the bar as Favorites and History.
                             if (records.isEmpty()) fullLine("empty") { NoDownloads() }
+                            else fullLine("top") { androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp)) }
                         },
                     )
                 }
