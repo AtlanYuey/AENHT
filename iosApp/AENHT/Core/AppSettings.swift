@@ -740,13 +740,6 @@ final class AppSettings {
 
     static let recentSearchLimit = 20
 
-    /// Puts [term] first in the search history (when history is on).
-    func addRecentSearch(_ term: String) {
-        guard saveSearchHistory else { return }
-        var items = recentSearches.filter { $0 != term }
-        items.insert(term, at: 0)
-        recentSearches = Array(items.prefix(Self.recentSearchLimit))
-    }
 
     func removeRecentSearch(_ term: String) {
         recentSearches = recentSearches.filter { $0 != term }

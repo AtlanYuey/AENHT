@@ -15,9 +15,16 @@ final class GalleryFeed {
     private(set) var error: String?
     private(set) var hasLoaded = false
     private(set) var total: Int?
+    /// The filters hid whole pages in a row and more remain: the list offers to keep looking.
+    private(set) var skippedHidden = false
 
     @ObservationIgnored private var next: String?
     @ObservationIgnored private var seen = Set<String>()
+    /// Everything loaded, before the filters (shown again when the rules change).
+    @ObservationIgnored private var loaded: [GalleryItem] = []
+    @ObservationIgnored private var filterVersion = 0
+    /// A hidden page doesn't end the list: this many more are read (each is a request to the site).
+    private static let maxHiddenPages = 4
     @ObservationIgnored private var generation = 0
     @ObservationIgnored var fetch: Fetch
     /// Browsing lists leave out galleries hidden by the filter rules (not favorites).
@@ -57,10 +64,11 @@ final class GalleryFeed {
         do {
             let response = try await fetch(nil)
             guard current == generation else { return }
-            next = response.next
             total = response.total
             seen = []
-            items = unique(response.items)
+            loaded = []
+            items = []
+            try await take(response, current)
         } catch is CancellationError {
         } catch {
             guard current == generation else { return }
@@ -82,11 +90,12 @@ final class GalleryFeed {
         guard canLoadMore, !isLoading, let cursor = next else { return }
         let current = generation
         isLoading = true
+        error = nil
         do {
             let response = try await fetch(cursor)
             guard current == generation else { return }
-            next = response.next
-            items.append(contentsOf: unique(response.items))
+            try await take(response, current)
+        } catch is CancellationError {
         } catch {
             guard current == generation else { return }
             self.error = error.localizedDescription
@@ -96,8 +105,34 @@ final class GalleryFeed {
         }
     }
 
-    private func unique(_ list: [GalleryItem]) -> [GalleryItem] {
-        let fresh = list.filter { seen.insert($0.uid).inserted }
-        return filtered ? Filters.shared.visible(fresh) : fresh
+    /// Adds a page. When the filters hide all of it, the next pages are read
+    /// too, a few at most: a hidden page doesn't end the list.
+    private func take(_ first: FeedPage, _ current: Int) async throws {
+        var page = first
+        var skipped = 0
+        while true {
+            next = page.next
+            let fresh = page.items.filter { seen.insert($0.uid).inserted }
+            loaded += fresh
+            filterVersion = Filters.shared.version
+            let visible = filtered ? Filters.shared.visible(fresh) : fresh
+            items += visible
+            let hidden = !fresh.isEmpty && visible.isEmpty && next != nil
+            guard hidden, skipped < Self.maxHiddenPages, let cursor = next else {
+                skippedHidden = hidden
+                return
+            }
+            skipped += 1
+            page = try await fetch(cursor)
+            guard current == generation else { return }
+        }
+    }
+
+    /// Applies the filters again to what is loaded (the rules or the account's blacklist changed).
+    func refilter() {
+        guard filtered, filterVersion != Filters.shared.version else { return }
+        filterVersion = Filters.shared.version
+        let visible = Filters.shared.visible(loaded)
+        if visible.map(\.uid) != items.map(\.uid) { items = visible }
     }
 }

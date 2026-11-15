@@ -234,6 +234,15 @@ actor SuperResolver {
 
     private init() {
         memory.countLimit = 6
+        // By size too: six enlarged pages can be 24 megapixels each. A fifth of
+        // the device's memory at most, and never more than 384 MB.
+        memory.totalCostLimit = Int(min(ProcessInfo.processInfo.physicalMemory / 5, 384 * 1024 * 1024))
+    }
+
+    /// Keeps an enlarged page in memory, counted by its decoded size.
+    private func remember(_ image: UIImage, _ name: String) {
+        let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+        memory.setObject(image, forKey: name as NSString, cost: cost)
     }
 
     func forget(_ kind: SuperResolutionModel) {
@@ -283,7 +292,7 @@ actor SuperResolver {
         if let cached = memory.object(forKey: name as NSString) { return cached }
         let file = Self.cacheDirectory.appending(path: name)
         if let data = try? Data(contentsOf: file), let cached = UIImage(data: data) {
-            memory.setObject(cached, forKey: name as NSString)
+            remember(cached, name)
             return cached
         }
         do {
@@ -291,7 +300,7 @@ actor SuperResolver {
             let result = try await run(model, kind: kind, image: cgImage, scale: scale,
                                        outWidth: outWidth, outHeight: outHeight)
             let enhanced = UIImage(cgImage: result, scale: 1, orientation: .up)
-            memory.setObject(enhanced, forKey: name as NSString)
+            remember(enhanced, name)
             save(enhanced, to: file)
             return enhanced
         } catch {

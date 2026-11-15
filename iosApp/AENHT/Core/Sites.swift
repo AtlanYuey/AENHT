@@ -132,15 +132,36 @@ final class EhSession {
         hasExHentai = isLoggedIn && !(c.igneous ?? "").isEmpty && c.igneous != "mystery"
     }
 
-    /// Saves cookies (from the login page or typed) and checks them with the site.
+    /// Why the last `login` failed when the site couldn't be reached (nil: the site refused the cookies).
+    private(set) var loginError: String?
+
+    /// Checks cookies (from the login page or typed) with the site and logs
+    /// in with them. When they are refused, or the site can't be reached,
+    /// the login there was before stays.
     func login(memberId: String, passHash: String, igneous: String?) async -> Bool {
-        EhCredentials.shared.save(memberId: memberId.trimmingCharacters(in: .whitespaces),
-                                  passHash: passHash.trimmingCharacters(in: .whitespaces),
-                                  igneous: igneous?.trimmingCharacters(in: .whitespaces))
-        let ok = (try? await EhService.shared.api.verifyLogin())?.boolValue ?? false
-        if !ok { EhCredentials.shared.clear() }
+        let c = EhCredentials.shared
+        let before = (c.memberId, c.passHash, c.igneous)
+        loginError = nil
+        c.save(memberId: memberId.trimmingCharacters(in: .whitespaces),
+               passHash: passHash.trimmingCharacters(in: .whitespaces),
+               igneous: igneous?.trimmingCharacters(in: .whitespaces))
+        var ok = false
+        do {
+            ok = try await EhService.shared.api.verifyLogin().boolValue
+        } catch {
+            loginError = EhService.map(error).localizedDescription
+        }
+        if !ok {
+            c.clear()
+            if let member = before.0, let hash = before.1, !member.isEmpty, !hash.isEmpty {
+                c.save(memberId: member, passHash: hash, igneous: before.2)
+            }
+        }
         refresh()
-        if ok { AccountBook.shared.rememberEh() }
+        if ok {
+            AccountBook.shared.rememberEh()
+            await FavoritesStore.shared.accountChanged(.ehentai)
+        }
         return ok
     }
 
@@ -149,6 +170,7 @@ final class EhSession {
         EhService.shared.api.logout()
         AppSettings.shared.useExHentai = false
         refresh()
+        Task { await FavoritesStore.shared.accountChanged(.ehentai) }
     }
 
     /// Another account: its folders are read again.

@@ -69,7 +69,13 @@ final class DownloadManager {
 
     private(set) var records: [DownloadRecord] = []
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
+    /// Which run of a download is the current one: pausing, resuming and
+    /// deleting start a new number, and a run that isn't current any more
+    /// (it was cancelled and is still winding down) changes nothing.
+    @ObservationIgnored private var runs: [String: Int] = [:]
     @ObservationIgnored private var lastSave = Date.distantPast
+    @ObservationIgnored private var indexRevision = 0
+    @ObservationIgnored private let indexWriter = IndexWriter()
 
     private init() {
         records = Self.loadIndex()
@@ -192,14 +198,24 @@ final class DownloadManager {
               records[index].state != .finished else { return }
         records[index].state = .downloading
         saveIndex()
+        let run = nextRun(uid)
         tasks[uid] = Task { [weak self] in
-            await self?.run(uid)
+            await self?.run(uid, run)
         }
     }
+
+    private func nextRun(_ uid: String) -> Int {
+        let run = (runs[uid] ?? 0) + 1
+        runs[uid] = run
+        return run
+    }
+
+    private func isCurrent(_ uid: String, _ run: Int) -> Bool { runs[uid] == run && !Task.isCancelled }
 
     func pause(uid: String) {
         tasks[uid]?.cancel()
         tasks[uid] = nil
+        _ = nextRun(uid)
         update(uid) { $0.state = .paused }
         saveIndex()
     }
@@ -207,6 +223,7 @@ final class DownloadManager {
     func delete(uid: String) {
         tasks[uid]?.cancel()
         tasks[uid] = nil
+        _ = nextRun(uid)
         if let record = record(uid: uid) {
             try? FileManager.default.removeItem(at: Self.folder(record))
         }
@@ -219,36 +236,38 @@ final class DownloadManager {
     /// Galleries downloading now (Download Settings limits how many at once).
     private var running = 0
 
-    private func run(_ uid: String) async {
+    private func run(_ uid: String, _ run: Int) async {
         // Waits its turn: the others keep downloading meanwhile.
         if running >= AppSettings.shared.downloadGalleries {
             update(uid) { $0.state = .queued }
             while running >= AppSettings.shared.downloadGalleries {
-                if Task.isCancelled { return }
+                if !isCurrent(uid, run) { return }
                 try? await Task.sleep(for: .milliseconds(500))
             }
+            guard isCurrent(uid, run) else { return }
             update(uid) { $0.state = .downloading }
         }
         running += 1
         defer { running -= 1 }
-        await download(uid)
+        await download(uid, run)
     }
 
-    private func download(_ uid: String) async {
-        if record(uid: uid)?.siteKind == .ehentai, !(await completeEhPages(uid)) {
+    private func download(_ uid: String, _ run: Int) async {
+        if record(uid: uid)?.siteKind == .ehentai, !(await completeEhPages(uid, run)) {
+            // Paused or deleted meanwhile: that isn't a failure, and the state isn't this run's to set.
+            guard isCurrent(uid, run) else { return }
             tasks[uid] = nil
             update(uid) { $0.state = .failed }
             saveIndex()
             return
         }
-        guard let record = record(uid: uid) else { return }
+        guard isCurrent(uid, run), let record = record(uid: uid) else { return }
         let folder = Self.folder(record)
         let isEh = record.siteKind == .ehentai
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var failures = 0
-        let pending = record.pages.filter {
-            !FileManager.default.fileExists(atPath: folder.appendingPathComponent($0.file).path)
-        }
+        // A file that isn't a picture (an error page saved by an earlier version) is downloaded again.
+        let pending = record.pages.filter { Self.imageExtension(of: folder.appendingPathComponent($0.file)) == nil }
         update(uid) { $0.completed = $0.pages.count - pending.count }
 
         let settings = AppSettings.shared
@@ -273,7 +292,7 @@ final class DownloadManager {
                 if !addNext() { break }
             }
             for await ok in group {
-                if Task.isCancelled { group.cancelAll(); break }
+                if !isCurrent(uid, run) { group.cancelAll(); break }
                 if ok {
                     update(uid) { $0.completed += 1 }
                 } else {
@@ -284,8 +303,9 @@ final class DownloadManager {
             }
         }
 
+        // A run that was paused or replaced leaves the state to whoever did that.
+        guard isCurrent(uid, run) else { return }
         tasks[uid] = nil
-        guard !Task.isCancelled else { return }
         update(uid) { record in
             record.state = failures == 0 && record.completed >= record.totalPages ? .finished : .failed
         }
@@ -293,10 +313,11 @@ final class DownloadManager {
     }
 
     /// Fills in the page links of an E-Hentai download from its thumbnail pages.
-    private func completeEhPages(_ uid: String) async -> Bool {
+    private func completeEhPages(_ uid: String, _ run: Int) async -> Bool {
         guard var record = record(uid: uid), let token = record.token else { return false }
         var thumbPage = 1
         while record.pages.count < record.totalPages {
+            guard isCurrent(uid, run) else { return false }
             guard let thumbs = try? await EhService.shared.thumbnails(gid: record.id, token: token, page: thumbPage),
                   !thumbs.isEmpty else { break }
             let known = Set(record.pages.map(\.number))
@@ -337,7 +358,9 @@ final class DownloadManager {
             if Task.isCancelled { return false }
             do {
                 let (data, response) = try await URLSession.shared.data(for: request)
-                guard let http = response as? HTTPURLResponse, http.statusCode == 200, !data.isEmpty else {
+                // An answer that isn't a picture (an error page with status 200) is not the page.
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                      imageExtension(of: data) != nil else {
                     throw URLError(.badServerResponse)
                 }
                 try data.write(to: file, options: .atomic)
@@ -361,15 +384,17 @@ final class DownloadManager {
         let content = base.appendingPathComponent(name.isEmpty ? "\(record.id)" : name, isDirectory: true)
         try fm.createDirectory(at: content, withIntermediateDirectories: true)
         let folder = Self.folder(record)
+        var exported = 0
         for (i, page) in record.pages.sorted(by: { $0.number < $1.number }).enumerated() {
             let source = folder.appendingPathComponent(page.file)
-            guard fm.fileExists(atPath: source.path) else { continue }
-            let ext = source.pathExtension.isEmpty ? "jpg" : source.pathExtension
+            // Named by what the file is (E-Hentai pages are stored without their type).
+            guard let ext = imageExtension(of: source) else { continue }
             try fm.copyItem(at: source, to: content.appendingPathComponent(String(format: "%04d.%@", i + 1, ext)))
+            exported += 1
         }
         func esc(_ s: String) -> String { s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;") }
         let web = record.siteKind == .ehentai ? "https://e-hentai.org/g/\(record.id)/\(record.token ?? "")/" : "https://nhentai.net/g/\(record.id)/"
-        let info = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo>\n  <Title>\(esc(record.title))</Title>\n  <PageCount>\(record.pages.count)</PageCount>\n  <Web>\(esc(web))</Web>\n</ComicInfo>\n"
+        let info = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo>\n  <Title>\(esc(record.title))</Title>\n  <PageCount>\(exported)</PageCount>\n  <Web>\(esc(web))</Web>\n</ComicInfo>\n"
         try Data(info.utf8).write(to: content.appendingPathComponent("ComicInfo.xml"))
         // Reading a folder "for uploading" gives it zipped.
         var zipped: URL?
@@ -422,20 +447,78 @@ final class DownloadManager {
         root.appendingPathComponent("index.json")
     }
 
+    nonisolated private static var indexBackupURL: URL {
+        root.appendingPathComponent("index.json.bak")
+    }
+
+    /// The list of downloads, or the copy before its last save when it can't be read.
     nonisolated private static func loadIndex() -> [DownloadRecord] {
-        guard let data = try? Data(contentsOf: indexURL) else { return [] }
-        return (try? JSONDecoder().decode([DownloadRecord].self, from: data)) ?? []
+        for url in [indexURL, indexBackupURL] {
+            if let data = try? Data(contentsOf: url), let list = try? JSONDecoder().decode([DownloadRecord].self, from: data) {
+                return list
+            }
+        }
+        return []
     }
 
     private func saveIndex() {
         lastSave = Date()
         let records = records
+        indexRevision += 1
+        let revision = indexRevision
+        let writer = indexWriter
         Task.detached(priority: .utility) {
-            try? FileManager.default.createDirectory(at: Self.root, withIntermediateDirectories: true)
-            if let data = try? JSONEncoder().encode(records) {
-                try? data.write(to: Self.indexURL, options: .atomic)
+            guard let data = try? JSONEncoder().encode(records) else { return }
+            await writer.write(data, revision: revision, to: Self.indexURL, backup: Self.indexBackupURL, in: Self.root)
+        }
+    }
+
+    /// Saves of the list, one at a time: an older list never lands after a
+    /// newer one, and the list before the save stays as a backup.
+    private actor IndexWriter {
+        private var written = 0
+
+        func write(_ data: Data, revision: Int, to url: URL, backup: URL, in folder: URL) {
+            guard revision > written else { return }
+            written = revision
+            let fm = FileManager.default
+            try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            if fm.fileExists(atPath: url.path) {
+                try? fm.removeItem(at: backup)
+                try? fm.copyItem(at: url, to: backup)
+            }
+            do {
+                try data.write(to: url, options: .atomic)
+            } catch {
+                Diagnostics.shared.log(category: "downloads", message: "Saving the list: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: Pictures
+
+    /// The type of a picture by its first bytes ("jpg", "png", "gif",
+    /// "webp", "avif", "heic", "bmp"), or nil when it isn't a picture.
+    nonisolated static func imageExtension(of data: Data) -> String? {
+        guard data.count >= 12 else { return nil }
+        let head = [UInt8](data.prefix(12))
+        func at(_ offset: Int, _ text: String) -> Bool { Array(text.utf8) == Array(head[offset..<offset + text.utf8.count]) }
+        if head[0] == 0xFF, head[1] == 0xD8, head[2] == 0xFF { return "jpg" }
+        if head[0] == 0x89, at(1, "PNG") { return "png" }
+        if at(0, "GIF8") { return "gif" }
+        if at(0, "RIFF"), at(8, "WEBP") { return "webp" }
+        if at(4, "ftyp"), at(8, "avif") || at(8, "avis") { return "avif" }
+        if at(4, "ftyp"), at(8, "heic") || at(8, "heix") || at(8, "mif1") { return "heic" }
+        if at(0, "BM") { return "bmp" }
+        return nil
+    }
+
+    /// The type of the picture in a file, or nil when it is missing or isn't one.
+    nonisolated static func imageExtension(of file: URL) -> String? {
+        guard let handle = try? FileHandle(forReadingFrom: file) else { return nil }
+        defer { try? handle.close() }
+        guard let head = try? handle.read(upToCount: 12) else { return nil }
+        return imageExtension(of: head)
     }
 
     /// Bytes used by downloads.

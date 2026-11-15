@@ -59,6 +59,7 @@ struct RootView: View {
         }
         .environment(\.privacyMode, scenePhase == .active ? .off : settings.backgroundPrivacy)
         .blur(radius: scenePhase != .active && settings.backgroundPrivacy == .blurApp ? 30 : 0)
+        .overlay(alignment: .top) { RateNoticeBanner().padding(.top, 6) }
         .overlay {
             // Locked, or (with the lock on, or Cover the App) in the app switcher.
             if lock.locked || ((lock.isEnabled || settings.backgroundPrivacy == .cover) && scenePhase != .active) {
@@ -66,6 +67,10 @@ struct RootView: View {
             }
         }
         .onAppear { lock.unlock() }
+        .task {
+            RateNotice.shared.watch(NHClient.shared.api.limiter)
+            RateNotice.shared.watch(EhService.shared.api.limiter)
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { lock.onBackground() }
             if phase == .active { lock.unlock() }

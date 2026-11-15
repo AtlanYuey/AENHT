@@ -12,10 +12,16 @@ final class Filters {
     private(set) var nhBlacklist: [Int] = []
     @ObservationIgnored private var lastBlacklistLoad = Date.distantPast
 
+    /// Counts changes of what is hidden (rules, blacklist, tag names): loaded lists filter again.
+    private(set) var version = 0
+
+    func changed() { version += 1 }
+
     var rules: [FilterRule] { Bridge.shared.filterRules(json: AppSettings.shared.filterRules) }
 
     private func save(_ rules: [FilterRule]) {
         AppSettings.shared.filterRules = Bridge.shared.encodeFilterRules(rules: rules)
+        changed()
     }
 
     func add(target: String, pattern: String, regex: Bool) {
@@ -53,10 +59,26 @@ final class Filters {
     func refreshNhBlacklist(force: Bool = false) async {
         guard UserSession.shared.isLoggedIn, AppSettings.shared.useNhBlacklist else { return }
         guard force || Date().timeIntervalSince(lastBlacklistLoad) > 30 * 60 else { return }
-        lastBlacklistLoad = Date()
+        // Kept from being asked for by every list at once; a failure is tried again soon.
+        let asked = Date()
+        lastBlacklistLoad = asked
         if let ids = try? await NHClient.shared.api.blacklistIds() {
-            nhBlacklist = ids.map { Int(truncating: $0) }
+            let list = ids.map { Int(truncating: $0) }
+            if list != nhBlacklist {
+                nhBlacklist = list
+                changed()
+            }
+        } else if lastBlacklistLoad == asked {
+            lastBlacklistLoad = asked.addingTimeInterval(-29 * 60)
         }
+    }
+
+    /// Another nhentai account (or none): the blacklist was the previous account's.
+    func accountChanged() {
+        nhBlacklist = []
+        lastBlacklistLoad = .distantPast
+        changed()
+        Task { await refreshNhBlacklist() }
     }
 }
 

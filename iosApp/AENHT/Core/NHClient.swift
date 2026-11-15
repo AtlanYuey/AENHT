@@ -142,9 +142,15 @@ final class NHClient: @unchecked Sendable {
         }
     }
 
+    /// The newest comments (the first page).
     func comments(_ id: Int) async throws -> [GalleryComment] {
-        let data = try await call { try await api.commentsJson(id: Int32(id)) }
-        return try decode(PageResponse<GalleryComment>.self, data).result
+        try await commentsPage(id, page: 1).result
+    }
+
+    /// A page of comments (50 each), with how many pages there are.
+    func commentsPage(_ id: Int, page: Int) async throws -> PageResponse<GalleryComment> {
+        let data = try await call { try await api.commentsJson(id: Int32(id), page: Int32(page)) }
+        return try decode(PageResponse<GalleryComment>.self, data)
     }
 
     // MARK: Account

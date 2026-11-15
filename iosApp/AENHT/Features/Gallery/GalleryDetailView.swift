@@ -668,7 +668,7 @@ private struct PreviewSection: View {
                                             contentMode: .fill, targetWidth: 240)
                                     .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .readerThumbSource(gallery: detail.id, page: index, namespace)
+                                    .readerThumbSource(gallery: "nh:\(detail.id)", page: index, namespace)
                                 Text("\(page.number)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -683,7 +683,7 @@ private struct PreviewSection: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
             .contentMargins(.horizontal, 16, for: .scrollContent)
-            .followsReader(gallery: detail.id, position: $centered)
+            .followsReader(gallery: "nh:\(detail.id)", position: $centered)
             .onScrollPhaseChange { _, phase in
                 // Scrolled by hand: the title goes to the first page again.
                 if phase == .interacting { savedPage = nil }
@@ -727,7 +727,7 @@ struct PageGrid: View {
                                             contentMode: .fit, targetWidth: 240)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .readerThumbSource(gallery: detail.id, page: page.number - 1, namespace)
+                            .readerThumbSource(gallery: "nh:\(detail.id)", page: page.number - 1, namespace)
                         Text("\(page.number)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)

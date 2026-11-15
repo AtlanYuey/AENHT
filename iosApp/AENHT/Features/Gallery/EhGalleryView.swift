@@ -88,8 +88,9 @@ final class EhGalleryModel {
         busy = true
         defer { busy = false }
         do {
-            // Moving between folders keeps the note.
-            let note = (target != nil && before != nil) ? ((try? await EhService.shared.favoriteNote(gid: gid, token: token)) ?? "") : ""
+            // Moving between folders keeps the note: when it can't be read the move
+            // stops here (sending an empty note would erase it on the site).
+            let note = (target != nil && before != nil) ? try await EhService.shared.favoriteNote(gid: gid, token: token) : ""
             try await EhService.shared.setFavorite(gid: gid, token: token, folder: target, note: note)
             if let card {
                 if let target { await FavoritesStore.shared.added(card, folder: target) } else { await FavoritesStore.shared.removed(card) }
@@ -169,8 +170,19 @@ struct EhGalleryView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("Try Again") { Task { await model.load(context: modelContext) } }
+                        // Downloaded: its pages can be read without the site.
+                        if let record = downloads.record(uid: "eh:\(model.gid):\(model.token)"), record.completed > 0 {
+                            NavigationLink(value: ReaderRoute(source: ReaderSource(record: record),
+                                                              page: modelContext.lastReadPage(key: record.uid) ?? 0)) {
+                                Label("Read", systemImage: "book.fill")
+                            }
                             .buttonStyle(.borderedProminent)
+                            Button("Try Again") { Task { await model.load(context: modelContext) } }
+                                .buttonStyle(.bordered)
+                        } else {
+                            Button("Try Again") { Task { await model.load(context: modelContext) } }
+                                .buttonStyle(.borderedProminent)
+                        }
                     }
                     .padding(.top, 40)
                 } else {
@@ -214,8 +226,13 @@ struct EhGalleryView: View {
                     if model.folder != nil, EhSession.shared.isLoggedIn {
                         Button("Favorite Note", systemImage: "note.text") {
                             Task {
-                                note = (try? await EhService.shared.favoriteNote(gid: model.gid, token: model.token)) ?? ""
-                                editingNote = true
+                                // Without the note as it is, saving would erase it: the editor doesn't open.
+                                do {
+                                    note = try await EhService.shared.favoriteNote(gid: model.gid, token: model.token)
+                                    editingNote = true
+                                } catch {
+                                    alertMessage = error.localizedDescription
+                                }
                             }
                         }
                     }
@@ -480,7 +497,7 @@ struct EhGalleryView: View {
                                 EhThumbnailView(thumb: thumb)
                                     .frame(width: height * min(max(ratio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .readerThumbSource(gallery: Int(detail.gid), page: item.id, namespace)
+                                    .readerThumbSource(gallery: "eh:\(detail.gid)", page: item.id, namespace)
                                 Text("\(thumb.page)").font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -492,7 +509,7 @@ struct EhGalleryView: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
             .contentMargins(.horizontal, 16, for: .scrollContent)
-            .followsReader(gallery: Int(detail.gid), position: $centeredPage)
+            .followsReader(gallery: "eh:\(detail.gid)", position: $centeredPage)
             .onScrollPhaseChange { _, phase in
                 if phase == .interacting { savedPage = nil }
             }
@@ -633,7 +650,7 @@ struct EhPagesView: View {
             EhThumbnailView(thumb: thumb)
                 .frame(height: 130)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .readerThumbSource(gallery: route.gid, page: Int(thumb.page) - 1, namespace)
+                .readerThumbSource(gallery: "eh:\(route.gid)", page: Int(thumb.page) - 1, namespace)
             Text("\(thumb.page)").font(.caption2).foregroundStyle(.secondary)
         }
     }

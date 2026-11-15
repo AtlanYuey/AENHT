@@ -24,7 +24,7 @@ struct GalleryDestinations: ViewModifier {
             .navigationDestination(for: GalleryRoute.self) { route in
                 GalleryDetailView(route: route)
                     .environment(\.galleryNamespace, namespace)
-                    .navigationTransition(.zoom(sourceID: route.id, in: namespace))
+                    .navigationTransition(.zoom(sourceID: "nh:\(route.id)", in: namespace))
             }
             .navigationDestination(for: SearchRoute.self) { route in
                 SearchResultsView(route: route)
@@ -40,7 +40,7 @@ struct GalleryDestinations: ViewModifier {
             .navigationDestination(for: EhGalleryRoute.self) { route in
                 EhGalleryView(route: route)
                     .environment(\.galleryNamespace, namespace)
-                    .navigationTransition(.zoom(sourceID: route.gid, in: namespace))
+                    .navigationTransition(.zoom(sourceID: "eh:\(route.gid)", in: namespace))
             }
             .navigationDestination(for: EhSearchRoute.self) { route in
                 EhListView(route: route)
@@ -64,7 +64,7 @@ extension View {
 
     /// Marks this view as the source of a gallery zoom transition.
     @ViewBuilder
-    func galleryTransitionSource(_ id: Int, _ namespace: Namespace.ID?) -> some View {
+    func galleryTransitionSource(_ id: String, _ namespace: Namespace.ID?) -> some View {
         if let namespace {
             matchedTransitionSource(id: id, in: namespace)
         } else {
@@ -198,18 +198,18 @@ struct GalleryCard: View {
                 case .grid:
                     CoverView(item: item, aspectRatio: 3 / 4)
                         .overlay { badge?(item) }
-                        .galleryTransitionSource(item.id, namespace)
+                        .galleryTransitionSource(item.transitionKey, namespace)
                     title.frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
                 case .compact:
                     CoverView(item: item)
                         .overlay(alignment: .bottom) { compactOverlay }
                         .overlay { badge?(item) }
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .galleryTransitionSource(item.id, namespace)
+                        .galleryTransitionSource(item.transitionKey, namespace)
                 default:
                     CoverView(item: item)
                         .overlay { badge?(item) }
-                        .galleryTransitionSource(item.id, namespace)
+                        .galleryTransitionSource(item.transitionKey, namespace)
                     title
                     CardFooter(item: item, style: .plain)
                 }
@@ -435,7 +435,7 @@ struct GalleryRow: View {
                 CoverView(item: item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
                     .overlay { badge?(item) }
                     .frame(width: 84)
-                    .galleryTransitionSource(item.id, namespace)
+                    .galleryTransitionSource(item.transitionKey, namespace)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.prettyTitle)
                         .font(.subheadline.weight(.semibold))
@@ -678,10 +678,15 @@ struct FeedFooter: View {
                     Button("Retry") { Task { await feed.loadMore() } }
                         .buttonStyle(.bordered)
                 }
+            } else if feed.skippedHidden, !feed.items.isEmpty {
+                Button("Load More") { Task { await feed.loadMore() } }
+                    .buttonStyle(.bordered)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
+        // The rules or the account's blacklist changed: what is loaded is filtered again.
+        .onChange(of: Filters.shared.version, initial: true) { feed.refilter() }
     }
 }
 
@@ -703,6 +708,15 @@ struct FeedPlaceholder: View {
                 Text(error)
             } actions: {
                 Button("Try Again") { Task { await feed.reload() } }
+                    .buttonStyle(.borderedProminent)
+            }
+        } else if feed.items.isEmpty, feed.skippedHidden {
+            ContentUnavailableView {
+                Label(emptyTitle, systemImage: emptyImage)
+            } description: {
+                Text("Everything on these pages is hidden by your filters.")
+            } actions: {
+                Button("Load More") { Task { await feed.loadMore() } }
                     .buttonStyle(.borderedProminent)
             }
         } else if feed.items.isEmpty {

@@ -229,7 +229,8 @@ struct EhLoginView: View {
             .alert("Couldn't Log In", isPresented: $failed) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("E-Hentai didn't accept the login. Try again, or log in with cookies.")
+                if let reason = EhSession.shared.loginError { Text(verbatim: reason) }
+                else { Text("E-Hentai didn't accept the login. Try again, or log in with cookies.") }
             }
         }
     }
@@ -331,7 +332,8 @@ struct EhCookieLoginView: View {
         .alert("Couldn't Log In", isPresented: $failed) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("E-Hentai didn't accept these cookies.")
+            if let reason = EhSession.shared.loginError { Text(verbatim: reason) }
+            else { Text("E-Hentai didn't accept these cookies.") }
         }
     }
 }

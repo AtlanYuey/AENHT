@@ -105,6 +105,10 @@ struct GalleryItem: Decodable, Identifiable, Hashable {
     /// Unique across both sites ("nh:123", "eh:123:token").
     var uid: String { site == .nhentai ? "nh:\(id)" : "eh:\(id):\(token ?? "")" }
 
+    /// The gallery on its site ("nh:123", "eh:123"), for transitions and the
+    /// reader's place: the two sites' numbers overlap.
+    var transitionKey: String { "\(site.rawValue):\(id)" }
+
     enum CodingKeys: String, CodingKey {
         case id
         case mediaID = "media_id"

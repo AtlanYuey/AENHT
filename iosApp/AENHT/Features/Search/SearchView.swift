@@ -170,13 +170,25 @@ struct InlineSearch: View {
                 .listRowBackground(Color.clear)
             } else {
                 Section {
+                    // An entry is a search on a site (shown at its end): tapping it searches there.
                     ForEach(settings.recentSearches, id: \.self) { item in
+                        let term = SearchHistory.shared.query(entry: item)
+                        let entrySite = SearchHistory.shared.site(entry: item).flatMap { SiteKind(rawValue: $0.key) }
                         Button {
-                            text = item
-                            submit(item)
+                            if let entrySite, settings.enabledSites.contains(entrySite) { site = entrySite }
+                            text = term
+                            submit(term)
                         } label: {
-                            Label(item, systemImage: "clock.arrow.circlepath")
-                                .foregroundStyle(.primary)
+                            HStack {
+                                Label(term, systemImage: "clock.arrow.circlepath")
+                                    .foregroundStyle(.primary)
+                                Spacer(minLength: 8)
+                                if let entrySite, settings.enabledSites.count > 1 {
+                                    Text(verbatim: entrySite.kotlin.badge)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                         .contextMenu {
                             Button("Delete", systemImage: "trash", role: .destructive) {
@@ -219,7 +231,14 @@ struct InlineSearch: View {
     private func submit(_ value: String) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        settings.addRecentSearch(trimmed)
+        if settings.saveSearchHistory {
+            // The search with its site, first in the history.
+            settings.recentSearches = SearchHistory.shared.adding(
+                entries: settings.recentSearches,
+                entry: SearchHistory.shared.entry(site: site.kotlin, query: trimmed),
+                limit: Int32(AppSettings.recentSearchLimit)
+            )
+        }
         suggestions = []
         focused = false
         query = trimmed

@@ -1,4 +1,5 @@
 import Nuke
+import Photos
 import Shared
 import SwiftData
 import SwiftUI
@@ -238,7 +239,7 @@ struct ReaderView: View {
             .onChange(of: sliderEditing) { scheduleHide() }
             .onChange(of: showSettings) { scheduleHide() }
             .onChange(of: page) { _, new in
-                ReaderProgress.shared.set(new, gallery: source.id)
+                ReaderProgress.shared.set(new, gallery: source.item.transitionKey)
                 sliderValue = Double(new)
                 if position != new { position = new }
                 prefetch(around: new)
@@ -265,7 +266,7 @@ struct ReaderView: View {
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
                 awake.touched()
-                ReaderProgress.shared.set(page, gallery: source.id)
+                ReaderProgress.shared.set(page, gallery: source.item.transitionKey)
                 prefetch(around: page)
                 recordPage()
                 scheduleHide()
@@ -394,8 +395,19 @@ struct ReaderView: View {
             notice = String(localized: "Couldn't Save")
             return
         }
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-        notice = String(localized: "Saved to Photos.")
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        guard status == .authorized || status == .limited else {
+            notice = String(localized: "Couldn't Save")
+            return
+        }
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }
+            notice = String(localized: "Saved to Photos.")
+        } catch {
+            notice = String(localized: "Couldn't Save")
+        }
     }
 
     private func sharePage() async {
@@ -1064,6 +1076,19 @@ final class PageController: UIViewController {
 final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private let imageView = UIImageView()
     private let spinner = UIActivityIndicatorView(style: .large)
+    /// Shown when the page couldn't be loaded: tapping it loads it again.
+    private let retryButton: UIButton = {
+        var configuration = UIButton.Configuration.gray()
+        configuration.title = String(localized: "Retry")
+        configuration.subtitle = String(localized: "Couldn't load the image.")
+        configuration.image = UIImage(systemName: "arrow.clockwise")
+        configuration.imagePadding = 10
+        configuration.cornerStyle = .capsule
+        configuration.baseForegroundColor = .white
+        configuration.baseBackgroundColor = UIColor(white: 1, alpha: 0.16)
+        return UIButton(configuration: configuration)
+    }()
+    private var retryLoad: (() -> Void)?
     private var task: ImageTask?
     private var spreadTask: Task<Void, Never>?
     private var currentURL: URL?
@@ -1098,6 +1123,14 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.color = .lightGray
         spinner.hidesWhenStopped = true
         addSubview(spinner)
+
+        retryButton.isHidden = true
+        retryButton.addAction(UIAction { [weak self] _ in
+            guard let self, let again = retryLoad else { return }
+            hideFailure()
+            again()
+        }, for: .touchUpInside)
+        addSubview(retryButton)
 
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap(_:))))
         swipeDelegate.isBlocked = { [weak self] in
@@ -1169,6 +1202,20 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             contentSize = bounds.size
         }
         spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        retryButton.sizeToFit()
+        retryButton.center = spinner.center
+    }
+
+    private func showFailure(again: @escaping () -> Void) {
+        spinner.stopAnimating()
+        retryLoad = again
+        retryButton.isHidden = false
+        setNeedsLayout()
+    }
+
+    private func hideFailure() {
+        retryLoad = nil
+        retryButton.isHidden = true
     }
 
     func resetZoom() {
@@ -1189,6 +1236,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         currentURL = url
         imageView.image = nil
         resetZoom()
+        hideFailure()
         guard let url else { return }
         let request = AutoCropProcessor.request(url)
         if let cached = ImagePipeline.shared.cache[request] {
@@ -1200,11 +1248,18 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         task = ImagePipeline.shared.loadImage(with: request) { [weak self] result in
             guard let self, self.currentURL == url else { return }
             self.spinner.stopAnimating()
-            if case let .success(response) = result {
+            switch result {
+            case let .success(response):
                 UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
                     self.imageView.image = response.image
                 }
                 self.startEnhance()
+            case .failure:
+                // Not left black: the page says it failed and loads again on a tap.
+                self.showFailure { [weak self] in
+                    self?.currentURL = nil
+                    self?.load(url)
+                }
             }
         }
     }
@@ -1219,12 +1274,19 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         currentURL = nil
         imageView.image = nil
         resetZoom()
+        hideFailure()
         spinner.startAnimating()
         let requests = key.map(AutoCropProcessor.request)
         spreadTask = Task { [weak self] in
             async let a = ImagePipeline.shared.image(for: requests[0])
             async let b = ImagePipeline.shared.image(for: requests[1])
-            guard let first = try? await a, let second = try? await b, !Task.isCancelled, let self else { return }
+            let (left, right) = (try? await a, try? await b)
+            guard !Task.isCancelled, let self else { return }
+            guard let first = left, let second = right else {
+                // One of the two failed: the spinner doesn't turn forever.
+                self.showFailure { [weak self] in self?.loadSpread(urls, rightToLeft: rightToLeft) }
+                return
+            }
             let settings = AppSettings.shared
             let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second,
                                   gap: settings.spreadGapOn ? settings.spreadGap : 0, screen: ReaderScreen.pixels,
@@ -1378,7 +1440,8 @@ private struct PageAlerts: ViewModifier {
 
 /// A page's thumbnail on a gallery page, as a zoom transition source.
 struct ReaderThumbID: Hashable {
-    let gallery: Int
+    /// The gallery on its site (`GalleryItem.transitionKey`).
+    let gallery: String
     let page: Int
 }
 
@@ -1388,13 +1451,13 @@ struct ReaderThumbID: Hashable {
 @Observable
 final class ReaderProgress {
     static let shared = ReaderProgress()
-    private(set) var pages: [Int: Int] = [:]
+    private(set) var pages: [String: Int] = [:]
 
-    func set(_ page: Int, gallery: Int) {
+    func set(_ page: Int, gallery: String) {
         if pages[gallery] != page { pages[gallery] = page }
     }
 
-    func page(gallery: Int) -> Int? { pages[gallery] }
+    func page(gallery: String) -> Int? { pages[gallery] }
 }
 
 /// The reader, zooming out of (and back into) the thumbnail of the page it's on.
@@ -1405,8 +1468,8 @@ struct ReaderDestination: View {
 
     var body: some View {
         ReaderView(route: route)
-            .navigationTransition(.zoom(sourceID: ReaderThumbID(gallery: route.source.id,
-                                                                  page: progress.page(gallery: route.source.id) ?? route.page),
+            .navigationTransition(.zoom(sourceID: ReaderThumbID(gallery: route.source.item.transitionKey,
+                                                                  page: progress.page(gallery: route.source.item.transitionKey) ?? route.page),
                                         in: namespace))
     }
 }
@@ -1414,7 +1477,7 @@ struct ReaderDestination: View {
 extension View {
     /// Marks a page thumbnail as where the reader zooms from and back to.
     @ViewBuilder
-    func readerThumbSource(gallery: Int, page: Int, _ namespace: Namespace.ID?) -> some View {
+    func readerThumbSource(gallery: String, page: Int, _ namespace: Namespace.ID?) -> some View {
         if let namespace {
             matchedTransitionSource(id: ReaderThumbID(gallery: gallery, page: page), in: namespace)
         } else {
@@ -1424,13 +1487,13 @@ extension View {
 
     /// Keeps a row of pages (ids: page indexes) centred on the page the
     /// reader is on, also while it's open, so it closes into its thumbnail.
-    func followsReader(gallery: Int, position: Binding<Int?>) -> some View {
+    func followsReader(gallery: String, position: Binding<Int?>) -> some View {
         modifier(FollowsReader(gallery: gallery, position: position))
     }
 }
 
 private struct FollowsReader: ViewModifier {
-    let gallery: Int
+    let gallery: String
     @Binding var position: Int?
     @State private var progress = ReaderProgress.shared
 

@@ -94,6 +94,9 @@ final class WebDavService {
         Task {
             defer { syncing = false }
             do {
+                // What is read while the sync waits for the server isn't in its answer:
+                // those entries are newer than this moment and are kept.
+                let started = Date()
                 try await pushHistory()
                 let settings = AppSettings.shared
                 let json = (try? JSONSerialization.data(withJSONObject: settings.syncedSnapshot(), options: [.sortedKeys]))
@@ -105,7 +108,7 @@ final class WebDavService {
                     settings.apply(values, fromSync: true)
                     settings.setChangedAt(result.settingsChangedAt)
                 }
-                if result.historyChanged > 0 { try await pullHistory() }
+                if result.historyChanged > 0 { try await pullHistory(since: started) }
                 if result.favoritesAdded > 0 { await FavoritesStore.shared.reload() }
                 lastSync = .now
                 defaults.set(lastSync, forKey: "webdavLastSync")
@@ -139,14 +142,16 @@ final class WebDavService {
         try await history.put(records: records)
     }
 
-    private func pullHistory() async throws {
+    /// Brings the merged history back. An entry that isn't in it was deleted
+    /// on another device, unless it was read after the sync began (`start`).
+    private func pullHistory(since start: Date) async throws {
         let records = try await history.all()
         let context = AppModel.container.mainContext
         let entries = try context.fetch(FetchDescriptor<HistoryEntry>())
         let kept = Set(records.map(\.key))
         var byKey: [String: HistoryEntry] = [:]
         for e in entries {
-            if kept.contains(e.key) { byKey[e.key] = e } else { context.delete(e) }
+            if kept.contains(e.key) { byKey[e.key] = e } else if e.lastRead < start { context.delete(e) }
         }
         for r in records {
             let date = Date(timeIntervalSince1970: Double(r.readAt) / 1000)

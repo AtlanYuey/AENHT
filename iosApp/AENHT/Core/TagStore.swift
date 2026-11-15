@@ -154,10 +154,12 @@ final class TagStore {
         if !snapshot.translations.isEmpty {
             translations = snapshot.translations
         }
-        lastUpdated = snapshot.date
+        lastUpdated = snapshot.date > Date(timeIntervalSince1970: 0) ? snapshot.date : nil
         tagCount = tags.count
         translationCount = translations.values.reduce(0) { $0 + $1.count }
         revision += 1
+        // Tag rules match by name: lists loaded before the names were there filter again.
+        Filters.shared.changed()
     }
 
     // MARK: Storage
@@ -246,10 +248,15 @@ final class TagStore {
                 }
             }
         }
-        if translations.isEmpty, let previous = readCache() {
-            translations = previous.translations
+        // Without the translations this update is half done: the old ones stay and the
+        // date isn't moved forward, so the next start tries again instead of waiting a week.
+        var date = Date()
+        if translations.isEmpty {
+            let previous = readCache()
+            translations = previous?.translations ?? [:]
+            date = previous?.date ?? Date(timeIntervalSince1970: 0)
         }
-        let snapshot = Snapshot(tags: tags, translations: translations, date: Date())
+        let snapshot = Snapshot(tags: tags, translations: translations, date: date)
         writeCache(snapshot)
         return snapshot
     }

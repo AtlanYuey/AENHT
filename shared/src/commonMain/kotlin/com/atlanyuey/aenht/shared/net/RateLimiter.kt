@@ -10,6 +10,11 @@ import kotlin.time.Duration.Companion.minutes
 /** At most [count] requests in any [window]. */
 data class RateLimit(val count: Int, val window: Duration = 1.minutes)
 
+/** Told when a request has to wait for its turn (the apps say so on screen). */
+fun interface RateWaitListener {
+    fun waiting(bucket: String, waitMillis: Long)
+}
+
 /**
  * A sliding-window limiter shared by every request of a site. Requests that
  * would exceed a bucket's limit wait until a slot is free, so screens never
@@ -24,6 +29,11 @@ class RateLimiter(private val now: () -> Long = { Clock.System.now().toEpochMill
 
     /** Called with the wait (ms) when a request has to wait for a slot. */
     var onWait: ((bucket: String, waitMillis: Long) -> Unit)? = null
+
+    /** [onWait] for Swift (an interface is simpler to implement there than a function type). */
+    fun watch(listener: RateWaitListener) {
+        onWait = { bucket, wait -> listener.waiting(bucket, wait) }
+    }
 
     suspend fun acquire(bucket: String, limit: RateLimit) {
         while (true) {

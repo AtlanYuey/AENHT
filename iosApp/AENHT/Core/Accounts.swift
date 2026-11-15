@@ -43,6 +43,18 @@ final class AccountBook {
             : account.values["member"] == EhCredentials.shared.memberId
     }
 
+    /// The nhentai login was renewed: its saved account keeps up, or switching back to it would use dead tokens.
+    func tokensRenewed(previousAccess: String, access: String, refresh: String?) {
+        guard accounts.contains(where: { $0.siteKind == .nhentai && $0.values["access"] == previousAccess }) else { return }
+        save(accounts.map { account in
+            guard account.siteKind == .nhentai, account.values["access"] == previousAccess else { return account }
+            var renewed = account
+            renewed.values = ["access": access]
+            if let refresh { renewed.values["refresh"] = refresh }
+            return renewed
+        })
+    }
+
     private func upsert(_ account: SavedAccount) {
         save(accounts.filter { $0.id != account.id } + [account])
     }
@@ -80,7 +92,8 @@ final class AccountBook {
             EhSession.shared.resetFolders()
             await EhSession.shared.loadFolders()
         }
-        await FavoritesStore.shared.accountChanged(account.siteKind)
+        // nhentai's login above already told the favorites copy.
+        if account.siteKind == .ehentai { await FavoritesStore.shared.accountChanged(.ehentai) }
     }
 
     func forget(_ account: SavedAccount) { save(accounts.filter { $0.id != account.id }) }

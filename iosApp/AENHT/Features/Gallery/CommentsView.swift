@@ -7,6 +7,12 @@ struct CommentsView: View {
     @State private var draft = ""
     @State private var isPosting = false
     @State private var error: String?
+    /// The last page read and how many the site has.
+    @State private var page = 1
+    @State private var pageCount = 1
+    @State private var loadingMore = false
+    /// Why the comments couldn't be read (shown instead of "No Comments" when there are none to show).
+    @State private var loadError: String?
     @FocusState private var composing: Bool
     @Environment(UserSession.self) private var session
 
@@ -21,10 +27,31 @@ struct CommentsView: View {
                 CommentBubble(comment: comment)
                     .padding(.vertical, 4)
             }
+            // More pages: the next one loads when the end shows.
+            if !comments.isEmpty, page < pageCount {
+                HStack {
+                    Spacer()
+                    if loadError != nil, !loadingMore {
+                        Button("Retry") { Task { await loadMore() } }.buttonStyle(.bordered)
+                    } else {
+                        ProgressView().task(id: page) { await loadMore() }
+                    }
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+            }
         }
         .listStyle(.plain)
         .overlay {
-            if comments.isEmpty {
+            if comments.isEmpty, let loadError {
+                ContentUnavailableView {
+                    Label("Couldn't Load", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(verbatim: loadError)
+                } actions: {
+                    Button("Try Again") { Task { await load() } }.buttonStyle(.borderedProminent)
+                }
+            } else if comments.isEmpty {
                 ContentUnavailableView("No Comments", systemImage: "text.bubble")
             }
         }
@@ -72,8 +99,32 @@ struct CommentsView: View {
     }
 
     private func load() async {
-        if let fresh = try? await NHClient.shared.comments(galleryID) {
-            comments = fresh
+        do {
+            let first = try await NHClient.shared.commentsPage(galleryID, page: 1)
+            comments = first.result
+            page = 1
+            pageCount = first.numPages
+            loadError = nil
+        } catch is CancellationError {
+        } catch {
+            loadError = error.localizedDescription
+        }
+    }
+
+    private func loadMore() async {
+        guard !loadingMore, page < pageCount else { return }
+        loadingMore = true
+        defer { loadingMore = false }
+        do {
+            let more = try await NHClient.shared.commentsPage(galleryID, page: page + 1)
+            let known = Set(comments.map(\.id))
+            comments += more.result.filter { !known.contains($0.id) }
+            pageCount = more.numPages
+            page += 1
+            loadError = nil
+        } catch is CancellationError {
+        } catch {
+            loadError = error.localizedDescription
         }
     }
 

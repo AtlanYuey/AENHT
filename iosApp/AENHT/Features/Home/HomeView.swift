@@ -34,7 +34,8 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(settings.homeRows(for: settings.currentSite)) { row in
-                    if let items = rows[row], !items.isEmpty {
+                    // The pinned rows follow the filter rules like the feed under them.
+                    if let items = rows[row].map({ Filters.shared.visible($0) }), !items.isEmpty {
                         SectionTitle(title: LocalizedStringKey(row.titleKey))
                         PopularRow(items: items)
                     }

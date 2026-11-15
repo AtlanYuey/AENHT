@@ -111,10 +111,8 @@ struct HistoryView: View {
                         GalleryRow(item: entry.item, subtitle: subtitle(entry))
                     }
                     .onDelete { offsets in
-                        for index in offsets {
-                            modelContext.delete(section.entries[index])
-                        }
-                        try? modelContext.save()
+                        // The same deletion as the card's menu: it is synced too.
+                        for entry in offsets.map({ section.entries[$0] }) { delete(entry) }
                     }
                 } header: {
                     Text(title(for: section.day))

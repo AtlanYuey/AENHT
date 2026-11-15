@@ -18,7 +18,28 @@ final class FavoritesStore {
         db: IosDatabase.shared.shared, nh: NHClient.shared.api, eh: EhService.shared.api
     )
 
-    private init() {}
+    /// The account each site's copy was read from (the saved account's id), kept with the copy.
+    private var owners: [SiteKind: String] = [:]
+    @ObservationIgnored private var syncTask: Task<Void, Never>?
+
+    private init() {
+        for site in SiteKind.allCases {
+            if let owner = UserDefaults.standard.string(forKey: "favoritesOwner.\(site.rawValue)") { owners[site] = owner }
+        }
+    }
+
+    /// The account logged in on `site` (nil when none, or not known yet).
+    private func account(_ site: SiteKind) -> String? {
+        AccountBook.shared.accounts(for: site).first { AccountBook.shared.isActive($0) }?.id
+    }
+
+    /// Whether `site`'s copy is the logged-in account's: another account's
+    /// copy (after switching, until the sync) and a logged-out site's stay hidden.
+    private func showsCopy(_ site: SiteKind) -> Bool {
+        guard loggedIn(site) else { return false }
+        guard let owner = owners[site] else { return true }
+        return owner == account(site)
+    }
 
     func reload() async {
         guard let all = try? await mirror.all() else { return }
@@ -27,7 +48,10 @@ final class FavoritesStore {
 
     /// Both sites' cards, newest first; [folders] limits E-Hentai's folders.
     func cards(folders: Set<Int>) -> [GalleryItem] {
-        items.filter { $0.site == .nhentai || folders.count >= 10 || folders.contains($0.favoriteFolder ?? 0) }
+        let shown = Set(SiteKind.allCases.filter(showsCopy))
+        return items.filter {
+            shown.contains($0.site) && ($0.site == .nhentai || folders.count >= 10 || folders.contains($0.favoriteFolder ?? 0))
+        }
     }
 
     func added(_ card: GalleryItem, folder: Int) async {
@@ -44,13 +68,16 @@ final class FavoritesStore {
         site == .nhentai ? UserSession.shared.isLoggedIn : EhSession.shared.isLoggedIn
     }
 
-    /// Syncs the logged-in sites whose last sync is older than [maxAge].
-    /// Another account of `site` became active: its copy is read again.
+    /// The login of `site` changed (another account, a new login, or none):
+    /// a sync that is running was the previous account's and is waited for;
+    /// then the new account's favorites are read.
     func accountChanged(_ site: SiteKind) async {
         lastSync[site] = nil
+        await syncTask?.value
         await sync([site])
     }
 
+    /// Syncs the logged-in sites whose last sync is older than [maxAge].
     func syncIfStale(maxAge: TimeInterval = 15 * 60) async {
         let due = AppSettings.shared.enabledSites.filter {
             loggedIn($0) && Date().timeIntervalSince(lastSync[$0] ?? .distantPast) > maxAge
@@ -61,11 +88,25 @@ final class FavoritesStore {
 
     func sync(_ sites: [SiteKind] = AppSettings.shared.enabledSites) async {
         guard syncing == nil else { return }
+        let task = Task { await run(sites) }
+        syncTask = task
+        await task.value
+    }
+
+    private func run(_ sites: [SiteKind]) async {
         error = nil
         for site in sites where loggedIn(site) {
             syncing = site
             syncedCount = 0
             do {
+                // The copy of another account is dropped before this account's is read
+                // (when a sync fails, nothing of the other account shows meanwhile).
+                if let who = account(site), owners[site] != who {
+                    if owners[site] != nil { _ = try await mirror.clear(site: site.kotlin) }
+                    owners[site] = who
+                    UserDefaults.standard.set(who, forKey: "favoritesOwner.\(site.rawValue)")
+                    await reload()
+                }
                 EhService.shared.api.useExHentai = AppSettings.shared.useExHentai
                 try await mirror.sync(site: site.kotlin, progress: nil)
                 lastSync[site] = Date()
