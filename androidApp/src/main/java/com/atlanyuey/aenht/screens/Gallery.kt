@@ -55,6 +55,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -295,9 +297,12 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 }
             },
         ) { padding ->
+            // Wide (a tablet held sideways): the details on the left, the pages on the right.
+            val wide = com.atlanyuey.aenht.ui.components.isWidePage()
             PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
+              Row(Modifier.fillMaxSize()) {
                 LazyColumn(
-                    Modifier.fillMaxSize(),
+                    Modifier.weight(1f).fillMaxHeight(),
                     state = list,
                     // Room under the comments, clear of the tab bar.
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
@@ -308,7 +313,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         item("actions") { Actions(d) }
                         item("info") { InfoStrip(d, numFavorites) }
                         item("tags") { TagsSection(d) }
-                        item("pages") { PreviewSection(d) }
+                        if (!wide) item("pages") { PreviewSection(d) }
                         // Its translations and other versions, then galleries like it.
                         if (versions.isNotEmpty()) {
                             item("versionsTitle") { VersionsTitle() }
@@ -335,6 +340,17 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         }
                     }
                 }
+                val d = detail
+                if (wide && d != null) {
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(AppTheme.colors.separator))
+                    PagesGrid(
+                        d,
+                        PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 110.dp),
+                        Modifier.weight(1f).fillMaxHeight(),
+                        titled = true,
+                    )
+                }
+              }
             }
         }
     }
@@ -646,27 +662,44 @@ class PagesScreen(private val detail: GalleryDetail) : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.current
         ScreenScaffold(title = tr("Pages")) { padding ->
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(96.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding()),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+            PagesGrid(
+                detail,
+                PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding()),
+            )
+        }
+    }
+}
+
+/** Every page of a gallery in a grid ([titled]: under a "Pages" heading, as half of a wide gallery page). */
+@Composable
+fun PagesGrid(detail: GalleryDetail, contentPadding: PaddingValues, modifier: Modifier = Modifier, titled: Boolean = false) {
+    val navigator = LocalNavigator.current
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(96.dp),
+        modifier = modifier,
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        if (titled) {
+            item(key = "title", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                // The heading has the page margin of its own: the grid's is taken off.
+                Box(Modifier.offset(x = (-16).dp)) { SectionTitle(tr("Pages")) }
+            }
+        }
+        items(detail.pages, key = { it.number }) { page ->
+            Column(
+                Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(detail), page.number - 1)) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                items(detail.pages, key = { it.number }) { page ->
-                    Column(
-                        Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(detail), page.number - 1)) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        RemoteImage(
-                            Downloads.localFile(detail.id, page.number - 1) ?: page.thumbUrl,
-                            Modifier.fillMaxWidth().height(130.dp).readerThumb("nh:${detail.id}", page.number - 1).clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Fit,
-                            targetWidth = 240.dp,
-                        )
-                        Txt("${page.number}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
-                    }
-                }
+                RemoteImage(
+                    Downloads.localFile(detail.id, page.number - 1) ?: page.thumbUrl,
+                    Modifier.fillMaxWidth().height(130.dp).readerThumb("nh:${detail.id}", page.number - 1).clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit,
+                    targetWidth = 240.dp,
+                )
+                Txt("${page.number}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
             }
         }
     }

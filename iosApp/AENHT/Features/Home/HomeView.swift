@@ -28,16 +28,47 @@ struct HomeView: View {
     /// Bottom of the feed's header in the feed's coordinates.
     @State private var headerBottom: CGFloat = .infinity
 
+    /// Wide (a tablet held sideways): the two pinned rows show side by side.
+    @State private var wide = false
+
     private static let space = "homeFeed"
+
+    private struct PinnedRow: Identifiable {
+        let row: HomeRow
+        let items: [GalleryItem]
+        var id: String { row.rawValue }
+    }
+
+    /// The pinned rows that have something to show; they follow the filter rules like the feed under them.
+    private var pinnedRows: [PinnedRow] {
+        settings.homeRows(for: settings.currentSite).compactMap { row in
+            guard let items = rows[row] else { return nil }
+            let visible = Filters.shared.visible(items)
+            return visible.isEmpty ? nil : PinnedRow(row: row, items: visible)
+        }
+    }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(settings.homeRows(for: settings.currentSite)) { row in
-                    // The pinned rows follow the filter rules like the feed under them.
-                    if let items = rows[row].map({ Filters.shared.visible($0) }), !items.isEmpty {
-                        SectionTitle(title: LocalizedStringKey(row.titleKey))
-                        PopularRow(items: items)
+                let pinned = pinnedRows
+                if wide, pinned.count == 2 {
+                    // Wide (a tablet held sideways): the two rows side by side.
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(pinned) { entry in
+                            // Each row scrolls inside its own half.
+                            VStack(alignment: .leading, spacing: 0) {
+                                SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
+                                PopularRow(items: entry.items)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .clipped()
+                        }
+                    }
+                } else {
+                    ForEach(pinned) { entry in
+                        SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
+                        PopularRow(items: entry.items)
                     }
                 }
                 FeedHeader { startSearch() }
@@ -52,6 +83,7 @@ struct HomeView: View {
             }
             .coordinateSpace(.named(Self.space))
         }
+        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
         .tabTapScrolling(.home, enabled: !searching) { await reload() }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             // The bar's bottom edge, in the feed's coordinates, is past the header.

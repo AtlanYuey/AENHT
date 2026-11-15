@@ -383,6 +383,7 @@ struct SearchResults: View {
         }
         .refreshable { await feed.reload() }
         .hidesBarsOnScroll()
+        .keepsPlaceOnResize()
         .task(id: site) {
             guard searches else { return }
             if !feed.hasLoaded { await feed.reload() }

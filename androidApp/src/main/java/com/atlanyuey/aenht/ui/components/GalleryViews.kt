@@ -421,6 +421,17 @@ fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: St
 // MARK: - Collections
 
 /**
+ * The window is wide enough for two halves side by side (a tablet held
+ * sideways, not a phone or a narrow window): Home's two pinned rows, a
+ * gallery page's details and pages.
+ */
+@Composable
+fun isWidePage(): Boolean {
+    val configuration = LocalConfiguration.current
+    return configuration.screenWidthDp >= 960 && configuration.screenWidthDp > configuration.screenHeightDp
+}
+
+/**
  * Number of columns: the count chosen in Card Size for a phone or a tablet
  * in the orientation (a narrow window shows fewer rather than cards
  * narrower than 90 dp). Rows of the list style fill the width instead.

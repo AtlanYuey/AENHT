@@ -101,6 +101,8 @@ struct GalleryDetailView: View {
     /// The title's translation (Translate), shown in place of the title.
     @State private var titleTranslation: Translation?
     @State private var showsOriginalTitle = false
+    /// A wide page (a tablet held sideways): the details on the left, the pages on the right.
+    @State private var wide = false
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(UserSession.self) private var session
@@ -113,6 +115,7 @@ struct GalleryDetailView: View {
     private var item: GalleryItem? { model.preview ?? model.detail?.asItem }
 
     var body: some View {
+        HStack(alignment: .top, spacing: 0) {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
@@ -120,7 +123,8 @@ struct GalleryDetailView: View {
                     actions(detail)
                     InfoStrip(detail: detail, favorites: model.numFavorites)
                     TagsSection(detail: detail)
-                    PreviewSection(detail: detail)
+                    // Wide: the pages have the right half to themselves.
+                    if !wide { PreviewSection(detail: detail) }
                     // Its translations and other versions, then galleries like it.
                     if !model.versions.isEmpty {
                         SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
@@ -154,6 +158,20 @@ struct GalleryDetailView: View {
                 Backdrop(url: item?.thumbURL, height: sizeClass == .regular ? 420 : 320)
             }
         }
+        .frame(maxWidth: .infinity)
+        if wide, let detail = model.detail {
+            Divider().ignoresSafeArea(edges: .bottom)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionHeader(title: "Pages") { EmptyView() }
+                    PageGrid(detail: detail).padding(.horizontal)
+                }
+                .padding(.bottom, 120)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        }
+        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -790,5 +808,13 @@ private struct CommentsPreview: View {
             }
         }
         .padding(.top, 8)
+    }
+}
+
+/// When a gallery page is wide enough for two halves side by side (a tablet
+/// held sideways, not half of Split View): the details and the pages.
+enum WideGalleryPage {
+    static func fits(_ size: CGSize) -> Bool {
+        size.width >= 960 && size.width > size.height
     }
 }

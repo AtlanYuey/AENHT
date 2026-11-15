@@ -72,7 +72,7 @@ struct FavoritesView: View {
                         })
                             .environment(\.showsSiteBadge, true)
                             .padding(.top, 8)
-                        if store.items.isEmpty {
+                        if store.cards(folders: Set(settings.favoritesAllFolders)).isEmpty {
                             if store.syncing != nil {
                                 ProgressView().controlSize(.large).frame(maxWidth: .infinity).padding(.top, 80)
                             } else {

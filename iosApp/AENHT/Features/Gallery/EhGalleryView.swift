@@ -129,6 +129,8 @@ struct EhGalleryView: View {
     }
     @State private var editingNote = false
     @State private var note = ""
+    /// A wide page (a tablet held sideways): the details on the left, the pages on the right.
+    @State private var wide = false
     @Environment(\.openURL) private var openURL
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -146,6 +148,7 @@ struct EhGalleryView: View {
     }
 
     var body: some View {
+        HStack(alignment: .top, spacing: 0) {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
@@ -153,7 +156,8 @@ struct EhGalleryView: View {
                     actions(detail)
                     info(detail)
                     tags(detail)
-                    previews(detail)
+                    // Wide: the pages have the right half to themselves.
+                    if !wide { previews(detail) }
                     // Its translations and other versions, then galleries like it.
                     if !model.versions.isEmpty {
                         SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
@@ -195,6 +199,15 @@ struct EhGalleryView: View {
                 Backdrop(url: model.card?.thumbURL, height: sizeClass == .regular ? 420 : 320)
             }
         }
+        .frame(maxWidth: .infinity)
+        if wide, let detail = model.detail, let card = model.card {
+            Divider().ignoresSafeArea(edges: .bottom)
+            EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
+                        loaded: detail, embedded: true)
+                .frame(maxWidth: .infinity)
+        }
+        }
+        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -609,6 +622,10 @@ struct IndexedThumb: Identifiable {
 
 struct EhPagesView: View {
     let route: EhPagesRoute
+    /// The gallery when it is already loaded (the wide gallery page's right half).
+    var loaded: EhGalleryDetail? = nil
+    /// Part of the gallery page (with a heading), not a page of its own.
+    var embedded = false
     @Environment(\.galleryNamespace) private var namespace
     @State private var thumbs: [EhThumbnail] = []
     @State private var nextPage = 0
@@ -616,7 +633,18 @@ struct EhPagesView: View {
     @State private var detail: EhGalleryDetail?
 
     var body: some View {
+        if embedded {
+            grid
+        } else {
+            grid
+                .navigationTitle("Pages")
+                .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var grid: some View {
         ScrollView {
+            if embedded { SectionHeader(title: "Pages") { EmptyView() } }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 14) {
                 ForEach(Array(thumbs.enumerated()), id: \.element.page) { index, thumb in
                     Group {
@@ -632,13 +660,12 @@ struct EhPagesView: View {
                     .onAppear { if index >= thumbs.count - 6 { Task { await loadMore() } } }
                 }
             }
-            .padding()
+            .padding(embedded ? [.horizontal, .bottom] : .all)
+            .padding(.bottom, embedded ? 104 : 0)
         }
-        .navigationTitle("Pages")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             if detail == nil {
-                detail = try? await EhService.shared.gallery(gid: route.gid, token: route.token)
+                if let loaded { detail = loaded } else { detail = try? await EhService.shared.gallery(gid: route.gid, token: route.token) }
                 thumbs = detail?.thumbnails ?? []
                 nextPage = 1
             }

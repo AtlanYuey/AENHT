@@ -222,6 +222,7 @@ struct DownloadsView: View {
             }
             .padding(.bottom, 16)
         }
+        .keepsPlaceOnResize()
         .environment(\.galleryCoverBadge) { item in
             AnyView(DownloadBadge(uid: item.uid))
         }

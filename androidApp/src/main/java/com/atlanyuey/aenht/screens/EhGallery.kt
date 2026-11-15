@@ -297,9 +297,12 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 summary?.let { s -> GlassCircleButton(Icons.Share, tr("Share"), onClick = { context.shareLink(galleryLink(s), s.title) }) }
             },
         ) { padding ->
+            // Wide (a tablet held sideways): the details on the left, the pages on the right.
+            val wide = com.atlanyuey.aenht.ui.components.isWidePage()
             PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
+              Row(Modifier.fillMaxSize()) {
                 LazyColumn(
-                    Modifier.fillMaxSize(),
+                    Modifier.weight(1f).fillMaxHeight(),
                     state = list,
                     // Room under the comments, clear of the tab bar.
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
@@ -310,7 +313,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         item("actions") { Actions(d) }
                         item("info") { Info(d) }
                         item("tags") { Tags(d) }
-                        item("pages") { Previews(d) }
+                        if (!wide) item("pages") { Previews(d) }
                         // Its translations and other versions, then galleries like it.
                         if (versions.isNotEmpty()) {
                             item("versionsTitle") { VersionsTitle() }
@@ -331,6 +334,19 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         }
                     }
                 }
+                val d = detail
+                val card = summary
+                if (wide && d != null && card != null) {
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(AppTheme.colors.separator))
+                    val pages = remember(d) { EhPagesState(d, scope) }
+                    EhPagesGrid(
+                        pages, card,
+                        PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 110.dp),
+                        Modifier.weight(1f).fillMaxHeight(),
+                        titled = true,
+                    )
+                }
+              }
             }
         }
     }
@@ -938,13 +954,13 @@ class EhTorrentsScreen(private val gid: Long, private val token: String) : Scree
     }
 }
 
-/** Every page's thumbnail; more thumbnail pages load while scrolling. */
-class EhPagesScreen(private val detail: EhGalleryDetail, private val card: GallerySummary) : Screen() {
-    private val thumbs = mutableStateListOf<EhThumbnail>().apply { addAll(detail.thumbnails) }
+/** A gallery's page thumbnails; more thumbnail pages load while scrolling. */
+class EhPagesState(val detail: EhGalleryDetail, private val scope: kotlinx.coroutines.CoroutineScope) {
+    val thumbs = mutableStateListOf<EhThumbnail>().apply { addAll(detail.thumbnails) }
     private var nextPage = 1
     private var loading = false
 
-    private fun loadMore() {
+    fun loadMore() {
         if (loading || thumbs.size >= detail.pages || nextPage >= detail.thumbnailPageCount) return
         loading = true
         scope.launch {
@@ -957,28 +973,51 @@ class EhPagesScreen(private val detail: EhGalleryDetail, private val card: Galle
             loading = false
         }
     }
+}
+
+/** Every page's thumbnail. */
+class EhPagesScreen(detail: EhGalleryDetail, private val card: GallerySummary) : Screen() {
+    private val state = EhPagesState(detail, scope)
 
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
         ScreenScaffold(title = tr("Pages")) { padding ->
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(96.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding()),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+            EhPagesGrid(
+                state, card,
+                PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding()),
+            )
+        }
+    }
+}
+
+/** Every page of a gallery in a grid ([titled]: under a "Pages" heading, as half of a wide gallery page). */
+@Composable
+fun EhPagesGrid(state: EhPagesState, card: GallerySummary, contentPadding: PaddingValues, modifier: Modifier = Modifier, titled: Boolean = false) {
+    val navigator = LocalNavigator.current
+    val detail = state.detail
+    val thumbs = state.thumbs
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(96.dp),
+        modifier = modifier,
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        if (titled) {
+            item(key = "title", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                // The heading has the page margin of its own: the grid's is taken off.
+                Box(Modifier.offset(x = (-16).dp)) { SectionTitle(tr("Pages")) }
+            }
+        }
+        itemsIndexed(thumbs, key = { _, t -> t.page }) { index, thumb ->
+            LaunchedEffect(thumb.page) { if (index >= thumbs.size - 6) state.loadMore() }
+            Column(
+                Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(detail, card), thumb.page - 1)) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                itemsIndexed(thumbs, key = { _, t -> t.page }) { index, thumb ->
-                    LaunchedEffect(thumb.page) { if (index >= thumbs.size - 6) loadMore() }
-                    Column(
-                        Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(detail, card), thumb.page - 1)) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).readerThumb("eh:${detail.gid}", thumb.page - 1).clip(RoundedCornerShape(8.dp)))
-                        Txt("${thumb.page}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
-                    }
-                }
+                EhThumbnailImage(thumb, Modifier.fillMaxWidth().height(130.dp).readerThumb("eh:${detail.gid}", thumb.page - 1).clip(RoundedCornerShape(8.dp)))
+                Txt("${thumb.page}", style = Type.caption2, color = AppTheme.colors.secondaryLabel)
             }
         }
     }

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
@@ -421,6 +422,60 @@ class ScreenshotTest {
 
     @Config(qualifiers = "w1194dp-h834dp-xhdpi")
     @Test fun tabletLandscape() = shoot("34_tablet_landscape")
+
+    /** A tablet held sideways: the gallery's details on the left, its pages on the right. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeGallery() {
+        val tabs = Tabs()
+        tabs.home.push(GalleryScreen(500001, null))
+        shoot("52_tablet_landscape_gallery", tabs, settle = 2500)
+    }
+
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeEhGallery() {
+        val tabs = Tabs()
+        tabs.home.push(com.atlanyuey.aenht.screens.EhGalleryScreen(4321, "1a2b3c4d5e", null))
+        shoot("53_tablet_landscape_eh_gallery", tabs, settle = 2500)
+    }
+
+    /**
+     * Turning the tablet keeps the list where it was (not back at the top).
+     * As in the app, the activity stays and the configuration changes: here
+     * the window is the landscape one, with the app first in a portrait part of it.
+     */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun rotationKeepsThePlace() {
+        val portrait = mutableStateOf(true)
+        val linkedGallery = mutableStateOf<com.atlanyuey.aenht.shared.site.GalleryLink?>(null)
+        val tabs = Tabs()
+        val overlays = com.atlanyuey.aenht.ui.components.OverlayController()
+        compose.setContent {
+            val base = androidx.compose.ui.platform.LocalConfiguration.current
+            val configuration = android.content.res.Configuration(base).apply {
+                if (portrait.value) { screenWidthDp = 600; screenHeightDp = 834 }
+            }
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalConfiguration provides configuration) {
+                androidx.compose.foundation.layout.Box(
+                    if (portrait.value) androidx.compose.ui.Modifier.requiredWidth(600.dp) else androidx.compose.ui.Modifier,
+                ) {
+                    AppTheme { RootView(linkedGallery, tabs, 0, overlays) }
+                }
+            }
+        }
+        compose.waitForIdle()
+        Thread.sleep(300)
+        compose.mainClock.advanceTimeBy(1500)
+        repeat(3) {
+            compose.onRoot().performTouchInput { swipeUp(startY = centerY + 300f, endY = centerY - 300f) }
+            compose.mainClock.advanceTimeBy(800)
+        }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/50_rotate_scrolled.png")
+        portrait.value = false
+        compose.mainClock.advanceTimeBy(800)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/51_rotate_landscape.png")
+    }
 
     @Test fun reading() {
         val tabs = Tabs()

@@ -68,6 +68,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -495,10 +496,23 @@ class HomeScreen : Screen(), TabRoot {
                         // after the feed make it taller instead of going in above
                         // the item the grid keeps in place.
                         fullLine("pinned") {
-                            Column {
-                                pinned.forEach { (row, items) ->
-                                    FeedTitle(tr(row.title), null)
-                                    PopularRow(items)
+                            if (pinned.size == 2 && com.atlanyuey.aenht.ui.components.isWidePage()) {
+                                // Wide (a tablet held sideways): the two rows side by side.
+                                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                                    pinned.forEach { (row, items) ->
+                                        // Each row scrolls inside its own half.
+                                        Column(Modifier.weight(1f).clipToBounds()) {
+                                            FeedTitle(tr(row.title), null)
+                                            PopularRow(items)
+                                        }
+                                    }
+                                }
+                            } else {
+                                Column {
+                                    pinned.forEach { (row, items) ->
+                                        FeedTitle(tr(row.title), null)
+                                        PopularRow(items)
+                                    }
                                 }
                             }
                         }
