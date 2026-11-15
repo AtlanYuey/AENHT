@@ -513,10 +513,12 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
         val navigator = LocalNavigator.current
         val card = d.summary(preview)
         Column {
-            SectionTitle(tr("Pages")) {
+            val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+            // Tapped: the row goes to the first page; again: back to where it was.
+            val jump = com.atlanyuey.aenht.ui.components.rememberRowJump(rowState)
+            SectionTitle(tr("Pages"), Modifier.clickable(interactionSource = null, indication = null, onClick = jump)) {
                 if (d.pages > 1) TextButton(tr("See All"), { navigator.push(EhPagesScreen(d, card)) })
             }
-            val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
             com.atlanyuey.aenht.ui.components.FollowReader(d.gid.toInt(), rowState, d.thumbnails.size)
             LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(d.thumbnails, key = { it.page }) { thumb ->

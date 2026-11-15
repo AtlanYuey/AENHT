@@ -582,13 +582,19 @@ private struct PreviewSection: View {
     @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row (the one being read, see followsReader).
     @State private var centered: Int?
+    /// Where the row was when its title took it to the first page.
+    @State private var savedPage: Int?
 
     var body: some View {
         let source = ReaderSource(detail: detail)
         let height: CGFloat = sizeClass == .regular ? 220 : 160
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
+                // Tapped: the row goes to the first page; again: back to where it was.
                 SectionTitle(title: "Pages")
+                    .fixedSize()
+                    .contentShape(Rectangle())
+                    .onTapGesture { pagesTitleTapped() }
                 Spacer()
                 if detail.pages.count > 1 {
                     // By value: the reader it opens must show above it.
@@ -624,8 +630,24 @@ private struct PreviewSection: View {
             .scrollIndicators(.hidden)
             .contentMargins(.horizontal, 16, for: .scrollContent)
             .followsReader(gallery: detail.id, position: $centered)
+            .onScrollPhaseChange { _, phase in
+                // Scrolled by hand: the title goes to the first page again.
+                if phase == .interacting { savedPage = nil }
+            }
         }
         .padding(.top, 8)
+    }
+
+    private func pagesTitleTapped() {
+        withAnimation(.smooth) {
+            if let saved = savedPage {
+                savedPage = nil
+                centered = saved
+            } else {
+                savedPage = centered ?? 0
+                centered = 0
+            }
+        }
     }
 }
 

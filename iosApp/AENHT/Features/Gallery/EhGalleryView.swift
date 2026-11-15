@@ -98,6 +98,8 @@ struct EhGalleryView: View {
     @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row of pages (the one being read).
     @State private var centeredPage: Int?
+    /// Where the row was when its title took it to the first page.
+    @State private var savedPage: Int?
 
     init(route: EhGalleryRoute) {
         _model = State(initialValue: EhGalleryModel(route: route))
@@ -411,7 +413,21 @@ struct EhGalleryView: View {
         let card = model.card ?? GalleryItem(ehDetail: detail, preview: nil)
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
+                // Tapped: the row goes to the first page; again: back to where it was.
                 SectionTitle(title: "Pages")
+                    .fixedSize()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.smooth) {
+                            if let saved = savedPage {
+                                savedPage = nil
+                                centeredPage = saved
+                            } else {
+                                savedPage = centeredPage ?? 0
+                                centeredPage = 0
+                            }
+                        }
+                    }
                 if detail.pages > 1 {
                     NavigationLink("See All", value: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card))
                         .padding(.trailing)
@@ -439,6 +455,9 @@ struct EhGalleryView: View {
             }
             .scrollIndicators(.hidden)
             .followsReader(gallery: Int(detail.gid), position: $centeredPage)
+            .onScrollPhaseChange { _, phase in
+                if phase == .interacting { savedPage = nil }
+            }
         }
     }
 

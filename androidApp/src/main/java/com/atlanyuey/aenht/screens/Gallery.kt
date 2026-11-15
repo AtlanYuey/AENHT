@@ -569,10 +569,12 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val height = if (maxWidth > 600.dp) 220.dp else 160.dp
             Column {
-                SectionTitle(tr("Pages")) {
+                val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
+                // Tapped: the row goes to the first page; again: back to where it was.
+                val jump = com.atlanyuey.aenht.ui.components.rememberRowJump(rowState)
+                SectionTitle(tr("Pages"), Modifier.clickable(interactionSource = null, indication = null, onClick = jump)) {
                     if (d.pages.size > 1) TextButton(tr("See All"), { navigator.push(PagesScreen(d)) })
                 }
-                val rowState = androidx.compose.foundation.lazy.rememberLazyListState()
                 com.atlanyuey.aenht.ui.components.FollowReader(d.id, rowState, d.pages.size)
                 LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(d.pages, key = { it.number }) { page ->
