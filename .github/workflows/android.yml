@@ -1,6 +1,8 @@
 name: Android
 
-# Shared Kotlin module tests and the Android app (debug APK + screenshot tests).
+# Shared Kotlin module tests and the Android app: screenshot tests on the
+# debug build, and the release APK signed with the project's key when the
+# signing secrets are set (otherwise the debug APK is published).
 on:
   push:
     branches: [main, dev, 'claude/**']
@@ -47,18 +49,56 @@ jobs:
       - name: Screenshot tests
         run: ./gradlew --no-daemon :androidApp:testDebugUnitTest
 
+      # The same key signs every release, so a new version installs over the
+      # last one. Pull requests from forks get no secrets and skip this.
+      - name: Build signed release APK
+        id: release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No signing secrets: publishing the debug APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/aenht-release.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          ./gradlew --no-daemon :androidApp:assembleRelease
+          APK=androidApp/build/outputs/apk/release/androidApp-release.apk
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/37.0.0/apksigner)
+          "$APKSIGNER" verify "$APK"
+          if "$APKSIGNER" verify --print-certs "$APK" | grep -q "CN=Android Debug"; then
+            echo "::error::The release APK was signed with the debug key: check the Android signing secrets."
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK" | grep "SHA-256" | head -1
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Remove the signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/aenht-release.jks"
+
       - name: Package APK
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' androidApp/build.gradle.kts)
           CODE=$(grep -oP 'versionCode = \K[0-9]+' androidApp/build.gradle.kts)
           mkdir -p dist
           cp androidApp/build/outputs/apk/debug/androidApp-debug.apk "dist/AENHT_${VERSION}_${CODE}_debug.apk"
-          cp androidApp/build/outputs/apk/debug/androidApp-debug.apk dist/AENHT-debug.apk
+          if [ "${{ steps.release.outputs.signed }}" = "true" ]; then
+            cp androidApp/build/outputs/apk/release/androidApp-release.apk "dist/AENHT_${VERSION}_${CODE}.apk"
+            cp androidApp/build/outputs/apk/release/androidApp-release.apk dist/AENHT.apk
+          else
+            cp androidApp/build/outputs/apk/debug/androidApp-debug.apk dist/AENHT.apk
+          fi
+          ls -lh dist
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: aenht-android-debug
+          name: aenht-android
           path: dist/AENHT_*.apk
           if-no-files-found: error
 
@@ -72,7 +112,9 @@ jobs:
           NOTES="Newest development build from the dev branch (commit ${GITHUB_SHA::7}). Experimental: not a release."
           gh release view dev-latest >/dev/null 2>&1 || \
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
-          for i in 1 2 3; do gh release upload dev-latest dist/AENHT-debug.apk --clobber && break; sleep 10; done
+          for i in 1 2 3; do gh release upload dev-latest dist/AENHT.apk --clobber && break; sleep 10; done
+          # Earlier builds were published as AENHT-debug.apk.
+          gh release delete-asset dev-latest AENHT-debug.apk -y 2>/dev/null || true
           gh release edit dev-latest --notes "$NOTES" || true
 
       - name: Upload screenshots

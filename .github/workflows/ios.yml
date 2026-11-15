@@ -1,6 +1,7 @@
 name: iOS
 
-# The SwiftUI app with the shared Kotlin framework (unsigned IPA).
+# The SwiftUI app with the shared Kotlin framework: a public unsigned IPA,
+# and a signed one for the owner's devices when the signing secrets are set.
 on:
   push:
     branches: [main, dev, 'claude/**']
@@ -81,8 +82,23 @@ jobs:
           grep -E "error:|e: " -A3 build.log | head -200 || true
           tail -80 build.log
 
-      # Signs the app when the signing secrets are set (see docs/ios-signing.md);
-      # without them the IPA stays unsigned for sideloading tools.
+      # The unsigned IPA is the public download (dev-latest, releases): anyone
+      # signs it with their own Apple ID. The signed one below holds the
+      # owner's provisioning profile (name, team, device ids), so it is kept
+      # only as a short-lived workflow artifact.
+      - name: Package unsigned IPA
+        working-directory: iosApp
+        run: |
+          APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Info.plist")
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$APP/Info.plist")
+          rm -rf build/ipa-unsigned && mkdir -p build/ipa-unsigned/Payload
+          cp -R "$APP" build/ipa-unsigned/Payload/
+          (cd build/ipa-unsigned && zip -qry "../AENHT_${VERSION}_${BUILD}_unsigned.ipa" Payload)
+          cp "build/AENHT_${VERSION}_${BUILD}_unsigned.ipa" build/AENHT.ipa
+          ls -lh build/*.ipa
+
+      # Signs the app when the signing secrets are set (see docs/ios-signing.md).
       - name: Sign
         id: sign
         working-directory: iosApp
@@ -126,6 +142,8 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k temp "$KEYCHAIN" > /dev/null
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
           IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -oE '"[^"]+"' | head -1 | tr -d '"')
+          # The logs of a public repository are public: hide who signs.
+          [ -n "$IDENTITY" ] && echo "::add-mask::$IDENTITY"
           if [ -z "$IDENTITY" ]; then echo "::error::The certificate has no valid code-signing identity (wrong password, expired or revoked?)"; security find-identity -p codesigning "$KEYCHAIN"; exit 1; fi
 
           # What the profile allows.
@@ -136,12 +154,14 @@ jobs:
           PROFILE_ID="${APPID#${TEAM}.}"
           EXPIRES=$($PB -c "Print :ExpirationDate" "$WORK/profile.plist")
           NAME=$($PB -c "Print :Name" "$WORK/profile.plist")
+          echo "::add-mask::$TEAM"
+          TEAM_NAME=$($PB -c "Print :TeamName" "$WORK/profile.plist" 2>/dev/null || true)
+          [ -n "$TEAM_NAME" ] && echo "::add-mask::$TEAM_NAME"
           DEVICES=$($PB -c "Print :ProvisionedDevices" "$WORK/profile.plist" 2>/dev/null | grep -c '^ ' || true)
           echo "Identity:  $IDENTITY"
           echo "Profile:   $NAME (team $TEAM, app id $PROFILE_ID, expires $EXPIRES, devices ${DEVICES:-all})"
           echo "### iOS signing" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Certificate: $IDENTITY" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Profile: $NAME, team $TEAM, app id \`$PROFILE_ID\`, expires $EXPIRES" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Profile: $NAME, app id \`$PROFILE_ID\`, expires $EXPIRES, ${DEVICES:-all} devices" >> "$GITHUB_STEP_SUMMARY"
 
           # A profile for one app id signs that bundle id; a wildcard keeps ours.
           BUNDLE_ID=$($PB -c "Print :CFBundleIdentifier" "$APP/Info.plist")
@@ -167,7 +187,6 @@ jobs:
           fi
           codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN" --entitlements "$WORK/entitlements.plist" --timestamp=none "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          codesign -d --entitlements - "$APP" 2>/dev/null | head -40 || true
           echo "signed=true" >> "$GITHUB_OUTPUT"
           echo "- Signed bundle id: \`$BUNDLE_ID\` ✅" >> "$GITHUB_STEP_SUMMARY"
 
@@ -175,7 +194,8 @@ jobs:
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/signing/signing.keychain-db" 2>/dev/null || true
 
-      - name: Package IPA
+      - name: Package signed IPA
+        if: steps.sign.outputs.signed == 'true'
         working-directory: iosApp
         run: |
           APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
@@ -183,16 +203,24 @@ jobs:
           BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$APP/Info.plist")
           rm -rf build/ipa && mkdir -p build/ipa/Payload
           cp -R "$APP" build/ipa/Payload/
-          SUFFIX=$([ "${{ steps.sign.outputs.signed }}" = "true" ] && echo "" || echo "_unsigned")
-          (cd build/ipa && zip -qry "../AENHT_${VERSION}_${BUILD}${SUFFIX}.ipa" Payload)
-          cp "build/AENHT_${VERSION}_${BUILD}${SUFFIX}.ipa" build/AENHT.ipa
-          ls -lh build/*.ipa
+          rm -rf build/signed && mkdir -p build/signed
+          (cd build/ipa && zip -qry "../signed/AENHT_${VERSION}_${BUILD}_signed.ipa" Payload)
+          ls -lh build/signed/
 
       - name: Upload IPA
         uses: actions/upload-artifact@v7
         with:
           name: aenht-ios
-          path: iosApp/build/AENHT_*.ipa
+          path: iosApp/build/AENHT_*_unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload signed IPA
+        if: steps.sign.outputs.signed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: aenht-ios-signed
+          path: iosApp/build/signed/*.ipa
+          retention-days: 3
           if-no-files-found: error
 
       # Every push to dev replaces the files of the "dev-latest" pre-release,
