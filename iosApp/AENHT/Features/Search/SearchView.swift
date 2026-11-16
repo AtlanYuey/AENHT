@@ -406,7 +406,7 @@ struct SearchResults: View {
             }
         }
         .task { await loadMatch() }
-        .toolbar {
+        .barToolbar {
             if showsMenus {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {

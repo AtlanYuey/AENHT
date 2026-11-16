@@ -77,7 +77,7 @@ struct HomeView: View {
         // The title's menu switches the site: with one site on, there is no menu (and no arrow).
         .modifier(SiteTitleMenu(sites: settings.enabledSites, current: settings.currentSite) { settings.homeSite = $0 })
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
-        .toolbar {
+        .barToolbar {
             if docked {
                 ToolbarItem(placement: .topBarLeading) {
                     SortMenu(compact: true)
@@ -396,12 +396,12 @@ private struct SiteTitleMenu: ViewModifier {
         if sites.count > 1 {
             if #available(iOS 26.0, *) {
                 // Its own glass, not the bar's shared background around it too.
-                content.toolbar {
+                content.barToolbar {
                     ToolbarItem(placement: .principal) { menu }
                         .sharedBackgroundVisibility(.hidden)
                 }
             } else {
-                content.toolbar {
+                content.barToolbar {
                     ToolbarItem(placement: .principal) { menu }
                 }
             }
@@ -435,11 +435,13 @@ private struct SiteTitleMenu: ViewModifier {
     }
 }
 
-/// The liquid glass of the bar's buttons (iOS 26), a material before.
+/// The liquid glass of the bar's buttons (iOS 26), a material before. Not
+/// interactive glass: the menu's own press shows the touch, and interactive
+/// glass in a menu's label stayed in its pressed shape after the menu closed.
 private struct SiteGlass: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.glassEffect(.regular.interactive(), in: Capsule())
+            content.glassEffect(.regular, in: Capsule())
         } else {
             content.background(.regularMaterial, in: Capsule())
         }

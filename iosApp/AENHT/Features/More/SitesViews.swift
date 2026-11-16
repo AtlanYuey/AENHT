@@ -222,7 +222,7 @@ struct EhLoginView: View {
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Log In")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .barToolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
                 }
