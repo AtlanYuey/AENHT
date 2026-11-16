@@ -65,9 +65,8 @@ struct GalleryList: View {
     var onScroll: ((_ offset: CGFloat, _ firstBlockBottom: CGFloat) -> Void)? = nil
 
     @Environment(AppSettings.self) private var settings
-    @Environment(\.galleryNamespace) private var namespace
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var opened: OpenedGallery?
+    @Environment(\.openRoute) private var openRoute
     @State private var chrome = AppChrome.shared
 
     var body: some View {
@@ -81,36 +80,11 @@ struct GalleryList: View {
             ),
             tabTap: tab == nil ? nil : chrome.tabTap
         )
-        .environment(\.openGallery) { item in opened = OpenedGallery(item) }
+        // Opened in the stack's path, like the links on the gallery's page (RoutedNavigationStack).
+        .environment(\.openGallery) { item in openRoute?(OpenedGallery(item)) }
         .ignoresSafeArea(.container)
         .background {
             if let tab { TabNavigationFinder(tab: tab).frame(width: 0, height: 0) }
-        }
-        .navigationDestination(item: $opened) { opened in
-            switch opened {
-            case let .nh(route):
-                GalleryDetailView(route: route)
-                    .environment(\.galleryNamespace, namespace)
-                    .modifier(ZoomTransition(id: "nh:\(route.id)", namespace: namespace))
-            case let .eh(route):
-                EhGalleryView(route: route)
-                    .environment(\.galleryNamespace, namespace)
-                    .modifier(ZoomTransition(id: "eh:\(route.gid)", namespace: namespace))
-            }
-        }
-    }
-}
-
-/// The zoom from the card to the gallery's page (as `galleryDestinations` does).
-private struct ZoomTransition: ViewModifier {
-    let id: String
-    let namespace: Namespace.ID?
-
-    func body(content: Content) -> some View {
-        if let namespace {
-            content.navigationTransition(.zoom(sourceID: id, in: namespace))
-        } else {
-            content
         }
     }
 }
@@ -180,7 +154,10 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
             self?.section(at: index, environment: environment)
         }
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .clear
+        // Cells are drawn again when the width changes (the visible ones): none kept ready off screen.
+        collectionView.isPrefetchingEnabled = false
         collectionView.delegate = self
         collectionView.allowsSelection = false
         collectionView.alwaysBounceVertical = true
@@ -192,7 +169,13 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
             collectionView.topEdgeEffect.style = .soft
             collectionView.bottomEdgeEffect.style = .soft
         }
-        view = collectionView
+        // In a view of its own: the width change is handled after this view's
+        // layout, not inside the collection view's own.
+        let root = UIView()
+        root.backgroundColor = .clear
+        collectionView.frame = root.bounds
+        root.addSubview(collectionView)
+        view = root
 
         let cell = UICollectionView.CellRegistration<UICollectionViewCell, String> { [weak self] cell, indexPath, id in
             self?.configure(cell, id: id, at: indexPath)
@@ -502,10 +485,13 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         // the same pass: during a rotation, inside its animation).
         collectionView.collectionViewLayout.invalidateLayout()
         collectionView.layoutIfNeeded()
-        // The cards drawn again at their new size (their titles may take other lines).
-        var snapshot = dataSource.snapshot()
-        snapshot.reconfigureItems(snapshot.itemIdentifiers)
-        dataSource.apply(snapshot, animatingDifferences: false)
+        // The cards on screen drawn again at their new size (their titles may take
+        // other lines); the others are drawn when they come on screen.
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            guard let cell = collectionView.cellForItem(at: indexPath),
+                  let id = dataSource.itemIdentifier(for: indexPath) else { continue }
+            configure(cell, id: id, at: indexPath)
+        }
         collectionView.layoutIfNeeded()
         let inset = collectionView.adjustedContentInset
         if atTop {

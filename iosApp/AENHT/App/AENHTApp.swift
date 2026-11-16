@@ -108,7 +108,7 @@ struct RootView: View {
             }
         }
         .sheet(item: $openedFromClipboard) { link in
-            NavigationStack {
+            RoutedNavigationStack {
                 Group {
                     switch link {
                     case let .nh(id): GalleryDetailView(route: GalleryRoute(id: id))
@@ -134,22 +134,22 @@ struct RootView: View {
             selection = tab
         })) {
             Tab(settings.currentSite.displayName, systemImage: "house", value: AppTab.home) {
-                NavigationStack {
+                RoutedNavigationStack {
                     HomeView().galleryDestinations()
                 }
             }
             Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
-                NavigationStack {
+                RoutedNavigationStack {
                     FavoritesView().galleryDestinations()
                 }
             }
             Tab("History", systemImage: "clock", value: AppTab.history) {
-                NavigationStack {
+                RoutedNavigationStack {
                     HistoryView().galleryDestinations()
                 }
             }
             Tab("Me", systemImage: "person.crop.circle", value: AppTab.more) {
-                NavigationStack {
+                RoutedNavigationStack {
                     MoreView().galleryDestinations()
                 }
             }

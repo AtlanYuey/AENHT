@@ -24,7 +24,7 @@ struct MoreTab: View {
                         // The tab bar is at the bottom of this column.
                         .safeAreaInset(edge: .bottom) { Color.clear.frame(height: TabNavigators.shared.bottomInset) }
                 } detail: {
-                    NavigationStack {
+                    RoutedNavigationStack {
                         MorePage.view(for: page ?? .overview, selection: $page)
                             .galleryDestinations()
                             // The Me tab button goes back one page at a time, on this side.
@@ -37,7 +37,7 @@ struct MoreTab: View {
                 .onAppear { chrome.meColumnWidth = Self.columnWidth }
                 .onDisappear { chrome.meColumnWidth = nil }
             } else {
-                NavigationStack {
+                RoutedNavigationStack {
                     MoreView().galleryDestinations()
                 }
             }

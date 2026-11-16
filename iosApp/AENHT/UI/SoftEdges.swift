@@ -31,44 +31,15 @@ extension View {
     }
 }
 
-/// Soft edges at the top and the bottom of a scrolling pane, under the bars,
-/// like iOS 26's scroll edge effect: the content blurs and fades out there
-/// instead of ending on a line.
+/// The top and bottom of a scrolling pane under the bars: the system's own
+/// soft scroll edge (iOS 26), like every other list in the app, for this
+/// pane too (it scrolls on its own beside another one).
 private struct PaneScrollEdges: ViewModifier {
     func body(content: Content) -> some View {
-        content
-            .modifier(NoSystemEdgeEffect())
-            .overlay {
-                GeometryReader { proxy in
-                    VStack(spacing: 0) {
-                        edge(top: true).frame(height: proxy.safeAreaInsets.top + 14)
-                        Spacer(minLength: 0)
-                        edge(top: false).frame(height: proxy.safeAreaInsets.bottom + 14)
-                    }
-                    .ignoresSafeArea()
-                }
-                .allowsHitTesting(false)
-            }
-    }
-
-    /// Blurred, then fading into the page's background (which follows Dark
-    /// Mode), like the system's soft edge.
-    private func edge(top: Bool) -> some View {
-        let mask = LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.45), .init(color: .clear, location: 1)],
-                                  startPoint: top ? .top : .bottom, endPoint: top ? .bottom : .top)
-        return ZStack {
-            Rectangle().fill(.ultraThinMaterial)
-            Color(.systemBackground).opacity(0.85)
-        }
-        .mask(mask)
-    }
-}
-
-/// The system's own edge effect is left out where the pane draws its own (not both).
-private struct NoSystemEdgeEffect: ViewModifier {
-    func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.scrollEdgeEffectHidden(true, for: .vertical)
+            content
+                .scrollEdgeEffectStyle(.soft, for: .all)
+                .scrollEdgeEffectHidden(false, for: .all)
         } else {
             content
         }

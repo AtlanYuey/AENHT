@@ -241,7 +241,7 @@ struct PadRootView: View {
             if ownsNavigation {
                 content()
             } else {
-                NavigationStack {
+                RoutedNavigationStack {
                     content().galleryDestinations()
                         .background(TabNavigationFinder(tab: value).frame(width: 0, height: 0))
                 }

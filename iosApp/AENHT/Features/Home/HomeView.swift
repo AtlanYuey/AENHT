@@ -3,8 +3,8 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
-    /// nhentai's random gallery, opened from the die at the top right.
-    @State private var randomRoute: GalleryRoute?
+    /// Opens nhentai's random gallery (the die at the top right) in this tab's stack.
+    @Environment(\.openRoute) private var openRoute
     /// The rows pinned above the feed (Settings › General › Pinned Rows), as loaded.
     @State private var rows: [HomeRow: [GalleryItem]] = [:]
     @State private var nhFeed = GalleryFeed.nh { page in
@@ -76,7 +76,6 @@ struct HomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         // The title's menu switches the site: with one site on, there is no menu (and no arrow).
         .modifier(SiteTitleMenu(sites: settings.enabledSites, current: settings.currentSite) { settings.homeSite = $0 })
-        .navigationDestination(item: $randomRoute) { GalleryDetailView(route: $0) }
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
             if docked {
@@ -97,7 +96,7 @@ struct HomeView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task {
-                            if let id = try? await NHClient.shared.randomID() { randomRoute = GalleryRoute(id: id, preview: nil) }
+                            if let id = try? await NHClient.shared.randomID() { openRoute?(.nh(GalleryRoute(id: id, preview: nil))) }
                         }
                     } label: {
                         Label("Random Gallery", systemImage: "dice")
@@ -382,10 +381,11 @@ struct PopularRow: View {
     }
 }
 
-/// The site switch: the site's name in the middle of the bar, in a glass
-/// capsule like the buttons at its sides (iOS 26), a menu of the sites, with
-/// room to touch (the system's title menu is just the text, and a touch a
-/// little above it scrolls the list to the top). Only when there is a site
+/// The site switch: the site's name in the middle of the bar, white and a
+/// little larger and bolder than a button's label (it names the site), on
+/// the same liquid glass as the buttons at its sides; a menu of the sites,
+/// with room to touch (the system's title menu is just the text, and a touch
+/// a little above it scrolls the list to the top). Only when there is a site
 /// to switch to; otherwise just the title.
 private struct SiteTitleMenu: ViewModifier {
     let sites: [SiteKind]
@@ -394,8 +394,16 @@ private struct SiteTitleMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         if sites.count > 1 {
-            content.toolbar {
-                ToolbarItem(placement: .principal) { menu }
+            if #available(iOS 26.0, *) {
+                // Its own glass, not the bar's shared background around it too.
+                content.toolbar {
+                    ToolbarItem(placement: .principal) { menu }
+                        .sharedBackgroundVisibility(.hidden)
+                }
+            } else {
+                content.toolbar {
+                    ToolbarItem(placement: .principal) { menu }
+                }
             }
         } else {
             content
@@ -408,18 +416,32 @@ private struct SiteTitleMenu: ViewModifier {
                 ForEach(sites) { Text($0.displayName).tag($0) }
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Text(current.displayName)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .font(.title3.weight(.bold))
                 Image(systemName: "chevron.down")
-                    .font(.caption.weight(.bold))
+                    .font(.footnote.weight(.bold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 16)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 18)
             .frame(minWidth: 120, minHeight: 44)
-            .contentShape(Rectangle())
+            .contentShape(Capsule())
+            .modifier(SiteGlass())
         }
+        // White (the label's own colors), not the accent of a button.
+        .tint(.primary)
         .accessibilityLabel(Text(current.displayName))
+    }
+}
+
+/// The liquid glass of the bar's buttons (iOS 26), a material before.
+private struct SiteGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content.background(.regularMaterial, in: Capsule())
+        }
     }
 }
