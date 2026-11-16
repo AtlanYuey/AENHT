@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SpreadsTest[jvm]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.245Z" hostname="76aa473ef4d2" time="0.002">
+  <properties/>
+  <testcase name="widePagesStayAlone[jvm]" classname="com.atlanyuey.aenht.shared.SpreadsTest" time="0.001"/>
+  <testcase name="oneStepTurnsOnePage[jvm]" classname="com.atlanyuey.aenht.shared.SpreadsTest" time="0.0"/>
+  <testcase name="coverAloneThenPairs[jvm]" classname="com.atlanyuey.aenht.shared.SpreadsTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

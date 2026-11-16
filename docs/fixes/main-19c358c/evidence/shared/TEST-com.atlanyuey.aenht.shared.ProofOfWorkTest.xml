@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProofOfWorkTest[jvm]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.046Z" hostname="76aa473ef4d2" time="0.025">
+  <properties/>
+  <testcase name="findsANonceWithLeadingZeroBits[jvm]" classname="com.atlanyuey.aenht.shared.ProofOfWorkTest" time="0.025"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

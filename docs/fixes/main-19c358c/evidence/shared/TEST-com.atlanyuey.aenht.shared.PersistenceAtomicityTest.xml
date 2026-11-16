@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="PersistenceAtomicityTest[jvm]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.009Z" hostname="76aa473ef4d2" time="0.036">
+  <properties/>
+  <testcase name="aFailedTombstoneWriteMustNotCommitAHalfDeletion[jvm]" classname="com.atlanyuey.aenht.shared.PersistenceAtomicityTest" time="0.021"/>
+  <testcase name="failedFavoriteDeletionKeepsItsMirrorRow[jvm]" classname="com.atlanyuey.aenht.shared.PersistenceAtomicityTest" time="0.008"/>
+  <testcase name="failedClearKeepsAllRowsAndDoesNotCommitAWildcard[jvm]" classname="com.atlanyuey.aenht.shared.PersistenceAtomicityTest" time="0.007"/>
+  <system-out><![CDATA[delete_failed=true local_row_retained=true tombstone_present=false after_old_remote_merge=true
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

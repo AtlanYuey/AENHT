@@ -1,0 +1,150 @@
+{
+  "syntax": {
+    "yaml": 4,
+    "xml": 23,
+    "python_ast": 20,
+    "javascript_syntax": 2,
+    "shell_syntax": 2,
+    "json": 18,
+    "svg": 15
+  },
+  "errors": [],
+  "i18n": [
+    {
+      "file": "androidApp/src/main/res/values-b+zh+Hans/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-ja/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-vi/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-fr/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-pt-rBR/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-de/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-in/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-th/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-b+zh+Hant/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-it/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-es/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-ru/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/res/values-ko/strings.xml",
+      "same_as_product": true
+    },
+    {
+      "file": "androidApp/src/main/java/com/atlanyuey/aenht/core/L10nKeys.kt",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/ru.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/th.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/fr.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/es.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/vi.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/zh-Hans.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/en.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/ja.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/id.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/de.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/ko.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/it.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/zh-Hant.lproj/Localizable.strings",
+      "same_as_product": true
+    },
+    {
+      "file": "iosApp/AENHT/Resources/pt-BR.lproj/Localizable.strings",
+      "same_as_product": true
+    }
+  ],
+  "models": [
+    {
+      "file": "AnimeSRPlus-coreml.tar",
+      "expected": "a2095d57403681abc6a383dba91a8987dcafc30b499de98be1d257a63c83801b",
+      "actual": "a2095d57403681abc6a383dba91a8987dcafc30b499de98be1d257a63c83801b",
+      "matches": true
+    },
+    {
+      "file": "AnimeSRPlus.param",
+      "expected": "2b8fb6e0ae4d2d85704ca08c119a2f5ea40add4f2ecd512eb7f4cd44b6127ed4",
+      "actual": "2b8fb6e0ae4d2d85704ca08c119a2f5ea40add4f2ecd512eb7f4cd44b6127ed4",
+      "matches": true
+    },
+    {
+      "file": "AnimeSRPlus.bin",
+      "expected": "fe01c269cfd10cdef8e018ab66ebe750cf79c7af4d1f9c16c737e1295229bacc",
+      "actual": "fe01c269cfd10cdef8e018ab66ebe750cf79c7af4d1f9c16c737e1295229bacc",
+      "matches": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atlanyuey.aenht.DownloadNavigationLayoutTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:26:40.597Z" hostname="76aa473ef4d2" time="4.261">
+  <properties/>
+  <testcase name="titleAndSelectDoNotOverlapAt360Dp" classname="com.atlanyuey.aenht.DownloadNavigationLayoutTest" time="4.058"/>
+  <testcase name="titleAndSelectDoNotOverlapAt393Dp" classname="com.atlanyuey.aenht.DownloadNavigationLayoutTest" time="0.194"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

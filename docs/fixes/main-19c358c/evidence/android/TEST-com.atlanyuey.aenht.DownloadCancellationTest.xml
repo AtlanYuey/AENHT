@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atlanyuey.aenht.DownloadCancellationTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:39:49.957Z" hostname="76aa473ef4d2" time="5.739">
+  <properties/>
+  <testcase name="anImmediateMetadataFailureDoesNotBlockTheNextResume" classname="com.atlanyuey.aenht.DownloadCancellationTest" time="5.077"/>
+  <testcase name="aCanceledOldDownloadMustNotReplaceANewerCommittedPage" classname="com.atlanyuey.aenht.DownloadCancellationTest" time="0.492"/>
+  <system-out><![CDATA[old_job_cancelled=true newer_committed_page_overwritten=false
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CommentFilterTest[jvm]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:30.592Z" hostname="76aa473ef4d2" time="0.003">
+  <properties/>
+  <testcase name="commentRules[jvm]" classname="com.atlanyuey.aenht.shared.CommentFilterTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

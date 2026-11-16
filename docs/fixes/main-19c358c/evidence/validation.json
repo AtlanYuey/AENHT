@@ -1,0 +1,45 @@
+{
+  "base": "19c358ce15a68e8be938800e60c86b83216dea11",
+  "code_commit": "0702f19ec1b092666f25939cca37b831e4381f11",
+  "branch": "fix/pre-release-main-19c358c",
+  "audit_commit": "b62af888ebebbd17cab1a5ad3b6942ac2cbc249c",
+  "observedAtUTC": "2026-11-16T22:48:07.385981+00:00",
+  "tests": {
+    "shared": {
+      "tests": 80,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android": {
+      "tests": 58,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 49,
+    "Hint": 9
+  },
+  "release_controls": {
+    "cases": 12,
+    "expectations_met": 12,
+    "real_upload": false
+  },
+  "product_files": 358,
+  "changed_product_files": 78,
+  "ios": {
+    "fix_build": "not executed",
+    "xctest_authored": 8,
+    "xctest_executed": 0,
+    "physical_device_available": false
+  },
+  "publication": {
+    "main_modified": false,
+    "dev_modified": false,
+    "software_published": false
+  },
+  "product_hashes_match_recorded_inputs": true
+}

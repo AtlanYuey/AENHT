@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AppSupportTest[jvm]" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:30.459Z" hostname="76aa473ef4d2" time="0.005">
+  <properties/>
+  <testcase name="versions[jvm]" classname="com.atlanyuey.aenht.shared.AppSupportTest" time="0.003"/>
+  <testcase name="redactsSecrets[jvm]" classname="com.atlanyuey.aenht.shared.AppSupportTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

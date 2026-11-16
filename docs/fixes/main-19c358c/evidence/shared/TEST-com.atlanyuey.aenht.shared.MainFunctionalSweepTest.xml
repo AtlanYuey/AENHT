@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MainFunctionalSweepTest[jvm]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:31.819Z" hostname="76aa473ef4d2" time="0.169">
+  <properties/>
+  <testcase name="aFailedLaterFavoritesPagePreservesTheExistingMirror[jvm]" classname="com.atlanyuey.aenht.shared.MainFunctionalSweepTest" time="0.016"/>
+  <testcase name="successfulFavoritesSyncKeepsKnownTimesAndAddsNewFavorites[jvm]" classname="com.atlanyuey.aenht.shared.MainFunctionalSweepTest" time="0.01"/>
+  <testcase name="spreadNavigationKeepsEveryRealPageReachableAcrossPairingModes[jvm]" classname="com.atlanyuey.aenht.shared.MainFunctionalSweepTest" time="0.125"/>
+  <testcase name="rereadingAfterDeletionSurvivesAnOlderRemoteReadAndDeletion[jvm]" classname="com.atlanyuey.aenht.shared.MainFunctionalSweepTest" time="0.018"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

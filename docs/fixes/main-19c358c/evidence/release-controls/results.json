@@ -1,0 +1,134 @@
+[
+  {
+    "platform": "android",
+    "purpose": "formal",
+    "case": "first-success",
+    "attempts": 1,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "android",
+    "purpose": "formal",
+    "case": "third-success",
+    "attempts": 3,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\nfake-gh-attempt 2 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\nfake-gh-attempt 3 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "android",
+    "purpose": "formal",
+    "case": "all-fail",
+    "attempts": 3,
+    "exit_code": 1,
+    "expected_success": false,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\nfake-gh-attempt 2 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\nfake-gh-attempt 3 release upload audit-local-only dist/AENHT-0.2.0.apk --clobber\n::error::APK upload failed after three attempts\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "formal",
+    "case": "first-success",
+    "attempts": 1,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "formal",
+    "case": "third-success",
+    "attempts": 3,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\nfake-gh-attempt 2 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\nfake-gh-attempt 3 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "formal",
+    "case": "all-fail",
+    "attempts": 3,
+    "exit_code": 1,
+    "expected_success": false,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\nfake-gh-attempt 2 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\nfake-gh-attempt 3 release upload audit-local-only iosApp/build/AENHT-0.2.0.ipa --clobber\n::error::IPA upload failed after three attempts\n",
+    "stderr": ""
+  },
+  {
+    "platform": "android",
+    "purpose": "development",
+    "case": "first-success",
+    "attempts": 1,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest dist/AENHT.apk --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "android",
+    "purpose": "development",
+    "case": "third-success",
+    "attempts": 3,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest dist/AENHT.apk --clobber\nfake-gh-attempt 2 release upload dev-latest dist/AENHT.apk --clobber\nfake-gh-attempt 3 release upload dev-latest dist/AENHT.apk --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "android",
+    "purpose": "development",
+    "case": "all-fail",
+    "attempts": 3,
+    "exit_code": 1,
+    "expected_success": false,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest dist/AENHT.apk --clobber\nfake-gh-attempt 2 release upload dev-latest dist/AENHT.apk --clobber\nfake-gh-attempt 3 release upload dev-latest dist/AENHT.apk --clobber\n::error::APK upload failed after three attempts\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "development",
+    "case": "first-success",
+    "attempts": 1,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest iosApp/build/AENHT.ipa --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "development",
+    "case": "third-success",
+    "attempts": 3,
+    "exit_code": 0,
+    "expected_success": true,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest iosApp/build/AENHT.ipa --clobber\nfake-gh-attempt 2 release upload dev-latest iosApp/build/AENHT.ipa --clobber\nfake-gh-attempt 3 release upload dev-latest iosApp/build/AENHT.ipa --clobber\n",
+    "stderr": ""
+  },
+  {
+    "platform": "ios",
+    "purpose": "development",
+    "case": "all-fail",
+    "attempts": 3,
+    "exit_code": 1,
+    "expected_success": false,
+    "contract_passed": true,
+    "stdout": "fake-gh-attempt 1 release upload dev-latest iosApp/build/AENHT.ipa --clobber\nfake-gh-attempt 2 release upload dev-latest iosApp/build/AENHT.ipa --clobber\nfake-gh-attempt 3 release upload dev-latest iosApp/build/AENHT.ipa --clobber\n::error::IPA upload failed after three attempts\n",
+    "stderr": ""
+  }
+]

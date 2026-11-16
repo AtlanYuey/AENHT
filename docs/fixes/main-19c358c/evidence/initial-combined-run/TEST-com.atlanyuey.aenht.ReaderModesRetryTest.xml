@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atlanyuey.aenht.ReaderModesRetryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:26:47.371Z" hostname="76aa473ef4d2" time="0.983">
+  <properties/>
+  <testcase name="doublePageCanFailAndRetryTwice" classname="com.atlanyuey.aenht.ReaderModesRetryTest" time="0.55"/>
+  <testcase name="continuousPageCanFailAndRetryTwice" classname="com.atlanyuey.aenht.ReaderModesRetryTest" time="0.428"/>
+  <system-out><![CDATA[mode=LeftToRight double=Always actual_loader_requests=4 first=2 second=3
+mode=Vertical double=Off actual_loader_requests=4 first=2 second=3
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

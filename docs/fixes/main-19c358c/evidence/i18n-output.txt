@@ -1,0 +1,14 @@
+ja: 559 strings
+zh-Hant: 559 strings
+ko: 559 strings
+es: 559 strings
+fr: 559 strings
+de: 559 strings
+it: 559 strings
+pt-BR: 559 strings
+ru: 559 strings
+vi: 559 strings
+th: 559 strings
+id: 559 strings
+
+564 keys, 14 languages

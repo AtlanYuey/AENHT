@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="TranslatorTest[jvm]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.248Z" hostname="76aa473ef4d2" time="2.073">
+  <properties/>
+  <testcase name="refusalFallsToTheNextModelThenMicrosoftThenTheDevice[jvm]" classname="com.atlanyuey.aenht.shared.TranslatorTest" time="2.027"/>
+  <testcase name="usageIsCountedAndTheSpendingLimitHandsOver[jvm]" classname="com.atlanyuey.aenht.shared.TranslatorTest" time="0.014"/>
+  <testcase name="requestParametersFollowThePresetAndTheCustomJson[jvm]" classname="com.atlanyuey.aenht.shared.TranslatorTest" time="0.027"/>
+  <testcase name="aModelThatAnswersIsUsed[jvm]" classname="com.atlanyuey.aenht.shared.TranslatorTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

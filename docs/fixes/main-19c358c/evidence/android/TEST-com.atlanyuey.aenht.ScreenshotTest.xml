@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.atlanyuey.aenht.ScreenshotTest" tests="38" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:40:03.076Z" hostname="76aa473ef4d2" time="36.432">
+  <properties/>
+  <testcase name="accounts" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.157"/>
+  <testcase name="ehHomeList" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.939"/>
+  <testcase name="searchHistory" classname="com.atlanyuey.aenht.ScreenshotTest" time="2.176"/>
+  <testcase name="mixedHistory" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.747"/>
+  <testcase name="historyCards" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.781"/>
+  <testcase name="ehHome" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.928"/>
+  <testcase name="galleryExpanded" classname="com.atlanyuey.aenht.ScreenshotTest" time="2.154"/>
+  <testcase name="reader" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.097"/>
+  <testcase name="search" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.165"/>
+  <testcase name="tablet" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.875"/>
+  <testcase name="readerSwipeFade" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.606"/>
+  <testcase name="homeDark" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.85"/>
+  <testcase name="gallery" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.89"/>
+  <testcase name="searchNumber" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.747"/>
+  <testcase name="cardSize" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.618"/>
+  <testcase name="home" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.738"/>
+  <testcase name="menu" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.852"/>
+  <testcase name="more" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.604"/>
+  <testcase name="readerFade" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.344"/>
+  <testcase name="downloadsList" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.771"/>
+  <testcase name="alert" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.878"/>
+  <testcase name="sites" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.68"/>
+  <testcase name="ehGallery" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.814"/>
+  <testcase name="historyList" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.686"/>
+  <testcase name="tabletLandscape" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.779"/>
+  <testcase name="readerRetry" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.004"/>
+  <testcase name="homeScrolled" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.467"/>
+  <testcase name="homeCompact" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.782"/>
+  <testcase name="rotationKeepsThePlace" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.006"/>
+  <testcase name="history" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.649"/>
+  <testcase name="reading" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.613"/>
+  <testcase name="tabletLandscapeEhGallery" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.783"/>
+  <testcase name="tabletLandscapeGallery" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.802"/>
+  <testcase name="downloadsCards" classname="com.atlanyuey.aenht.ScreenshotTest" time="1.118"/>
+  <testcase name="galleryChinese" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.886"/>
+  <testcase name="aboutEgg" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.917"/>
+  <testcase name="appearance" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.606"/>
+  <testcase name="tabletSearch" classname="com.atlanyuey.aenht.ScreenshotTest" time="0.909"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

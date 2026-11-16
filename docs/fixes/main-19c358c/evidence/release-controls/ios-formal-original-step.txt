@@ -1,0 +1,8 @@
+VERSION=$(grep -oE 'MARKETING_VERSION: "[^"]+"' iosApp/project.yml | sed -E 's/.*"(.*)"/\1/')
+cp iosApp/build/AENHT.ipa "iosApp/build/AENHT-${VERSION}.ipa"
+uploaded=false
+for i in 1 2 3; do
+  if gh release upload "${{ github.event.release.tag_name }}" "iosApp/build/AENHT-${VERSION}.ipa" --clobber; then uploaded=true; break; fi
+  if [ "$i" -lt 3 ]; then sleep 10; fi
+done
+if [ "$uploaded" != true ]; then echo "::error::IPA upload failed after three attempts"; exit 1; fi

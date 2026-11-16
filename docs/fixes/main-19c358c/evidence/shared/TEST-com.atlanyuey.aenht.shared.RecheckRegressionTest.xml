@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="RecheckRegressionTest[jvm]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.079Z" hostname="76aa473ef4d2" time="0.043">
+  <properties/>
+  <testcase name="persistentConflictsMustNeverFallBackToAnUnconditionalOverwrite[jvm]" classname="com.atlanyuey.aenht.shared.RecheckRegressionTest" time="0.032"/>
+  <testcase name="aSiteUrlEmbeddedInsideAnotherUrlsPathMustNotBeRecognised[jvm]" classname="com.atlanyuey.aenht.shared.RecheckRegressionTest" time="0.002"/>
+  <testcase name="aMissingFavoriteNoteFormMustNotBecomeAnEmptyNote[jvm]" classname="com.atlanyuey.aenht.shared.RecheckRegressionTest" time="0.009"/>
+  <system-out><![CDATA[persistent_conflict_put_conditions=["v1", "v2", "v3", "v4"]; final_error=WebDavException
+nested_url_result=null
+missing_note_form success=false, note=null
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

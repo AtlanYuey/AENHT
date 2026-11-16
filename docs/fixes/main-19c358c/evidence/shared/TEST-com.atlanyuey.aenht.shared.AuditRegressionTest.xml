@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AuditRegressionTest[jvm]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:30.465Z" hostname="76aa473ef4d2" time="0.11">
+  <properties/>
+  <testcase name="githubRateLimitMustNotBecomeAnEmptySuccessfulUpdateCheck[jvm]" classname="com.atlanyuey.aenht.shared.AuditRegressionTest" time="0.015"/>
+  <testcase name="olderRemoteTombstoneMustNotResurrectHistory[jvm]" classname="com.atlanyuey.aenht.shared.AuditRegressionTest" time="0.081"/>
+  <testcase name="futureSyncVersionMustNotBeSilentlyRewritten[jvm]" classname="com.atlanyuey.aenht.shared.AuditRegressionTest" time="0.014"/>
+  <system-out><![CDATA[after_merge deletedAt=300, historyPresent=false
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

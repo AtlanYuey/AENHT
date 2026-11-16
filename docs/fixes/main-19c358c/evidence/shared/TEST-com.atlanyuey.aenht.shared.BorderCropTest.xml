@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="BorderCropTest[jvm]" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:30.577Z" hostname="76aa473ef4d2" time="0.013">
+  <properties/>
+  <testcase name="keepsPagesWithoutPlainMargins[jvm]" classname="com.atlanyuey.aenht.shared.BorderCropTest" time="0.009"/>
+  <testcase name="trimsWhiteMargins[jvm]" classname="com.atlanyuey.aenht.shared.BorderCropTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

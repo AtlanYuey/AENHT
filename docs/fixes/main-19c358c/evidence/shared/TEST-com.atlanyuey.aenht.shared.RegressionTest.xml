@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="RegressionTest[jvm]" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:32.125Z" hostname="76aa473ef4d2" time="0.117">
+  <properties/>
+  <testcase name="aPageThatIsNotTheFavoritesIsNotAnEmptyFavoritesList[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.007"/>
+  <testcase name="aPageWithoutTheNoteFieldIsNotAnEmptyNote[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.006"/>
+  <testcase name="anOlderDeletionFromTheServerDoesNotBringHistoryBack[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.014"/>
+  <testcase name="anUploadDoesNotOverwriteAnotherDevicesNewerCopy[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.035"/>
+  <testcase name="aKeyCheckedWhileLoggingOutDoesNotLogBackIn[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.004"/>
+  <testcase name="aKeyThatCannotBeSavedLeavesTheLogin[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.003"/>
+  <testcase name="anEhLoginIsCheckedWithoutTouchingTheSavedOne[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.005"/>
+  <testcase name="aGalleryWithoutPagesHasNoSpreads[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.001"/>
+  <testcase name="linksWithHugeNumbersAreNotLinks[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.002"/>
+  <testcase name="aFileOfANewerVersionIsNotRewritten[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.002"/>
+  <testcase name="anExHentaiCookieForTheLoginBeforeIsNotSavedWithTheNewOne[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.003"/>
+  <testcase name="aRefusedUpdateCheckIsAnErrorNotAnEmptyList[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.007"/>
+  <testcase name="onlyTheSitesOwnHostsAreLinks[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.002"/>
+  <testcase name="theLogHidesCredentialsInHeadersAndLinks[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.0"/>
+  <testcase name="searchHistoryEntriesCarryTheirSite[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.001"/>
+  <testcase name="aServerThatKeepsChangingIsNeverOverwritten[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.018"/>
+  <testcase name="aRenewalOfTheLoginBeforeDoesNotReplaceTheNewOne[jvm]" classname="com.atlanyuey.aenht.shared.RegressionTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

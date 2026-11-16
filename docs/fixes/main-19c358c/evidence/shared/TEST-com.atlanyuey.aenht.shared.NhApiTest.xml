@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="NhApiTest[jvm]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:31.989Z" hostname="76aa473ef4d2" time="0.019">
+  <properties/>
+  <testcase name="renewsTheTokenOnceAndReplaysReads[jvm]" classname="com.atlanyuey.aenht.shared.NhApiTest" time="0.006"/>
+  <testcase name="parsesLatestAndSearch[jvm]" classname="com.atlanyuey.aenht.shared.NhApiTest" time="0.005"/>
+  <testcase name="keepsTheAccountWhenRenewalFails[jvm]" classname="com.atlanyuey.aenht.shared.NhApiTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

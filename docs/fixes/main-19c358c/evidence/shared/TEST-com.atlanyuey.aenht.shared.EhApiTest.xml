@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="EhApiTest[jvm]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T22:35:31.677Z" hostname="76aa473ef4d2" time="0.093">
+  <properties/>
+  <testcase name="favoritesNeedALoginAndPostTheForm[jvm]" classname="com.atlanyuey.aenht.shared.EhApiTest" time="0.007"/>
+  <testcase name="switchesToCompactAndSendsCookies[jvm]" classname="com.atlanyuey.aenht.shared.EhApiTest" time="0.068"/>
+  <testcase name="buildsSearchUrls[jvm]" classname="com.atlanyuey.aenht.shared.EhApiTest" time="0.002"/>
+  <testcase name="reportsBansAndNoAccess[jvm]" classname="com.atlanyuey.aenht.shared.EhApiTest" time="0.005"/>
+  <testcase name="picksUpExHentaiAccessAndUsesIt[jvm]" classname="com.atlanyuey.aenht.shared.EhApiTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
