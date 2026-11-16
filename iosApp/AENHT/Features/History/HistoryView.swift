@@ -89,7 +89,7 @@ struct HistoryView: View {
         }
         blocks.append(.view("bottom") { Color.clear.frame(height: 16) })
         // History is on the device: a double tap just goes to the top.
-        return GalleryList(blocks: blocks, tab: .history)
+        return GalleryList(blocks: blocks, tab: .history, hidesBars: false)
         .environment(\.galleryCoverBadge) { item in
             AnyView(ReadingProgressBar(entry: byID[item.uid]))
         }
