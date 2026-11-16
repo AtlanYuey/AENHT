@@ -357,6 +357,18 @@ struct SitesSettingsView: View {
                                                 set: { if $0 || settings.ehentaiEnabled { settings.nhentaiEnabled = $0 } }))
                 Toggle("E-Hentai", isOn: Binding(get: { settings.ehentaiEnabled },
                                                  set: { if $0 || settings.nhentaiEnabled { settings.ehentaiEnabled = $0 } }))
+                // Right under E-Hentai, while it's on.
+                if settings.ehentaiEnabled {
+                    Toggle(isOn: $settings.useExHentai) {
+                        VStack(alignment: .leading) {
+                            Text("Use ExHentai")
+                            if !ehSession.hasExHentai {
+                                Text("Needs an account with ExHentai access").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .disabled(!ehSession.hasExHentai)
+                }
             } header: {
                 Text("Sites in Use")
             } footer: {
@@ -399,15 +411,6 @@ struct SitesSettingsView: View {
                     } label: {
                         LabeledContent("Account", value: ehSession.isLoggedIn ? String(localized: "Logged In") : String(localized: "Not logged in"))
                     }
-                    Toggle(isOn: $settings.useExHentai) {
-                        VStack(alignment: .leading) {
-                            Text("Use ExHentai")
-                            if !ehSession.hasExHentai {
-                                Text("Needs an account with ExHentai access").font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .disabled(!ehSession.hasExHentai)
                 }
             }
         }

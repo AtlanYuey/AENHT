@@ -321,7 +321,14 @@ class SitesScreen : Screen() {
         GroupedListScreen(tr("Sites")) {
             section("Sites in Use", footer = { FooterText(tr("A site that is turned off disappears everywhere in the app. At least one stays on.")) }) {
                 ToggleRow("nhentai", AppSettings.nhentaiEnabled, { if (it || AppSettings.ehentaiEnabled) AppSettings.nhentaiEnabled = it })
-                ToggleRow("E-Hentai", AppSettings.ehentaiEnabled, { if (it || AppSettings.nhentaiEnabled) AppSettings.ehentaiEnabled = it }, last = true)
+                ToggleRow("E-Hentai", AppSettings.ehentaiEnabled, { if (it || AppSettings.nhentaiEnabled) AppSettings.ehentaiEnabled = it },
+                    last = !AppSettings.ehentaiEnabled)
+                // Right under E-Hentai, while it's on.
+                if (AppSettings.ehentaiEnabled) {
+                    ToggleRow(tr("Use ExHentai"), AppSettings.useExHentai && EhSession.hasExHentai, {
+                        if (EhSession.hasExHentai) AppSettings.useExHentai = it
+                    }, last = true, subtitle = if (EhSession.hasExHentai) null else tr("Needs an account with ExHentai access"))
+                }
             }
             if (both) {
                 section("Show When Opened", footer = { FooterText(tr("“Same as Home” shows the site the home page is on.")) }) {
@@ -339,10 +346,7 @@ class SitesScreen : Screen() {
             if (AppSettings.ehentaiEnabled) {
                 section("E-Hentai") {
                     ListRow(tr("Account"), value = if (EhSession.isLoggedIn) tr("Logged In") else tr("Not logged in"), chevron = true,
-                        onClick = { navigator.push(if (EhSession.isLoggedIn) EhAccountScreen() else EhLoginScreen()) })
-                    ToggleRow(tr("Use ExHentai"), AppSettings.useExHentai && EhSession.hasExHentai, {
-                        if (EhSession.hasExHentai) AppSettings.useExHentai = it
-                    }, last = true, subtitle = if (EhSession.hasExHentai) null else tr("Needs an account with ExHentai access"))
+                        onClick = { navigator.push(if (EhSession.isLoggedIn) EhAccountScreen() else EhLoginScreen()) }, last = true)
                 }
             }
         }
