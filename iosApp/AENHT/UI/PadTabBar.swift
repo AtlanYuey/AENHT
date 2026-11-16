@@ -18,6 +18,9 @@ final class AppChrome {
 
     /// The last tap on the button of the tab that shows (see tabReselected).
     var tabTap = TabTap(tab: .home, count: 0)
+
+    /// The Me tab is two columns (MoreTab): the left one's width, where the tab bar sits.
+    var meColumnWidth: CGFloat?
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s
@@ -177,9 +180,10 @@ struct PadRootView: View {
             tab(.home) { HomeView() }
             tab(.favorites) { FavoritesView() }
             tab(.history) { HistoryView() }
-            tab(.more) { MoreView() }
+            // Its own navigation (two columns on a wide screen).
+            tab(.more, ownsNavigation: true) { MoreTab() }
         }
-        .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar, collapsed: barsHidden) {
+        .modifier(BottomBar(alignment: alignment, column: barColumn, visible: !chrome.hidesTabBar, collapsed: barsHidden) {
             PadTabBar(selection: $selection)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                     barFrame = frame
@@ -192,17 +196,21 @@ struct PadRootView: View {
         .background(TouchObserver { touch in
             // Menus and sheets aren't the hand on the screen (and moving the
             // bar under an open menu would close it).
-            guard isPad, settings.followHand, !touch.onOverlay, !chrome.hidesTabBar, !chrome.barsHidden,
+            guard isPad, settings.followHand, barColumn == nil, !touch.onOverlay, !chrome.hidesTabBar, !chrome.barsHidden,
                   !barFrame.insetBy(dx: -10, dy: -10).contains(touch.location) else { return }
             hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })
         .onChange(of: selection) { chrome.barsHidden = false }
         .onChange(of: chrome.hidesTabBar, initial: true) { _, hidden in TabNavigators.shared.barHidden = hidden }
         .animation(.spring(duration: settings.followSpeed.duration, bounce: 0.15), value: alignment)
+        .animation(.spring(duration: 0.35, bounce: 0.15), value: barColumn)
         .animation(.smooth(duration: 0.25), value: chrome.hidesTabBar)
     }
 
     private var barsHidden: Bool { settings.hideBarsOnScroll && chrome.barsHidden }
+
+    /// Me in two columns: the bar in the middle of the left one, the right one left free.
+    private var barColumn: CGFloat? { selection == .more ? chrome.meColumnWidth : nil }
     private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     private var alignment: HorizontalAlignment {
@@ -226,12 +234,18 @@ struct PadRootView: View {
     }
 
     /// Every tab keeps its own navigation stack; only the selected one shows.
-    private func tab<Content: View>(_ value: AppTab, @ViewBuilder content: () -> Content) -> some View {
+    private func tab<Content: View>(_ value: AppTab, ownsNavigation: Bool = false, @ViewBuilder content: () -> Content) -> some View {
         // There is no search tab: Home has the search.
         let selected = selection == value || (value == .home && selection == .search)
-        return NavigationStack {
-            content().galleryDestinations()
-                .background(TabNavigationFinder(tab: value).frame(width: 0, height: 0))
+        return Group {
+            if ownsNavigation {
+                content()
+            } else {
+                NavigationStack {
+                    content().galleryDestinations()
+                        .background(TabNavigationFinder(tab: value).frame(width: 0, height: 0))
+                }
+            }
         }
         .opacity(selected ? 1 : 0)
         .allowsHitTesting(selected)
@@ -244,6 +258,8 @@ struct PadRootView: View {
 /// but keeps its space, so the lists don't move.
 private struct BottomBar<Bar: View>: ViewModifier {
     let alignment: HorizontalAlignment
+    /// Centered in a column this wide at the leading edge, instead of [alignment].
+    var column: CGFloat? = nil
     let visible: Bool
     let collapsed: Bool
     @ViewBuilder let bar: () -> Bar
@@ -251,7 +267,13 @@ private struct BottomBar<Bar: View>: ViewModifier {
     // Over the pages: the room under it is the navigation controllers'
     // own safe area (TabNavigators.bottomInset), which pushed pages keep.
     func body(content: Content) -> some View {
-        content.overlay(alignment: Alignment(horizontal: alignment, vertical: .bottom)) { placedBar }
+        content.overlay(alignment: column == nil ? Alignment(horizontal: alignment, vertical: .bottom) : .bottomLeading) {
+            if let column {
+                placedBar.frame(width: column)
+            } else {
+                placedBar
+            }
+        }
     }
 
     @ViewBuilder private var placedBar: some View {

@@ -547,9 +547,13 @@
     <string name="l_544">With Fade on Swipe, the pages don\'t move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.</string>
     <string name="l_545">The login couldn\'t be saved on this device.</string>
     <string name="l_546">Another device is syncing at the same time. Nothing was overwritten; try again in a moment.</string>
-    <string name="l_547">Settings Backup</string>
-    <string name="l_548">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_549">Android\'s own backup also keeps these settings.</string>
-    <string name="l_550">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_551">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_547">Overview</string>
+    <string name="l_548">Not set up</string>
+    <string name="l_549">Not synced yet</string>
+    <string name="l_550">Version</string>
+    <string name="l_551">Settings Backup</string>
+    <string name="l_552">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_553">Android\'s own backup also keeps these settings.</string>
+    <string name="l_554">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_555">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

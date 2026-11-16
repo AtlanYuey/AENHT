@@ -546,3 +546,7 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "'쓸어서 페이드로 넘기기'를 켜면 페이지가 손가락을 따라 움직이지 않습니다. 쓸어넘기면 이전 또는 다음 페이지로 넘어가고, 새 페이지는 쓸어넘긴 방향을 따라 서서히 나타납니다.";
 "The login couldn't be saved on this device." = "이 기기에 로그인 정보를 저장할 수 없습니다.";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "다른 기기가 동시에 동기화하고 있습니다. 덮어쓴 내용은 없습니다. 잠시 후 다시 시도하세요.";
+"Overview" = "개요";
+"Not set up" = "설정 안 됨";
+"Not synced yet" = "아직 동기화 안 됨";
+"Version" = "버전";

@@ -547,9 +547,13 @@
     <string name="l_544">开启「滑动渐变翻页」后，页面不再随手指移动：滑动一下就翻到上一页或下一页，新页面沿着你滑动的方向渐变出现。</string>
     <string name="l_545">无法在此设备上保存登录信息。</string>
     <string name="l_546">另一台设备正在同时同步。没有覆盖任何内容，请稍后再试。</string>
-    <string name="l_547">设置备份</string>
-    <string name="l_548">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_549">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_550">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_551">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_547">概览</string>
+    <string name="l_548">未设置</string>
+    <string name="l_549">尚未同步</string>
+    <string name="l_550">版本</string>
+    <string name="l_551">设置备份</string>
+    <string name="l_552">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_553">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_554">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_555">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

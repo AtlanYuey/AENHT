@@ -546,4 +546,8 @@ T = [
     "Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.",
     "Login tidak dapat disimpan di perangkat ini.",
     "Perangkat lain sedang menyinkronkan pada saat yang sama. Tidak ada yang ditimpa; coba lagi sebentar lagi.",
+    "Ringkasan",
+    "Belum diatur",
+    "Belum disinkronkan",
+    "Versi",
 ]

@@ -546,3 +546,7 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "เมื่อเปิด “จางเมื่อปัด” หน้าจะไม่เลื่อนตามนิ้ว การปัดจะเปลี่ยนไปหน้าถัดไปหรือหน้าก่อนหน้า และหน้าใหม่จะค่อยๆ ปรากฏตามทิศทางที่คุณปัด";
 "The login couldn't be saved on this device." = "ไม่สามารถบันทึกการเข้าสู่ระบบบนอุปกรณ์นี้ได้";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "มีอุปกรณ์อื่นกำลังซิงค์พร้อมกัน ไม่มีสิ่งใดถูกเขียนทับ โปรดลองอีกครั้งในอีกสักครู่";
+"Overview" = "ภาพรวม";
+"Not set up" = "ยังไม่ได้ตั้งค่า";
+"Not synced yet" = "ยังไม่ได้ซิงค์";
+"Version" = "เวอร์ชัน";

@@ -546,3 +546,7 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Khi bật “Mờ dần khi vuốt”, trang không di chuyển theo ngón tay: vuốt sẽ chuyển sang trang sau hoặc trang trước, và trang mới hiện dần theo hướng bạn vuốt.";
 "The login couldn't be saved on this device." = "Không thể lưu thông tin đăng nhập trên thiết bị này.";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Một thiết bị khác đang đồng bộ cùng lúc. Không có gì bị ghi đè; hãy thử lại sau giây lát.";
+"Overview" = "Tổng quan";
+"Not set up" = "Chưa thiết lập";
+"Not synced yet" = "Chưa đồng bộ";
+"Version" = "Phiên bản";

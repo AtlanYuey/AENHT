@@ -546,4 +546,8 @@ T = [
     "Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.",
     "Die Anmeldung konnte auf diesem Gerät nicht gespeichert werden.",
     "Ein anderes Gerät synchronisiert gerade gleichzeitig. Es wurde nichts überschrieben; versuche es gleich noch einmal.",
+    "Übersicht",
+    "Nicht eingerichtet",
+    "Noch nicht synchronisiert",
+    "Version",
 ]

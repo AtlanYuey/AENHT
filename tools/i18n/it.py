@@ -546,4 +546,8 @@ T = [
     "Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.",
     "Impossibile salvare l’accesso su questo dispositivo.",
     "Un altro dispositivo sta sincronizzando nello stesso momento. Non è stato sovrascritto nulla; riprova tra poco.",
+    "Panoramica",
+    "Non configurato",
+    "Non ancora sincronizzato",
+    "Versione",
 ]

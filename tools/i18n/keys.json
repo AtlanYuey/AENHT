@@ -545,5 +545,9 @@
  "Fade on Swipe",
  "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.",
  "The login couldn't be saved on this device.",
- "Another device is syncing at the same time. Nothing was overwritten; try again in a moment."
+ "Another device is syncing at the same time. Nothing was overwritten; try again in a moment.",
+ "Overview",
+ "Not set up",
+ "Not synced yet",
+ "Version"
 ]

@@ -2,7 +2,37 @@ import Shared
 import SwiftUI
 import UIKit
 
+/// The Me page's entries: on a wide screen (an iPad held sideways) they are
+/// the left column and open in the right one (MoreTab).
+enum MorePage: Hashable {
+    case overview, accounts, downloads, sites, filters, translation, appearance, reading, general, iCloud, webDav, language, about
+
+    /// The page an entry opens; [selection] lets the overview open the others.
+    @MainActor @ViewBuilder
+    static func view(for page: MorePage, selection: Binding<MorePage?>) -> some View {
+        switch page {
+        case .overview: MoreOverview(selection: selection)
+        case .accounts: AccountsView()
+        case .downloads: DownloadsView()
+        case .sites: SitesSettingsView()
+        case .filters: FiltersSettingsView()
+        case .translation: TranslationSettingsView()
+        case .appearance: AppearanceSettingsView()
+        case .reading: ReadingSettingsView()
+        case .general: GeneralSettingsView()
+        case .iCloud: SyncSettingsView()
+        case .webDav: WebDavSettingsView()
+        case .language: LanguageSettingsView()
+        case .about: AboutView()
+        }
+    }
+}
+
 struct MoreView: View {
+    /// In the left column of a wide screen: the entry open in the right one
+    /// (nil: a page of its own, whose entries push their pages).
+    var selection: Binding<MorePage?>? = nil
+
     @Environment(UserSession.self) private var session
     @Environment(EhSession.self) private var ehSession
     @Environment(AppSettings.self) private var settings
@@ -17,74 +47,77 @@ struct MoreView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                // Both sites' accounts are one row; the next screen has a section per site.
-                NavigationLink {
-                    AccountsView()
-                } label: {
-                    HStack(spacing: 14) {
-                        AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 56)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Accounts")
-                                .font(.title3.weight(.semibold))
-                            Text(accountsSummary)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            Section {
-                NavigationLink(value: DownloadsRoute()) {
-                    SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
-                        .badge(downloads.records.filter { $0.state == .downloading }.count)
-                }
-            }
-
-            Section {
-                NavigationLink { SitesSettingsView() } label: {
-                    SettingsLabel("Sites", systemImage: "square.stack.3d.up.fill", color: .pink)
-                }
-                NavigationLink { FiltersSettingsView() } label: {
-                    SettingsLabel("Filters", systemImage: "eye.slash.fill", color: .gray)
-                }
-                NavigationLink { TranslationSettingsView() } label: {
-                    SettingsLabel("Translation", systemImage: "character.bubble.fill", color: .green)
-                }
-                NavigationLink { AppearanceSettingsView() } label: {
-                    SettingsLabel("Appearance", systemImage: "textformat.size", color: .blue)
-                }
-                NavigationLink { ReadingSettingsView() } label: {
-                    SettingsLabel("Reading", systemImage: "book.fill", color: .orange)
-                }
-                NavigationLink { GeneralSettingsView() } label: {
-                    SettingsLabel("General", systemImage: "gearshape.fill", color: .gray)
-                }
-                NavigationLink { SyncSettingsView() } label: {
-                    SettingsLabel("iCloud Sync", systemImage: "icloud.fill", color: .cyan)
-                }
-                NavigationLink { WebDavSettingsView() } label: {
-                    SettingsLabel("WebDAV Sync", systemImage: "externaldrive.fill.badge.icloud", color: .blue)
-                }
-            }
-
-            Section {
-                NavigationLink { LanguageSettingsView() } label: {
-                    SettingsLabel("Language", systemImage: "globe", color: .teal)
-                }
-                NavigationLink { AboutView() } label: {
-                    SettingsLabel("About", systemImage: "info", color: .indigo)
-                }
+        Group {
+            if let selection {
+                List(selection: selection) { rows }
+            } else {
+                List { rows }
+                    // The Me tab button goes back one page at a time (AppChrome.tabReselected).
+                    .background(TabNavigationFinder(tab: .more).frame(width: 0, height: 0))
             }
         }
         .navigationTitle("Me")
-        // The Me tab button goes back one page at a time (AppChrome.tabReselected).
-        .background(TabNavigationFinder(tab: .more).frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogin) { LoginView() }
+    }
+
+    /// An entry: in the left column it selects its page, otherwise it pushes it.
+    @ViewBuilder
+    private func row<Label: View>(_ page: MorePage, @ViewBuilder label: () -> Label) -> some View {
+        if selection != nil {
+            NavigationLink(value: page) { label() }
+        } else if page == .downloads {
+            NavigationLink(value: DownloadsRoute()) { label() }
+        } else {
+            NavigationLink { MorePage.view(for: page, selection: .constant(nil)) } label: { label() }
+        }
+    }
+
+    @ViewBuilder private var rows: some View {
+        if selection != nil {
+            Section {
+                row(.overview) { SettingsLabel("Overview", systemImage: "square.grid.2x2.fill", color: .purple) }
+            }
+        }
+        Section {
+            // Both sites' accounts are one row; the next screen has a section per site.
+            row(.accounts) {
+                HStack(spacing: 14) {
+                    AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Accounts")
+                            .font(.title3.weight(.semibold))
+                        Text(accountsSummary)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+
+        Section {
+            row(.downloads) {
+                SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
+                    .badge(downloads.records.filter { $0.state == .downloading }.count)
+            }
+        }
+
+        Section {
+            row(.sites) { SettingsLabel("Sites", systemImage: "square.stack.3d.up.fill", color: .pink) }
+            row(.filters) { SettingsLabel("Filters", systemImage: "eye.slash.fill", color: .gray) }
+            row(.translation) { SettingsLabel("Translation", systemImage: "character.bubble.fill", color: .green) }
+            row(.appearance) { SettingsLabel("Appearance", systemImage: "textformat.size", color: .blue) }
+            row(.reading) { SettingsLabel("Reading", systemImage: "book.fill", color: .orange) }
+            row(.general) { SettingsLabel("General", systemImage: "gearshape.fill", color: .gray) }
+            row(.iCloud) { SettingsLabel("iCloud Sync", systemImage: "icloud.fill", color: .cyan) }
+            row(.webDav) { SettingsLabel("WebDAV Sync", systemImage: "externaldrive.fill.badge.icloud", color: .blue) }
+        }
+
+        Section {
+            row(.language) { SettingsLabel("Language", systemImage: "globe", color: .teal) }
+            row(.about) { SettingsLabel("About", systemImage: "info", color: .indigo) }
+        }
     }
 }
 
