@@ -1,6 +1,5 @@
 package com.atlanyuey.aenht.screens
 
-import com.atlanyuey.aenht.ui.components.fadeEdges
 import com.atlanyuey.aenht.ui.components.readerThumb
 import com.atlanyuey.aenht.core.privacyText
 import android.content.ClipData
@@ -324,7 +323,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                             item("similarTitle") { SectionTitle(tr("More Like This")) }
                             item("similar") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(similar, cutEnd = wide) } }
                         }
-                        item("comments") { Comments(d, cutEnd = wide) }
+                        item("comments") { Comments(d) }
                     } else if (error != null) {
                         item("error") {
                             EmptyState(Icons.Offline, tr("Couldn't Load"), error, action = tr("Try Again") to { scope.launch { load() } })
@@ -610,7 +609,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
     }
 
     @Composable
-    private fun Comments(d: EhGalleryDetail, cutEnd: Boolean = false) {
+    private fun Comments(d: EhGalleryDetail) {
         val navigator = LocalNavigator.current
         Column {
             SectionTitle(tr("Comments")) {
@@ -624,9 +623,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             if (shown.isEmpty()) {
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
             } else {
-                // Wide: the comments cut off where the details meet the pages fade out.
                 LazyRow(
-                    if (cutEnd) Modifier.fadeEdges(end = true, length = 36.dp) else Modifier,
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {

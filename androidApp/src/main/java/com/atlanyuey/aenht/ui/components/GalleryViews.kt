@@ -421,41 +421,15 @@ fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: St
 // MARK: - Collections
 
 /**
- * Fades the content out over [length] at the chosen edges: what a pane cuts
- * off ends in a soft edge, not a straight line.
- */
-fun Modifier.fadeEdges(
-    start: Boolean = false,
-    end: Boolean = false,
-    top: Boolean = false,
-    bottom: Boolean = false,
-    length: androidx.compose.ui.unit.Dp = 28.dp,
-): Modifier = this
-    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        val l = length.toPx()
-        if (l <= 0f) return@drawWithContent
-        val clear = Color.Transparent
-        val kept = Color.Black
-        val dstIn = androidx.compose.ui.graphics.BlendMode.DstIn
-        if (start) drawRect(Brush.horizontalGradient(0f to clear, 1f to kept, startX = 0f, endX = l), blendMode = dstIn)
-        if (end) drawRect(Brush.horizontalGradient(0f to kept, 1f to clear, startX = size.width - l, endX = size.width), blendMode = dstIn)
-        if (top) drawRect(Brush.verticalGradient(0f to clear, 1f to kept, startY = 0f, endY = l), blendMode = dstIn)
-        if (bottom) drawRect(Brush.verticalGradient(0f to kept, 1f to clear, startY = size.height - l, endY = size.height), blendMode = dstIn)
-    }
-
-/**
  * A row of covers cut off at [start] or [end] (where it meets the other half
  * of a wide page): the covers end in round corners like their own, as if
- * cut by a card, and the titles under them ([imageHeight] on) fade out.
+ * cut by a card. The titles under them ([imageHeight] on) are cut straight.
  */
 fun Modifier.cutCards(
     start: Boolean,
     end: Boolean,
     imageHeight: androidx.compose.ui.unit.Dp,
     radius: androidx.compose.ui.unit.Dp = 12.dp,
-    fade: androidx.compose.ui.unit.Dp = 36.dp,
 ): Modifier = this
     .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
     .drawWithContent {
@@ -475,13 +449,6 @@ fun Modifier.cutCards(
             addRect(androidx.compose.ui.geometry.Rect(0f, h, size.width, size.height))
         }
         clipPath(shape) { this@drawWithContent.drawContent() }
-        // Under the covers: the titles fade out at the cut.
-        val f = fade.toPx()
-        val below = androidx.compose.ui.geometry.Size(size.width, size.height - h)
-        val at = androidx.compose.ui.geometry.Offset(0f, h)
-        val dstIn = androidx.compose.ui.graphics.BlendMode.DstIn
-        if (end) drawRect(Brush.horizontalGradient(0f to Color.Black, 1f to Color.Transparent, startX = size.width - f, endX = size.width), at, below, blendMode = dstIn)
-        if (start) drawRect(Brush.horizontalGradient(0f to Color.Transparent, 1f to Color.Black, startX = 0f, endX = f), at, below, blendMode = dstIn)
     }
 
 /**

@@ -1,52 +1,12 @@
 import SwiftUI
 
-/// Fades content out at its edges: what a pane cuts off ends in a soft edge,
-/// not a straight line.
-private struct FadedEdges: ViewModifier {
-    let edges: Edge.Set
-    let length: CGFloat
-
-    func body(content: Content) -> some View {
-        content
-            .mask {
-                HStack(spacing: 0) {
-                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: edges.contains(.leading) ? length : 0)
-                    Color.black
-                    LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: edges.contains(.trailing) ? length : 0)
-                }
-                // Over the bars too (the content scrolls under them).
-                .ignoresSafeArea()
-            }
-            .mask {
-                VStack(spacing: 0) {
-                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                        .frame(height: edges.contains(.top) ? length : 0)
-                    Color.black
-                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
-                        .frame(height: edges.contains(.bottom) ? length : 0)
-                }
-                .ignoresSafeArea(edges: edges.contains(.top) || edges.contains(.bottom) ? [] : .all)
-            }
-    }
-}
-
-extension View {
-    /// Fades out over [length] at [edges] (0: nothing fades, without rebuilding the content).
-    func fadedEdges(_ edges: Edge.Set, length: CGFloat = 28) -> some View {
-        modifier(FadedEdges(edges: edges, length: length))
-    }
-}
-
 /// A row of covers cut off at [edges] (where it meets the other half of a
 /// wide page): the covers end in round corners like their own, as if cut by
-/// a card, and the titles under them ([imageHeight] on) fade out.
+/// a card. The titles under them ([imageHeight] on) are cut straight.
 private struct CutCards: ViewModifier {
     let edges: Edge.Set
     let imageHeight: CGFloat
     var radius: CGFloat = 12
-    var fade: CGFloat = 36
 
     func body(content: Content) -> some View {
         let leading = edges.contains(.leading)
@@ -58,20 +18,14 @@ private struct CutCards: ViewModifier {
                                        bottomTrailingRadius: trailing ? radius : 0, topTrailingRadius: trailing ? radius : 0,
                                        style: .continuous)
                     .frame(height: imageHeight)
-                HStack(spacing: 0) {
-                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: leading ? fade : 0)
-                    Color.black
-                    LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
-                        .frame(width: trailing ? fade : 0)
-                }
+                Color.black
             }
         }
     }
 }
 
 extension View {
-    /// Cut off at [edges]: covers ([imageHeight] tall) with round corners, titles fading out.
+    /// Cut off at [edges]: covers ([imageHeight] tall) with round corners.
     func cutCards(_ edges: Edge.Set, imageHeight: CGFloat) -> some View {
         modifier(CutCards(edges: edges, imageHeight: imageHeight))
     }
@@ -97,11 +51,16 @@ private struct PaneScrollEdges: ViewModifier {
             }
     }
 
+    /// Blurred, then fading into the page's background (which follows Dark
+    /// Mode), like the system's soft edge.
     private func edge(top: Bool) -> some View {
-        Rectangle()
-            .fill(.ultraThinMaterial)
-            .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.45), .init(color: .clear, location: 1)],
-                                 startPoint: top ? .top : .bottom, endPoint: top ? .bottom : .top))
+        let mask = LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.45), .init(color: .clear, location: 1)],
+                                  startPoint: top ? .top : .bottom, endPoint: top ? .bottom : .top)
+        return ZStack {
+            Rectangle().fill(.ultraThinMaterial)
+            Color(.systemBackground).opacity(0.85)
+        }
+        .mask(mask)
     }
 }
 

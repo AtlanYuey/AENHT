@@ -112,6 +112,8 @@ struct ReaderView: View {
     @State private var prefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
     )
+    /// What the prefetcher is loading now.
+    @State private var prefetched: Set<URL> = []
 
     init(route: ReaderRoute) {
         source = route.source
@@ -451,11 +453,17 @@ struct ReaderView: View {
         go(target)
     }
 
+    /// Loads the pages around [index] ahead. Pages left behind by fast
+    /// turning are dropped: they would hold up the one being read (E-Hentai
+    /// answers a few page requests a second).
     private func prefetch(around index: Int) {
         let upper = min(pageCount, index + 1 + settings.preloadPages)
         let lower = max(0, index - 2)
         guard lower < upper else { return }
         let urls = source.pages[lower..<upper].compactMap(\.url).filter { !$0.isFileURL }
+        let stale = prefetched.subtracting(urls)
+        if !stale.isEmpty { prefetcher.stopPrefetching(with: Array(stale)) }
+        prefetched = Set(urls)
         prefetcher.startPrefetching(with: urls)
     }
 
@@ -1482,29 +1490,51 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
 // MARK: - Back swipe
 
-/// iOS 26 goes back with a swipe from anywhere on the screen. In the reader
-/// a swipe in the middle is the reader's (turning pages, its swipe
-/// actions): only the swipe from the left edge goes back.
+/// In the reader a swipe in the middle of the page is the reader's (turning
+/// pages, its swipe actions): only the swipe from the left edge goes back.
+/// Two system gestures would otherwise take it: iOS 26's swipe back from
+/// anywhere on the screen, and the drag that closes a screen opened with the
+/// zoom transition (the reader opens out of a page's thumbnail).
 private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> Controller { Controller() }
     func updateUIViewController(_ controller: Controller, context: Context) {}
 
     final class Controller: UIViewController {
-        private weak var blocked: UIGestureRecognizer?
+        private var blocked: [UIGestureRecognizer] = []
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-            if #available(iOS 26.0, *), let swipe = navigationController?.interactiveContentPopGestureRecognizer {
-                swipe.isEnabled = false
-                blocked = swipe
-            }
+            block()
         }
 
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
-            // Leaving the reader (or starting to): the other screens have it again.
-            blocked?.isEnabled = true
-            blocked = nil
+            // Leaving the reader (or starting to): the other screens have them again.
+            for gesture in blocked { gesture.isEnabled = true }
+            blocked = []
+        }
+
+        private func block() {
+            guard let navigation = navigationController else { return }
+            var found: [UIGestureRecognizer] = []
+            if #available(iOS 26.0, *), let swipe = navigation.interactiveContentPopGestureRecognizer {
+                found.append(swipe)
+            }
+            // The zoom transition's own closing drag: on the screens between the
+            // reader and the navigation controller (not on the reader's own views).
+            var view: UIView? = parent?.view
+            while let current = view, current !== navigation.view.superview {
+                for gesture in current.gestureRecognizers ?? [] where gesture !== navigation.interactivePopGestureRecognizer {
+                    if String(describing: type(of: gesture)).localizedCaseInsensitiveContains("zoom") { found.append(gesture) }
+                }
+                view = current.superview
+            }
+            for gesture in found where gesture.isEnabled {
+                gesture.isEnabled = false
+                blocked.append(gesture)
+            }
+            Diagnostics.shared.log(category: "reader", message: "Back swipes kept from the page: " +
+                                   (blocked.map { String(describing: type(of: $0)) }.joined(separator: ", ")))
         }
     }
 }

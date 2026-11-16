@@ -1,7 +1,6 @@
 package com.atlanyuey.aenht.screens
 
 import com.atlanyuey.aenht.ui.components.cutCards
-import com.atlanyuey.aenht.ui.components.fadeEdges
 import com.atlanyuey.aenht.ui.components.prompt
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.shortLabel
@@ -70,7 +69,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth

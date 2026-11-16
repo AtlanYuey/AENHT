@@ -763,14 +763,26 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
+    /** Pages being loaded ahead, by index. */
+    private val prefetching = mutableMapOf<Int, coil3.request.Disposable>()
+
+    /**
+     * Loads the pages around [index] ahead. Pages left behind by fast turning
+     * are dropped: they would hold up the one being read (E-Hentai answers a
+     * few page requests a second).
+     */
     private fun prefetch(context: android.content.Context, index: Int) {
         val loader = SingletonImageLoader.get(context)
         val upper = minOf(count, index + 1 + AppSettings.preloadPages)
         val lower = maxOf(0, index - 2)
-        for (i in lower until upper) {
+        val wanted = lower until upper
+        prefetching.keys.filter { it !in wanted }.forEach { prefetching.remove(it)?.dispose() }
+        // The nearest first.
+        for (i in wanted.sortedBy { kotlin.math.abs(it - index) }) {
+            if (prefetching[i]?.isDisposed == false) continue
             val data = source.pages[i].url ?: continue
             if (data !is String && data !is com.atlanyuey.aenht.core.EhPageRef) continue
-            loader.enqueue(ImageRequest.Builder(context).data(data).build())
+            prefetching[i] = loader.enqueue(ImageRequest.Builder(context).data(data).build())
         }
     }
 

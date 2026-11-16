@@ -560,8 +560,6 @@ struct EhGalleryView: View {
                     .padding(.horizontal)
                 }
                 .scrollIndicators(.hidden)
-                // Wide: the comments cut off where the details meet the pages fade out.
-                .fadedEdges(.trailing, length: wide ? 36 : 0)
             }
         }
     }

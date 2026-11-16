@@ -405,6 +405,38 @@ actor EhPageDirectory {
     private var links: [Int: [Int: String]] = [:]
     private var perPage: [Int: Int] = [:]
 
+    // Page requests take turns here, a few at a time, the newest first: the
+    // page being read goes before pages turned past, and a page that is no
+    // longer wanted leaves the line (the site answers a few a second).
+    private static let atOnce = 2
+    private var running = 0
+    private var waiting: [(id: UUID, resume: CheckedContinuation<Void, Error>)] = []
+
+    private func takeTurn() async throws {
+        if running < Self.atOnce {
+            running += 1
+            return
+        }
+        let id = UUID()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (resume: CheckedContinuation<Void, Error>) in
+                if Task.isCancelled { resume.resume(throwing: CancellationError()) } else { waiting.append((id, resume)) }
+            }
+        } onCancel: {
+            Task { await self.leaveLine(id) }
+        }
+    }
+
+    private func leaveLine(_ id: UUID) {
+        guard let index = waiting.firstIndex(where: { $0.id == id }) else { return }
+        waiting.remove(at: index).resume.resume(throwing: CancellationError())
+    }
+
+    /// The turn passes to the newest waiting request.
+    private func endTurn() {
+        if let next = waiting.popLast() { next.resume.resume() } else { running -= 1 }
+    }
+
     func remember(gid: Int, thumbnails: [EhThumbnail]) {
         guard !thumbnails.isEmpty else { return }
         var map = links[gid] ?? [:]
@@ -423,6 +455,9 @@ actor EhPageDirectory {
     }
 
     func image(gid: Int, token: String, page: Int) async throws -> Data {
+        try await takeTurn()
+        defer { endTurn() }
+        try Task.checkCancellation()
         let pageLink = try await link(gid: gid, token: token, page: page)
         var reloadKey: String?
         var lastError: Error = EhError.failed(String(localized: "Couldn't load the image."))

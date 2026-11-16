@@ -135,7 +135,7 @@ struct GalleryDetailView: View {
                         PopularRow(items: detail.related.filter { item in !model.versions.contains { $0.id == item.id } },
                                    cutEdges: wide ? .trailing : [])
                     }
-                    CommentsPreview(detail: detail, comments: model.comments, cut: wide)
+                    CommentsPreview(detail: detail, comments: model.comments)
                 } else if let error = model.error {
                     ContentUnavailableView {
                         Label("Couldn't Load", systemImage: "wifi.exclamationmark")
@@ -777,8 +777,6 @@ struct PagesView: View {
 private struct CommentsPreview: View {
     let detail: GalleryDetail
     let comments: [GalleryComment]
-    /// Cut off on the right (a wide page): the comments fade out there.
-    var cut = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -809,7 +807,6 @@ private struct CommentsPreview: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollTargetBehavior(.viewAligned)
-                .fadedEdges(.trailing, length: cut ? 36 : 0)
             }
         }
         .padding(.top, 8)
