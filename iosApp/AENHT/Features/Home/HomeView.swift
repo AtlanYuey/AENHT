@@ -3,7 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
-    /// nhentai's random gallery, opened from the title's menu.
+    /// nhentai's random gallery, opened from the die at the top right.
     @State private var randomRoute: GalleryRoute?
     /// The rows pinned above the feed (Settings › General › Pinned Rows), as loaded.
     @State private var rows: [HomeRow: [GalleryItem]] = [:]
@@ -97,20 +97,8 @@ struct HomeView: View {
         // the bar once it has scrolled under it.
         .navigationTitle(settings.currentSite.displayName)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarTitleMenu {
-            if settings.enabledSites.count > 1 {
-                Picker("Site", selection: Binding(get: { settings.currentSite }, set: { settings.homeSite = $0 })) {
-                    ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
-                }
-            }
-            if settings.currentSite == .nhentai {
-                Button("Random Gallery", systemImage: "dice") {
-                    Task {
-                        if let id = try? await NHClient.shared.randomID() { randomRoute = GalleryRoute(id: id, preview: nil) }
-                    }
-                }
-            }
-        }
+        // The title's menu switches the site: with one site on, there is no menu (and no arrow).
+        .modifier(SiteTitleMenu(sites: settings.enabledSites, current: settings.currentSite) { settings.homeSite = $0 })
         .navigationDestination(item: $randomRoute) { GalleryDetailView(route: $0) }
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
         .toolbar {
@@ -124,6 +112,18 @@ struct HomeView: View {
                         startSearch()
                     } label: {
                         Label("Search", systemImage: "magnifyingglass")
+                    }
+                }
+            } else if settings.currentSite == .nhentai {
+                // nhentai's random gallery; the feed's language and search buttons
+                // take its place once they have scrolled up into the bar.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task {
+                            if let id = try? await NHClient.shared.randomID() { randomRoute = GalleryRoute(id: id, preview: nil) }
+                        }
+                    } label: {
+                        Label("Random Gallery", systemImage: "dice")
                     }
                 }
             }
@@ -377,5 +377,25 @@ struct PopularRow: View {
         .scrollTargetBehavior(.viewAligned)
         // The covers are 3:4.
         .cutCards(cutEdges, imageHeight: width * 4 / 3)
+    }
+}
+
+/// The site switch in the title's menu, only when there is a site to switch to
+/// (a title menu, even an empty one, shows an arrow by the title).
+private struct SiteTitleMenu: ViewModifier {
+    let sites: [SiteKind]
+    let current: SiteKind
+    let select: (SiteKind) -> Void
+
+    func body(content: Content) -> some View {
+        if sites.count > 1 {
+            content.toolbarTitleMenu {
+                Picker("Site", selection: Binding(get: { current }, set: select)) {
+                    ForEach(sites) { Text($0.displayName).tag($0) }
+                }
+            }
+        } else {
+            content
+        }
     }
 }

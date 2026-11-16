@@ -665,4 +665,13 @@ object Icons {
         p("m304 48 112 112-112 112M398.87 160H96M208 464 96 352l112-112M114 352h302", fill = false, stroke = 32f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
     }
+
+    /** A die (nhentai's random gallery). */
+    val Dice: ImageVector by lazy {
+        icon(
+            "Dice",
+            p("M144 48h224a96 96 0 0 1 96 96v224a96 96 0 0 1-96 96H144a96 96 0 0 1-96-96V144a96 96 0 0 1 96-96Z", fill = false, stroke = 32f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            p("M168 128a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM344 128a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM256 216a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM168 304a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM344 304a40 40 0 1 0 0 80a40 40 0 1 0 0-80Z", fill = true, stroke = 0f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        )
+    }
 }

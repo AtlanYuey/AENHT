@@ -29,6 +29,7 @@ import com.atlanyuey.aenht.ui.components.galleryScreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -433,24 +434,20 @@ class HomeScreen : Screen(), TabRoot {
         val overlaysHome = LocalOverlays.current
         val randomLabel = tr("Random Gallery")
         val randomError = tr("Couldn't Load")
-        // The title's menu: the sites, and nhentai's random gallery.
-        val siteItems: (() -> List<List<MenuItem>>)? = if (AppSettings.enabledSites.size > 1 || site == Site.NHENTAI) {
-            {
-                buildList {
-                    if (AppSettings.enabledSites.size > 1) add(AppSettings.enabledSites.map { s -> MenuItem(s.label, checked = s == site) { AppSettings.homeSite = s } })
-                    if (site == Site.NHENTAI) add(listOf(MenuItem(randomLabel, Icons.SwapHorizontal) {
-                        scope.launch {
-                            try {
-                                navigator.push(GalleryScreen(NHClient.randomId(), null))
-                            } catch (e: Exception) {
-                                overlaysHome.alert(randomError, e.localizedMessage)
-                            }
-                        }
-                    }))
-                }
-            }
+        // The title's menu switches the site: with one site on, there is no menu (and no arrow).
+        val siteItems: (() -> List<List<MenuItem>>)? = if (AppSettings.enabledSites.size > 1) {
+            { listOf(AppSettings.enabledSites.map { s -> MenuItem(s.label, checked = s == site) { AppSettings.homeSite = s } }) }
         } else {
             null
+        }
+        val openRandom: () -> Unit = {
+            scope.launch {
+                try {
+                    navigator.push(GalleryScreen(NHClient.randomId(), null))
+                } catch (e: Exception) {
+                    overlaysHome.alert(randomError, e.localizedMessage)
+                }
+            }
         }
         ScreenScaffold(
             // Three parts, like the iOS bar: the sort, the site (a menu that
@@ -491,10 +488,22 @@ class HomeScreen : Screen(), TabRoot {
                     LaunchedEffect(Unit) { focus.requestFocus() }
                     GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
                 } else {
-                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
-                            GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
+                    // nhentai's random gallery at the top right; the feed's language and
+                    // search buttons take its place once they have scrolled up into the bar.
+                    androidx.compose.animation.AnimatedContent(
+                        targetState = docked,
+                        transitionSpec = {
+                            (fadeIn() + scaleIn(initialScale = 0.8f)) togetherWith (fadeOut() + scaleOut(targetScale = 0.8f))
+                        },
+                        label = "homeTrailing",
+                    ) { isDocked ->
+                        if (isDocked) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
+                                GlassCircleButton(Icons.Search, tr("Search"), { search.site = AppSettings.searchStartSite(); searching = true })
+                            }
+                        } else if (site == Site.NHENTAI) {
+                            GlassCircleButton(Icons.Dice, randomLabel, openRandom)
                         }
                     }
                 }
