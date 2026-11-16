@@ -557,3 +557,6 @@ T = [
     "Traduções das tags para chinês",
     "Obrigado a todos por trás desses projetos. As licenças estão em Licenças de código aberto.",
 ]
+
+# Download verification and atomic logout feedback.
+T += ["Esta versão do Android não consegue decodificar imagens AVIF. Estas páginas não foram marcadas como baixadas.", "Não foi possível salvar a saída. Sua conta continua conectada."]

@@ -557,3 +557,6 @@ T = [
     "Bản dịch tiếng Trung của thẻ",
     "Cảm ơn tất cả những người đứng sau các dự án này. Giấy phép của chúng nằm trong Giấy phép mã nguồn mở.",
 ]
+
+# Download verification and atomic logout feedback.
+T += ["Phiên bản Android này không thể giải mã ảnh AVIF. Các trang này chưa được đánh dấu là đã tải xuống.", "Không thể lưu trạng thái đăng xuất. Tài khoản của bạn vẫn đang đăng nhập."]

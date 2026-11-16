@@ -25,6 +25,18 @@ settings:
     DEAD_CODE_STRIPPING: YES
 
 targets:
+  AENHTCredentialTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AENHT/Core/AtomicCredentials.swift
+      - path: Tests/AtomicCredentialsTests.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.AENHT.CredentialTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
   AENHT:
     type: application
     platform: iOS
@@ -85,3 +97,17 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIStatusBarStyle: UIStatusBarStyleDefault
         UIViewControllerBasedStatusBarAppearance: true
+
+# The credential tests are hostless and use an injected in-memory secret store.
+schemes:
+  AENHT:
+    build:
+      targets:
+        AENHT: all
+  AENHTCredentialTests:
+    build:
+      targets:
+        AENHTCredentialTests: all
+    test:
+      targets:
+        - AENHTCredentialTests

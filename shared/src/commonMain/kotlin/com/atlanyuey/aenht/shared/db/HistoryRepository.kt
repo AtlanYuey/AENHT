@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.shared.db
 
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import com.atlanyuey.aenht.shared.site.GalleryKey
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
@@ -70,18 +72,19 @@ class HistoryRepository internal constructor(private val db: AenhtDatabase, priv
     /** Deletes by storage key ("nh:1", "eh:2:token"), remembering it for WebDAV sync. */
     @Throws(CancellationException::class)
     suspend fun delete(storageKey: String) {
-        db.history().delete(storageKey)
-        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, storageKey, now())))
+        db.useWriterConnection { writer -> writer.immediateTransaction {
+            db.history().delete(storageKey)
+            db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, storageKey, now())))
+        } }
     }
 
-    suspend fun delete(key: GalleryKey) {
-        db.history().delete(key.storageKey)
-        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, key.storageKey, now())))
-    }
+    suspend fun delete(key: GalleryKey) = delete(key.storageKey)
 
     @Throws(CancellationException::class)
     suspend fun clear() {
-        db.history().clear()
-        db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, Tombstone.ALL, now())))
+        db.useWriterConnection { writer -> writer.immediateTransaction {
+            db.history().clear()
+            db.tombstones().upsert(listOf(Tombstone(Tombstone.HISTORY, Tombstone.ALL, now())))
+        } }
     }
 }

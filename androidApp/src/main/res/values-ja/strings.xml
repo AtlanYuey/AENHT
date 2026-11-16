@@ -557,9 +557,11 @@
     <string name="l_554">nhentai のタグデータ</string>
     <string name="l_555">タグの中国語訳</string>
     <string name="l_556">これらのプロジェクトに携わったすべての方に感謝します。ライセンスは「オープンソースライセンス」にあります。</string>
-    <string name="l_557">設定のバックアップ</string>
-    <string name="l_558">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_559">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_560">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_561">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_557">このAndroidバージョンはAVIF画像をデコードできません。これらのページはダウンロード済みになっていません。</string>
+    <string name="l_558">ログアウト状態を保存できませんでした。アカウントはログインしたままです。</string>
+    <string name="l_559">設定のバックアップ</string>
+    <string name="l_560">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_561">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_562">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_563">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

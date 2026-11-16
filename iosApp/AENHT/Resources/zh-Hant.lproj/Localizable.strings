@@ -556,3 +556,5 @@
 "nhentai's tag data" = "nhentai 標籤資料";
 "Chinese translations of tags" = "標籤的中文翻譯";
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "感謝這些專案背後的每一個人。它們的授權見「開放原始碼授權」。";
+"This Android version can't decode AVIF images. These pages were not marked as downloaded." = "此 Android 版本無法解碼 AVIF 圖像。這些頁面未標記為已下載。";
+"The logout couldn't be saved. Your account is still signed in." = "無法儲存登出狀態，帳號仍保持登入。";

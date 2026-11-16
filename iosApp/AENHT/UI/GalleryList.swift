@@ -264,6 +264,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         var newItems: [String: GalleryItem] = [:]
         var newViews: [String: AnyView] = [:]
         var changed: [String] = []
+        var cardsChanged = false
         for block in newBlocks {
             snapshot.appendSections([block.id])
             switch block.content {
@@ -278,7 +279,10 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
                 for card in cards where seen.insert(card.uid).inserted {
                     let id = Self.cardID(block.id, card.uid)
                     ids.append(id)
-                    if let old = items[id], old != card { changed.append(id) }
+                    if let old = items[id], old != card {
+                        changed.append(id)
+                        cardsChanged = true
+                    }
                     newItems[id] = card
                 }
                 snapshot.appendItems(ids, toSection: block.id)
@@ -302,7 +306,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
             if !existing.isEmpty { snapshot.reconfigureItems(existing) }
             dataSource.apply(snapshot, animatingDifferences: false)
         }
-        if relayout { collectionView.collectionViewLayout.invalidateLayout() }
+        if relayout || cardsChanged { collectionView.collectionViewLayout.invalidateLayout() }
     }
 
     // MARK: Cells
@@ -609,7 +613,13 @@ final class CardMetrics {
 
     private var titleHeights: [Int: CGFloat] = [:]
     private var footerHeight: CGFloat?
-    private var lines: [String: Int] = [:]
+    private struct TitleKey: Hashable {
+        let uid: String
+        let text: String
+        let width: CGFloat
+        let fontSize: CGFloat
+    }
+    private var lines: [TitleKey: Int] = [:]
 
     func clear() {
         titleHeights = [:]
@@ -639,15 +649,17 @@ final class CardMetrics {
 
     /// How many lines (one or two) the card's title takes at [width].
     private func titleLines(_ item: GalleryItem, width: CGFloat, traits: UITraitCollection) -> Int {
-        let key = "\(item.uid)|\(Int(width * 2))"
-        if let known = lines[key] { return known }
         let size = UIFont.preferredFont(forTextStyle: .footnote, compatibleWith: traits).pointSize
+        let key = TitleKey(uid: item.uid, text: item.prettyTitle, width: width, fontSize: size)
+        if let known = lines[key] { return known }
         let font = UIFont.systemFont(ofSize: size, weight: .medium)
         let text = item.prettyTitle as NSString
         let height = text.boundingRect(with: CGSize(width: width, height: .greatestFiniteMagnitude),
                                        options: [.usesLineFragmentOrigin, .usesFontLeading],
                                        attributes: [.font: font], context: nil).height
         let count = min(2, max(1, Int((height / font.lineHeight).rounded())))
+        // Split View can visit many widths; keep measurements bounded over a long session.
+        if lines.count >= 4096 { lines.removeAll(keepingCapacity: true) }
         lines[key] = count
         return count
     }

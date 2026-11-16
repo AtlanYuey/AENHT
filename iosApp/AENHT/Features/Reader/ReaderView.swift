@@ -322,7 +322,7 @@ struct ReaderView: View {
                         Color.clear
                             .aspectRatio(page.aspectRatio, contentMode: .fit)
                             .overlay {
-                                RemoteImage(url: page.url, contentMode: .fit, targetWidth: 1400)
+                                RemoteImage(url: page.url, contentMode: .fit, targetWidth: 1400, retryOnFailure: true)
                             }
                             .id(page.index)
                     }

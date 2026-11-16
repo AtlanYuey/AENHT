@@ -70,25 +70,18 @@ sealed class NhException(message: String, val kind: String, val code: Int = 0, v
 /** Marks an API key kept in [TokenStorage.accessToken]. */
 const val API_KEY_PREFIX = "key:"
 
+/** Atomic credentials plus an in-process identity that changes on explicit login/logout. */
+data class TokenSnapshot(val accessToken: String?, val refreshToken: String?, val revision: Long)
+
 interface TokenStorage {
     val accessToken: String?
     val refreshToken: String?
-
-    /**
-     * The login [previousAccess] was renewed: saves [access] and [refresh]
-     * only while [previousAccess] is still the saved token (checked and
-     * written in one step). False when the login changed meanwhile or the
-     * tokens couldn't be saved; nothing changed then.
-     */
-    fun renew(previousAccess: String, access: String, refresh: String?): Boolean
-
-    /**
-     * Puts a new login in place, only while the saved token is still
-     * [expected] (null: none saved), in one step. False when it changed
-     * meanwhile or couldn't be saved; nothing changed then.
-     */
-    fun replace(expected: String?, access: String, refresh: String?): Boolean
-
+    /** Read all three under the same lock used by credential writes. */
+    fun snapshot(): TokenSnapshot
+    /** Renew only this exact snapshot; a renewal keeps its session revision. */
+    fun renew(expected: TokenSnapshot, access: String, refresh: String?): Boolean
+    /** Explicit replacement must also match the revision, including A → B → A. */
+    fun replace(expected: TokenSnapshot, access: String, refresh: String?): Boolean
     fun clear()
 }
 
@@ -143,11 +136,11 @@ class NhApi internal constructor(
      */
     @Throws(NhException::class, CancellationException::class)
     suspend fun loginWithApiKey(key: String): CurrentUser {
-        val expected = tokens.accessToken
+        val expected = tokens.snapshot()
         val candidate = API_KEY_PREFIX + key.trim()
         val user = CurrentUser.parse(send("user", "user", Limits.user, candidate = candidate).objOrThrow())
         if (!tokens.replace(expected, candidate, null)) {
-            throw if (tokens.accessToken != expected) NhException.LoginChanged() else NhException.NotSaved()
+            throw if (tokens.snapshot().revision != expected.revision) NhException.LoginChanged() else NhException.NotSaved()
         }
         return user
     }
@@ -168,9 +161,12 @@ class NhApi internal constructor(
         retried: Boolean = false,
         /** A login being checked, sent instead of the saved one (never renewed, never saved here). */
         candidate: String? = null,
+        expectedRevision: Long? = null,
     ): JsonElement = withContext(Dispatchers.IO) {
         limiter.acquire(bucket, limit)
-        val token = candidate ?: tokens.accessToken?.takeIf { it.isNotEmpty() }
+        val login = tokens.snapshot()
+        if (candidate == null && expectedRevision != null && login.revision != expectedRevision) throw NhException.LoginChanged()
+        val token = candidate ?: login.accessToken?.takeIf { it.isNotEmpty() }
         val (code, text, retryAfter) = try {
             val response = http.request("${NHHost.SITE}/api/v2/$path") {
                 this.method = method
@@ -200,21 +196,22 @@ class NhApi internal constructor(
             // Someone else (another app, the browser) used the quota: wait and try once more.
             val wait = retryAfter?.toLongOrNull()?.coerceIn(1, 120) ?: 30
             limiter.backOff(bucket, limit, wait.seconds)
-            return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true, candidate = candidate)
+            return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true, candidate = candidate, expectedRevision = if (candidate == null) login.revision else null)
         }
         // A key being checked: a rejection is the answer, not an expired login.
         if (code == 401 && candidate != null) throw NhException.Http(401, message(text) ?: "Invalid API key")
+        if (candidate == null && token != null && tokens.snapshot().revision != login.revision) throw NhException.LoginChanged()
         if (code == 401 && token != null && token.startsWith(API_KEY_PREFIX)) {
             // An API key isn't renewed: it was revoked (or is wrong).
             onNeedsVerification?.invoke()
             throw NhException.NeedsVerification()
         }
         if (code == 401 && token != null && !retried) {
-            if (refresh(token, path)) {
+            if (refresh(login, path)) {
                 // A rejected request did nothing on the server, so reads are sent
                 // again; actions that need a fresh challenge are restarted by their caller.
                 if (replayAfterRefresh) {
-                    return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true)
+                    return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true, expectedRevision = login.revision)
                 }
                 throw AuthRenewed()
             }
@@ -418,7 +415,7 @@ class NhApi internal constructor(
     // MARK: Auth
 
     /** The last renewal: the token that was rejected and the one that replaced it. */
-    private var lastRenewal: Pair<String, String>? = null
+    private var lastRenewal: Triple<Long, String, String>? = null
 
     /**
      * Renews the access token once, shared by concurrent requests. [failedToken]
@@ -429,14 +426,17 @@ class NhApi internal constructor(
      * logout) is neither renewed nor sent again with the new login:
      * [NhException.LoginChanged].
      */
-    private suspend fun refresh(failedToken: String, path: String): Boolean = refreshMutex.withLock {
-        val current = tokens.accessToken
+    private suspend fun refresh(failed: TokenSnapshot, path: String): Boolean = refreshMutex.withLock {
+        val failedToken = failed.accessToken ?: return@withLock false
+        val expected = tokens.snapshot()
+        if (expected.revision != failed.revision) throw NhException.LoginChanged()
+        val current = expected.accessToken
         if (current != failedToken) {
-            if (current != null && lastRenewal == (failedToken to current)) return@withLock true
+            if (current != null && lastRenewal == Triple(failed.revision, failedToken, current)) return@withLock true
             com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "$path: the login changed while it waited")
             throw NhException.LoginChanged()
         }
-        val refreshToken = tokens.refreshToken ?: return@withLock false
+        val refreshToken = expected.refreshToken ?: return@withLock false
         val (access, refresh) = try {
             refreshTokens(refreshToken)
         } catch (e: CancellationException) {
@@ -445,12 +445,12 @@ class NhApi internal constructor(
             return@withLock false
         }
         // Saved only for the login it renews (a switch or logout meanwhile wins).
-        if (!tokens.renew(failedToken, access, refresh ?: refreshToken)) {
-            if (tokens.accessToken != failedToken) throw NhException.LoginChanged()
+        if (!tokens.renew(expected, access, refresh ?: refreshToken)) {
+            if (tokens.snapshot().revision != failed.revision) throw NhException.LoginChanged()
             com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "The renewed login couldn't be saved")
             return@withLock false
         }
-        lastRenewal = failedToken to access
+        lastRenewal = Triple(failed.revision, failedToken, access)
         true
     }
 

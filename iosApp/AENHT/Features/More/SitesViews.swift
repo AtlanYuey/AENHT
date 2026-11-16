@@ -194,10 +194,12 @@ struct EhAccountView: View {
         .navigationTitle("E-Hentai")
         .navigationBarTitleDisplayMode(.inline)
         .task { limit = try? await EhService.shared.imageLimit() }
+        .alert("Couldn't Save", isPresented: Binding(
+            get: { ehSession.storageError != nil }, set: { if !$0 { ehSession.storageError = nil } }
+        )) { Button("OK") { ehSession.storageError = nil } } message: { Text(ehSession.storageError ?? "") }
         .confirmationDialog("Log out of E-Hentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
             Button("Log Out", role: .destructive) {
-                ehSession.logout()
-                dismiss()
+                if ehSession.logout() { dismiss() }
             }
         }
     }

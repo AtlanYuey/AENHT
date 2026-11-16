@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.shared.db
 
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import com.atlanyuey.aenht.shared.eh.EhApi
 import com.atlanyuey.aenht.shared.eh.EhListSource
 import com.atlanyuey.aenht.shared.nh.NhApi
@@ -59,8 +61,10 @@ class FavoritesMirror internal constructor(
 
     @Throws(CancellationException::class)
     suspend fun removed(key: GalleryKey) = lock.withLock {
-        db.favorites().delete(key.storageKey)
-        db.tombstones().upsert(listOf(Tombstone(Tombstone.FAVORITE, key.storageKey, now())))
+        db.useWriterConnection { writer -> writer.immediateTransaction {
+            db.favorites().delete(key.storageKey)
+            db.tombstones().upsert(listOf(Tombstone(Tombstone.FAVORITE, key.storageKey, now())))
+        } }
     }
 
     /**

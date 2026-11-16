@@ -557,9 +557,11 @@
     <string name="l_554">Die Tag-Daten von nhentai</string>
     <string name="l_555">Chinesische Übersetzungen der Tags</string>
     <string name="l_556">Danke an alle hinter diesen Projekten. Ihre Lizenzen stehen unter Open-Source-Lizenzen.</string>
-    <string name="l_557">Einstellungen sichern</string>
-    <string name="l_558">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_559">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_560">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_561">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_557">Diese Android-Version kann AVIF-Bilder nicht dekodieren. Diese Seiten wurden nicht als heruntergeladen markiert.</string>
+    <string name="l_558">Die Abmeldung konnte nicht gespeichert werden. Ihr Konto ist weiterhin angemeldet.</string>
+    <string name="l_559">Einstellungen sichern</string>
+    <string name="l_560">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_561">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_562">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_563">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

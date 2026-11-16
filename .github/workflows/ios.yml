@@ -236,7 +236,12 @@ jobs:
           NOTES="Newest development build from the dev branch (commit ${GITHUB_SHA::7}). Experimental: not a release."
           gh release view dev-latest >/dev/null 2>&1 || \
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
-          for i in 1 2 3; do gh release upload dev-latest iosApp/build/AENHT.ipa --clobber && break; sleep 10; done
+          uploaded=false
+          for i in 1 2 3; do
+            if gh release upload dev-latest iosApp/build/AENHT.ipa --clobber; then uploaded=true; break; fi
+            if [ "$i" -lt 3 ]; then sleep 10; fi
+          done
+          if [ "$uploaded" != true ]; then echo "::error::IPA upload failed after three attempts"; exit 1; fi
           gh release edit dev-latest --notes "$NOTES" || true
 
       # A release published on GitHub gets the unsigned IPA from this build (the
@@ -248,4 +253,9 @@ jobs:
         run: |
           VERSION=$(grep -oE 'MARKETING_VERSION: "[^"]+"' iosApp/project.yml | sed -E 's/.*"(.*)"/\1/')
           cp iosApp/build/AENHT.ipa "iosApp/build/AENHT-${VERSION}.ipa"
-          for i in 1 2 3; do gh release upload "${{ github.event.release.tag_name }}" "iosApp/build/AENHT-${VERSION}.ipa" --clobber && break; sleep 10; done
+          uploaded=false
+          for i in 1 2 3; do
+            if gh release upload "${{ github.event.release.tag_name }}" "iosApp/build/AENHT-${VERSION}.ipa" --clobber; then uploaded=true; break; fi
+            if [ "$i" -lt 3 ]; then sleep 10; fi
+          done
+          if [ "$uploaded" != true ]; then echo "::error::IPA upload failed after three attempts"; exit 1; fi

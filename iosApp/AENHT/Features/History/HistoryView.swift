@@ -7,6 +7,8 @@ struct HistoryView: View {
     @Environment(AppSettings.self) private var settings
     @State private var searchText = ""
     @State private var confirmClear = false
+    @State private var storageError: String?
+    @State private var clearing = false
     @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.historySite)
 
     private var siteEntries: [HistoryEntry] {
@@ -62,7 +64,7 @@ struct HistoryView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Clear", systemImage: "trash") { confirmClear = true }
-                    .disabled(entries.isEmpty)
+                    .disabled(entries.isEmpty || clearing)
             }
         }
         .environment(\.showsSiteBadge, showsSites)
@@ -71,11 +73,12 @@ struct HistoryView: View {
         }
         .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear History", role: .destructive) {
-                try? modelContext.delete(model: HistoryEntry.self)
-                try? modelContext.save()
-                Task { try? await WebDavService.shared.history.clear() }
+                clearHistory()
             }
         }
+        .alert("Couldn't Save", isPresented: Binding(
+            get: { storageError != nil }, set: { if !$0 { storageError = nil } }
+        )) { Button("OK") { storageError = nil } } message: { Text(storageError ?? "") }
     }
 
     /// Cards like Favorites (in the list style), by day.
@@ -123,9 +126,40 @@ struct HistoryView: View {
 
     private func delete(_ entry: HistoryEntry) {
         let key = entry.key
-        Task { try? await WebDavService.shared.history.delete(storageKey: key) }
-        modelContext.delete(entry)
-        try? modelContext.save()
+        let readAt = entry.lastRead
+        Task { @MainActor in
+            var deleting = false
+            do {
+                try await WebDavService.shared.history.delete(storageKey: key)
+                try modelContext.save() // Keep unrelated pending progress out of deletion rollback.
+                deleting = true
+                if entry.modelContext != nil, entry.lastRead == readAt { modelContext.delete(entry) }
+                try modelContext.save()
+            } catch {
+                if deleting { modelContext.rollback() }
+                storageError = error.localizedDescription
+            }
+        }
+    }
+
+    private func clearHistory() {
+        guard !clearing else { return }
+        clearing = true
+        let pending = entries.map { ($0, $0.lastRead) }
+        Task { @MainActor in
+            defer { clearing = false }
+            var deleting = false
+            do {
+                try await WebDavService.shared.history.clear()
+                try modelContext.save()
+                deleting = true
+                for (entry, readAt) in pending where entry.modelContext != nil && entry.lastRead == readAt { modelContext.delete(entry) }
+                try modelContext.save()
+            } catch {
+                if deleting { modelContext.rollback() }
+                storageError = error.localizedDescription
+            }
+        }
     }
 
     private func subtitle(_ entry: HistoryEntry) -> String {

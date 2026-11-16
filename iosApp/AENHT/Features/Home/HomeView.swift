@@ -28,6 +28,9 @@ struct HomeView: View {
 
     /// Wide (a tablet held sideways): the two pinned rows show side by side.
     @State private var wide = false
+    @State private var randomTask: Task<Void, Never>?
+    @State private var randomRequest: UUID?
+    @State private var randomError: String?
 
     private struct PinnedRow: Identifiable {
         let row: HomeRow
@@ -94,13 +97,14 @@ struct HomeView: View {
                 // nhentai's random gallery; the feed's language and search buttons
                 // take its place once they have scrolled up into the bar.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task {
-                            if let id = try? await NHClient.shared.randomID() { openRoute?(.nh(GalleryRoute(id: id, preview: nil))) }
+                    Button(action: openRandom) {
+                        if randomRequest != nil {
+                            ProgressView().accessibilityLabel("Random Gallery")
+                        } else {
+                            Label("Random Gallery", systemImage: "dice")
                         }
-                    } label: {
-                        Label("Random Gallery", systemImage: "dice")
                     }
+                    .disabled(randomRequest != nil)
                 }
             }
         }
@@ -112,6 +116,17 @@ struct HomeView: View {
         }
         .task {
             if !feed.hasLoaded { await reload() }
+        }
+        .onDisappear { cancelRandom() }
+        .onChange(of: settings.currentSite) { cancelRandom() }
+        .alert("Couldn't Load", isPresented: Binding(
+            get: { randomError != nil },
+            set: { if !$0 { randomError = nil } }
+        )) {
+            Button("Retry") { openRandom() }
+            Button("Cancel", role: .cancel) { randomError = nil }
+        } message: {
+            Text(randomError ?? "")
         }
         .onChange(of: settings.homeLanguage) { Task { await feed.reload() } }
         .onChange(of: settings.homeSort) { Task { await nhFeed.reload() } }
@@ -157,6 +172,36 @@ struct HomeView: View {
 
     private func startSearch() {
         withAnimation(.smooth(duration: 0.25)) { searching = true }
+    }
+
+    private func cancelRandom() {
+        randomRequest = nil
+        randomTask?.cancel()
+        randomTask = nil
+        randomError = nil
+    }
+
+    private func openRandom() {
+        guard randomRequest == nil, settings.currentSite == .nhentai else { return }
+        let request = UUID()
+        randomRequest = request
+        randomError = nil
+        randomTask = Task { @MainActor in
+            defer {
+                if randomRequest == request {
+                    randomRequest = nil
+                    randomTask = nil
+                }
+            }
+            do {
+                let id = try await NHClient.shared.randomID()
+                guard !Task.isCancelled, randomRequest == request, settings.currentSite == .nhentai else { return }
+                openRoute?(.nh(GalleryRoute(id: id, preview: nil)))
+            } catch {
+                guard !Task.isCancelled, randomRequest == request, settings.currentSite == .nhentai else { return }
+                randomError = error.localizedDescription
+            }
+        }
     }
 
     private func reload() async {

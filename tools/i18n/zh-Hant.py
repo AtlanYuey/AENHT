@@ -557,3 +557,6 @@ T = [
     "標籤的中文翻譯",
     "感謝這些專案背後的每一個人。它們的授權見「開放原始碼授權」。",
 ]
+
+# Download verification and atomic logout feedback.
+T += ["此 Android 版本無法解碼 AVIF 圖像。這些頁面未標記為已下載。", "無法儲存登出狀態，帳號仍保持登入。"]

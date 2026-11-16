@@ -556,3 +556,5 @@
 "nhentai's tag data" = "Les données des tags de nhentai";
 "Chinese translations of tags" = "Traductions chinoises des tags";
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Merci à toutes les personnes derrière ces projets. Leurs licences se trouvent dans Licences open source.";
+"This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Cette version d’Android ne peut pas décoder les images AVIF. Ces pages ne sont pas marquées comme téléchargées.";
+"The logout couldn't be saved. Your account is still signed in." = "La déconnexion n’a pas pu être enregistrée. Votre compte est toujours connecté.";

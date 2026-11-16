@@ -12,6 +12,9 @@ struct RemoteImage: View {
     var blur: Bool = false
     /// Where to load the image from when [url] fails (asked only then).
     var fallback: (() -> URL?)? = nil
+    /// Reader pages need an explicit recovery action without leaving their scroll position.
+    var retryOnFailure = false
+    @State private var attempt = 0
     @Environment(\.privacyMode) private var privacy
 
     var body: some View {
@@ -23,19 +26,27 @@ struct RemoteImage: View {
                     .blur(radius: blur ? 18 : privacy == .blurImages || privacy == .blurContent ? 28 : 0, opaque: true)
                     .transition(.opacity)
             } else if state.error != nil, let other = fallback?(), other != url {
-                RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur)
+                RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur, retryOnFailure: retryOnFailure)
             } else if state.error != nil {
                 Rectangle()
                     .fill(.quaternary)
                     .overlay {
-                        Image(systemName: "photo")
-                            .font(.title3)
-                            .foregroundStyle(.tertiary)
+                        VStack(spacing: 12) {
+                            Image(systemName: "photo")
+                                .font(.title3)
+                                .foregroundStyle(.tertiary)
+                            if retryOnFailure {
+                                Button("Retry") { attempt += 1 }
+                                    .buttonStyle(.bordered)
+                                    .frame(minHeight: 44)
+                            }
+                        }
                     }
             } else {
                 Rectangle().fill(.quaternary.opacity(0.6))
             }
         }
+        .id(attempt)
         .animation(.easeOut(duration: 0.2), value: url)
     }
 

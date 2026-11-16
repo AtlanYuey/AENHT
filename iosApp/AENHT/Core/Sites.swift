@@ -122,10 +122,14 @@ final class EhCredentials: NSObject, EhCredentialStorage, @unchecked Sendable {
         return saved
     }
 
-    func clear() {
-        lock.withLock { Keychain.deleteAll(["eh_member_id", "eh_pass_hash", "eh_igneous"]) }
+    @discardableResult
+    func clearLogin() -> Bool {
+        let saved = lock.withLock { Keychain.deleteAll(["eh_member_id", "eh_pass_hash", "eh_igneous"]) }
         Task { @MainActor in EhSession.shared.refresh() }
+        return saved
     }
+
+    func clear() { _ = clearLogin() }
 }
 
 /// E-Hentai account state, observed by the UI.
@@ -150,6 +154,7 @@ final class EhSession {
 
     /// Why the last `login` failed when the site couldn't be reached (nil: the site refused the cookies).
     private(set) var loginError: String?
+    var storageError: String?
 
     /// Checks cookies (from the login page or typed) with the site and logs
     /// in with them. When they are refused, or the site can't be reached,
@@ -201,13 +206,20 @@ final class EhSession {
         return true
     }
 
-    func logout() {
+    @discardableResult
+    func logout() -> Bool {
+        let active = AccountBook.shared.accounts(for: .ehentai).first { AccountBook.shared.isActive($0) }
+        guard EhCredentials.shared.clearLogin() else {
+            storageError = String(localized: "The logout couldn't be saved. Your account is still signed in.")
+            return false
+        }
         generation += 1
-        AccountBook.shared.forgetActive(.ehentai)
+        if let active { AccountBook.shared.forget(active) }
         EhService.shared.api.logout()
         AppSettings.shared.useExHentai = false
         refresh()
         Task { await FavoritesStore.shared.accountChanged(.ehentai) }
+        return true
     }
 
     /// Another account: its folders are read again.

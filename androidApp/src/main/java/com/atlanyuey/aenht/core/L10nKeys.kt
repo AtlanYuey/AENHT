@@ -562,10 +562,12 @@ object L10nKeys {
         "nhentai's tag data" to R.string.l_554,
         "Chinese translations of tags" to R.string.l_555,
         "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." to R.string.l_556,
-        "Settings Backup" to R.string.l_557,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_558,
-        "Android's own backup also keeps these settings." to R.string.l_559,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_560,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_561,
+        "This Android version can't decode AVIF images. These pages were not marked as downloaded." to R.string.l_557,
+        "The logout couldn't be saved. Your account is still signed in." to R.string.l_558,
+        "Settings Backup" to R.string.l_559,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_560,
+        "Android's own backup also keeps these settings." to R.string.l_561,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_562,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_563,
     )
 }

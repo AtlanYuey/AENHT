@@ -88,28 +88,30 @@ class ApiKeyTest {
     }
 }
 
-internal class MemoryTokens(override var accessToken: String?, override var refreshToken: String?) : TokenStorage {
-    /** Refuses every write (a storage that's full or locked). */
+internal class MemoryTokens(access: String?, refresh: String?) : TokenStorage {
+    private var revision = 0L
+    private var savedAccess = access
+    private var savedRefresh = refresh
+    override var accessToken: String?
+        get() = savedAccess
+        set(value) { savedAccess = value; revision++ }
+    override var refreshToken: String?
+        get() = savedRefresh
+        set(value) { savedRefresh = value; revision++ }
     var refuses = false
-
-    override fun renew(previousAccess: String, access: String, refresh: String?): Boolean {
-        if (refuses || accessToken != previousAccess) return false
-        accessToken = access
-        if (refresh != null) refreshToken = refresh
+    override fun snapshot() = com.atlanyuey.aenht.shared.nh.TokenSnapshot(savedAccess, savedRefresh, revision)
+    override fun renew(expected: com.atlanyuey.aenht.shared.nh.TokenSnapshot, access: String, refresh: String?): Boolean {
+        if (refuses || snapshot() != expected) return false
+        savedAccess = access
+        if (refresh != null) savedRefresh = refresh
         return true
     }
-
-    override fun replace(expected: String?, access: String, refresh: String?): Boolean {
-        if (refuses || accessToken != expected) return false
-        accessToken = access
-        refreshToken = refresh
+    override fun replace(expected: com.atlanyuey.aenht.shared.nh.TokenSnapshot, access: String, refresh: String?): Boolean {
+        if (refuses || snapshot() != expected) return false
+        savedAccess = access; savedRefresh = refresh; revision++
         return true
     }
-
-    override fun clear() {
-        accessToken = null
-        refreshToken = null
-    }
+    override fun clear() { savedAccess = null; savedRefresh = null; revision++ }
 }
 
 class NhApiTest {

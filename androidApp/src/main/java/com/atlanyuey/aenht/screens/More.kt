@@ -391,6 +391,9 @@ class DownloadsScreen : Screen() {
                     GalleryGrid(
                         records.map { it.summary }, grid, padding,
                         header = {
+                            if (records.any { it.errorKind == "unsupported_avif" }) fullLine("format-warning") {
+                                FooterText(tr("This Android version can't decode AVIF images. These pages were not marked as downloaded."))
+                            }
                             // The same space under the bar as Favorites and History.
                             if (records.isEmpty()) fullLine("empty") { NoDownloads() }
                             else fullLine("top") { androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp)) }
@@ -510,6 +513,11 @@ class DownloadsScreen : Screen() {
         ) {
             if (records.isEmpty()) {
                 item { NoDownloads() }
+            }
+            if (records.any { it.errorKind == "unsupported_avif" }) {
+                item(key = "format-warning") {
+                    FooterText(tr("This Android version can't decode AVIF images. These pages were not marked as downloaded."))
+                }
             }
             groups.forEach { (title, group) ->
             item(key = "header-$title") {

@@ -556,3 +556,5 @@
 "nhentai's tag data" = "Dữ liệu thẻ của nhentai";
 "Chinese translations of tags" = "Bản dịch tiếng Trung của thẻ";
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Cảm ơn tất cả những người đứng sau các dự án này. Giấy phép của chúng nằm trong Giấy phép mã nguồn mở.";
+"This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Phiên bản Android này không thể giải mã ảnh AVIF. Các trang này chưa được đánh dấu là đã tải xuống.";
+"The logout couldn't be saved. Your account is still signed in." = "Không thể lưu trạng thái đăng xuất. Tài khoản của bạn vẫn đang đăng nhập.";

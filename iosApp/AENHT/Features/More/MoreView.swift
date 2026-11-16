@@ -191,10 +191,12 @@ struct AccountView: View {
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.inline)
         .task { await session.reload() }
+        .alert("Couldn't Save", isPresented: Binding(
+            get: { session.storageError != nil }, set: { if !$0 { session.storageError = nil } }
+        )) { Button("OK") { session.storageError = nil } } message: { Text(session.storageError ?? "") }
         .confirmationDialog("Log out of nhentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
             Button("Log Out", role: .destructive) {
-                session.logout()
-                dismiss()
+                if session.logout() { dismiss() }
             }
         }
     }

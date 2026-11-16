@@ -11,16 +11,16 @@ import java.io.File
  */
 fun imageExtension(file: File): String? {
     val type = imageType(file) ?: return null
-    return type.takeIf { hasPicture(file, type) }
+    return type.takeIf { hasPicture(file) }
 }
 
 /** The largest side a page may have (a bigger size is a broken file, not a page). */
 private const val MAX_SIDE = 30_000
 
 /** Whether the system's decoder reads a picture's size from [file] (its header only: nothing is decoded). */
-private fun hasPicture(file: File, type: String): Boolean {
-    // Android decodes AVIF from 12 on: before, the container's own structure has to do.
-    if (type == "avif" && android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return true
+private fun hasPicture(file: File): Boolean {
+    // Unsupported formats are not verified downloads. Container shape alone
+    // must never turn missing/invalid image data into a completed page.
     val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
     return try {
         android.graphics.BitmapFactory.decodeFile(file.path, options)

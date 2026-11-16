@@ -13,8 +13,10 @@ import com.atlanyuey.aenht.shared.net.AndroidHttp
 import com.atlanyuey.aenht.shared.net.AppInfo
 import com.atlanyuey.aenht.shared.nh.NhApi
 import com.atlanyuey.aenht.shared.nh.NhException
+import com.atlanyuey.aenht.shared.nh.TokenSnapshot
 import com.atlanyuey.aenht.shared.nh.TokenStorage
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import okhttp3.OkHttpClient
 import java.security.KeyStore
@@ -196,26 +198,50 @@ object Auth : TokenStorage {
     override val refreshToken: String? get() = store["refresh"]
     val isLoggedIn: Boolean get() = accessToken != null
 
-    override fun renew(previousAccess: String, access: String, refresh: String?): Boolean {
+    private var revision = 0L
+    override fun snapshot(): TokenSnapshot = store.locked { TokenSnapshot(accessToken, refreshToken, revision) }
+
+    override fun renew(expected: TokenSnapshot, access: String, refresh: String?): Boolean {
         val saved = store.locked {
-            accessToken == previousAccess && store.putAll(buildMap {
+            if (snapshot() != expected) return@locked false
+            store.putAll(buildMap {
                 put("access", access)
                 if (!refresh.isNullOrEmpty()) put("refresh", refresh)
             })
         }
-        // The saved account gets the new tokens (it stays the active one).
-        if (saved && previousAccess != access) AccountBook.tokensRenewed(previousAccess, access, refreshToken)
+        val renewedRefresh = refresh?.takeIf { it.isNotEmpty() } ?: expected.refreshToken
+        if (saved && expected.accessToken != access) AccountBook.tokensRenewed(expected.accessToken.orEmpty(), access, renewedRefresh)
+        if (!saved) reconcileFailedWrite()
         return saved
     }
 
-    override fun replace(expected: String?, access: String, refresh: String?): Boolean = store.locked {
-        accessToken == expected && store.putAll(mapOf("access" to access, "refresh" to refresh))
+    override fun replace(expected: TokenSnapshot, access: String, refresh: String?): Boolean {
+        val saved = store.locked {
+            if (snapshot() != expected) return@locked false
+            if (!store.putAll(mapOf("access" to access, "refresh" to refresh))) return@locked false
+            revision++
+            true
+        }
+        if (!saved) reconcileFailedWrite()
+        return saved
     }
 
-    /** Puts a new login in place of the one there is (both tokens); false when it couldn't be saved, and the old one stays. */
-    fun replace(access: String, refresh: String?): Boolean = store.putAll(mapOf("access" to access, "refresh" to refresh))
+    fun replace(access: String, refresh: String?): Boolean {
+        val saved = store.locked {
+            if (!store.putAll(mapOf("access" to access, "refresh" to refresh))) return@locked false
+            revision++
+            true
+        }
+        if (!saved) reconcileFailedWrite()
+        return saved
+    }
 
-    override fun clear() = store.clear()
+    private fun reconcileFailedWrite() {
+        AppScope.launch { Session.reconcileCredentialFailure() }
+    }
+
+    override fun clear() = store.locked { revision++; store.clear() }
+
 }
 
 /** The signed-in user, observed by the UI. */
@@ -293,6 +319,15 @@ object Session {
         reload()
         accountChanged()
         return true
+    }
+
+    internal fun reconcileCredentialFailure() {
+        if (Auth.isLoggedIn) return
+        generation++
+        user = null
+        isLoggedIn = false
+        needsVerification = false
+        accountChanged()
     }
 
     fun logout() {

@@ -18,43 +18,91 @@ final class AuthStore: NSObject, TokenStorage, @unchecked Sendable {
     /// Read, compare and write in one step (the shared module renews from its own threads).
     private let lock = NSLock()
 
-    func renew(previousAccess: String, access: String, refresh: String?) -> Bool {
+    private var revision: Int64 = 0
+
+    func snapshot() -> TokenSnapshot {
+        lock.withLock {
+            let values = Keychain.nhCredentials.values()
+            return TokenSnapshot(accessToken: values?[accessKey], refreshToken: values?[refreshKey], revision: revision)
+        }
+    }
+
+    private func matches(_ expected: TokenSnapshot) -> Bool {
+        let values = Keychain.nhCredentials.values()
+        return revision == expected.revision && values?[accessKey] == expected.accessToken && values?[refreshKey] == expected.refreshToken
+    }
+
+    func renew(expected: TokenSnapshot, access: String, refresh: String?) -> Bool {
         let saved: Bool = lock.withLock {
-            guard accessToken == previousAccess else { return false }
+            guard matches(expected) else { return false }
             var values: [(String, String?)] = [(accessKey, access)]
             if let refresh, !refresh.isEmpty { values.append((refreshKey, refresh)) }
             return Keychain.writeAll(values)
         }
-        // The saved account gets the new tokens (it stays the active one).
-        if saved, previousAccess != access {
-            let renewed = refreshToken
-            Task { @MainActor in AccountBook.shared.tokensRenewed(previousAccess: previousAccess, access: access, refresh: renewed) }
+        if saved, let previous = expected.accessToken, previous != access {
+            // Use this renewal's tuple, never a different account switched in after the lock.
+            let renewed = (refresh?.isEmpty == false) ? refresh : expected.refreshToken
+            Task { @MainActor in AccountBook.shared.tokensRenewed(previousAccess: previous, access: access, refresh: renewed) }
         }
         return saved
     }
 
-    func replace(expected: String?, access: String, refresh: String?) -> Bool {
+    func replace(expected: TokenSnapshot, access: String, refresh: String?) -> Bool {
         lock.withLock {
-            guard accessToken == expected else { return false }
-            return Keychain.writeAll([(accessKey, access), (refreshKey, refresh)])
+            guard matches(expected), Keychain.writeAll([(accessKey, access), (refreshKey, refresh)]) else { return false }
+            revision += 1
+            return true
         }
     }
 
-    /// Puts a new login in place of the one there is (both tokens); false
-    /// when it couldn't be saved, and the old one stays.
     func replace(access: String, refresh: String?) -> Bool {
-        lock.withLock { Keychain.writeAll([(accessKey, access), (refreshKey, refresh)]) }
+        lock.withLock {
+            guard Keychain.writeAll([(accessKey, access), (refreshKey, refresh)]) else { return false }
+            revision += 1
+            return true
+        }
     }
 
-    func clear() {
-        lock.withLock { Keychain.deleteAll([accessKey, refreshKey]) }
+    @discardableResult
+    func clearLogin() -> Bool {
+        lock.withLock {
+            // Invalidate pending work even when the device refuses the logout.
+            revision += 1
+            return Keychain.deleteAll([accessKey, refreshKey])
+        }
     }
+
+    func clear() { _ = clearLogin() }
+
 }
 
 enum Keychain {
     static let service = "com.atlanyuey.aenht"
 
+    static let nhCredentials = AtomicCredentials(
+        record: "nh_credentials_v1", legacyKeys: ["api_v2_access_token", "api_v2_refresh_token"],
+        read: readValue, write: writeRaw, remove: deleteRaw
+    )
+    private static let ehCredentials = AtomicCredentials(
+        record: "eh_credentials_v1", legacyKeys: ["eh_member_id", "eh_pass_hash", "eh_igneous"],
+        read: readValue, write: writeRaw, remove: deleteRaw
+    )
+
+    private static func group(_ key: String) -> AtomicCredentials? {
+        switch key {
+        case "api_v2_access_token", "api_v2_refresh_token": return nhCredentials
+        case "eh_member_id", "eh_pass_hash", "eh_igneous": return ehCredentials
+        default: return nil
+        }
+    }
+
     static func read(_ key: String) -> String? {
+        if let group = group(key) { return group.values()?[key] }
+        if case let .value(value) = readValue(key), !value.isEmpty { return value }
+        return nil
+    }
+
+    private static func readValue(_ key: String) -> SecretRead {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -63,18 +111,22 @@ enum Keychain {
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
         var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data,
-              let value = String(data: data, encoding: .utf8),
-              !value.isEmpty
-        else { return nil }
-        return value
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecItemNotFound { return .missing }
+        guard status == errSecSuccess, let data = item as? Data,
+              let value = String(data: data, encoding: .utf8) else { return .unavailable }
+        return .value(value)
     }
 
     /// Saves a value: the item there is is updated in place (what was saved
     /// stays when the Keychain refuses), or a new one is added.
     @discardableResult
     static func write(_ key: String, _ value: String) -> Bool {
+        if let group = group(key) { return group.update([(key, value)]) }
+        return writeRaw(key, value)
+    }
+
+    private static func writeRaw(_ key: String, _ value: String) -> Bool {
         let item: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -94,31 +146,21 @@ enum Keychain {
         return status == errSecSuccess
     }
 
-    /// Writes several values (nil or empty removes one). The Keychain has no
-    /// transactions: when one write or removal is refused, the values there
-    /// were are put back; when even that fails, all of them are removed, so a
-    /// mix of two logins is never left (false in both cases).
+    /// Site credentials are committed as one Keychain item, including legacy migration.
     static func writeAll(_ values: [(String, String?)]) -> Bool {
-        let before = values.map { ($0.0, read($0.0)) }
-        for (key, value) in values {
-            let done: Bool
-            if let value, !value.isEmpty { done = write(key, value) } else { done = delete(key) }
-            if done { continue }
-            let restored = before.allSatisfy { key, old in
-                if let old { write(key, old) } else { delete(key) }
-            }
-            if !restored {
-                Diagnostics.shared.log(category: "keychain", message: "Couldn't restore \(values.map(\.0)): removed")
-                deleteAll(values.map(\.0))
-            }
-            return false
-        }
-        return true
+        guard let key = values.first?.0, let group = group(key),
+              values.allSatisfy({ self.group($0.0) === group }) else { return false }
+        return group.update(values)
     }
 
     /// Removes a value; false when the Keychain refused (one that isn't there is removed).
     @discardableResult
     static func delete(_ key: String) -> Bool {
+        if let group = group(key) { return group.update([(key, nil)]) }
+        return deleteRaw(key)
+    }
+
+    private static func deleteRaw(_ key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -135,7 +177,10 @@ enum Keychain {
     /// Removes several values (all those it can).
     @discardableResult
     static func deleteAll(_ keys: [String]) -> Bool {
-        keys.map { delete($0) }.allSatisfy { $0 }
+        if let first = keys.first, let group = group(first), keys.allSatisfy({ self.group($0) === group }) {
+            return group.update(keys.map { ($0, nil) })
+        }
+        return keys.map { delete($0) }.allSatisfy { $0 }
     }
 }
 
@@ -144,6 +189,7 @@ enum Keychain {
 final class UserSession {
     static let shared = UserSession()
 
+    var storageError: String?
     private(set) var user: CurrentUser?
     private(set) var isLoggedIn: Bool = AuthStore.shared.isLoggedIn
 
@@ -206,12 +252,18 @@ final class UserSession {
     }
 
     @MainActor
-    func logout() {
+    @discardableResult
+    func logout() -> Bool {
+        let active = AccountBook.shared.accounts(for: .nhentai).first { AccountBook.shared.isActive($0) }
+        guard AuthStore.shared.clearLogin() else {
+            storageError = String(localized: "The logout couldn't be saved. Your account is still signed in.")
+            return false
+        }
         generation += 1
-        AccountBook.shared.forgetActive(.nhentai)
-        AuthStore.shared.clear()
+        if let active { AccountBook.shared.forget(active) }
         user = nil
         isLoggedIn = false
         Task { @MainActor in await accountChanged() }
+        return true
     }
 }

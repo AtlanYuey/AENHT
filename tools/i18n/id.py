@@ -557,3 +557,6 @@ T = [
     "Terjemahan tag ke bahasa Mandarin",
     "Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.",
 ]
+
+# Download verification and atomic logout feedback.
+T += ["Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.", "Gagal menyimpan status keluar. Akun Anda masih masuk."]

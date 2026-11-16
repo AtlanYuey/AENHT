@@ -557,9 +557,11 @@
     <string name="l_554">Data tag nhentai</string>
     <string name="l_555">Terjemahan tag ke bahasa Mandarin</string>
     <string name="l_556">Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.</string>
-    <string name="l_557">Cadangan Pengaturan</string>
-    <string name="l_558">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_559">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_560">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_561">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_557">Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.</string>
+    <string name="l_558">Gagal menyimpan status keluar. Akun Anda masih masuk.</string>
+    <string name="l_559">Cadangan Pengaturan</string>
+    <string name="l_560">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_561">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_562">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_563">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

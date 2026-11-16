@@ -115,7 +115,12 @@ jobs:
           NOTES="Newest development build from the dev branch (commit ${GITHUB_SHA::7}). Experimental: not a release."
           gh release view dev-latest >/dev/null 2>&1 || \
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
-          for i in 1 2 3; do gh release upload dev-latest dist/AENHT.apk --clobber && break; sleep 10; done
+          uploaded=false
+          for i in 1 2 3; do
+            if gh release upload dev-latest dist/AENHT.apk --clobber; then uploaded=true; break; fi
+            if [ "$i" -lt 3 ]; then sleep 10; fi
+          done
+          if [ "$uploaded" != true ]; then echo "::error::APK upload failed after three attempts"; exit 1; fi
           # Earlier builds were published as AENHT-debug.apk.
           gh release delete-asset dev-latest AENHT-debug.apk -y 2>/dev/null || true
           gh release edit dev-latest --notes "$NOTES" || true
@@ -133,7 +138,12 @@ jobs:
           fi
           VERSION=$(grep -oP 'versionName = "\K[^"]+' androidApp/build.gradle.kts)
           cp dist/AENHT.apk "dist/AENHT-${VERSION}.apk"
-          for i in 1 2 3; do gh release upload "${{ github.event.release.tag_name }}" "dist/AENHT-${VERSION}.apk" --clobber && break; sleep 10; done
+          uploaded=false
+          for i in 1 2 3; do
+            if gh release upload "${{ github.event.release.tag_name }}" "dist/AENHT-${VERSION}.apk" --clobber; then uploaded=true; break; fi
+            if [ "$i" -lt 3 ]; then sleep 10; fi
+          done
+          if [ "$uploaded" != true ]; then echo "::error::APK upload failed after three attempts"; exit 1; fi
 
       - name: Upload screenshots
         if: always()

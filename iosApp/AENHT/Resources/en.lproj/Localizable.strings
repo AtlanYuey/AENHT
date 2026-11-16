@@ -1,2 +1,5 @@
 /* English uses the keys in the source code. */
 "Page %lld of %lld · %@" = "Page %1$lld of %2$lld · %3$@";
+
+"This Android version can't decode AVIF images. These pages were not marked as downloaded." = "This Android version can't decode AVIF images. These pages were not marked as downloaded.";
+"The logout couldn't be saved. Your account is still signed in." = "The logout couldn't be saved. Your account is still signed in.";

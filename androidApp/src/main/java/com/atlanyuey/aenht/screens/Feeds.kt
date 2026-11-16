@@ -900,6 +900,14 @@ class HistoryScreen : Screen(), TabRoot {
     @Composable
     override fun Content() {
         val overlays = LocalOverlays.current
+        val historyError = HistoryStore.storageError
+        val saveFailure = tr("Couldn't Save")
+        LaunchedEffect(historyError) {
+            if (historyError != null) {
+                overlays.alert(saveFailure, historyError)
+                HistoryStore.storageError = null
+            }
+        }
         val entries = HistoryStore.entries.filter { e -> site == null || e.site == site?.key }
         val text = search.trim()
         val filtered = if (text.isEmpty()) entries.toList() else entries.filter {

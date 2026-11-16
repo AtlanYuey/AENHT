@@ -557,9 +557,11 @@
     <string name="l_554">Os dados de tags do nhentai</string>
     <string name="l_555">Traduções das tags para chinês</string>
     <string name="l_556">Obrigado a todos por trás desses projetos. As licenças estão em Licenças de código aberto.</string>
-    <string name="l_557">Backup dos ajustes</string>
-    <string name="l_558">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_559">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_560">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_561">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_557">Esta versão do Android não consegue decodificar imagens AVIF. Estas páginas não foram marcadas como baixadas.</string>
+    <string name="l_558">Não foi possível salvar a saída. Sua conta continua conectada.</string>
+    <string name="l_559">Backup dos ajustes</string>
+    <string name="l_560">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_561">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_562">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_563">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

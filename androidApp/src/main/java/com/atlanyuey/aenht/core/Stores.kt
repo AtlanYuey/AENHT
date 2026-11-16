@@ -19,6 +19,13 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonObject
@@ -104,6 +111,7 @@ data class HistoryEntry(
 object HistoryStore {
     private lateinit var repo: HistoryRepository
     val entries = mutableStateListOf<HistoryEntry>()
+    var storageError by mutableStateOf<String?>(null)
     private val writes = Mutex()
 
     fun init(context: Context) {
@@ -166,20 +174,35 @@ object HistoryStore {
     fun lastReadPage(gid: Int): Int? = lastReadPage(GalleryKey.nh(gid))
 
     fun delete(key: GalleryKey) {
-        entries.removeAll { it.key == key }
-        write { repo.delete(key) }
+        val pending = entries.firstOrNull { it.key == key }
+        write {
+            repo.delete(key)
+            // A read made while persistence waited is a newer entry, not the deleted one.
+            entries.removeAll { it === pending }
+        }
     }
 
     fun delete(gid: Int) = delete(GalleryKey.nh(gid))
 
     fun clear() {
-        entries.clear()
-        write { repo.clear() }
+        val pending = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<HistoryEntry, Boolean>())
+        pending.addAll(entries)
+        write {
+            repo.clear()
+            entries.removeAll { it in pending }
+        }
     }
 
     private fun write(block: suspend () -> Unit) {
         AppScope.launch {
-            writes.withLock { runCatching { block() } }
+            writes.withLock {
+                try { block() }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (e: Exception) {
+                    storageError = e.message ?: e.toString()
+                    com.atlanyuey.aenht.shared.app.Diagnostics.log("history", storageError.orEmpty())
+                }
+            }
         }
     }
 }
@@ -218,6 +241,8 @@ data class DownloadRecord(
     val pageCount: Int = 0,
     val category: String? = null,
     val language: String? = null,
+    /** Stable failure code, kept in the index and localized by the UI. */
+    val errorKind: String? = null,
 ) {
     val key: GalleryKey get() = GalleryKey(Site.fromKey(site) ?: Site.NHENTAI, id.toLong(), token)
     val isEh: Boolean get() = site == Site.EHENTAI.key
@@ -256,6 +281,20 @@ object Downloads {
     private lateinit var root: File
     val records = mutableStateListOf<DownloadRecord>()
     private val jobs = mutableMapOf<String, Job>()
+    private val runLock = Any()
+    private class DownloadRun(val storageKey: String) : AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<DownloadRun>
+    }
+    private val runs = mutableMapOf<String, DownloadRun>()
+
+    private suspend fun ensureCurrentRun() {
+        val context = currentCoroutineContext()
+        context.ensureActive()
+        val run = context[DownloadRun] ?: return
+        synchronized(runLock) {
+            if (runs[run.storageKey] !== run) throw kotlinx.coroutines.CancellationException("Download replaced")
+        }
+    }
     private var lastSave = 0L
 
     fun init(context: Context) {
@@ -396,14 +435,21 @@ object Downloads {
     fun resume(key: GalleryKey) {
         val record = record(key) ?: return
         if (jobs[key.storageKey] != null || record.state == DownloadRecord.FINISHED) return
-        update(key) { it.copy(state = DownloadRecord.DOWNLOADING) }
+        update(key) { it.copy(state = DownloadRecord.DOWNLOADING, errorKind = null) }
         saveIndex()
-        jobs[key.storageKey] = AppScope.launch { run(key) }
+        val execution = DownloadRun(key.storageKey)
+        synchronized(runLock) { runs[key.storageKey] = execution }
+        // Register before executing: a synchronous failure must not leave a
+        // completed Job assigned after its own cleanup, blocking every retry.
+        val job = AppScope.launch(execution, start = CoroutineStart.LAZY) { run(key) }
+        jobs[key.storageKey] = job
+        job.start()
     }
 
     fun resume(id: Int) = resume(GalleryKey.nh(id))
 
     fun pause(key: GalleryKey) {
+        synchronized(runLock) { runs.remove(key.storageKey) }
         jobs.remove(key.storageKey)?.cancel()
         update(key) { it.copy(state = DownloadRecord.PAUSED) }
         saveIndex()
@@ -412,10 +458,16 @@ object Downloads {
     fun pause(id: Int) = pause(GalleryKey.nh(id))
 
     fun delete(key: GalleryKey) {
+        // Move only the deleted run's folder aside before another run can use its path.
+        val removedFolder = synchronized(runLock) {
+            runs.remove(key.storageKey)
+            val source = folder(key)
+            val trash = File(root, ".deleted-${UUID.randomUUID()}")
+            if (source.exists() && source.renameTo(trash)) trash else null
+        }
         jobs.remove(key.storageKey)?.cancel()
         records.removeAll { it.site == key.site.key && it.id.toLong() == key.id }
-        val folder = folder(key)
-        AppScope.launch(Dispatchers.IO) { folder.deleteRecursively() }
+        if (removedFolder != null) AppScope.launch(Dispatchers.IO) { removedFolder.deleteRecursively() }
         saveIndex()
     }
 
@@ -425,10 +477,12 @@ object Downloads {
     private var running = 0
 
     private suspend fun run(key: GalleryKey) {
+        ensureCurrentRun()
         // Waits its turn: the others keep downloading meanwhile.
         if (running >= AppSettings.downloadGalleries) {
             update(key) { it.copy(state = DownloadRecord.QUEUED) }
             while (running >= AppSettings.downloadGalleries) delay(500)
+            ensureCurrentRun()
             update(key) { it.copy(state = DownloadRecord.DOWNLOADING) }
         }
         running++
@@ -441,7 +495,9 @@ object Downloads {
 
     private suspend fun download(key: GalleryKey) {
         if (record(key)?.isEh == true && !completeEhPages(key)) {
+            ensureCurrentRun()
             jobs.remove(key.storageKey)
+            synchronized(runLock) { runs.remove(key.storageKey) }
             update(key) { it.copy(state = DownloadRecord.FAILED) }
             saveIndex()
             return
@@ -453,6 +509,7 @@ object Downloads {
             // A file that isn't a picture (an error page saved by an earlier version) is downloaded again.
             record.pages.filter { imageExtension(File(folder, it.file)) == null }
         }
+        ensureCurrentRun()
         update(key) { it.copy(completed = it.pages.size - pending.size) }
         var failures = 0
         // E-Hentai: at most 3 at a time (each page also loads its page link).
@@ -462,17 +519,26 @@ object Downloads {
         coroutineScope {
             pending.map { page ->
                 async {
-                    val ok = semaphore.withPermit {
-                        if (interval > 0) delay(interval)
-                        if (record.isEh) fetchEh(page, File(folder, page.file), attempts)
-                        else fetch(page.remote, File(folder, page.file), attempts)
+                    val ok = try {
+                        semaphore.withPermit {
+                            if (interval > 0) delay(interval)
+                            if (record.isEh) fetchEh(page, File(folder, page.file), attempts)
+                            else fetch(page.remote, File(folder, page.file), attempts)
+                        }
+                    } catch (_: UnsupportedAvif) {
+                        ensureCurrentRun()
+                        update(key) { it.copy(errorKind = "unsupported_avif") }
+                        false
                     }
+                    ensureCurrentRun()
                     if (ok) update(key) { it.copy(completed = it.completed + 1) } else failures++
                     if (System.currentTimeMillis() - lastSave > 2000) saveIndex()
                 }
             }.awaitAll()
         }
+        ensureCurrentRun()
         jobs.remove(key.storageKey)
+        synchronized(runLock) { runs.remove(key.storageKey) }
         update(key) {
             it.copy(
                 state = if (failures == 0 && it.completed >= it.totalPages) DownloadRecord.FINISHED
@@ -496,6 +562,7 @@ object Downloads {
             } catch (_: Exception) {
                 return false
             }
+            ensureCurrentRun()
             val known = record.pages.map { it.number }.toSet()
             val added = ehPages(thumbs.filter { it.page !in known })
             if (thumbs.isEmpty()) break
@@ -526,20 +593,48 @@ object Downloads {
         return false
     }
 
-    private suspend fun fetch(url: String, file: File, attempts: Int = 3): Boolean = withContext(Dispatchers.IO) {
+    private class UnsupportedAvif : Exception()
+
+    private suspend fun fetch(url: String, file: File, attempts: Int = 3, client: okhttp3.OkHttpClient = Net.client): Boolean = withContext(Dispatchers.IO) {
         repeat(attempts) { attempt ->
             if (!isActive) return@withContext false
             try {
                 val request = Request.Builder().url(url).build()
-                val ok = Net.client.newCall(request).execute().use { response ->
-                    if (response.code != 200) return@use false
-                    val temp = File(file.parentFile, file.name + ".part")
-                    temp.outputStream().use { out -> response.body.byteStream().copyTo(out) }
-                    // An answer that isn't a picture (an error page with status 200) is not the page.
-                    if (imageExtension(temp) == null) { temp.delete(); return@use false }
-                    temp.renameTo(file)
+                val call = client.newCall(request)
+                val ok = coroutineScope {
+                    // A response can already be streaming when cancellation happens.
+                    val cancellation = launch(start = CoroutineStart.UNDISPATCHED) {
+                        try { awaitCancellation() } finally { call.cancel() }
+                    }
+                    val temp = File(file.parentFile, ".${file.name}-${UUID.randomUUID()}.part")
+                    try {
+                        call.execute().use { response ->
+                            if (response.code != 200) return@use false
+                            temp.outputStream().use { out -> response.body.byteStream().copyTo(out) }
+                            if (imageExtension(temp) == null) {
+                                if (android.os.Build.VERSION.SDK_INT < 31 && imageType(temp) == "avif") throw UnsupportedAvif()
+                                return@use false
+                            }
+                            val context = currentCoroutineContext()
+                            synchronized(runLock) {
+                                context.ensureActive()
+                                val run = context[DownloadRun]
+                                if (run != null && runs[run.storageKey] !== run) {
+                                    throw kotlinx.coroutines.CancellationException("Download replaced")
+                                }
+                                temp.renameTo(file)
+                            }
+                        }
+                    } finally {
+                        temp.delete()
+                        cancellation.cancel()
+                    }
                 }
                 if (ok) return@withContext true
+            } catch (e: UnsupportedAvif) {
+                throw e // Retrying cannot install a missing system decoder.
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (_: Exception) {
             }
             if (attempt < attempts - 1) delay(1000L * (attempt + 1))
