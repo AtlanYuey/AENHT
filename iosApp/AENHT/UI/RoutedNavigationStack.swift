@@ -21,8 +21,10 @@ struct RoutedNavigationStack<Content: View>: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            content()
+            // The pages keep the accent; the bar (its back button) is in the label color.
+            content().tint(AppSettings.shared.accent.color)
         }
+        .tint(.primary)
         .environment(\.openRoute) { route in
             guard Date().timeIntervalSince(lastOpened) > 0.8 else { return }
             lastOpened = Date()
@@ -36,34 +38,45 @@ struct RoutedNavigationStack<Content: View>: View {
 
 
 /// A page that is being closed (or covered by the next one) doesn't take
-/// touches: a tap while its closing animation still runs goes to the page
-/// under it, the one it is going back to, instead of opening something on
-/// the page that is going away.
+/// touches while that animation runs: on iOS 18 a touch during the zoom
+/// back to the card catches the animation and turns it around, and the same
+/// touch then landed on the page (opening the page of the gallery that was
+/// closing). The app takes no touches until the animation has ended (a
+/// moment); a back swipe, which the finger drives itself, isn't touched.
 struct LeavingPageIgnoresTouches: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> Watcher { Watcher() }
     func updateUIViewController(_ controller: Watcher, context: Context) {}
 
     final class Watcher: UIViewController {
-        /// The page: the view of the controller the navigation controller shows.
-        private var page: UIView? {
-            var controller: UIViewController? = parent
-            while let current = controller, !(current.parent is UINavigationController) { controller = current.parent }
-            return controller?.view
-        }
-
         override func viewDidLoad() {
             super.viewDidLoad()
             view.isUserInteractionEnabled = false
         }
 
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            page?.isUserInteractionEnabled = true
-        }
-
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
-            page?.isUserInteractionEnabled = false
+            guard animated, let window = view.window else { return }
+            let coordinator = transitionCoordinator
+            guard coordinator?.isInteractive != true else { return }
+            window.isUserInteractionEnabled = false
+            coordinator?.animate(alongsideTransition: nil) { _ in window.isUserInteractionEnabled = true }
+            // Whatever happens to the animation, never longer than this.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { window.isUserInteractionEnabled = true }
         }
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            view.window?.isUserInteractionEnabled = true
+        }
+    }
+}
+
+extension View {
+    /// The bar's buttons in the label color (white in Dark Mode, black in
+    /// Light), not the accent: the page under the bar keeps the accent.
+    func barToolbar<Content: ToolbarContent>(@ToolbarContentBuilder _ content: () -> Content) -> some View {
+        self.tint(AppSettings.shared.accent.color)
+            .toolbar(content: content)
+            .tint(.primary)
     }
 }

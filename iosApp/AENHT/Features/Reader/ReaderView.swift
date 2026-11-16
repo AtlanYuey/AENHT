@@ -170,7 +170,7 @@ struct ReaderView: View {
             }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .barToolbar {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text(source.title)
@@ -630,7 +630,7 @@ struct ReaderSettingsSheet: View {
             }
             .navigationTitle("Reader Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .barToolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }
                 }

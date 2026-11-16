@@ -211,7 +211,7 @@ struct EhGalleryView: View {
         .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
         .background(LeavingPageIgnoresTouches().frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .barToolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     if let card = model.card {

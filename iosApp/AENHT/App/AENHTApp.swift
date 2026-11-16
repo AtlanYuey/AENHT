@@ -120,7 +120,7 @@ struct RootView: View {
                     }
                 }
                     .galleryDestinations()
-                    .toolbar {
+                    .barToolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Close", systemImage: "xmark") { openedFromClipboard = nil }
                         }

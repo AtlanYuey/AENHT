@@ -233,7 +233,7 @@ struct DownloadsView: View {
         .navigationTitle("Downloads")
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.showsSiteBadge, site == nil && settings.enabledSites.count > 1)
-        .toolbar {
+        .barToolbar {
             ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { DownloadSettingsView() } label: { Label("Download Settings", systemImage: "gearshape") }
@@ -1031,7 +1031,7 @@ private struct LicenseTextView: View {
         }
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .barToolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Link(destination: url) {
                     Image(systemName: "safari")
