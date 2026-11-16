@@ -97,13 +97,18 @@ struct LanguageBadge: View {
     }
 }
 
-/// Opens a gallery of either site.
+/// Opens a gallery of either site (in a `GalleryList`, through the list:
+/// its cards are UIKit cells, out of reach of the navigation stack's links).
 struct GalleryLinkButton<Label: View>: View {
     let item: GalleryItem
     @ViewBuilder let label: () -> Label
 
+    @Environment(\.openGallery) private var openGallery
+
     var body: some View {
-        if item.site == .ehentai {
+        if let openGallery {
+            Button { openGallery(item) } label: { label() }
+        } else if item.site == .ehentai {
             NavigationLink(value: EhGalleryRoute(gid: item.id, token: item.token ?? "", preview: item), label: label)
         } else {
             NavigationLink(value: GalleryRoute(id: item.id, preview: item), label: label)
@@ -186,6 +191,15 @@ struct CoverView: View {
 struct GalleryCard: View {
     let item: GalleryItem
     let style: GalleryListStyle
+    /// The title's and the tag line's sizes, worked out by the list (`CardMetrics`): the
+    /// card is exactly as tall as the list placed it. Nil: as tall as its content.
+    var fixed: Fixed? = nil
+
+    struct Fixed: Equatable {
+        var titleLines: Int
+        var titleHeight: CGFloat
+        var footerHeight: CGFloat?
+    }
 
     @Environment(\.galleryNamespace) private var namespace
     @Environment(\.galleryCoverBadge) private var badge
@@ -199,7 +213,11 @@ struct GalleryCard: View {
                     CoverView(item: item, aspectRatio: 3 / 4)
                         .overlay { badge?(item) }
                         .galleryTransitionSource(item.transitionKey, namespace)
-                    title.frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
+                    if let fixed {
+                        title.frame(maxWidth: .infinity, minHeight: fixed.titleHeight, maxHeight: fixed.titleHeight, alignment: .topLeading)
+                    } else {
+                        title.frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
+                    }
                 case .compact:
                     CoverView(item: item)
                         .overlay(alignment: .bottom) { compactOverlay }
@@ -210,8 +228,17 @@ struct GalleryCard: View {
                     CoverView(item: item)
                         .overlay { badge?(item) }
                         .galleryTransitionSource(item.transitionKey, namespace)
-                    title
-                    CardFooter(item: item, style: .plain)
+                    if let fixed {
+                        title(lines: fixed.titleLines)
+                            .frame(maxWidth: .infinity, minHeight: fixed.titleHeight, maxHeight: fixed.titleHeight, alignment: .topLeading)
+                        if let footer = fixed.footerHeight {
+                            CardFooter(item: item, style: .plain)
+                                .frame(maxWidth: .infinity, minHeight: footer, maxHeight: footer)
+                        }
+                    } else {
+                        title
+                        CardFooter(item: item, style: .plain)
+                    }
                 }
             }
             .contentShape(Rectangle())
@@ -225,11 +252,13 @@ struct GalleryCard: View {
         }
     }
 
-    private var title: some View {
+    private var title: some View { title(lines: 2) }
+
+    private func title(lines: Int) -> some View {
         Text(item.prettyTitle)
             .font(.footnote.weight(.medium))
             .foregroundStyle(.primary)
-            .lineLimit(2)
+            .lineLimit(lines)
             .multilineTextAlignment(.leading)
             .privacyText()
     }
@@ -499,117 +528,6 @@ struct GalleryContextMenu: View {
         } label: {
             Label("Copy Link", systemImage: "link")
         }
-    }
-}
-
-/// Galleries laid out in the user's list style; the column count follows
-/// the available width and the card size setting for the orientation.
-struct GalleryCollection: View {
-    let items: [GalleryItem]
-    var onItemAppear: (GalleryItem) -> Void = { _ in }
-
-    @Environment(AppSettings.self) private var settings
-    @State private var width: CGFloat = 0
-    @State private var isLandscape = false
-
-    private let spacing: CGFloat = 12
-
-    var body: some View {
-        Group {
-            switch settings.listStyle {
-            case .list:
-                LazyVStack(spacing: 0) {
-                    ForEach(items, id: \.uid) { item in
-                        GalleryRow(item: item)
-                            .padding(.horizontal)
-                            .onAppear { onItemAppear(item) }
-                        Divider().padding(.leading, 114)
-                    }
-                }
-            case .grid:
-                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 18) {
-                    ForEach(items, id: \.uid) { item in
-                        GalleryCard(item: item, style: .grid)
-                            .onAppear { onItemAppear(item) }
-                    }
-                }
-                .padding(.horizontal)
-            case .waterfall, .compact:
-                Masonry(items: items, columns: columnCount, spacing: spacing,
-                        style: settings.listStyle, onItemAppear: onItemAppear)
-                    .padding(.horizontal)
-            }
-        }
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
-            width = size.width
-        }
-        .background {
-            GeometryReader { proxy in
-                Color.clear.onAppear { updateOrientation(proxy) }
-                    .onChange(of: proxy.size) { updateOrientation(proxy) }
-            }
-        }
-    }
-
-    private func updateOrientation(_ proxy: GeometryProxy) {
-        let scene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first
-        if let scene {
-            isLandscape = scene.effectiveGeometry.interfaceOrientation.isLandscape
-        } else {
-            isLandscape = proxy.size.width > proxy.size.height
-        }
-    }
-
-    /// The columns chosen in Card Size for this device and orientation; a
-    /// narrow pane (Split View, Slide Over) shows fewer rather than cards
-    /// narrower than 90 pt.
-    private var columnCount: Int {
-        let available = max(0, width - 32)
-        guard available > 0 else { return settings.columns(isLandscape: isLandscape) }
-        let fit = max(1, Int((available + spacing) / (90 + spacing)))
-        return min(settings.columns(isLandscape: isLandscape), fit)
-    }
-
-    private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: spacing, alignment: .top), count: columnCount)
-    }
-}
-
-/// Waterfall layout: each card goes to the currently shortest column.
-private struct Masonry: View {
-    let items: [GalleryItem]
-    let columns: Int
-    let spacing: CGFloat
-    let style: GalleryListStyle
-    let onItemAppear: (GalleryItem) -> Void
-
-    var body: some View {
-        HStack(alignment: .top, spacing: spacing) {
-            ForEach(Array(distributed.enumerated()), id: \.offset) { _, column in
-                LazyVStack(spacing: style == .compact ? spacing : 16) {
-                    ForEach(column, id: \.uid) { item in
-                        GalleryCard(item: item, style: style)
-                            .onAppear { onItemAppear(item) }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .top)
-            }
-        }
-    }
-
-    private var distributed: [[GalleryItem]] {
-        let count = max(1, columns)
-        var result = Array(repeating: [GalleryItem](), count: count)
-        var heights = Array(repeating: CGFloat(0), count: count)
-        let titleHeight: CGFloat = style == .compact ? 0 : 0.28
-        for item in items {
-            let index = heights.indices.min { heights[$0] < heights[$1] } ?? 0
-            result[index].append(item)
-            heights[index] += 1 / max(item.aspectRatio, 0.3) + titleHeight
-        }
-        return result
     }
 }
 

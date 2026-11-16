@@ -65,41 +65,43 @@ struct FavoritesView: View {
                         .modifier(ProminentButtonStyle())
                 }
             } else if site == nil {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        GalleryCollection(items: store.cards(folders: Set(settings.favoritesAllFolders)).filter {
-                            query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)
-                        })
-                            .environment(\.showsSiteBadge, true)
-                            .padding(.top, 8)
-                        if store.cards(folders: Set(settings.favoritesAllFolders)).isEmpty {
-                            if store.syncing != nil {
-                                ProgressView().controlSize(.large).frame(maxWidth: .infinity).padding(.top, 80)
-                            } else {
-                                ContentUnavailableView("No Favorites", systemImage: "heart",
-                                                       description: Text(store.error ?? String(localized: "Log in to a site to see its favorites here.")))
+                let cards = store.cards(folders: Set(settings.favoritesAllFolders))
+                GalleryList(
+                    blocks: [
+                        .view("top") { Color.clear.frame(height: 8) },
+                        .cards("all", cards.filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }),
+                        .view("empty") {
+                            if cards.isEmpty {
+                                if store.syncing != nil {
+                                    ProgressView().controlSize(.large).frame(maxWidth: .infinity).padding(.top, 80)
+                                } else {
+                                    ContentUnavailableView("No Favorites", systemImage: "heart",
+                                                           description: Text(store.error ?? String(localized: "Log in to a site to see its favorites here.")))
+                                }
                             }
-                        }
-                    }
-                }
-                .refreshable { await store.sync() }
-                .tabTapScrolling(.favorites) { await store.sync() }
-                .hidesBarsOnScroll()
+                        },
+                    ],
+                    refresh: { await store.sync() },
+                    tab: .favorites
+                )
+                .environment(\.showsSiteBadge, true)
             } else {
                 let feed = site == .ehentai ? ehFeed : nhFeed
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        GalleryCollection(items: feed.items) { item in
-                            Task { await feed.loadMoreIfNeeded(after: item) }
-                        }
-                        .padding(.top, 8)
-                        FeedPlaceholder(feed: feed, emptyTitle: "No Favorites", emptyImage: "heart")
-                        FeedFooter(feed: feed)
-                    }
-                }
-                .refreshable { await feed.reload() }
-                .tabTapScrolling(.favorites) { await feed.reload() }
-                .hidesBarsOnScroll()
+                GalleryList(
+                    blocks: [
+                        .view("top") { Color.clear.frame(height: 8) },
+                        .cards(site == .ehentai ? "eh" : "nh", feed.items),
+                        .view("footer") {
+                            VStack(spacing: 0) {
+                                FeedPlaceholder(feed: feed, emptyTitle: "No Favorites", emptyImage: "heart")
+                                FeedFooter(feed: feed)
+                            }
+                        },
+                    ],
+                    onItemAppear: { item in Task { await feed.loadMoreIfNeeded(after: item) } },
+                    refresh: { await feed.reload() },
+                    tab: .favorites
+                )
             }
         }
         // The system title menu, like Home's (not a tinted button).

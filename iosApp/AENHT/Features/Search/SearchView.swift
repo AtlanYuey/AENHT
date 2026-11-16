@@ -338,52 +338,64 @@ struct SearchResults: View {
     private var searches: Bool { link == nil || link!.hasPrefix("nh:") }
     private var feed: GalleryFeed { site == .ehentai ? ehFeed : nhFeed }
 
-    var body: some View {
-        @Bindable var settings = settings
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                if let match {
-                    SectionTitle(title: match.site == .ehentai ? "E-Hentai Gallery" : "Gallery #\(match.id)")
-                    GalleryRow(item: match)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
-                if searches, settings.enabledSites.count > 1 {
-                    Picker("Site", selection: $site) {
-                        ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
+    /// Above the results: a gallery the search text names, the site, what the
+    /// other site can't search for, and how many results there are.
+    private var resultsHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let match {
+                SectionTitle(title: match.site == .ehentai ? "E-Hentai Gallery" : "Gallery #\(match.id)")
+                GalleryRow(item: match)
                     .padding(.horizontal)
-                    .padding(.vertical, 6)
+                    .padding(.bottom, 8)
+            }
+            if searches, settings.enabledSites.count > 1 {
+                Picker("Site", selection: $site) {
+                    ForEach(settings.enabledSites) { Text($0.displayName).tag($0) }
                 }
-                if searches {
-                    if let terms = dropped[site], !terms.isEmpty {
-                        Text("Not available on \(site.displayName): \(terms.joined(separator: " "))")
-                            .font(.footnote)
-                            .foregroundStyle(.orange)
-                            .padding(.horizontal)
-                            .padding(.top, 4)
-                    }
-                    if let total = feed.total, feed.hasLoaded {
-                        Text("\(total) results")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
-                    }
-                    GalleryCollection(items: feed.items) { item in
-                        Task { await feed.loadMoreIfNeeded(after: item) }
-                    }
-                    if match == nil {
-                        FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
-                    }
-                    FeedFooter(feed: feed)
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+            }
+            if searches {
+                if let terms = dropped[site], !terms.isEmpty {
+                    Text("Not available on \(site.displayName): \(terms.joined(separator: " "))")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal)
+                        .padding(.top, 4)
+                }
+                if let total = feed.total, feed.hasLoaded {
+                    Text("\(total) results")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
                 }
             }
         }
-        .refreshable { await feed.reload() }
-        .hidesBarsOnScroll()
-        .keepsPlaceOnResize()
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    var body: some View {
+        @Bindable var settings = settings
+        GalleryList(
+            blocks: [
+                .view("header") { resultsHeader },
+                .cards(site == .ehentai ? "eh" : "nh", searches ? feed.items : []),
+                .view("footer") {
+                    if searches {
+                        VStack(spacing: 0) {
+                            if match == nil {
+                                FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
+                            }
+                            FeedFooter(feed: feed)
+                        }
+                    }
+                },
+            ],
+            onItemAppear: { item in Task { await feed.loadMoreIfNeeded(after: item) } },
+            refresh: { await feed.reload() }
+        )
         .task(id: site) {
             guard searches else { return }
             if !feed.hasLoaded { await feed.reload() }

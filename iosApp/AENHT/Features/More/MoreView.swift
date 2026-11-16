@@ -215,14 +215,14 @@ struct DownloadsView: View {
     }
 
     private var cards: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                GalleryCollection(items: records.map(\.item))
-                    .padding(.top, 8)
-            }
-            .padding(.bottom, 16)
-        }
-        .keepsPlaceOnResize()
+        GalleryList(
+            blocks: [
+                .view("top") { Color.clear.frame(height: 8) },
+                .cards("downloads", records.map(\.item)),
+                .view("bottom") { Color.clear.frame(height: 16) },
+            ],
+            hidesBars: false
+        )
         .environment(\.galleryCoverBadge) { item in
             AnyView(DownloadBadge(uid: item.uid))
         }

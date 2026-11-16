@@ -106,7 +106,6 @@ struct TabTapScrolling: ViewModifier {
     @State private var scroll = ScrollPosition(edge: .top)
     /// How far the list is scrolled (0 at the top).
     @State private var offset: CGFloat = 0
-    @State private var place = KeptPlace()
     /// Where the list was when the tab button took it to the top.
     @State private var saved: CGFloat?
     /// A tap at the top, waiting to see if a second follows.
@@ -120,12 +119,10 @@ struct TabTapScrolling: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scrollPosition($scroll)
-            .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
-                ScrollPlace(geometry)
-            } action: { old, new in
-                offset = new.offset
-                // Turned (or resized): the list stays where it was, not back at the top.
-                place.changed(from: old, to: new) { scroll.scrollTo(y: $0) }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, new in
+                offset = new
             }
             .background(TabNavigationFinder(tab: tab).frame(width: 0, height: 0))
             .onAppear { visible = true }
@@ -167,70 +164,4 @@ extension View {
     func tabTapScrolling(_ tab: AppTab, enabled: Bool = true, refresh: @escaping () async -> Void) -> some View {
         modifier(TabTapScrolling(tab: tab, enabled: enabled, refresh: refresh))
     }
-}
-
-// MARK: - Keeping the place when the width changes
-
-/// Where a list is: how far it is scrolled, how long it is and how wide.
-struct ScrollPlace: Equatable {
-    var offset: CGFloat
-    var length: CGFloat
-    var width: CGFloat
-
-    init(_ geometry: ScrollGeometry) {
-        offset = geometry.contentOffset.y + geometry.contentInsets.top
-        length = geometry.contentSize.height
-        width = geometry.containerSize.width
-    }
-}
-
-/// Keeps a list where it was when its width changes (the device is turned,
-/// Split View is resized): the cards are laid out again in another number
-/// of columns, the list has another length, and without this it starts
-/// again at the top. The place is kept as a share of the list's length.
-@MainActor
-final class KeptPlace {
-    /// The place before the change, as a share of the list's length.
-    private var share: CGFloat?
-    private var length: CGFloat = 0
-    private var task: Task<Void, Never>?
-
-    func changed(from old: ScrollPlace, to new: ScrollPlace, scrollTo: @escaping (CGFloat) -> Void) {
-        length = new.length
-        guard old.width > 0, abs(new.width - old.width) > 1 else { return }
-        // The first step of the change has the place as it was (later ones are already laid out again).
-        if share == nil {
-            guard old.offset > 1, old.length > 0 else { return }
-            share = old.offset / old.length
-        }
-        // Once the new layout has settled.
-        task?.cancel()
-        task = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled, let self, let share = self.share else { return }
-            self.share = nil
-            scrollTo(share * self.length)
-        }
-    }
-}
-
-/// For lists that aren't a tab's first page (those keep their place with `tabTapScrolling`).
-private struct KeepsPlaceOnResize: ViewModifier {
-    @State private var scroll = ScrollPosition(edge: .top)
-    @State private var place = KeptPlace()
-
-    func body(content: Content) -> some View {
-        content
-            .scrollPosition($scroll)
-            .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
-                ScrollPlace(geometry)
-            } action: { old, new in
-                place.changed(from: old, to: new) { scroll.scrollTo(y: $0) }
-            }
-    }
-}
-
-extension View {
-    /// Keeps this list where it was when the device is turned.
-    func keepsPlaceOnResize() -> some View { modifier(KeepsPlaceOnResize()) }
 }

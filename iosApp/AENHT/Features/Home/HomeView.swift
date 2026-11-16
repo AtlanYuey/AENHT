@@ -25,13 +25,9 @@ struct HomeView: View {
     /// The feed's header (sort, language, search) has scrolled under the
     /// navigation bar: its buttons show in the bar instead.
     @State private var docked = false
-    /// Bottom of the feed's header in the feed's coordinates.
-    @State private var headerBottom: CGFloat = .infinity
 
     /// Wide (a tablet held sideways): the two pinned rows show side by side.
     @State private var wide = false
-
-    private static let space = "homeFeed"
 
     private struct PinnedRow: Identifiable {
         let row: HomeRow
@@ -49,48 +45,29 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                let pinned = pinnedRows
-                if wide, pinned.count == 2 {
-                    // Wide (a tablet held sideways): the two rows side by side.
-                    HStack(alignment: .top, spacing: 12) {
-                        ForEach(Array(pinned.enumerated()), id: \.element.id) { index, entry in
-                            // Each row scrolls inside its own half, cut off where the halves meet.
-                            VStack(alignment: .leading, spacing: 0) {
-                                SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
-                                PopularRow(items: entry.items, cutEdges: index == 0 ? .trailing : .leading)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
+        GalleryList(
+            blocks: [
+                // The pinned rows and the feed's header (its bottom is where the header docks in the bar).
+                .view("header") { header },
+                .cards("feed", feed.items),
+                .view("footer") {
+                    VStack(spacing: 0) {
+                        FeedPlaceholder(feed: feed)
+                        FeedFooter(feed: feed)
                     }
-                } else {
-                    ForEach(pinned) { entry in
-                        SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
-                        PopularRow(items: entry.items)
-                    }
-                }
-                FeedHeader { startSearch() }
-                    .onGeometryChange(for: CGFloat.self) {
-                        $0.frame(in: .named(Self.space)).maxY
-                    } action: { headerBottom = $0 }
-                GalleryCollection(items: feed.items) { item in
-                    Task { await feed.loadMoreIfNeeded(after: item) }
-                }
-                FeedPlaceholder(feed: feed)
-                FeedFooter(feed: feed)
+                },
+            ],
+            onItemAppear: { item in Task { await feed.loadMoreIfNeeded(after: item) } },
+            refresh: { await reload() },
+            tab: .home,
+            tabTapEnabled: !searching,
+            onScroll: { offset, headerBottom in
+                // The bar's bottom edge, in the feed's coordinates, is past the header.
+                let under = offset > headerBottom - 4
+                if under != docked { withAnimation(.smooth(duration: 0.25)) { docked = under } }
             }
-            .coordinateSpace(.named(Self.space))
-        }
+        )
         .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
-        .tabTapScrolling(.home, enabled: !searching) { await reload() }
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            // The bar's bottom edge, in the feed's coordinates, is past the header.
-            geometry.contentOffset.y + geometry.contentInsets.top > headerBottom - 4
-        } action: { _, under in
-            withAnimation(.smooth(duration: 0.25)) { docked = under }
-        }
-        .hidesBarsOnScroll()
         // The system bar (with its soft edge over the content): the site's
         // name in the middle (a menu that switches the site). The feed's
         // header (sort, language, search) sits above the feed and moves into
@@ -134,7 +111,6 @@ struct HomeView: View {
                     .transition(.opacity)
             }
         }
-        .refreshable { await reload() }
         .task {
             if !feed.hasLoaded { await reload() }
         }
@@ -152,6 +128,32 @@ struct HomeView: View {
         }
         .onChange(of: settings.homeRowsRaw) { Task { await loadRows() } }
         .onChange(of: settings.currentSite) { Task { if !feed.hasLoaded { await reload() } } }
+    }
+
+    /// The pinned rows, then the feed's header (sort, language, search).
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            let pinned = pinnedRows
+            if wide, pinned.count == 2 {
+                // Wide (a tablet held sideways): the two rows side by side.
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(Array(pinned.enumerated()), id: \.element.id) { index, entry in
+                        // Each row scrolls inside its own half, cut off where the halves meet.
+                        VStack(alignment: .leading, spacing: 0) {
+                            SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
+                            PopularRow(items: entry.items, cutEdges: index == 0 ? .trailing : .leading)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            } else {
+                ForEach(pinned) { entry in
+                    SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
+                    PopularRow(items: entry.items)
+                }
+            }
+            FeedHeader { startSearch() }
+        }
     }
 
     private func startSearch() {

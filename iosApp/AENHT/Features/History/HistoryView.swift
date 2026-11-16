@@ -81,17 +81,15 @@ struct HistoryView: View {
     /// Cards like Favorites (in the list style), by day.
     private var cards: some View {
         let byID = Dictionary(filtered.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
-        return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(sections) { section in
-                    SectionTitle(title: "\(title(for: section.day))")
-                    GalleryCollection(items: section.entries.map(\.item))
-                }
-            }
-            .padding(.bottom, 16)
+        var blocks: [GalleryBlock] = []
+        for section in sections {
+            let day = "\(section.day.timeIntervalSinceReferenceDate)"
+            blocks.append(.view("title-\(day)") { SectionTitle(title: "\(title(for: section.day))") })
+            blocks.append(.cards("day-\(day)", section.entries.map(\.item)))
         }
+        blocks.append(.view("bottom") { Color.clear.frame(height: 16) })
         // History is on the device: a double tap just goes to the top.
-        .tabTapScrolling(.history) {}
+        return GalleryList(blocks: blocks, tab: .history)
         .environment(\.galleryCoverBadge) { item in
             AnyView(ReadingProgressBar(entry: byID[item.uid]))
         }
