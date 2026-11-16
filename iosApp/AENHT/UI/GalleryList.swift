@@ -162,6 +162,15 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
     private var appTab: AppTab?
     private var tabTapEnabled = true
     private var lastTabTap: TabTap?
+    /// What of the environment the cells' views show that doesn't reach them
+    /// by itself: when it changes (the app comes back and its privacy blur
+    /// ends, the theme changes), every cell is drawn again.
+    private var cellEnvironment: CellEnvironment?
+
+    private struct CellEnvironment: Equatable {
+        var privacy: BackgroundPrivacy
+        var colorScheme: ColorScheme
+    }
 
     private let metrics = CardMetrics()
     private let bars = ScrollBarsHiding()
@@ -178,6 +187,11 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         // Only the scrolling direction: the sides' safe area is left to the sections (see section(at:)).
         collectionView.contentInsetAdjustmentBehavior = .scrollableAxes
         collectionView.keyboardDismissMode = .onDrag
+        if #available(iOS 26.0, *) {
+            // The soft edge under the bars, like the app's SwiftUI lists (SoftScrollEdges), not the flat one.
+            collectionView.topEdgeEffect.style = .soft
+            collectionView.bottomEdgeEffect.style = .soft
+        }
         view = collectionView
 
         let cell = UICollectionView.CellRegistration<UICollectionViewCell, String> { [weak self] cell, indexPath, id in
@@ -228,7 +242,10 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         let relayout = layoutKey != nil && layoutKey != layout
         if relayout { metrics.clear() }
         layoutKey = layout
-        apply(list.blocks, relayout: relayout)
+        let cells = CellEnvironment(privacy: environment.privacyMode, colorScheme: environment.colorScheme)
+        let redraw = cellEnvironment != nil && cellEnvironment != cells
+        cellEnvironment = cells
+        apply(list.blocks, relayout: relayout, redraw: redraw)
         claimScrollEdges(always: false)
 
         if let tabTap {
@@ -258,7 +275,8 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
     private static func viewID(_ block: String) -> String { "v|\(block)" }
     private static func cardID(_ block: String, _ uid: String) -> String { "c|\(block)|\(uid)" }
 
-    private func apply(_ newBlocks: [GalleryBlock], relayout: Bool) {
+    /// [relayout]: the cards' sizes changed; [redraw]: every cell is drawn again (same sizes).
+    private func apply(_ newBlocks: [GalleryBlock], relayout: Bool, redraw: Bool) {
         var snapshot = NSDiffableDataSourceSnapshot<String, String>()
         var newItems: [String: GalleryItem] = [:]
         var newViews: [String: AnyView] = [:]
@@ -291,12 +309,12 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         views = newViews
         if sameIDs {
             // The same cells: their views (and changed cards; all of them when their size changed) are shown again.
-            let again = relayout ? current.itemIdentifiers : changed
+            let again = relayout || redraw ? current.itemIdentifiers : changed
             if !again.isEmpty { current.reconfigureItems(again) }
             dataSource.apply(current, animatingDifferences: false)
         } else {
             let before = Set(current.itemIdentifiers)
-            let again = relayout ? snapshot.itemIdentifiers : changed
+            let again = relayout || redraw ? snapshot.itemIdentifiers : changed
             let existing = again.filter { before.contains($0) }
             if !existing.isEmpty { snapshot.reconfigureItems(existing) }
             dataSource.apply(snapshot, animatingDifferences: false)
@@ -330,8 +348,9 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         case .grid, .waterfall, .compact:
             let size = metrics.cardSize(item, style: key.style, width: width, environment: environment, traits: traitCollection)
             cell.contentConfiguration = UIHostingConfiguration {
+                // The cell's size is the layout's: the card fills it.
                 GalleryCard(item: item, style: key.style, fixed: size.fixed)
-                    .frame(width: width, height: size.height, alignment: .top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .environment(\.self, environment)
             }
             .margins(.all, 0)
@@ -482,6 +501,11 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         // Laid out again at once for the new width, then back to the same cell (in
         // the same pass: during a rotation, inside its animation).
         collectionView.collectionViewLayout.invalidateLayout()
+        collectionView.layoutIfNeeded()
+        // The cards drawn again at their new size (their titles may take other lines).
+        var snapshot = dataSource.snapshot()
+        snapshot.reconfigureItems(snapshot.itemIdentifiers)
+        dataSource.apply(snapshot, animatingDifferences: false)
         collectionView.layoutIfNeeded()
         let inset = collectionView.adjustedContentInset
         if atTop {
