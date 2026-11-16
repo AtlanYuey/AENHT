@@ -49,8 +49,17 @@ object FavoritesStore {
         private set
     private val lastSync = mutableMapOf<Site, Long>()
 
-    /** The account each site's copy was read from (the saved account's id), kept with the copy. */
+    /**
+     * The login each site's copy is a complete read of (the saved account's
+     * id, or [UNIDENTIFIED]), kept with the copy. Set only by a sync that
+     * read the whole list; none (an older version's copy, after a WebDAV
+     * import, a login that changed, a sync that failed part way): the copy
+     * is no one's and stays hidden.
+     */
     private val owners = mutableStateMapOf<Site, String>()
+
+    /** A login that isn't one of the saved accounts (from before accounts were kept). */
+    private const val UNIDENTIFIED = "?"
     private val prefs by lazy { appContext.getSharedPreferences("favorites", Context.MODE_PRIVATE) }
     private var syncJob: Job? = null
 
@@ -59,23 +68,40 @@ object FavoritesStore {
         for (site in Site.entries) prefs.getString("owner.${site.key}", null)?.let { owners[site] = it }
     }
 
-    /** The account logged in on [site] (null when none, or not known yet). */
-    private fun account(site: Site): String? = AccountBook.accounts(site).firstOrNull { AccountBook.isActive(it) }?.id
-
-    /**
-     * Whether [site]'s copy is the logged-in account's: another account's
-     * copy (after switching, until the sync) and a logged-out site's stay hidden.
-     */
-    private fun showsCopy(site: Site): Boolean {
-        if (!loggedIn(site)) return false
-        val owner = owners[site] ?: return true
-        // Which saved account is logged in isn't known (a login from before accounts were kept): shown.
-        val who = account(site) ?: return true
-        return owner == who
+    /** Who is logged in on [site]: the saved account's id, [UNIDENTIFIED], or null when no one. */
+    private fun identity(site: Site): String? {
+        if (!loggedIn(site)) return null
+        return AccountBook.accounts(site).firstOrNull { AccountBook.isActive(it) }?.id ?: UNIDENTIFIED
     }
 
-    /** Reads the copy again (after WebDAV sync added to it). */
-    suspend fun reloadFromDatabase() = reload()
+    /**
+     * Whether [site]'s copy is the logged-in account's: a copy of no one
+     * (not yet read whole for this login) or of another account stays hidden,
+     * like a logged-out site's.
+     */
+    private fun showsCopy(site: Site): Boolean {
+        val who = identity(site) ?: return false
+        return owners[site] == who
+    }
+
+    private fun setOwner(site: Site, owner: String?) {
+        if (owner == null) owners.remove(site) else owners[site] = owner
+        prefs.edit().apply { if (owner == null) remove("owner.${site.key}") else putString("owner.${site.key}", owner) }.apply()
+    }
+
+    /**
+     * WebDAV added favorites from another device: they may be another
+     * account's, so the copy is no one's until it's read again from the site.
+     */
+    fun imported() {
+        for (site in Site.entries) setOwner(site, null)
+        AppScope.launch {
+            reload()
+            syncJob?.cancelAndJoin()
+            syncing = null
+            sync()
+        }
+    }
 
     private suspend fun reload() {
         val all = runCatching { mirror.all() }.getOrDefault(emptyList())
@@ -113,6 +139,8 @@ object FavoritesStore {
      */
     fun accountChanged(site: Site) {
         lastSync.remove(site)
+        // Hidden at once: nothing of the previous login shows until the new one's list is read.
+        setOwner(site, null)
         val running = syncJob
         AppScope.launch {
             running?.cancelAndJoin()
@@ -142,17 +170,18 @@ object FavoritesStore {
                 syncing = site
                 syncedCount = 0
                 try {
-                    // The copy of another account is dropped before this account's is read
-                    // (when a sync fails, nothing of the other account shows meanwhile).
-                    val who = account(site)
-                    if (who != null && owners[site] != who) {
-                        if (owners[site] != null) mirror.clear(site)
-                        owners[site] = who
-                        prefs.edit().putString("owner.${site.key}", who).apply()
+                    // A copy that isn't this login's (another account's, an older
+                    // version's, imported) is dropped before this login's is read.
+                    val who = identity(site) ?: continue
+                    if (owners[site] != who) {
+                        setOwner(site, null)
+                        mirror.clear(site)
                         reload()
                     }
                     EhClient.api.useExHentai = AppSettings.useExHentai
                     mirror.sync(site) { count -> AppScope.launch { syncedCount = count } }
+                    // The whole list was read for this login (one that changed meanwhile cancelled this sync).
+                    if (identity(site) == who) setOwner(site, who)
                     lastSync[site] = System.currentTimeMillis()
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e

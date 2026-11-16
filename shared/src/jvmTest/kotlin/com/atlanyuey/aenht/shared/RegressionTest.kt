@@ -61,12 +61,22 @@ class RegressionTest {
         assertNull(SiteLinks.find("https://evil.com/nhentai.net/g/123/"))
         assertNull(SiteLinks.find("https://user@nhentai.net/g/123/"))
         assertNull(SiteLinks.find("note-e-hentai.org/g/2345678/abcdef1234/"))
+        // Inside another link (R009).
+        assertNull(SiteLinks.find("https://example.invalid/path/https://nhentai.net/g/123/"))
+        assertNull(SiteLinks.find("https://example.invalid/?u=https://nhentai.net/g/123/"))
+        assertNull(SiteLinks.find("example.invalid/r?to=nhentai.net/g/123"))
+        assertNull(SiteLinks.find("https://example.invalid/e-hentai.org/g/2345678/abcdef1234/"))
+        // A link inside another, then one of the site's own: the second.
+        assertEquals(GalleryLink.Nh(456), SiteLinks.find("https://example.invalid/https://nhentai.net/g/123/ 和 https://nhentai.net/g/456/"))
         // Still links: with or without a scheme, after any text.
         assertEquals(GalleryLink.Nh(123), SiteLinks.find("nhentai.net/g/123"))
         assertEquals(GalleryLink.Nh(123), SiteLinks.find("www.nhentai.net/g/123/"))
         assertEquals(GalleryLink.Nh(123), SiteLinks.find("看这个https://nhentai.net/g/123/"))
         assertEquals(GalleryLink.Nh(123), SiteLinks.find("看这个 nhentai.net/g/123/"))
         assertEquals(GalleryLink.Nh(123), SiteLinks.find("(nhentai.net/g/123)"))
+        assertEquals(GalleryLink.Nh(123), SiteLinks.find("link:https://nhentai.net/g/123/"))
+        assertEquals(GalleryLink.Nh(123), SiteLinks.find("链接：https://nhentai.net/g/123/，看看"))
+        assertEquals(GalleryLink.Nh(123), SiteLinks.find("\"https://nhentai.net/g/123/\""))
         assertEquals(GalleryLink.Eh(2345678, "abcdef1234", true), SiteLinks.find("HTTPS://EXHENTAI.ORG/g/2345678/ABCDEF1234/"))
     }
 
@@ -133,12 +143,15 @@ class RegressionTest {
         val conditions = mutableListOf<String>()
         /** Runs once, between a device's download and its upload. */
         var beforePut: (suspend () -> Unit)? = null
+        /** Another device uploads before every upload of this one. */
+        var alwaysChanging = false
         val engine = MockEngine { request ->
             when (request.method.value) {
                 "MKCOL" -> respond("", HttpStatusCode.Created)
                 "GET" -> body?.let { respond(it, HttpStatusCode.OK, headersOf("ETag", "\"v$etag\"")) } ?: respond("", HttpStatusCode.NotFound)
                 "PUT" -> {
                     beforePut?.also { beforePut = null }?.invoke()
+                    if (alwaysChanging) etag++
                     val ifMatch = request.headers["If-Match"]
                     val ifNoneMatch = request.headers["If-None-Match"]
                     conditions += ifMatch?.let { "If-Match" } ?: ifNoneMatch?.let { "If-None-Match" } ?: "none"
@@ -177,6 +190,23 @@ class RegressionTest {
         for (title in listOf("from A", "from A too", "from B")) assertTrue(title in onServer, title)
         assertNotNull(dbA.history().get(GalleryKey.nh(3).storageKey))
         dbA.close(); dbB.close()
+    }
+
+    @Test
+    fun aServerThatKeepsChangingIsNeverOverwritten() = runTest {
+        // Every upload finds that another device uploaded in between (R001).
+        val server = EtagServer()
+        server.body = """{"version":1,"device":"other","updatedAt":1,"settingsChangedAt":0,"history":[],"favorites":[],"tombstones":[]}"""
+        server.alwaysChanging = true
+        val db = openInMemoryDatabase()
+        val error = assertFailsWith<WebDavException> {
+            WebDavSync(db, buildHttpClient(server.engine)) { 5_000L }.sync("https://dav.example.com/files", "u", "p", "A", "{}", 0L)
+        }
+        assertTrue(error.conflict)
+        assertEquals(WebDavSync.CONFLICT_RETRIES + 1, server.conditions.size)
+        assertTrue(server.conditions.all { it == "If-Match" }, server.conditions.toString())
+        assertTrue("\"other\"" in server.body!!)
+        db.close()
     }
 
     // MARK: Updates (F033)
@@ -227,6 +257,22 @@ class RegressionTest {
         val empty = "<html><body><div class=\"fp\"><div>0</div><div class=\"i\"></div><div>Favorites 0</div></div><p>No hits found</p></body></html>"
         val api2 = EhApi(Credentials(), buildHttpClient(MockEngine { respond(empty) }))
         assertEquals(emptyList(), api2.list(EhListSource.Favorites(null)).galleries)
+    }
+
+    @Test
+    fun aPageWithoutTheNoteFieldIsNotAnEmptyNote() = runTest {
+        // R012: moving a favorite writes the note back, so a page that isn't the popup must be an error.
+        for (page in listOf(
+            "<html><body><form action=\"https://forums.e-hentai.org/index.php?act=Login\"></form></body></html>",
+            "<html><body>Your IP address has been temporarily banned</body></html>",
+            "<form><textarea name=\"favnote\">read la",
+        )) {
+            assertNull(EhParser.parseFavoriteNote(page), page)
+            val api = EhApi(Credentials(), buildHttpClient(MockEngine { respond(page) }))
+            assertFailsWith<EhException.Parse> { api.favoriteNote(1, "abcdef1234") }
+        }
+        assertEquals("", EhParser.parseFavoriteNote("""<form><textarea name="favnote"></textarea></form>"""))
+        assertEquals("read later", EhParser.parseFavoriteNote("""<form><textarea name="favnote" cols="40">read later</textarea></form>"""))
     }
 
     // MARK: Search history (F035)

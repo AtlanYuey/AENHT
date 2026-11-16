@@ -586,3 +586,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。";
 "Fade on Swipe" = "滑动渐变翻页";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "开启「滑动渐变翻页」后，页面不再随手指移动：滑动一下就翻到上一页或下一页，新页面沿着你滑动的方向渐变出现。";
+"The login couldn't be saved on this device." = "无法在此设备上保存登录信息。";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "另一台设备正在同时同步。没有覆盖任何内容，请稍后再试。";

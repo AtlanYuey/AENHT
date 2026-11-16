@@ -80,6 +80,7 @@ object WebDavService {
     private fun message(e: Throwable): String = when {
         e is WebDavException && e.unauthorized -> L10n.string("The server refused the user name or password.")
         e is WebDavException && e.newerVersion -> L10n.string("The file on the server was written by a newer version of AENHT. Update the app to sync.")
+        e is WebDavException && e.conflict -> L10n.string("Another device is syncing at the same time. Nothing was overwritten; try again in a moment.")
         else -> e.message ?: L10n.string("Couldn't connect to the server.")
     }
 
@@ -97,7 +98,7 @@ object WebDavService {
                 val result = engine.sync(url, user, password, Build.MODEL ?: "Android", AppSettings.toJson(), AppSettings.changedAt)
                 result.settings?.let { runCatching { AppSettings.applyJson(it, changedAt = result.settingsChangedAt) } }
                 if (result.historyChanged > 0) HistoryStore.reloadFromDatabase()
-                if (result.favoritesAdded > 0) FavoritesStore.reloadFromDatabase()
+                if (result.favoritesAdded > 0) FavoritesStore.imported()
                 val now = System.currentTimeMillis()
                 lastSync = now
                 prefs.edit().putLong("lastSync", now).apply()

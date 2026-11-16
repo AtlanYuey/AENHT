@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -50,6 +53,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.math.abs
+import org.junit.Assert.assertTrue
 
 /** Renders the main screens with sample data (no network) to build/screens/. */
 @RunWith(RobolectricTestRunner::class)
@@ -69,6 +73,13 @@ class ScreenshotTest {
         AppSettings.homeSite = com.atlanyuey.aenht.shared.site.Site.NHENTAI
         AppSettings.nhentaiEnabled = true
         AppSettings.ehentaiEnabled = true
+        // The sites' rate limits use the real clock and are shared by all the tests:
+        // each starts with none of the requests of the ones before (not a lower limit).
+        kotlinx.coroutines.runBlocking {
+            com.atlanyuey.aenht.core.NHClient.api.limiter.clear()
+            com.atlanyuey.aenht.core.EhClient.api.limiter.clear()
+        }
+        com.atlanyuey.aenht.core.RateNotice.clear()
     }
 
     // MARK: Two sites
@@ -463,19 +474,28 @@ class ScreenshotTest {
                 }
             }
         }
-        compose.waitForIdle()
-        Thread.sleep(300)
+        // The galleries are there before scrolling.
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Night Walk").fetchSemanticsNodes().isNotEmpty() }
         compose.mainClock.advanceTimeBy(1500)
+        compose.waitForIdle()
+        compose.onNodeWithText("All Languages").assertIsDisplayed()
         repeat(3) {
             compose.onRoot().performTouchInput { swipeUp(startY = centerY + 300f, endY = centerY - 300f) }
             compose.mainClock.advanceTimeBy(800)
         }
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/50_rotate_scrolled.png")
+        // Scrolled: the top of the list is gone (the large header with the language under the feed's name docks in the bar).
+        compose.onAllNodesWithText("All Languages").assertCountEquals(0)
         portrait.value = false
         compose.mainClock.advanceTimeBy(800)
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/51_rotate_landscape.png")
+        // Still down the list after rotating: back at the top would show the header again.
+        compose.onAllNodesWithText("All Languages").assertCountEquals(0)
+        assertTrue(compose.onAllNodesWithText("Night Walk", substring = true).fetchSemanticsNodes().isNotEmpty() ||
+            compose.onAllNodesWithText("Snow Mountain").fetchSemanticsNodes().isNotEmpty() ||
+            compose.onAllNodesWithText("Garden", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test fun reading() {
@@ -613,7 +633,11 @@ var average_rating = 4.37;</script></head><body>
             path.endsWith("/galleries/popular") -> "[${list(8, 4)}]"
             path.contains("/comments") -> comments
             Regex("/galleries/\\d+$").containsMatchIn(path) -> detail
-            path.endsWith("/galleries") || path.endsWith("/search") -> """{"result":[${list(12)}],"num_pages":5,"total":1234}"""
+            // Each page its own galleries (the same ones again would be dropped as already shown, and more pages read).
+            path.endsWith("/galleries") || path.endsWith("/search") -> {
+                val page = url.queryParameter("page")?.toIntOrNull() ?: 1
+                """{"result":[${list(12, (page - 1) * 12)}],"num_pages":5,"total":1234}"""
+            }
             path.endsWith("/user") -> """{"id":1,"username":"tester","avatar_url":""}"""
             else -> "[]"
         }

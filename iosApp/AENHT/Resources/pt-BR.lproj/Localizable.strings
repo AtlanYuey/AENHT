@@ -544,3 +544,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Com o esmaecimento, as páginas não deslizam: a próxima aparece no lugar, mais confortável ao virar rápido.";
 "Fade on Swipe" = "Esmaecer ao deslizar";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Com “Esmaecer ao deslizar”, as páginas não acompanham o dedo: um deslize vira para a próxima página ou a anterior, e a nova aparece esmaecendo na direção do gesto.";
+"The login couldn't be saved on this device." = "Não foi possível salvar o login neste dispositivo.";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Outro dispositivo está sincronizando ao mesmo tempo. Nada foi substituído; tente novamente em instantes.";

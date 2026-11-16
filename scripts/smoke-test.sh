@@ -2,7 +2,8 @@
 # Installs an APK on the running emulator, opens it, sends it to the
 # background and back, taps around with the monkey and checks that the app
 # never crashed (logcat). Writes OK, FAILED (it couldn't be installed or
-# started, or wasn't running when it should) or CRASHED to
+# started, wasn't running when it should, or the monkey didn't send all its
+# events: the check didn't run, which isn't a pass) or CRASHED to
 # <output dir>/result.txt, with logcat, the monkey's log and screenshots next
 # to it, and exits with 0 only for OK.
 # Usage: smoke-test.sh <apk> <output dir>
@@ -41,7 +42,15 @@ shot 02_resumed
 echo "After resume: $(alive)"
 [ "$(alive)" = "running" ] || fail "not running after coming back"
 
-adb shell monkey -p "$PKG" -s 7 --throttle 250 --pct-syskeys 2 --pct-appswitch 2 -v 800 > "$OUT/monkey.txt" 2>&1 || true
+# ANRs don't stop it (on the slow emulator they're mostly its slowness; they're listed below).
+EVENTS=800
+adb shell monkey -p "$PKG" -s 7 --throttle 250 --pct-syskeys 2 --pct-appswitch 2 --ignore-timeouts -v "$EVENTS" > "$OUT/monkey.txt" 2>&1
+MONKEY=$?
+INJECTED=$(grep -oE "Events injected: [0-9]+" "$OUT/monkey.txt" | grep -oE "[0-9]+" | tail -1)
+echo "Monkey: exit $MONKEY, ${INJECTED:-no} events injected of $EVENTS"
+if [ "$MONKEY" -ne 0 ] || ! grep -q "// Monkey finished" "$OUT/monkey.txt" || [ "${INJECTED:-0}" -lt "$EVENTS" ]; then
+  fail "the monkey didn't finish (exit $MONKEY, ${INJECTED:-no} of $EVENTS events)"
+fi
 shot 03_after_monkey
 echo "After monkey: $(alive)"
 [ "$(alive)" = "running" ] || fail "not running after the monkey"
@@ -66,6 +75,7 @@ awk -v pkg="$PKG" '
   grep -E "Events injected|Monkey finished|CRASH" "$OUT/monkey.txt" || true
 } | tee "$OUT/summary.txt"
 
+# A crash stops the monkey too: that's a crash, not an unfinished check.
 if [ -s "$OUT/crashes.txt" ] || grep -q "CRASH: $PKG" "$OUT/monkey.txt"; then
   echo CRASHED > "$OUT/result.txt"
   exit 1

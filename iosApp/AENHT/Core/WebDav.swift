@@ -71,6 +71,7 @@ final class WebDavService {
         if let e = kotlin as? WebDavException {
             if e.unauthorized { return String(localized: "The server refused the user name or password.") }
             if e.newerVersion { return String(localized: "The file on the server was written by a newer version of AENHT. Update the app to sync.") }
+            if e.conflict { return String(localized: "Another device is syncing at the same time. Nothing was overwritten; try again in a moment.") }
             return e.message ?? String(localized: "Couldn't connect to the server.")
         }
         return (kotlin as? KotlinThrowable)?.message ?? error.localizedDescription
@@ -109,7 +110,7 @@ final class WebDavService {
                     settings.setChangedAt(result.settingsChangedAt)
                 }
                 if result.historyChanged > 0 { try await pullHistory(since: started) }
-                if result.favoritesAdded > 0 { await FavoritesStore.shared.reload() }
+                if result.favoritesAdded > 0 { await FavoritesStore.shared.imported() }
                 lastSync = .now
                 defaults.set(lastSync, forKey: "webdavLastSync")
             } catch {

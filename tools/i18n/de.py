@@ -544,4 +544,6 @@ T = [
     "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern.",
     "Überblenden beim Wischen",
     "Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.",
+    "Die Anmeldung konnte auf diesem Gerät nicht gespeichert werden.",
+    "Ein anderes Gerät synchronisiert gerade gleichzeitig. Es wurde nichts überschrieben; versuche es gleich noch einmal.",
 ]

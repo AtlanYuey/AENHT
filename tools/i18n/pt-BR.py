@@ -544,4 +544,6 @@ T = [
     "Com o esmaecimento, as páginas não deslizam: a próxima aparece no lugar, mais confortável ao virar rápido.",
     "Esmaecer ao deslizar",
     "Com “Esmaecer ao deslizar”, as páginas não acompanham o dedo: um deslize vira para a próxima página ou a anterior, e a nova aparece esmaecendo na direção do gesto.",
+    "Não foi possível salvar o login neste dispositivo.",
+    "Outro dispositivo está sincronizando ao mesmo tempo. Nada foi substituído; tente novamente em instantes.",
 ]

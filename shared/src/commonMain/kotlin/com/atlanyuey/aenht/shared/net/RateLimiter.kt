@@ -35,6 +35,9 @@ class RateLimiter(private val now: () -> Long = { Clock.System.now().toEpochMill
         onWait = { bucket, wait -> listener.waiting(bucket, wait) }
     }
 
+    /** Forgets the requests sent so far (each screenshot test starts afresh; the apps never call it). */
+    suspend fun clear() = mutex.withLock { history.clear() }
+
     suspend fun acquire(bucket: String, limit: RateLimit) {
         while (true) {
             val wait = mutex.withLock {

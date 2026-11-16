@@ -109,7 +109,11 @@ struct AccountsView: View {
             NavigationLink { destination() } label: { label }
         } else {
             Button {
-                Task { await book.switchTo(account) }
+                Task {
+                    if !(await book.switchTo(account)) {
+                        error = String(localized: "The login couldn't be saved on this device.")
+                    }
+                }
             } label: { label }
             .swipeActions {
                 Button("Remove from This Device", systemImage: "trash", role: .destructive) { book.forget(account) }

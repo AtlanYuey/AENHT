@@ -64,8 +64,11 @@ object Filters {
         if (!force && now - lastBlacklistLoad < 30 * 60 * 1000L) return
         // Kept from being asked for by every list at once; a failure is tried again soon.
         lastBlacklistLoad = now
+        val login = Session.generation
         AppScope.launch {
             val ids = runCatching { NHClient.api.blacklistIds() }.getOrNull()
+            // The blacklist of an earlier login: dropped (the new login reads its own).
+            if (login != Session.generation) return@launch
             if (ids == null) {
                 lastBlacklistLoad = now - 29 * 60 * 1000L
             } else if (ids.toSet() != nhBlacklist) {

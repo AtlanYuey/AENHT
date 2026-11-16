@@ -544,3 +544,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.";
 "Fade on Swipe" = "Fundido al deslizar";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Con «Fundido al deslizar», las páginas no se mueven con el dedo: al deslizar se pasa a la página siguiente o anterior, y la nueva aparece con un fundido que avanza en la dirección del gesto.";
+"The login couldn't be saved on this device." = "No se pudo guardar el inicio de sesión en este dispositivo.";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Otro dispositivo está sincronizando al mismo tiempo. No se sobrescribió nada; inténtalo de nuevo en un momento.";

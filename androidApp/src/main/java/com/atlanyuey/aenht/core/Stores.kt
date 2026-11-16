@@ -620,31 +620,6 @@ object Downloads {
     fun diskUsage(): Long = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 }
 
-/**
- * The type of a picture file by its first bytes ("jpg", "png", "gif",
- * "webp", "avif", "bmp"), or null when it is missing or isn't a picture.
- */
-fun imageExtension(file: File): String? {
-    val head = ByteArray(12)
-    val read = try {
-        file.inputStream().use { it.read(head) }
-    } catch (_: Exception) {
-        return null
-    }
-    if (read < 12) return null
-    fun at(offset: Int, text: String) = text.indices.all { head[offset + it] == text[it].code.toByte() }
-    return when {
-        head[0] == 0xFF.toByte() && head[1] == 0xD8.toByte() && head[2] == 0xFF.toByte() -> "jpg"
-        head[0] == 0x89.toByte() && at(1, "PNG") -> "png"
-        at(0, "GIF8") -> "gif"
-        at(0, "RIFF") && at(8, "WEBP") -> "webp"
-        at(4, "ftyp") && (at(8, "avif") || at(8, "avis")) -> "avif"
-        at(4, "ftyp") && (at(8, "heic") || at(8, "heix") || at(8, "mif1")) -> "heic"
-        at(0, "BM") -> "bmp"
-        else -> null
-    }
-}
-
 // MARK: - Tags
 
 @Serializable

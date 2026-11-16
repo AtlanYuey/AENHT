@@ -544,4 +544,6 @@ T = [
     "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat.",
     "Pudar Saat Menggeser",
     "Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.",
+    "Login tidak dapat disimpan di perangkat ini.",
+    "Perangkat lain sedang menyinkronkan pada saat yang sama. Tidak ada yang ditimpa; coba lagi sebentar lagi.",
 ]

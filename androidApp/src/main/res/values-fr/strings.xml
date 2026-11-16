@@ -545,9 +545,11 @@
     <string name="l_542">Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite.</string>
     <string name="l_543">Fondu au balayage</string>
     <string name="l_544">Avec « Fondu au balayage », les pages ne suivent pas le doigt : un balayage passe à la page suivante ou précédente, et la nouvelle apparaît en fondu qui avance dans le sens du geste.</string>
-    <string name="l_545">Sauvegarde des réglages</string>
-    <string name="l_546">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_547">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_548">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_549">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_545">Impossible d’enregistrer la connexion sur cet appareil.</string>
+    <string name="l_546">Un autre appareil synchronise en même temps. Rien n’a été écrasé ; réessayez dans un instant.</string>
+    <string name="l_547">Sauvegarde des réglages</string>
+    <string name="l_548">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_549">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_550">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_551">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

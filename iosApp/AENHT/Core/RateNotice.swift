@@ -30,9 +30,19 @@ final class RateNotice {
         }
     }
 
+    @ObservationIgnored private var clearing: Task<Void, Never>?
+
     private func waiting(_ seconds: TimeInterval) {
         let end = Date().addingTimeInterval(seconds)
-        if (until ?? .distantPast) < end { until = end }
+        guard (until ?? .distantPast) < end else { return }
+        until = end
+        // Gone when the wait is over: the banner's timeline doesn't keep running.
+        clearing?.cancel()
+        clearing = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self, let until = self.until, until <= Date() else { return }
+            self.until = nil
+        }
     }
 }
 

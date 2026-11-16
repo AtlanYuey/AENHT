@@ -544,4 +544,6 @@ T = [
     "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.",
     "Fundido al deslizar",
     "Con «Fundido al deslizar», las páginas no se mueven con el dedo: al deslizar se pasa a la página siguiente o anterior, y la nueva aparece con un fundido que avanza en la dirección del gesto.",
+    "No se pudo guardar el inicio de sesión en este dispositivo.",
+    "Otro dispositivo está sincronizando al mismo tiempo. No se sobrescribió nada; inténtalo de nuevo en un momento.",
 ]

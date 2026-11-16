@@ -665,17 +665,18 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
                         val context = LocalContext.current
                         val crop = AppSettings.autoCrop
+                        // Each half loads (and is retried) on its own: the other one stays.
+                        var attempt by remember(p) { mutableIntStateOf(0) }
+                        var failed by remember(p, attempt) { mutableStateOf(false) }
                         coil3.compose.AsyncImage(
-                            model = remember(p, crop) {
-                                val url = source.pages[p].url
-                                if (!crop) url else coil3.request.ImageRequest.Builder(context).data(url)
-                                    .transformations(com.atlanyuey.aenht.core.AutoCropTransformation()).build()
-                            },
+                            model = remember(p, crop, attempt) { pageRequest(context, p, crop) },
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             alignment = align,
                             modifier = Modifier.fillMaxSize(),
+                            onState = { failed = it is coil3.compose.AsyncImagePainter.State.Error },
                         )
+                        if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { attempt++ } }
                     }
                 }
             }
@@ -694,11 +695,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         ) {
             val context = LocalContext.current
             val crop = AppSettings.autoCrop
-            val model = remember(index, crop) {
-                val url = source.pages[index].url
-                if (!crop) url else coil3.request.ImageRequest.Builder(context).data(url)
-                    .transformations(com.atlanyuey.aenht.core.AutoCropTransformation()).build()
-            }
+            var attempt by remember(index) { mutableIntStateOf(0) }
+            var failed by remember(index, attempt) { mutableStateOf(false) }
+            val model = remember(index, crop, attempt) { pageRequest(context, index, crop) { failed = true } }
             // Super resolution: the page sharpened to the screen's resolution
             // replaces it once ready (the original stays as the placeholder,
             // and fades into the sharper one: no reload, no flash).
@@ -735,7 +734,27 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
             )
-            if (!imageState.isImageDisplayed) ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
+            when {
+                failed -> PageRetry { attempt++ }
+                !imageState.isImageDisplayed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
+            }
+        }
+    }
+
+    /**
+     * The request of page [index] (cropped when [crop]); [onError] hears when
+     * it fails. Each call makes a new request, so a retry loads it again.
+     */
+    private fun pageRequest(context: android.content.Context, index: Int, crop: Boolean, onError: () -> Unit = {}) =
+        coil3.request.ImageRequest.Builder(context).data(source.pages[index].url).apply {
+            if (crop) transformations(com.atlanyuey.aenht.core.AutoCropTransformation())
+        }.listener(onError = { _, _ -> onError() }).build()
+
+    /** A page that couldn't be loaded: loads it again (the page and the place stay). */
+    @Composable
+    private fun PageRetry(onRetry: () -> Unit) {
+        com.atlanyuey.aenht.ui.components.GlassCapsuleButton(onRetry, height = 36.dp) {
+            Txt(tr("Retry"), style = Type.subheadline, color = Color.White)
         }
     }
 
@@ -751,13 +770,23 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 val ratio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
                     ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] } ?: readerPage.aspectRatio
                 Box(Modifier.fillMaxWidth().aspectRatio(ratio.coerceIn(0.2f, 5f)), contentAlignment = Alignment.Center) {
-                    ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                    val context = LocalContext.current
+                    var attempt by remember(readerPage.index) { mutableIntStateOf(0) }
+                    var state by remember(readerPage.index, attempt) { mutableStateOf<coil3.compose.AsyncImagePainter.State?>(null) }
                     coil3.compose.AsyncImage(
-                        model = readerPage.url,
+                        model = remember(readerPage.index, attempt) {
+                            if (attempt == 0) readerPage.url else pageRequest(context, readerPage.index, crop = false)
+                        },
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize(),
+                        onState = { state = it },
                     )
+                    when (state) {
+                        is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { attempt++ }
+                        is coil3.compose.AsyncImagePainter.State.Success -> {}
+                        else -> ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                    }
                 }
             }
         }

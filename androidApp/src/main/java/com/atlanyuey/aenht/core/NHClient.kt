@@ -111,17 +111,23 @@ class SecureStore(private val keyAlias: String) {
         prefs.getString(name, null)?.let { decrypt(it) }?.takeIf { it.isNotEmpty() }
 
     operator fun set(name: String, value: String?) {
-        if (value.isNullOrEmpty()) {
-            prefs.edit().remove(name).apply()
-            return
+        putAll(mapOf(name to value))
+    }
+
+    /**
+     * Saves [values] (null or empty removes one), all of them or none: false
+     * when the Keystore or the disk refused, and what was saved stays.
+     */
+    fun putAll(values: Map<String, String?>): Boolean {
+        val encrypted = values.mapValues { (name, value) ->
+            if (value.isNullOrEmpty()) null else encrypt(value) ?: run {
+                com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't save \"$name\"")
+                return false
+            }
         }
-        val encrypted = encrypt(value)
-        if (encrypted == null) {
-            // The Keystore refused: what was saved stays rather than being erased.
-            com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't save \"$name\"")
-            return
-        }
-        prefs.edit().putString(name, encrypted).apply()
+        val edit = prefs.edit()
+        encrypted.forEach { (name, value) -> if (value == null) edit.remove(name) else edit.putString(name, value) }
+        return edit.commit().also { if (!it) com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't write ${values.keys}") }
     }
 
     fun clear() {
@@ -171,11 +177,16 @@ object Auth : TokenStorage {
 
     override fun save(access: String, refresh: String?) {
         val previous = accessToken
-        store["access"] = access
-        if (!refresh.isNullOrEmpty()) store["refresh"] = refresh
+        val saved = store.putAll(buildMap {
+            put("access", access)
+            if (!refresh.isNullOrEmpty()) put("refresh", refresh)
+        })
         // A renewed login: the saved account gets the new tokens (it stays the active one).
-        if (previous != null && previous != access) AccountBook.tokensRenewed(previous, access, refreshToken)
+        if (saved && previous != null && previous != access) AccountBook.tokensRenewed(previous, access, refreshToken)
     }
+
+    /** Puts a new login in place of the one there is (both tokens); false when it couldn't be saved, and the old one stays. */
+    fun replace(access: String, refresh: String?): Boolean = store.putAll(mapOf("access" to access, "refresh" to refresh))
 
     override fun clear() = store.clear()
 }
@@ -191,26 +202,45 @@ object Session {
     var needsVerification by mutableStateOf(false)
         internal set
 
+    /**
+     * Counts the changes of login (log in, log out, switch): an answer to a
+     * request of an earlier login (its user, its blacklist) isn't kept.
+     */
+    @Volatile var generation = 0
+        private set
+
     suspend fun reload() {
         isLoggedIn = Auth.isLoggedIn
         if (!isLoggedIn) {
             user = null
             return
         }
+        val mine = generation
+        val token = Auth.accessToken
         try {
-            user = NHClient.currentUser()
+            val current = NHClient.currentUser()
+            // Another login meanwhile: this user isn't its user.
+            if (mine != generation || Auth.accessToken != token) return
+            user = current
             AccountBook.rememberNh()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Exception) {
         }
     }
 
     /** Logs in with an API key (nhentai.net › Settings › API Keys). */
     suspend fun loginWithApiKey(key: String) {
-        try {
-            user = NHClient.api.loginWithApiKey(key)
+        val mine = ++generation
+        val current = try {
+            NHClient.api.loginWithApiKey(key)
         } catch (e: com.atlanyuey.aenht.shared.nh.NhException) {
             throw NHException(e.message ?: L10n.string("Couldn't Log In"))
         }
+        // Logged out or into another account meanwhile: that one stays.
+        if (mine != generation) return
+        if (Auth.accessToken == null) throw NHException(L10n.string("The login couldn't be saved on this device."))
+        user = current
         isLoggedIn = true
         needsVerification = false
         AccountBook.rememberNh()
@@ -223,17 +253,20 @@ object Session {
         FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.NHENTAI)
     }
 
-    suspend fun login(access: String, refresh: String?) {
+    /** Logs in with tokens; false when they couldn't be saved on this device (the login there was stays). */
+    suspend fun login(access: String, refresh: String?): Boolean {
         // Nothing of the login before stays: not its refresh token, not its user.
-        Auth.clear()
+        if (!Auth.replace(access, refresh)) return false
+        generation++
         user = null
-        Auth.save(access, refresh)
         needsVerification = false
         reload()
         accountChanged()
+        return true
     }
 
     fun logout() {
+        generation++
         AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.NHENTAI)
         Auth.clear()
         user = null

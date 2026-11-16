@@ -34,6 +34,9 @@ object RateNotice {
     var until by mutableLongStateOf(0L)
         private set
 
+    /** No request waits any more (tests start afresh). */
+    fun clear() { until = 0L }
+
     /** Waits shorter than this aren't worth a notice. */
     private const val WORTH_SAYING = 2_000L
 

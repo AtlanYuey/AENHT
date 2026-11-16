@@ -62,7 +62,11 @@ final class Filters {
         // Kept from being asked for by every list at once; a failure is tried again soon.
         let asked = Date()
         lastBlacklistLoad = asked
-        if let ids = try? await NHClient.shared.api.blacklistIds() {
+        let login = UserSession.shared.generation
+        let ids = try? await NHClient.shared.api.blacklistIds()
+        // The blacklist of an earlier login: dropped (the new login reads its own).
+        guard login == UserSession.shared.generation else { return }
+        if let ids {
             let list = ids.map { Int(truncating: $0) }
             if list != nhBlacklist {
                 nhBlacklist = list

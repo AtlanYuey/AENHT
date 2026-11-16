@@ -265,6 +265,10 @@ final class DownloadManager {
         let folder = Self.folder(record)
         let isEh = record.siteKind == .ehentai
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        // Pages an earlier run didn't finish.
+        for name in (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [] where name.contains(".part") {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
+        }
         var failures = 0
         // A file that isn't a picture (an error page saved by an earlier version) is downloaded again.
         let pending = record.pages.filter { Self.imageExtension(of: folder.appendingPathComponent($0.file)) == nil }
@@ -275,15 +279,20 @@ final class DownloadManager {
         let interval = settings.downloadInterval
         let original = settings.ehOriginalImages
         let atOnce = isEh ? min(3, settings.downloadPages) : settings.downloadPages
-        await withTaskGroup(of: Bool.self) { group in
+        // Each page goes to a file of this run first; only while the run is still
+        // the current one is it moved into place (a paused, deleted or restarted
+        // download never writes over the pages of the one that replaced it).
+        await withTaskGroup(of: (file: URL, part: URL?).self) { group in
             var iterator = pending.makeIterator()
             func addNext() -> Bool {
                 guard let page = iterator.next() else { return false }
                 group.addTask {
                     if interval > 0 { try? await Task.sleep(for: .seconds(interval)) }
                     let file = folder.appendingPathComponent(page.file)
-                    return isEh ? await Self.fetchEh(page, to: file, attempts: attempts, original: original)
-                        : await Self.fetch(page.remote, to: file, attempts: attempts)
+                    let part = folder.appendingPathComponent("\(page.file).part\(run)")
+                    let ok = isEh ? await Self.fetchEh(page, to: part, attempts: attempts, original: original)
+                        : await Self.fetch(page.remote, to: part, attempts: attempts)
+                    return (file, ok ? part : nil)
                 }
                 return true
             }
@@ -291,9 +300,13 @@ final class DownloadManager {
             for _ in 0..<atOnce {
                 if !addNext() { break }
             }
-            for await ok in group {
-                if !isCurrent(uid, run) { group.cancelAll(); break }
-                if ok {
+            for await result in group {
+                guard isCurrent(uid, run) else {
+                    if let part = result.part { try? FileManager.default.removeItem(at: part) }
+                    group.cancelAll()
+                    continue // Waits for the others, to remove their files too.
+                }
+                if let part = result.part, Self.commit(part, to: result.file) {
                     update(uid) { $0.completed += 1 }
                 } else {
                     failures += 1
@@ -312,6 +325,21 @@ final class DownloadManager {
         saveIndex()
     }
 
+    /// Moves a downloaded page into place.
+    nonisolated private static func commit(_ part: URL, to file: URL) -> Bool {
+        do {
+            if FileManager.default.fileExists(atPath: file.path) {
+                _ = try FileManager.default.replaceItemAt(file, withItemAt: part)
+            } else {
+                try FileManager.default.moveItem(at: part, to: file)
+            }
+            return true
+        } catch {
+            try? FileManager.default.removeItem(at: part)
+            return false
+        }
+    }
+
     /// Fills in the page links of an E-Hentai download from its thumbnail pages.
     private func completeEhPages(_ uid: String, _ run: Int) async -> Bool {
         guard var record = record(uid: uid), let token = record.token else { return false }
@@ -320,13 +348,18 @@ final class DownloadManager {
             guard isCurrent(uid, run) else { return false }
             guard let thumbs = try? await EhService.shared.thumbnails(gid: record.id, token: token, page: thumbPage),
                   !thumbs.isEmpty else { break }
-            let known = Set(record.pages.map(\.number))
-            let added = Self.ehPages(thumbs.filter { !known.contains(Int($0.page)) })
-            update(uid) { $0.pages = ($0.pages + added).sorted { $0.number < $1.number } }
+            // Paused, deleted or restarted while the page loaded: its pages aren't this run's to add.
+            guard isCurrent(uid, run) else { return false }
+            update(uid) { current in
+                let known = Set(current.pages.map(\.number))
+                let added = Self.ehPages(thumbs.filter { !known.contains(Int($0.page)) })
+                current.pages = (current.pages + added).sorted { $0.number < $1.number }
+            }
             guard let updated = self.record(uid: uid) else { return false }
             record = updated
             thumbPage += 1
         }
+        guard isCurrent(uid, run) else { return false }
         saveIndex()
         return record.pages.count >= record.totalPages
     }
@@ -498,27 +531,90 @@ final class DownloadManager {
     // MARK: Pictures
 
     /// The type of a picture by its first bytes ("jpg", "png", "gif",
-    /// "webp", "avif", "heic", "bmp"), or nil when it isn't a picture.
+    /// "webp", "avif", "heic", "bmp"), or nil when it isn't a picture or was
+    /// cut off (a download that stopped part way: the type's end marker or
+    /// its own stated length is missing).
     nonisolated static func imageExtension(of data: Data) -> String? {
-        guard data.count >= 12 else { return nil }
-        let head = [UInt8](data.prefix(12))
-        func at(_ offset: Int, _ text: String) -> Bool { Array(text.utf8) == Array(head[offset..<offset + text.utf8.count]) }
-        if head[0] == 0xFF, head[1] == 0xD8, head[2] == 0xFF { return "jpg" }
-        if head[0] == 0x89, at(1, "PNG") { return "png" }
-        if at(0, "GIF8") { return "gif" }
-        if at(0, "RIFF"), at(8, "WEBP") { return "webp" }
-        if at(4, "ftyp"), at(8, "avif") || at(8, "avis") { return "avif" }
-        if at(4, "ftyp"), at(8, "heic") || at(8, "heix") || at(8, "mif1") { return "heic" }
-        if at(0, "BM") { return "bmp" }
-        return nil
+        let size = data.count
+        return imageType(size: Int64(size)) { offset, count in
+            let start = data.startIndex + Int(offset)
+            guard offset >= 0, Int(offset) + count <= size else { return nil }
+            return data.subdata(in: start..<start + count)
+        }
     }
 
-    /// The type of the picture in a file, or nil when it is missing or isn't one.
+    /// The type of the picture in a file, or nil when it is missing, isn't one, or was cut off.
     nonisolated static func imageExtension(of file: URL) -> String? {
-        guard let handle = try? FileHandle(forReadingFrom: file) else { return nil }
+        guard let handle = try? FileHandle(forReadingFrom: file),
+              let size = try? handle.seekToEnd() else { return nil }
         defer { try? handle.close() }
-        guard let head = try? handle.read(upToCount: 12) else { return nil }
-        return imageExtension(of: head)
+        return imageType(size: Int64(size)) { offset, count in
+            guard (try? handle.seek(toOffset: UInt64(offset))) != nil,
+                  let bytes = try? handle.read(upToCount: count), bytes.count == count else { return nil }
+            return bytes
+        }
+    }
+
+    /// The checks of `imageExtension`, on bytes read with `read(offset, count)`.
+    /// The same as Android's (`ImageEnds` in Stores.kt).
+    nonisolated private static func imageType(size: Int64, read: (Int64, Int) -> Data?) -> String? {
+        guard size >= 12, let headData = read(0, 12) else { return nil }
+        let head = [UInt8](headData)
+        func at(_ offset: Int, _ text: String) -> Bool { Array(text.utf8) == Array(head[offset..<offset + text.utf8.count]) }
+        let type: String
+        if head[0] == 0xFF, head[1] == 0xD8, head[2] == 0xFF { type = "jpg" }
+        else if head[0] == 0x89, at(1, "PNG") { type = "png" }
+        else if at(0, "GIF8") { type = "gif" }
+        else if at(0, "RIFF"), at(8, "WEBP") { type = "webp" }
+        else if at(4, "ftyp"), at(8, "avif") || at(8, "avis") { type = "avif" }
+        else if at(4, "ftyp"), at(8, "heic") || at(8, "heix") || at(8, "mif1") { type = "heic" }
+        else if at(0, "BM") { type = "bmp" }
+        else { return nil }
+
+        func tail(_ count: Int) -> [UInt8] {
+            let count = Int(min(Int64(count), size))
+            return read(size - Int64(count), count).map { [UInt8]($0) } ?? []
+        }
+        func contains(_ bytes: [UInt8], _ marker: [UInt8]) -> Bool {
+            guard bytes.count >= marker.count else { return false }
+            return (0...(bytes.count - marker.count)).contains { i in marker.indices.allSatisfy { bytes[i + $0] == marker[$0] } }
+        }
+        func number(_ bytes: [UInt8], _ offset: Int, _ count: Int, littleEndian: Bool) -> Int64 {
+            let part = bytes[offset..<offset + count]
+            return (littleEndian ? Array(part.reversed()) : Array(part)).reduce(Int64(0)) { $0 << 8 | Int64($1) }
+        }
+        let complete: Bool
+        switch type {
+        // The end of image marker (some files carry a few bytes after it).
+        case "jpg": complete = contains(tail(512), [0xFF, 0xD9])
+        case "png": complete = contains(tail(64), Array("IEND".utf8) + [0xAE, 0x42, 0x60, 0x82]) // With its CRC.
+        case "gif": complete = tail(1) == [0x3B] // The trailer.
+        // The length the file says it has.
+        case "webp": complete = number(head, 4, 4, littleEndian: true) + 8 <= size
+        case "bmp": complete = (26...max(26, size)).contains(number(head, 2, 4, littleEndian: true))
+        // Boxes one after the other, each within the file, the last ending at its end.
+        default:
+            var offset: Int64 = 0
+            var boxes = 0
+            var ends = true
+            walk: while offset < size {
+                boxes += 1
+                guard size - offset >= 8, boxes <= 4096, let header = read(offset, 8) else { ends = false; break }
+                var length = number([UInt8](header), 0, 4, littleEndian: false)
+                switch length {
+                case 0: offset = size; break walk // To the end of the file.
+                case 1:
+                    guard size - offset >= 16, let large = read(offset + 8, 8) else { ends = false; break walk }
+                    length = number([UInt8](large), 0, 8, littleEndian: false)
+                    guard length >= 16 else { ends = false; break walk }
+                default:
+                    guard length >= 8 else { ends = false; break walk }
+                }
+                offset += length
+            }
+            complete = ends && offset == size
+        }
+        return complete ? type : nil
     }
 
     /// Bytes used by downloads.

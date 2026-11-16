@@ -28,11 +28,11 @@ final class AccountBook {
         }
     }
 
+    /// The list changes only when it was saved (what shows is what a restart finds).
     private func save(_ list: [SavedAccount]) {
+        guard let data = try? JSONEncoder().encode(list), let text = String(data: data, encoding: .utf8),
+              Keychain.write("saved_accounts", text) else { return }
         accounts = list
-        if let data = try? JSONEncoder().encode(list), let text = String(data: data, encoding: .utf8) {
-            Keychain.write("saved_accounts", text)
-        }
     }
 
     func accounts(for site: SiteKind) -> [SavedAccount] { accounts.filter { $0.siteKind == site } }
@@ -79,21 +79,24 @@ final class AccountBook {
     }
 
     /// Makes `account` the active login of its site.
-    func switchTo(_ account: SavedAccount) async {
+    /// Makes `account` the active login of its site; false when it couldn't be saved (the login there was stays).
+    @discardableResult
+    func switchTo(_ account: SavedAccount) async -> Bool {
         switch account.siteKind {
         case .nhentai:
-            guard let access = account.values["access"] else { return }
-            AuthStore.shared.clear()
-            await UserSession.shared.login(access: access, refresh: account.values["refresh"])
+            guard let access = account.values["access"] else { return false }
+            return await UserSession.shared.login(access: access, refresh: account.values["refresh"])
         case .ehentai:
-            guard let member = account.values["member"], let hash = account.values["hash"] else { return }
-            EhCredentials.shared.save(memberId: member, passHash: hash, igneous: account.values["igneous"])
+            guard let member = account.values["member"], let hash = account.values["hash"],
+                  EhCredentials.shared.store(memberId: member, passHash: hash, igneous: account.values["igneous"]) else { return false }
+            EhSession.shared.loginReplaced()
             EhSession.shared.refresh()
             EhSession.shared.resetFolders()
             await EhSession.shared.loadFolders()
         }
         // nhentai's login above already told the favorites copy.
         if account.siteKind == .ehentai { await FavoritesStore.shared.accountChanged(.ehentai) }
+        return true
     }
 
     func forget(_ account: SavedAccount) { save(accounts.filter { $0.id != account.id }) }

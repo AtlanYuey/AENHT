@@ -755,9 +755,18 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
     /** Why the comments couldn't be read (shown instead of "No Comments" when there are none to show). */
     private var error by mutableStateOf<String?>(null)
 
+    /** Counts the reloads: a later page read for an earlier list isn't added to this one. */
+    private var generation = 0
+    private var moreJob: kotlinx.coroutines.Job? = null
+
     private suspend fun load() {
+        val mine = ++generation
+        moreJob?.cancel()
+        moreJob = null
+        loadingMore = false
         try {
             val first = NHClient.commentsPage(galleryId, 1)
+            if (mine != generation) return
             comments.clear()
             comments.addAll(first.result)
             page = 1
@@ -766,28 +775,33 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            error = e.localizedMessage ?: ""
+            if (mine == generation) error = e.localizedMessage ?: ""
+        } finally {
+            if (mine == generation) pulling = false
         }
-        pulling = false
     }
 
     private fun loadMore() {
         if (loadingMore || page >= pageCount) return
+        val mine = generation
+        val wanted = page + 1
         loadingMore = true
-        scope.launch {
+        moreJob = scope.launch {
             try {
-                val more = NHClient.commentsPage(galleryId, page + 1)
+                val more = NHClient.commentsPage(galleryId, wanted)
+                if (mine != generation) return@launch
                 val known = comments.map { it.id }.toSet()
                 comments.addAll(more.result.filter { it.id !in known })
-                page++
+                page = wanted
                 pageCount = more.numPages
                 error = null
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                error = e.localizedMessage ?: ""
+                if (mine == generation) error = e.localizedMessage ?: ""
+            } finally {
+                if (mine == generation) loadingMore = false
             }
-            loadingMore = false
         }
     }
 

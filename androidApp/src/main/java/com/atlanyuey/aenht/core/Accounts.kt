@@ -35,9 +35,9 @@ object AccountBook {
         accounts = store["list"]?.let { runCatching { json.decodeFromString(ListSerializer(SavedAccount.serializer()), it) }.getOrNull() } ?: emptyList()
     }
 
+    /** The list changes only when it was saved (what shows is what a restart finds). */
     private fun save(list: List<SavedAccount>) {
-        accounts = list
-        store["list"] = json.encodeToString(ListSerializer(SavedAccount.serializer()), list)
+        if (store.putAll(mapOf("list" to json.encodeToString(ListSerializer(SavedAccount.serializer()), list)))) accounts = list
     }
 
     fun accounts(site: Site) = accounts.filter { it.site == site.key }
@@ -87,16 +87,15 @@ object AccountBook {
         upsert(SavedAccount("eh:$member", Site.EHENTAI.key, "ID $member", null, values))
     }
 
-    /** Makes [account] the active login of its site. */
-    suspend fun switchTo(account: SavedAccount) {
+    /** Makes [account] the active login of its site; false when it couldn't be saved (the login there was stays). */
+    suspend fun switchTo(account: SavedAccount): Boolean {
         when (account.site) {
             Site.NHENTAI.key -> {
-                Auth.clear()
-                Session.login(account.values["access"] ?: return, account.values["refresh"])
+                return Session.login(account.values["access"] ?: return false, account.values["refresh"])
             }
             else -> {
-                EhAuth.clear()
-                EhAuth.save(account.values["member"] ?: return, account.values["hash"] ?: return, account.values["igneous"])
+                if (!EhAuth.store(account.values["member"] ?: return false, account.values["hash"] ?: return false, account.values["igneous"])) return false
+                EhSession.loginReplaced()
                 EhSession.refresh()
                 com.atlanyuey.aenht.screens.EhFolders.reset()
                 com.atlanyuey.aenht.screens.EhFolders.load()
@@ -104,6 +103,7 @@ object AccountBook {
         }
         // nhentai's login above already told the favorites copy.
         if (account.site != Site.NHENTAI.key) FavoritesStore.accountChanged(Site.EHENTAI)
+        return true
     }
 
     fun forget(account: SavedAccount) = save(accounts.filter { it.id != account.id })

@@ -544,4 +544,6 @@ T = [
     "Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta.",
     "Dissolvenza allo scorrimento",
     "Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.",
+    "Impossibile salvare l’accesso su questo dispositivo.",
+    "Un altro dispositivo sta sincronizzando nello stesso momento. Non è stato sovrascritto nulla; riprova tra poco.",
 ]

@@ -545,9 +545,11 @@
     <string name="l_542">Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.</string>
     <string name="l_543">Fundido al deslizar</string>
     <string name="l_544">Con «Fundido al deslizar», las páginas no se mueven con el dedo: al deslizar se pasa a la página siguiente o anterior, y la nueva aparece con un fundido que avanza en la dirección del gesto.</string>
-    <string name="l_545">Copia de los ajustes</string>
-    <string name="l_546">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_547">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_548">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_549">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_545">No se pudo guardar el inicio de sesión en este dispositivo.</string>
+    <string name="l_546">Otro dispositivo está sincronizando al mismo tiempo. No se sobrescribió nada; inténtalo de nuevo en un momento.</string>
+    <string name="l_547">Copia de los ajustes</string>
+    <string name="l_548">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_549">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_550">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_551">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

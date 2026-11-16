@@ -265,6 +265,9 @@ class LoginScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val overlays = LocalOverlays.current
+        val failedTitle = tr("Couldn't Log In")
+        val failedMessage = tr("The login couldn't be saved on this device.")
         ScreenScaffold(
             title = tr("Log In"),
             trailing = { if (loading) ActivityIndicator() },
@@ -298,7 +301,9 @@ class LoginScreen : Screen() {
                                 val access = map["access_token"]?.takeIf { it.isNotEmpty() } ?: return
                                 done = true
                                 scope.launch {
-                                    Session.login(access, map["refresh_token"])
+                                    if (!Session.login(access, map["refresh_token"])) {
+                                        overlays.alert(failedTitle, failedMessage)
+                                    }
                                     navigator.pop()
                                 }
                             }

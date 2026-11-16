@@ -358,7 +358,9 @@ class EhApi internal constructor(
     @Throws(EhException::class, CancellationException::class)
     suspend fun favoriteNote(gid: Long, token: String): String {
         if (!isLoggedIn) throw EhException.NotLoggedIn()
+        // A page without the note field must not read as an empty note: moving the favorite would clear it.
         return EhParser.parseFavoriteNote(getPage("$host/gallerypopups.php?gid=$gid&t=$token&act=addfav"))
+            ?: throw EhException.Parse("favorite note")
     }
 
     /** Votes a comment up (+1) or down (-1); voting the same way again takes the vote back. Answers the new score. */

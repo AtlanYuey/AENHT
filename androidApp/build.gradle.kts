@@ -148,7 +148,14 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             all {
-                it.systemProperty("roborazzi.test.record", "true")
+                // Screenshots are written to build/screens (the default). With
+                // -PscreenshotsVerify they are compared with the ones already there
+                // (recorded and looked at before) and a difference fails the test.
+                if (project.hasProperty("screenshotsVerify")) {
+                    it.systemProperty("roborazzi.test.verify", "true")
+                } else {
+                    it.systemProperty("roborazzi.test.record", "true")
+                }
                 // Where Robolectric downloads Android (a mirror can be set locally).
                 (project.findProperty("robolectricRepo") as String?)?.let { repo ->
                     it.systemProperty("robolectric.dependency.repo.url", repo)

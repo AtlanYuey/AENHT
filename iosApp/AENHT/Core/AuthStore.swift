@@ -17,15 +17,20 @@ final class AuthStore: NSObject, TokenStorage, @unchecked Sendable {
 
     func save(access: String, refresh: String?) {
         let previous = accessToken
-        Keychain.write(accessKey, access)
-        if let refresh, !refresh.isEmpty {
-            Keychain.write(refreshKey, refresh)
-        }
+        var values: [(String, String?)] = [(accessKey, access)]
+        if let refresh, !refresh.isEmpty { values.append((refreshKey, refresh)) }
+        guard Keychain.writeAll(values) else { return }
         // A renewed login: the saved account gets the new tokens (it stays the active one).
         if let previous, previous != access {
             let renewed = refreshToken
             Task { @MainActor in AccountBook.shared.tokensRenewed(previousAccess: previous, access: access, refresh: renewed) }
         }
+    }
+
+    /// Puts a new login in place of the one there is (both tokens); false
+    /// when it couldn't be saved, and the old one stays.
+    func replace(access: String, refresh: String?) -> Bool {
+        Keychain.writeAll([(accessKey, access), (refreshKey, refresh)])
     }
 
     func clear() {
@@ -77,6 +82,23 @@ enum Keychain {
         return status == errSecSuccess
     }
 
+    /// Writes several values (nil or empty removes one), all of them or none:
+    /// false when the Keychain refused, and what was saved stays.
+    static func writeAll(_ values: [(String, String?)]) -> Bool {
+        let before = values.map { ($0.0, read($0.0)) }
+        for (key, value) in values {
+            if let value, !value.isEmpty {
+                if write(key, value) { continue }
+                for (key, old) in before {
+                    if let old { write(key, old) } else { delete(key) }
+                }
+                return false
+            }
+            delete(key)
+        }
+        return true
+    }
+
     static func delete(_ key: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -95,6 +117,10 @@ final class UserSession {
     private(set) var user: CurrentUser?
     private(set) var isLoggedIn: Bool = AuthStore.shared.isLoggedIn
 
+    /// Counts the changes of login (log in, log out, switch): an answer to a
+    /// request of an earlier login (its user, its blacklist) isn't kept.
+    @ObservationIgnored private(set) var generation = 0
+
     @MainActor
     func reload() async {
         isLoggedIn = AuthStore.shared.isLoggedIn
@@ -102,7 +128,11 @@ final class UserSession {
             user = nil
             return
         }
+        let mine = generation
+        let token = AuthStore.shared.accessToken
         if let user = try? await NHClient.shared.currentUser() {
+            // Another login meanwhile: this user isn't its user.
+            guard mine == generation, AuthStore.shared.accessToken == token else { return }
             self.user = user
             AccountBook.shared.rememberNh(user: user)
         }
@@ -111,7 +141,14 @@ final class UserSession {
     /// Logs in with an API key (nhentai.net › Settings › API Keys).
     @MainActor
     func loginWithApiKey(_ key: String) async throws {
+        generation += 1
+        let mine = generation
         try await NHClient.shared.loginWithApiKey(key)
+        // Logged out or into another account meanwhile: that one stays.
+        guard mine == generation else { return }
+        guard AuthStore.shared.isLoggedIn else {
+            throw NHError.network(String(localized: "The login couldn't be saved on this device."))
+        }
         user = nil
         await reload()
         await accountChanged()
@@ -124,18 +161,22 @@ final class UserSession {
         await FavoritesStore.shared.accountChanged(.nhentai)
     }
 
+    /// Logs in with tokens; false when they couldn't be saved on this device (the login there was stays).
     @MainActor
-    func login(access: String, refresh: String?) async {
+    @discardableResult
+    func login(access: String, refresh: String?) async -> Bool {
         // Nothing of the login before stays: not its refresh token, not its user.
-        AuthStore.shared.clear()
+        guard AuthStore.shared.replace(access: access, refresh: refresh) else { return false }
+        generation += 1
         user = nil
-        AuthStore.shared.save(access: access, refresh: refresh)
         await reload()
         await accountChanged()
+        return true
     }
 
     @MainActor
     func logout() {
+        generation += 1
         AccountBook.shared.forgetActive(.nhentai)
         AuthStore.shared.clear()
         user = nil

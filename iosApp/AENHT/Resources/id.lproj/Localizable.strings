@@ -544,3 +544,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat.";
 "Fade on Swipe" = "Pudar Saat Menggeser";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.";
+"The login couldn't be saved on this device." = "Login tidak dapat disimpan di perangkat ini.";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Perangkat lain sedang menyinkronkan pada saat yang sama. Tidak ada yang ditimpa; coba lagi sebentar lagi.";

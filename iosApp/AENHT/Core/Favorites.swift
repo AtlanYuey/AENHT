@@ -18,8 +18,14 @@ final class FavoritesStore {
         db: IosDatabase.shared.shared, nh: NHClient.shared.api, eh: EhService.shared.api
     )
 
-    /// The account each site's copy was read from (the saved account's id), kept with the copy.
+    /// The login each site's copy is a complete read of (the saved account's
+    /// id, or `unidentified`), kept with the copy. Set only by a sync that read
+    /// the whole list; none (an older version's copy, after a WebDAV import, a
+    /// login that changed, a sync that failed part way): the copy is no one's
+    /// and stays hidden.
     private var owners: [SiteKind: String] = [:]
+    /// A login that isn't one of the saved accounts (from before accounts were kept).
+    private static let unidentified = "?"
     @ObservationIgnored private var syncTask: Task<Void, Never>?
 
     private init() {
@@ -28,19 +34,32 @@ final class FavoritesStore {
         }
     }
 
-    /// The account logged in on `site` (nil when none, or not known yet).
-    private func account(_ site: SiteKind) -> String? {
-        AccountBook.shared.accounts(for: site).first { AccountBook.shared.isActive($0) }?.id
+    /// Who is logged in on `site`: the saved account's id, `unidentified`, or nil when no one.
+    private func identity(_ site: SiteKind) -> String? {
+        guard loggedIn(site) else { return nil }
+        return AccountBook.shared.accounts(for: site).first { AccountBook.shared.isActive($0) }?.id ?? Self.unidentified
     }
 
-    /// Whether `site`'s copy is the logged-in account's: another account's
-    /// copy (after switching, until the sync) and a logged-out site's stay hidden.
+    /// Whether `site`'s copy is the logged-in account's: a copy of no one (not
+    /// yet read whole for this login) or of another account stays hidden, like
+    /// a logged-out site's.
     private func showsCopy(_ site: SiteKind) -> Bool {
-        guard loggedIn(site) else { return false }
-        guard let owner = owners[site] else { return true }
-        // Which saved account is logged in isn't known (a login from before accounts were kept): shown.
-        guard let who = account(site) else { return true }
-        return owner == who
+        guard let who = identity(site) else { return false }
+        return owners[site] == who
+    }
+
+    private func setOwner(_ site: SiteKind, _ owner: String?) {
+        owners[site] = owner
+        UserDefaults.standard.set(owner, forKey: "favoritesOwner.\(site.rawValue)")
+    }
+
+    /// WebDAV added favorites from another device: they may be another
+    /// account's, so the copy is no one's until it's read again from the site.
+    func imported() async {
+        for site in SiteKind.allCases { setOwner(site, nil) }
+        await reload()
+        await syncTask?.value
+        await sync()
     }
 
     func reload() async {
@@ -75,6 +94,8 @@ final class FavoritesStore {
     /// then the new account's favorites are read.
     func accountChanged(_ site: SiteKind) async {
         lastSync[site] = nil
+        // Hidden at once: nothing of the previous login shows until the new one's list is read.
+        setOwner(site, nil)
         await syncTask?.value
         await sync([site])
     }
@@ -101,16 +122,18 @@ final class FavoritesStore {
             syncing = site
             syncedCount = 0
             do {
-                // The copy of another account is dropped before this account's is read
-                // (when a sync fails, nothing of the other account shows meanwhile).
-                if let who = account(site), owners[site] != who {
-                    if owners[site] != nil { _ = try await mirror.clear(site: site.kotlin) }
-                    owners[site] = who
-                    UserDefaults.standard.set(who, forKey: "favoritesOwner.\(site.rawValue)")
+                // A copy that isn't this login's (another account's, an older
+                // version's, imported) is dropped before this login's is read.
+                guard let who = identity(site) else { continue }
+                if owners[site] != who {
+                    setOwner(site, nil)
+                    _ = try await mirror.clear(site: site.kotlin)
                     await reload()
                 }
                 EhService.shared.api.useExHentai = AppSettings.shared.useExHentai
                 try await mirror.sync(site: site.kotlin, progress: nil)
+                // The whole list was read for this login: one that changed meanwhile is read again after this.
+                if identity(site) == who { setOwner(site, who) }
                 lastSync[site] = Date()
             } catch {
                 self.error = EhService.map(error).localizedDescription

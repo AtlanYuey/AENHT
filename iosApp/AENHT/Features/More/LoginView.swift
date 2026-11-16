@@ -7,16 +7,21 @@ struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(UserSession.self) private var session
     @State private var isLoading = true
+    @State private var notSaved = false
 
     var body: some View {
         NavigationStack {
             LoginWebView(isLoading: $isLoading) { access, refresh in
                 Task {
-                    await session.login(access: access, refresh: refresh)
-                    dismiss()
+                    if await session.login(access: access, refresh: refresh) { dismiss() } else { notSaved = true }
                 }
             }
             .ignoresSafeArea(edges: .bottom)
+            .alert("Couldn't Log In", isPresented: $notSaved) {
+                Button("OK", role: .cancel) { dismiss() }
+            } message: {
+                Text("The login couldn't be saved on this device.")
+            }
             .navigationTitle("Log In")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

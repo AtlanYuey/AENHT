@@ -544,3 +544,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern.";
 "Fade on Swipe" = "Überblenden beim Wischen";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.";
+"The login couldn't be saved on this device." = "Die Anmeldung konnte auf diesem Gerät nicht gespeichert werden.";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Ein anderes Gerät synchronisiert gerade gleichzeitig. Es wurde nichts überschrieben; versuche es gleich noch einmal.";

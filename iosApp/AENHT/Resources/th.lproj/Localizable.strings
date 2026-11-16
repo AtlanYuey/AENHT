@@ -544,3 +544,5 @@
 "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "เมื่อเปลี่ยนหน้าแบบจางลง หน้าจะไม่เลื่อน หน้าถัดไปจะค่อยๆ ปรากฏในที่เดิม สบายตากว่าเมื่อเปลี่ยนหน้าเร็ว";
 "Fade on Swipe" = "จางเมื่อปัด";
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "เมื่อเปิด “จางเมื่อปัด” หน้าจะไม่เลื่อนตามนิ้ว การปัดจะเปลี่ยนไปหน้าถัดไปหรือหน้าก่อนหน้า และหน้าใหม่จะค่อยๆ ปรากฏตามทิศทางที่คุณปัด";
+"The login couldn't be saved on this device." = "ไม่สามารถบันทึกการเข้าสู่ระบบบนอุปกรณ์นี้ได้";
+"Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "มีอุปกรณ์อื่นกำลังซิงค์พร้อมกัน ไม่มีสิ่งใดถูกเขียนทับ โปรดลองอีกครั้งในอีกสักครู่";

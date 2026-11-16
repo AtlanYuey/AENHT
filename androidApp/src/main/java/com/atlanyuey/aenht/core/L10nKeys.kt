@@ -550,10 +550,12 @@ object L10nKeys {
         "With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." to R.string.l_542,
         "Fade on Swipe" to R.string.l_543,
         "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." to R.string.l_544,
-        "Settings Backup" to R.string.l_545,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_546,
-        "Android's own backup also keeps these settings." to R.string.l_547,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_548,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_549,
+        "The login couldn't be saved on this device." to R.string.l_545,
+        "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." to R.string.l_546,
+        "Settings Backup" to R.string.l_547,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_548,
+        "Android's own backup also keeps these settings." to R.string.l_549,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_550,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_551,
     )
 }

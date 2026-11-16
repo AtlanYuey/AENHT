@@ -11,6 +11,8 @@ struct CommentsView: View {
     @State private var page = 1
     @State private var pageCount = 1
     @State private var loadingMore = false
+    /// Counts the reloads: a later page read for an earlier list isn't added to this one.
+    @State private var generation = 0
     /// Why the comments couldn't be read (shown instead of "No Comments" when there are none to show).
     @State private var loadError: String?
     @FocusState private var composing: Bool
@@ -99,32 +101,40 @@ struct CommentsView: View {
     }
 
     private func load() async {
+        generation += 1
+        let mine = generation
+        loadingMore = false
         do {
             let first = try await NHClient.shared.commentsPage(galleryID, page: 1)
+            guard mine == generation else { return }
             comments = first.result
             page = 1
             pageCount = first.numPages
             loadError = nil
         } catch is CancellationError {
         } catch {
-            loadError = error.localizedDescription
+            if mine == generation { loadError = error.localizedDescription }
         }
     }
 
     private func loadMore() async {
         guard !loadingMore, page < pageCount else { return }
+        // A page read for the list before a refresh isn't added to the new one.
+        let mine = generation
+        let wanted = page + 1
         loadingMore = true
-        defer { loadingMore = false }
+        defer { if mine == generation { loadingMore = false } }
         do {
-            let more = try await NHClient.shared.commentsPage(galleryID, page: page + 1)
+            let more = try await NHClient.shared.commentsPage(galleryID, page: wanted)
+            guard mine == generation else { return }
             let known = Set(comments.map(\.id))
             comments += more.result.filter { !known.contains($0.id) }
             pageCount = more.numPages
-            page += 1
+            page = wanted
             loadError = nil
         } catch is CancellationError {
         } catch {
-            loadError = error.localizedDescription
+            if mine == generation { loadError = error.localizedDescription }
         }
     }
 

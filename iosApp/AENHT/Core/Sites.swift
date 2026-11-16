@@ -98,10 +98,15 @@ final class EhCredentials: NSObject, EhCredentialStorage, @unchecked Sendable {
     var igneous: String? { Keychain.read("eh_igneous") }
 
     func save(memberId: String, passHash: String, igneous: String?) {
-        Keychain.write("eh_member_id", memberId)
-        Keychain.write("eh_pass_hash", passHash)
-        if let igneous, !igneous.isEmpty { Keychain.write("eh_igneous", igneous) } else { Keychain.delete("eh_igneous") }
+        store(memberId: memberId, passHash: passHash, igneous: igneous)
+    }
+
+    /// Saves a login (all three cookies or none); false when it couldn't be saved, and the one there was stays.
+    @discardableResult
+    func store(memberId: String, passHash: String, igneous: String?) -> Bool {
+        let saved = Keychain.writeAll([("eh_member_id", memberId), ("eh_pass_hash", passHash), ("eh_igneous", igneous)])
         Task { @MainActor in EhSession.shared.refresh() }
+        return saved
     }
 
     func clear() {
@@ -139,18 +144,47 @@ final class EhSession {
     /// in with them. When they are refused, or the site can't be reached,
     /// the login there was before stays.
     func login(memberId: String, passHash: String, igneous: String?) async -> Bool {
+        // One login checked at a time: the next waits for this one.
+        let previous = loginTask
+        let task = Task { @MainActor in
+            _ = await previous?.value
+            return await self.check(memberId: memberId, passHash: passHash, igneous: igneous)
+        }
+        loginTask = task
+        return await task.value
+    }
+
+    @ObservationIgnored private var loginTask: Task<Bool, Never>?
+
+    /// Counts the changes of login (log in, log out, switch): a check of an earlier one doesn't decide the current one.
+    @ObservationIgnored private(set) var generation = 0
+
+    /// Another login was put in place (switching accounts).
+    func loginReplaced() { generation += 1 }
+
+    private func check(memberId: String, passHash: String, igneous: String?) async -> Bool {
+        generation += 1
+        let mine = generation
         let c = EhCredentials.shared
         let before = (c.memberId, c.passHash, c.igneous)
         loginError = nil
-        c.save(memberId: memberId.trimmingCharacters(in: .whitespaces),
-               passHash: passHash.trimmingCharacters(in: .whitespaces),
-               igneous: igneous?.trimmingCharacters(in: .whitespaces))
+        guard c.store(memberId: memberId.trimmingCharacters(in: .whitespaces),
+                      passHash: passHash.trimmingCharacters(in: .whitespaces),
+                      igneous: igneous?.trimmingCharacters(in: .whitespaces)) else {
+            // Checking would check the login there is, not this one.
+            loginError = String(localized: "The login couldn't be saved on this device.")
+            return false
+        }
         var ok = false
+        var failure: String?
         do {
             ok = try await EhService.shared.api.verifyLogin().boolValue
         } catch {
-            loginError = EhService.map(error).localizedDescription
+            failure = EhService.map(error).localizedDescription
         }
+        // The login changed while this one was checked: that one stays, this one isn't used.
+        guard mine == generation else { return false }
+        loginError = failure
         if !ok {
             c.clear()
             if let member = before.0, let hash = before.1, !member.isEmpty, !hash.isEmpty {
@@ -166,6 +200,7 @@ final class EhSession {
     }
 
     func logout() {
+        generation += 1
         AccountBook.shared.forgetActive(.ehentai)
         EhService.shared.api.logout()
         AppSettings.shared.useExHentai = false

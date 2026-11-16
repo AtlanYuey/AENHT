@@ -44,6 +44,7 @@ class AccountsScreen : Screen() {
         val login = tr("Log In")
         val cancel = tr("Cancel")
         val failed = tr("Couldn't Log In")
+        val notSaved = tr("The login couldn't be saved on this device.")
         val forgetLabel = tr("Remove from This Device")
         GroupedListScreen(tr("Accounts")) {
             if (AppSettings.nhentaiEnabled) {
@@ -52,7 +53,7 @@ class AccountsScreen : Screen() {
                     saved.forEach { account ->
                         AccountRow(account, forgetLabel) {
                             if (AccountBook.isActive(account)) navigator.push(AccountScreen())
-                            else scope.launch { AccountBook.switchTo(account) }
+                            else scope.launch { if (!AccountBook.switchTo(account)) overlays.alert(failed, notSaved) }
                         }
                     }
                     if (saved.isEmpty() && Session.isLoggedIn) {
@@ -83,7 +84,7 @@ class AccountsScreen : Screen() {
                     saved.forEach { account ->
                         AccountRow(account, forgetLabel) {
                             if (AccountBook.isActive(account)) navigator.push(EhAccountScreen())
-                            else scope.launch { AccountBook.switchTo(account) }
+                            else scope.launch { if (!AccountBook.switchTo(account)) overlays.alert(failed, notSaved) }
                         }
                     }
                     if (saved.isEmpty() && EhSession.isLoggedIn) {

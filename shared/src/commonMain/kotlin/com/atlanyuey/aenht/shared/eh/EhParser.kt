@@ -254,9 +254,16 @@ object EhParser {
         return EhImageLimit(m.groupValues[1].replace(",", "").toInt(), m.groupValues[2].replace(",", "").toInt(), cost)
     }
 
-    /** The note of a favorite, from the favorites popup (gallerypopups.php). */
-    fun parseFavoriteNote(html: String): String =
-        Ksoup.parse(html).selectFirst("textarea[name=favnote]")?.wholeText()?.trim().orEmpty()
+    /**
+     * The note of a favorite, from the favorites popup (gallerypopups.php);
+     * null when the page has no note field (not the popup: a login or error
+     * page), which is not the same as an empty note.
+     */
+    fun parseFavoriteNote(html: String): String? {
+        // A page cut off inside the field would read as part of the note.
+        if (!Regex("""name=["']?favnote\b[^>]*>[\s\S]*?</textarea>""", RegexOption.IGNORE_CASE).containsMatchIn(html)) return null
+        return Ksoup.parse(html).selectFirst("textarea[name=favnote]")?.wholeText()?.trim()
+    }
 
     /** The comments on a gallery page (the answer to posting one). */
     fun parseComments(html: String): List<EhComment> = parseComments(Ksoup.parse(html))

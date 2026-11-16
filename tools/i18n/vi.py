@@ -544,4 +544,6 @@ T = [
     "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh.",
     "Mờ dần khi vuốt",
     "Khi bật “Mờ dần khi vuốt”, trang không di chuyển theo ngón tay: vuốt sẽ chuyển sang trang sau hoặc trang trước, và trang mới hiện dần theo hướng bạn vuốt.",
+    "Không thể lưu thông tin đăng nhập trên thiết bị này.",
+    "Một thiết bị khác đang đồng bộ cùng lúc. Không có gì bị ghi đè; hãy thử lại sau giây lát.",
 ]

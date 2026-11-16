@@ -25,17 +25,29 @@ object SiteLinks {
     private val ehPage = Regex("""(?:https?://)?(?:www\.)?(e-hentai|exhentai)\.org/s/([0-9a-f]{10})/(\d+)-(\d+)""", RegexOption.IGNORE_CASE)
 
     /**
-     * The match is a link of the site itself: nothing before it that would
-     * make the host another one ("evilnhentai.net", "x.nhentai.net",
-     * "evil.com/nhentai.net/…", "user@nhentai.net").
+     * The match is a link of the site itself, not part of another link:
+     * nothing before it that would make the host another one
+     * ("evilnhentai.net", "x.nhentai.net", "evil.com/nhentai.net/…",
+     * "user@nhentai.net", "https://evil.com/x/https://nhentai.net/…").
+     *
+     * The text right before the match back to a space, a bracket, a quote
+     * or a non-ASCII character (Chinese right next to a link is fine) is the
+     * rest of the same word: when it holds a "/", "." or "@" the match sits
+     * inside another address.
      */
     private fun atHostStart(text: String, match: MatchResult): Boolean {
-        // With its scheme the match is a whole URL, whatever text runs into it.
+        var start = match.range.first
+        while (start > 0 && !separates(text[start - 1])) start--
+        val prefix = text.substring(start, match.range.first)
+        if (prefix.any { it == '/' || it == '.' || it == '@' || it == '\\' }) return false
+        // Without a scheme, a letter or digit right before makes another host ("evilnhentai.net").
         if (match.value.startsWith("http", ignoreCase = true)) return true
-        val before = text.getOrNull(match.range.first - 1) ?: return true
-        val asciiWord = before in 'a'..'z' || before in 'A'..'Z' || before in '0'..'9'
-        return !(asciiWord || before in "._-/@")
+        val before = prefix.lastOrNull() ?: return true
+        return !(before in 'a'..'z' || before in 'A'..'Z' || before in '0'..'9' || before in "_-")
     }
+
+    /** Ends a word of a link: space, brackets, quotes and punctuation that links don't use, or any non-ASCII. */
+    private fun separates(c: Char): Boolean = c.isWhitespace() || c.code > 0x7E || c in "\"'<>()[]{}|`,;!"
 
     private fun first(regex: Regex, text: String): MatchResult? = regex.findAll(text).firstOrNull { atHostStart(text, it) }
 

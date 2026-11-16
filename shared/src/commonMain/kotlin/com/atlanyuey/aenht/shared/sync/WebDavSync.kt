@@ -33,6 +33,8 @@ class WebDavException(
     val unauthorized: Boolean = false,
     /** The server's file was written by a newer version of the app: this one must not rewrite it. */
     val newerVersion: Boolean = false,
+    /** Another device kept uploading while this one synced: nothing was uploaded, try again later. */
+    val conflict: Boolean = false,
 ) : Exception(message)
 
 /** What one sync changed on this device. */
@@ -159,10 +161,11 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
                     favorites = db.favorites().all(),
                     tombstones = db.tombstones().all(),
                 )
-                // Weak ETags can't be used with If-Match; servers without ETags get a plain upload.
+                // Weak ETags can't be used with If-Match. A server without strong ETags
+                // gets a plain upload: on it, two devices syncing at the same moment
+                // aren't protected from each other (the README says so).
                 val etag = response.headers[HttpHeaders.ETag]?.takeIf { remote != null && !it.startsWith("W/") }
                 val condition = when {
-                    attempt > CONFLICT_RETRIES -> null // Still changing after the retries: upload what was merged.
                     remote == null -> HttpHeaders.IfNoneMatch to "*"
                     etag != null -> HttpHeaders.IfMatch to etag
                     else -> null
@@ -177,7 +180,8 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
                     favoritesAdded = favoritesAdded,
                 )
             }
-            throw WebDavException("The file on the server keeps changing.")
+            // Never uploaded without the condition: the other device's copy stays, and the next sync merges it.
+            throw WebDavException("The file on the server keeps changing.", conflict = true)
         }
 
     internal suspend fun merge(remote: SyncFile?, settingsChangedAt: Long): WebDavResult {

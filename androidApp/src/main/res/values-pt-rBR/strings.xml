@@ -545,9 +545,11 @@
     <string name="l_542">Com o esmaecimento, as páginas não deslizam: a próxima aparece no lugar, mais confortável ao virar rápido.</string>
     <string name="l_543">Esmaecer ao deslizar</string>
     <string name="l_544">Com “Esmaecer ao deslizar”, as páginas não acompanham o dedo: um deslize vira para a próxima página ou a anterior, e a nova aparece esmaecendo na direção do gesto.</string>
-    <string name="l_545">Backup dos ajustes</string>
-    <string name="l_546">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_547">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_548">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_549">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_545">Não foi possível salvar o login neste dispositivo.</string>
+    <string name="l_546">Outro dispositivo está sincronizando ao mesmo tempo. Nada foi substituído; tente novamente em instantes.</string>
+    <string name="l_547">Backup dos ajustes</string>
+    <string name="l_548">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_549">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_550">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_551">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>
