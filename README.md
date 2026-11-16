@@ -19,7 +19,7 @@
 </p>
 
 > [!WARNING]
-> 0.1.0 是第一个版本，项目仍在积极开发中。仅供 18 岁以上用户使用。
+> 当前版本 0.1.1，项目仍在积极开发中。仅供 18 岁以上用户使用。
 > 本项目与 nhentai、E-Hentai 均无关联。
 
 <p align="center">
@@ -116,7 +116,7 @@ flowchart LR
 ```
 
 - 两站的数据先转换成同一种作品模型，界面只认这一种。所以两站的作品页都按同样的顺序排列：信息条 → 标签 → 页面 → 其他版本 → 相似作品 → 评论。各站独有的内容（E-Hentai 的评分、种子、归档）放在各自合适的位置，不打乱整体结构。
-- ExHentai 不算一个单独的站点，而是 E-Hentai 下的「使用里站」开关，封面上标 EX。
+- ExHentai 不算一个单独的站点，而是 E-Hentai 下的「使用里站」开关（在「我的 › 站点」里紧挨 E-Hentai，开着 E-Hentai 时才显示），封面上标 EX。
 - 每个分站点的页面都可以设置打开时显示什么：跟随上次、跟随主页、nhentai、E-Hentai 或全部，集中在「设置 › 站点」里。
 - 卡片的配色约定：左上角的角标是语言，颜色跟作品分类（同人志、漫画等）走，两站用同一套分类色；在合并列表里，右上角标 NH 或 EH。
 
@@ -124,9 +124,11 @@ flowchart LR
 
 顶部空间有限，所以只放一行：
 
-- 站点名在最上面，点它切换站点。
-- 下面一行是当前排序（例如「最新」），点它弹出菜单，副标题显示当前语言。
-- 右侧只有两个圆形按钮：语言和搜索。
+- 站点名在最上面正中，是一块液态玻璃按钮（白色粗体），点它切换站点；只开一个站点时不显示箭头。
+- nhentai 的「随机作品」是右上角的骰子按钮。
+- 下面一行是当前排序（例如「最新」），点它弹出菜单，副标题显示当前语言；右侧是语言和搜索两个圆形按钮。
+- 往下滚动后，排序、语言和搜索会收进顶栏（替换掉骰子），回到顶部再放回原处。
+- 顶栏的按钮都用白色（浅色模式下为黑色），不用强调色。
 - 搜索在原地展开，不跳到新页面；站点切换放在搜索栏下面。
 - 收藏页的标题本身就是菜单，点它在全部 / nhentai / E-Hentai 和各收藏夹之间切换。
 
@@ -148,7 +150,11 @@ iPad 上，底栏会跟着手移到你最后触摸的那一侧（快 / 中 / 慢
 - 滑动手势和点击区自动配合：点击区在左右两侧时，上下滑动可以设成退出阅读器、显示控件或自动翻页；点击区在上下两侧时，改为左右滑动。和翻页同方向的滑动始终用来翻页，不会冲突。
 - 屏幕常亮（默认 5 分钟）从最后一次触摸开始计时，结束后交还给系统自己的自动锁屏，**绝不会比系统更早熄屏**。
 - 双页模式中间默认留 6 pt 间隔，和「连续（有间距）」模式用同一套间距设计。
-- 平板横屏时，作品页左半边是作品信息，右半边是全部页面，上下在栏下柔和模糊；首页的两行固定推荐左右并排。在两半交界处被切开的封面保持圆角。转屏时列表停在原来的位置。
+- 平板横屏时：
+  - 作品页左半边是作品信息，右半边是全部页面，上下是 iOS 26 的柔和渐变模糊。
+  - 首页的两行固定推荐左右并排；在两半交界处被切开的封面保持圆角。
+  - 「我的」分成左右两栏：左边是列表，右边显示所选的页面，以及从它打开的二级、三级页面；默认显示「全部」：账号、下载、历史与收藏数、同步状态和版本。
+- 转屏时列表在转屏动画里一次排好，停在原来看的那张卡片（iOS 的列表是 UICollectionView）。
 
 ### 5. 超分辨率：只在需要的时候做
 
@@ -206,7 +212,7 @@ flowchart LR
 - **E-Hentai**：最新、热门、订阅（Watched）、昨日 / 本月 / 本年 / 全部时间排行榜。
 - **固定推荐行**：最多两行，显示在信息流上方。默认 nhentai 为「当前热门 + 本周热门」，E-Hentai 为「昨日排行榜 + 当前热门」。两行一起加载、一起出现。
 - **列表样式**：瀑布流、紧凑瀑布流、网格、列表。卡片大小按横屏和竖屏分别设置，并随分屏和台前调度自动增减列数。
-- 「随机作品」、卡片上显示标签（可翻译）、按语言筛选。
+- 「随机作品」（nhentai，右上角骰子）、卡片上显示标签（可翻译）、按语言筛选。
 </details>
 
 <details>
@@ -287,7 +293,7 @@ flowchart LR
 <details>
 <summary><b>账号</b></summary>
 
-- 每个站点支持多个账号，点按即可切换。
+- 每个站点支持多个账号，点按即可切换。E-Hentai 没有头像，用「EH」字母头像表示。
 - **nhentai**：账号登录，或者用 API Key 登录；可以使用账号的云端标签黑名单。
 - **E-Hentai**：
   - 网页登录，或者手动填写 Cookie（里站需要 `igneous`，通常会自动获取）。
@@ -425,7 +431,7 @@ cd iosApp && xcodegen generate && open AENHT.xcodeproj
 
 界面截图测试的输出在 `androidApp/build/screens/`。
 
-**CI**：推送到 `main` 或 `dev` 时，GitHub Actions 会构建 APK 和 IPA。`dev` 的构建会更新 `dev-latest` 预发布。IPA 的签名方法见 [docs/ios-signing.md](docs/ios-signing.md)。
+**CI**：推送到 `main` 或 `dev` 时，GitHub Actions 会构建 APK 和 IPA。`dev` 的构建会更新 `dev-latest` 预发布。在 GitHub 上发布一个 Release 时，会按它的标签自动构建，并把正式签名的 APK 和未签名的 IPA 附加到这个 Release 上，不需要手动上传。IPA 的签名方法见 [docs/ios-signing.md](docs/ios-signing.md)。
 
 ## 路线图
 
@@ -441,11 +447,14 @@ cd iosApp && xcodegen generate && open AENHT.xcodeproj
 
 ## 许可与致谢
 
-- **来源与许可**：本项目是 [honjow/eros_n](https://github.com/honjow/eros_n) 的修改版（经由 [AEros-NHT](https://github.com/AtlanYuey/AEros-NHT)），基于 Apache License 2.0 发布（见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)），由 [AtlanYuey](https://github.com/AtlanYuey) 维护。与原作者、nhentai 及 E-Hentai 均无关联。
-- **行为参考**：部分功能的行为参考了 [NextE](https://github.com/erosTeam/NextE) 与 [NextN](https://github.com/erosTeam/NextN)（MIT），没有复制其源码。
-- **数据**：
-  - 标签数据来自 [nhentai_tags_fetcher](https://github.com/honjow/nhentai_tags_fetcher)。
-  - 中文标签翻译来自 [EhTagTranslation](https://github.com/EhTagTranslation/Database)（CC BY-NC-SA 3.0）。
+- **许可**：基于 Apache License 2.0 发布（见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)），由 [AtlanYuey](https://github.com/AtlanYuey) 维护。与 nhentai、E-Hentai 及下面各项目的作者均无关联。
+- **参考项目**（App 内「关于 › 参考项目」）：
+  - [eros_n](https://github.com/honjow/eros_n)（honjow）：AENHT 最初的起点。
+  - [AEros-NHT](https://github.com/AtlanYuey/AEros-NHT)：本应用的早期版本。
+  - [NextE](https://github.com/erosTeam/NextE) 与 [NextN](https://github.com/erosTeam/NextN)（erosTeam，MIT）：E-Hentai 与 nhentai 功能的行为参考，没有复制其源码。
+  - [AY Translate](https://github.com/AtlanYuey/AY_Translate)：AI 翻译服务的设置。
+  - [nhentai_tags_fetcher](https://github.com/honjow/nhentai_tags_fetcher)（honjow）：nhentai 标签数据。
+  - [EhTagTranslation](https://github.com/EhTagTranslation/Database)（CC BY-NC-SA 3.0）：标签的中文翻译。
 - **图标与模型**：
   - AI 服务商图标来自 [LobeHub Icons](https://github.com/lobehub/lobe-icons)（MIT）。
   - 超分辨率模型来自 [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)（BSD-3-Clause）。
