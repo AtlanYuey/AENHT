@@ -32,6 +32,20 @@ final class GalleryFeed {
 
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
+        watchFilters()
+    }
+
+    /// The rules, the account's blacklist or the tag names changed: what is
+    /// loaded is filtered again (whether or not the end of the list shows).
+    private func watchFilters() {
+        withObservationTracking {
+            _ = Filters.shared.version
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.refilter()
+                self?.watchFilters()
+            }
+        }
     }
 
     /// A feed of nhentai pages (page numbers as cursors); blacklisted galleries are left out.

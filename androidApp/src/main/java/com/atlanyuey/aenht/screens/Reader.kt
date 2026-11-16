@@ -232,7 +232,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private fun go(target: Int) {
         if (target !in 0 until count) return
         val paged = AppSettings.readMode.isPaged
-        val animate = AppSettings.animatePageTurns
+        // Fade Follows the Finger: a tap (no finger to follow) fades, as without the animation.
+        val animate = AppSettings.animatePageTurns && !AppSettings.fadeFollowsFinger
         if (paged && !animate) {
             // A turn during another one ends that one and starts its own.
             fadeJob?.cancel()

@@ -937,6 +937,12 @@ class GalleryFeed(
 
     val canLoadMore: Boolean get() = hasLoaded && next != null
 
+    init {
+        // The rules, the account's blacklist or the tag names changed: what is loaded is filtered again
+        // (while the screen lives, whether or not the end of the list shows).
+        if (filtered) scope.launch { androidx.compose.runtime.snapshotFlow { Filters.version }.collect { refilter() } }
+    }
+
     fun reload(): Job {
         if (filtered) Filters.refreshNhBlacklist()
         generation++

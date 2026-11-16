@@ -38,7 +38,9 @@ final class FavoritesStore {
     private func showsCopy(_ site: SiteKind) -> Bool {
         guard loggedIn(site) else { return false }
         guard let owner = owners[site] else { return true }
-        return owner == account(site)
+        // Which saved account is logged in isn't known (a login from before accounts were kept): shown.
+        guard let who = account(site) else { return true }
+        return owner == who
     }
 
     func reload() async {

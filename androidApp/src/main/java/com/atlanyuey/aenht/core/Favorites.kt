@@ -69,7 +69,9 @@ object FavoritesStore {
     private fun showsCopy(site: Site): Boolean {
         if (!loggedIn(site)) return false
         val owner = owners[site] ?: return true
-        return owner == account(site)
+        // Which saved account is logged in isn't known (a login from before accounts were kept): shown.
+        val who = account(site) ?: return true
+        return owner == who
     }
 
     /** Reads the copy again (after WebDAV sync added to it). */

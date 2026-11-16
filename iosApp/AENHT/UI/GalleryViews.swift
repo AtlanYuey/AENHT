@@ -685,8 +685,6 @@ struct FeedFooter: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        // The rules or the account's blacklist changed: what is loaded is filtered again.
-        .onChange(of: Filters.shared.version, initial: true) { feed.refilter() }
     }
 }
 
