@@ -24,7 +24,7 @@ struct LoginView: View {
             }
             .navigationTitle("Log In")
             .navigationBarTitleDisplayMode(.inline)
-            .barToolbar {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
                 }

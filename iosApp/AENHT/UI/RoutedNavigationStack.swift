@@ -20,10 +20,8 @@ struct RoutedNavigationStack<Content: View>: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            // The pages keep the accent; the bar (its back button) is in the label color.
-            content().tint(AppSettings.shared.accent.color)
+            content()
         }
-        .tint(.primary)
         .environment(\.openRoute) { route in
             guard Date().timeIntervalSince(lastOpened) > 0.8 else { return }
             lastOpened = Date()
@@ -35,12 +33,3 @@ struct RoutedNavigationStack<Content: View>: View {
     }
 }
 
-extension View {
-    /// The bar's buttons in the label color (white in Dark Mode, black in
-    /// Light), not the accent: the page under the bar keeps the accent.
-    func barToolbar<Content: ToolbarContent>(@ToolbarContentBuilder _ content: () -> Content) -> some View {
-        self.tint(AppSettings.shared.accent.color)
-            .toolbar(content: content)
-            .tint(.primary)
-    }
-}

@@ -78,7 +78,8 @@ struct MoreView: View {
             // Both sites' accounts are one row; the next screen has a section per site.
             row(.accounts) {
                 HStack(spacing: 14) {
-                    AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 56)
+                    AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 56,
+                               monogram: !session.isLoggedIn && ehSession.isLoggedIn ? "EH" : nil)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Accounts")
                             .font(.title3.weight(.semibold))
@@ -123,11 +124,25 @@ struct MoreView: View {
 struct AvatarView: View {
     let url: URL?
     let size: CGFloat
+    /// Letters drawn instead of a picture (E-Hentai accounts have none): an
+    /// account, not a missing one.
+    var monogram: String? = nil
 
     var body: some View {
         Group {
             if let url {
                 RemoteImage(url: url, targetWidth: size * 2)
+            } else if let monogram {
+                ZStack {
+                    LinearGradient(colors: [Color(red: 0.62, green: 0.25, blue: 0.36), Color(red: 0.36, green: 0.16, blue: 0.42)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    Text(monogram)
+                        .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                        .padding(size * 0.12)
+                }
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
@@ -218,7 +233,7 @@ struct DownloadsView: View {
         .navigationTitle("Downloads")
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.showsSiteBadge, site == nil && settings.enabledSites.count > 1)
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { DownloadSettingsView() } label: { Label("Download Settings", systemImage: "gearshape") }
@@ -965,7 +980,7 @@ private struct LicenseTextView: View {
         }
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Link(destination: url) {
                     Image(systemName: "safari")

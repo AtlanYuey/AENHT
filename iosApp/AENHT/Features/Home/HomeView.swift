@@ -77,7 +77,7 @@ struct HomeView: View {
         // The title's menu switches the site: with one site on, there is no menu (and no arrow).
         .modifier(SiteTitleMenu(sites: settings.enabledSites, current: settings.currentSite) { settings.homeSite = $0 })
         .toolbar(searching ? .hidden : .automatic, for: .navigationBar)
-        .barToolbar {
+        .toolbar {
             if docked {
                 ToolbarItem(placement: .topBarLeading) {
                     SortMenu(compact: true)
@@ -396,12 +396,12 @@ private struct SiteTitleMenu: ViewModifier {
         if sites.count > 1 {
             if #available(iOS 26.0, *) {
                 // Its own glass, not the bar's shared background around it too.
-                content.barToolbar {
+                content.toolbar {
                     ToolbarItem(placement: .principal) { menu }
                         .sharedBackgroundVisibility(.hidden)
                 }
             } else {
-                content.barToolbar {
+                content.toolbar {
                     ToolbarItem(placement: .principal) { menu }
                 }
             }

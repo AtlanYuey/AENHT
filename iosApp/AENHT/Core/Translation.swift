@@ -397,7 +397,7 @@ private struct LlmPresetPicker: View {
         }
         .navigationTitle("Choose Provider")
         .navigationBarTitleDisplayMode(.inline)
-        .barToolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
     }
 }
 
@@ -579,7 +579,7 @@ struct LlmServiceEditor: View {
         }
         .navigationTitle(isNew ? "Add AI Service" : "Edit AI Service")
         .navigationBarTitleDisplayMode(.inline)
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     service.store(draft, key: trimmedKey)

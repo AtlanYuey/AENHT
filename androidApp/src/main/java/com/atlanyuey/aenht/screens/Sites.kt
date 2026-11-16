@@ -90,7 +90,7 @@ class AccountsScreen : Screen() {
                     if (saved.isEmpty() && EhSession.isLoggedIn) {
                         ListRow(tr("Logged In"),
                             subtitle = if (EhSession.hasExHentai) tr("E-Hentai account · ExHentai access") else tr("E-Hentai account"),
-                            leading = { Avatar(null, 44) }, chevron = true,
+                            leading = { Avatar(null, 44, monogram = "EH") }, chevron = true,
                             onClick = { navigator.push(EhAccountScreen()) })
                     }
                     ListRow(if (EhSession.isLoggedIn) tr("Add Account") else tr("Log In"),
@@ -116,7 +116,7 @@ class AccountsScreen : Screen() {
             ListRow(
                 account.name,
                 subtitle = if (active) tr("Active") else null,
-                leading = { Avatar(account.avatar, 44) },
+                leading = { Avatar(account.avatar, 44, monogram = if (account.site == Site.EHENTAI.key) "EH" else null) },
                 trailing = { if (active) AppIcon(Icons.Check, null, tint = AppTheme.tint, size = 18.dp) },
                 chevron = active,
             )

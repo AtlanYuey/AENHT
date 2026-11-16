@@ -54,7 +54,8 @@ struct AccountsView: View {
                     }
                     if book.accounts(for: .ehentai).isEmpty, ehSession.isLoggedIn {
                         NavigationLink { EhAccountView() } label: {
-                            accountRow("Logged In", ehSession.hasExHentai ? "E-Hentai account · ExHentai access" : "E-Hentai account")
+                            accountRow("Logged In", ehSession.hasExHentai ? "E-Hentai account · ExHentai access" : "E-Hentai account",
+                                       monogram: "EH")
                         }
                     }
                     Button { showEhLogin = true } label: {
@@ -97,7 +98,8 @@ struct AccountsView: View {
     @ViewBuilder
     private func savedRow<Destination: View>(_ account: SavedAccount, @ViewBuilder destination: () -> Destination) -> some View {
         let label = HStack(spacing: 12) {
-            AvatarView(url: account.avatar.flatMap(URL.init(string:)), size: 44)
+            AvatarView(url: account.avatar.flatMap(URL.init(string:)), size: 44,
+                       monogram: account.siteKind == .ehentai ? "EH" : nil)
             VStack(alignment: .leading) {
                 Text(account.name).font(.headline).foregroundStyle(.primary)
                 if book.isActive(account) { Text("Active").font(.subheadline).foregroundStyle(.secondary) }
@@ -121,9 +123,9 @@ struct AccountsView: View {
         }
     }
 
-    private func accountRow(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey?) -> some View {
+    private func accountRow(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey?, monogram: String? = nil) -> some View {
         HStack(spacing: 12) {
-            AvatarView(url: nil, size: 44)
+            AvatarView(url: nil, size: 44, monogram: monogram)
             VStack(alignment: .leading) {
                 Text(title).font(.headline).foregroundStyle(.primary)
                 if let subtitle { Text(subtitle).font(.subheadline).foregroundStyle(.secondary) }
@@ -222,7 +224,7 @@ struct EhLoginView: View {
             .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Log In")
             .navigationBarTitleDisplayMode(.inline)
-            .barToolbar {
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
                 }

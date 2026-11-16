@@ -73,6 +73,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil3.SingletonImageLoader
 import com.atlanyuey.aenht.BuildConfig
@@ -159,7 +160,10 @@ class MoreScreen : Screen() {
                 ListRow(
                     tr("Accounts"),
                     subtitle = accountsSummary(),
-                    leading = { Avatar(nhUser?.avatar, 56) },
+                    leading = {
+                        Avatar(nhUser?.avatar, 56,
+                            monogram = if (nhUser == null && AppSettings.ehentaiEnabled && EhSession.isLoggedIn) "EH" else null)
+                    },
                     chevron = true,
                     last = true,
                     minHeight = 76.dp,
@@ -202,10 +206,30 @@ private fun SettingsNav(title: String, icon: ImageVector, color: Color, last: Bo
 }
 
 @Composable
-fun Avatar(url: String?, size: Int) {
+fun Avatar(url: String?, size: Int, monogram: String? = null) {
     Box(Modifier.size(size.dp).clip(CircleShape).background(AppTheme.colors.quaternaryFill), contentAlignment = Alignment.Center) {
         if (url != null) {
             RemoteImage(url, Modifier.fillMaxSize(), targetWidth = (size * 2).dp)
+        } else if (monogram != null) {
+            // Letters instead of a picture (E-Hentai accounts have none): an account, not a missing one.
+            Box(
+                Modifier.fillMaxSize().background(
+                    androidx.compose.ui.graphics.Brush.linearGradient(
+                        listOf(androidx.compose.ui.graphics.Color(0xFF9E405C), androidx.compose.ui.graphics.Color(0xFF5C296B)),
+                    ),
+                ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Txt(
+                    monogram,
+                    style = androidx.compose.ui.text.TextStyle(
+                        fontSize = (size * 0.38f).sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    ),
+                    color = androidx.compose.ui.graphics.Color.White,
+                    maxLines = 1,
+                )
+            }
         } else {
             AppIcon(Icons.PersonCircle, null, tint = AppTheme.colors.secondaryLabel, size = size.dp)
         }

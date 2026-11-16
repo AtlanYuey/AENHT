@@ -59,31 +59,24 @@ struct MoreOverview: View {
 
     var body: some View {
         Form {
+            // The logged-in accounts side by side (nhentai first), each opening Accounts.
             Section("Accounts") {
-                if settings.nhentaiEnabled {
-                    entry(.accounts) {
-                        HStack(spacing: 12) {
-                            AvatarView(url: session.isLoggedIn ? session.user?.avatar : nil, size: 40)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("nhentai").font(.headline)
-                                Text(session.isLoggedIn ? (session.user?.username ?? String(localized: "Logged In")) : String(localized: "Not logged in"))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                entry(.accounts) {
+                    HStack(spacing: 12) {
+                        let nh = settings.nhentaiEnabled && session.isLoggedIn
+                        let eh = settings.ehentaiEnabled && ehSession.isLoggedIn
+                        if nh {
+                            account(name: session.user?.username ?? "nhentai", site: "nhentai",
+                                    avatar: AvatarView(url: session.user?.avatar, size: 40))
                         }
-                    }
-                }
-                if settings.ehentaiEnabled {
-                    entry(.accounts) {
-                        HStack(spacing: 12) {
-                            AvatarView(url: nil, size: 40)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("E-Hentai").font(.headline)
-                                Text(ehSession.isLoggedIn ? (ehSession.hasExHentai ? "E-Hentai · ExHentai" : String(localized: "Logged In"))
-                                                          : String(localized: "Not logged in"))
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                        if eh {
+                            account(name: ehSession.hasExHentai ? "E-Hentai · ExHentai" : "E-Hentai",
+                                    site: String(localized: "Logged In"),
+                                    avatar: AvatarView(url: nil, size: 40, monogram: "EH"))
+                        }
+                        if !nh, !eh {
+                            account(name: String(localized: "Not logged in"), site: String(localized: "Accounts"),
+                                    avatar: AvatarView(url: nil, size: 40))
                         }
                     }
                 }
@@ -128,6 +121,19 @@ struct MoreOverview: View {
         .task(id: downloads.records.count) {
             usage = await Task.detached { DownloadManager.diskUsage() }.value
         }
+    }
+
+    /// One account: its picture, name and site, taking an equal share of the row.
+    private func account(name: String, site: String, avatar: AvatarView) -> some View {
+        HStack(spacing: 10) {
+            avatar
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name).font(.headline).lineLimit(1)
+                Text(site).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// A part that opens [page] in this column.

@@ -493,6 +493,11 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
             configure(cell, id: id, at: indexPath)
         }
         collectionView.layoutIfNeeded()
+        restoreAnchor()
+    }
+
+    /// Back to the cell recorded in [anchor] (or the top).
+    private func restoreAnchor() {
         let inset = collectionView.adjustedContentInset
         if atTop {
             collectionView.contentOffset.y = -inset.top
@@ -501,7 +506,26 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         guard let anchor, let indexPath = dataSource.indexPath(for: anchor.id),
               let frame = collectionView.layoutAttributesForItem(at: indexPath)?.frame else { return }
         let maximum = max(-inset.top, collectionView.contentSize.height + inset.bottom - collectionView.bounds.height)
-        collectionView.contentOffset.y = min(max(frame.minY - anchor.offset - inset.top, -inset.top), maximum)
+        let target = min(max(frame.minY - anchor.offset - inset.top, -inset.top), maximum)
+        if abs(collectionView.contentOffset.y - target) > 0.5 { collectionView.contentOffset.y = target }
+    }
+
+    /// The place as the turn starts (the freshest, also when a page was just
+    /// closed and its animation is still going), and once more when it has
+    /// ended: whatever settled after the new layout (that animation ending,
+    /// the bars) doesn't move the list off it.
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        if abs(collectionView.bounds.width - laidOutWidth) < 0.5, view.window != nil { recordAnchor() }
+        let kept = anchor
+        let top = atTop
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            guard let self else { return }
+            self.anchor = kept
+            self.atTop = top
+            self.collectionView.layoutIfNeeded()
+            self.restoreAnchor()
+        }
     }
 
     // MARK: Scrolling

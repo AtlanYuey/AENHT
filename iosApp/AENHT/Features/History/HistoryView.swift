@@ -56,7 +56,7 @@ struct HistoryView: View {
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search History")
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SiteFilterMenu(site: $site)
             }

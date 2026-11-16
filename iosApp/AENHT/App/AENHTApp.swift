@@ -12,6 +12,10 @@ struct AENHTApp: App {
     @State private var ehSession = EhSession.shared
 
     init() {
+        // The bars' buttons (back, menus, actions) in the label color: white in
+        // Dark Mode, black in Light, not the accent. iOS 26 draws them in UIKit,
+        // with UIKit's tint, so SwiftUI's tint doesn't reach them.
+        UINavigationBar.appearance().tintColor = .label
         ImageSetup.configure()
         SettingsSync.shared.start(isPad: UIDevice.current.userInterfaceIdiom == .pad)
     }
@@ -116,7 +120,7 @@ struct RootView: View {
                     }
                 }
                     .galleryDestinations()
-                    .barToolbar {
+                    .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Close", systemImage: "xmark") { openedFromClipboard = nil }
                         }

@@ -175,7 +175,7 @@ struct GalleryDetailView: View {
         }
         .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
         .navigationBarTitleDisplayMode(.inline)
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if let detail = model.detail {
                     ShareLink(item: detail.url, subject: Text(detail.displayTitle)) {

@@ -115,7 +115,7 @@ struct FavoritesView: View {
             if !query.isEmpty { Button("Clear Search", role: .destructive) { applyQuery("") } }
             Button("Cancel", role: .cancel) {}
         }
-        .barToolbar {
+        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     draftQuery = query
@@ -215,7 +215,7 @@ private struct FolderPicker: View {
             }
             .navigationTitle("E-Hentai Folders Shown in All")
             .navigationBarTitleDisplayMode(.inline)
-            .barToolbar {
+            .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
