@@ -515,8 +515,6 @@ struct GalleryCollection: View {
     private let spacing: CGFloat = 12
 
     var body: some View {
-        // Each card's place in the list, for keeping the place when the list is laid out again.
-        let order = Dictionary(items.enumerated().map { ($1.uid, $0) }, uniquingKeysWith: { first, _ in first })
         Group {
             switch settings.listStyle {
             case .list:
@@ -524,7 +522,6 @@ struct GalleryCollection: View {
                     ForEach(items, id: \.uid) { item in
                         GalleryRow(item: item)
                             .padding(.horizontal)
-                            .tellsVisibility(item.uid, order[item.uid] ?? 0)
                             .onAppear { onItemAppear(item) }
                         Divider().padding(.leading, 114)
                     }
@@ -533,13 +530,12 @@ struct GalleryCollection: View {
                 LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 18) {
                     ForEach(items, id: \.uid) { item in
                         GalleryCard(item: item, style: .grid)
-                            .tellsVisibility(item.uid, order[item.uid] ?? 0)
                             .onAppear { onItemAppear(item) }
                     }
                 }
                 .padding(.horizontal)
             case .waterfall, .compact:
-                Masonry(items: items, order: order, columns: columnCount, spacing: spacing,
+                Masonry(items: items, columns: columnCount, spacing: spacing,
                         style: settings.listStyle, onItemAppear: onItemAppear)
                     .padding(.horizontal)
             }
@@ -581,29 +577,9 @@ struct GalleryCollection: View {
     }
 }
 
-/// A card tells the list it is on screen (see `VisibleCards`); nothing in lists that don't keep their place.
-private struct TellsVisibility: ViewModifier {
-    let uid: String
-    let index: Int
-    @Environment(\.visibleCards) private var cards
-
-    func body(content: Content) -> some View {
-        if let cards {
-            content.onScrollVisibilityChange(threshold: 0.3) { cards.changed(uid, index: index, visible: $0) }
-        } else {
-            content
-        }
-    }
-}
-
-private extension View {
-    func tellsVisibility(_ uid: String, _ index: Int) -> some View { modifier(TellsVisibility(uid: uid, index: index)) }
-}
-
 /// Waterfall layout: each card goes to the currently shortest column.
 private struct Masonry: View {
     let items: [GalleryItem]
-    let order: [String: Int]
     let columns: Int
     let spacing: CGFloat
     let style: GalleryListStyle
@@ -615,7 +591,6 @@ private struct Masonry: View {
                 LazyVStack(spacing: style == .compact ? spacing : 16) {
                     ForEach(column, id: \.uid) { item in
                         GalleryCard(item: item, style: style)
-                            .tellsVisibility(item.uid, order[item.uid] ?? 0)
                             .onAppear { onItemAppear(item) }
                     }
                 }
