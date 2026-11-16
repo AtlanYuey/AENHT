@@ -40,9 +40,24 @@ interface EhCredentialStorage {
     val passHash: String?
     /** ExHentai access cookie, given by exhentai.org to accounts that have access. */
     val igneous: String?
-    fun save(memberId: String, passHash: String, igneous: String?)
+    /** Saves a login (all three, or nothing changes): false when it couldn't be saved. */
+    fun save(memberId: String, passHash: String, igneous: String?): Boolean
+
+    /**
+     * The site gave the account [memberId] an ExHentai cookie: saved only
+     * while [memberId] is still the saved login (checked and written in one
+     * step); false otherwise.
+     */
+    fun updateIgneous(memberId: String, igneous: String): Boolean
+
     fun clear()
 }
+
+/** E-Hentai login cookies being checked ([EhApi.checkLogin]); nothing is saved. */
+data class EhLoginCookies(val memberId: String, val passHash: String, val igneous: String?)
+
+/** What [EhApi.checkLogin] found: whether the cookies log in, and the ExHentai cookie the site gave. */
+data class EhLoginCheck(val ok: Boolean, val igneous: String?)
 
 /** Which list to load. */
 sealed class EhListSource {
@@ -137,8 +152,15 @@ class EhApi internal constructor(
         return cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
     }
 
-    private fun cookieHeader(url: String): String {
+    private fun cookieHeader(url: String, login: EhLoginCookies? = null): String {
         val cookies = linkedMapOf("nw" to "1") // skip the content warning page
+        if (login != null) {
+            // A login being checked: its own cookies only, none of the saved session's.
+            cookies["ipb_member_id"] = login.memberId
+            cookies["ipb_pass_hash"] = login.passHash
+            if (url.startsWith(EX)) login.igneous?.takeIf { it.isNotEmpty() && it != "mystery" }?.let { cookies["igneous"] = it }
+            return cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
+        }
         if (isLoggedIn) {
             cookies["ipb_member_id"] = credentials.memberId!!
             cookies["ipb_pass_hash"] = credentials.passHash!!
@@ -148,16 +170,20 @@ class EhApi internal constructor(
         return cookies.entries.joinToString("; ") { "${it.key}=${it.value}" }
     }
 
-    /** Keeps cookies the site sets; an `igneous` from exhentai.org is saved with the login. */
-    private fun remember(response: HttpResponse) {
+    /**
+     * Keeps cookies the site sets; an `igneous` from exhentai.org is saved
+     * with the login the request was sent with ([sentAs], its member id),
+     * and only while that is still the saved login.
+     */
+    private fun remember(response: HttpResponse, sentAs: String?) {
         response.headers.getAll(HttpHeaders.SetCookie).orEmpty().forEach { header ->
             val pair = header.substringBefore(';')
             val name = pair.substringBefore('=').trim()
             val value = pair.substringAfter('=', "").trim()
             if (value.isEmpty() || value == "deleted") return@forEach
             when (name) {
-                "igneous" -> if (value != "mystery" && isLoggedIn && value != credentials.igneous) {
-                    credentials.save(credentials.memberId!!, credentials.passHash!!, value)
+                "igneous" -> if (value != "mystery" && sentAs != null && value != credentials.igneous) {
+                    credentials.updateIgneous(sentAs, value)
                 }
                 "ipb_member_id", "ipb_pass_hash" -> {}
                 else -> sessionCookies[name] = value
@@ -165,18 +191,33 @@ class EhApi internal constructor(
         }
     }
 
-    private suspend fun getPage(url: String, bucket: String = "page", limit: RateLimit = Limits.page): String =
+    /** The `igneous` cookie an answer sets (for a login being checked). */
+    private fun igneousOf(response: HttpResponse): String? =
+        response.headers.getAll(HttpHeaders.SetCookie).orEmpty()
+            .map { it.substringBefore(';') }
+            .firstOrNull { it.substringBefore('=').trim() == "igneous" }
+            ?.substringAfter('=', "")?.trim()
+            ?.takeIf { it.isNotEmpty() && it != "deleted" && it != "mystery" }
+
+    private suspend fun getPage(
+        url: String,
+        bucket: String = "page",
+        limit: RateLimit = Limits.page,
+        login: EhLoginCookies? = null,
+        found: ((igneous: String?) -> Unit)? = null,
+    ): String =
         withContext(Dispatchers.IO) {
             limiter.acquire(bucket, limit)
+            val sentAs = if (login == null && isLoggedIn) credentials.memberId else null
             val response = try {
-                http.get(url) { header(HttpHeaders.Cookie, cookieHeader(url)) }
+                http.get(url) { header(HttpHeaders.Cookie, cookieHeader(url, login)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')}: ${e.message ?: e::class.simpleName}")
                 throw EhException.Network(e.message ?: e.toString())
             }
-            remember(response)
+            if (login == null) remember(response, sentAs) else found?.invoke(igneousOf(response))
             val text = response.bodyAsText()
             if (response.status.value !in 200..299) {
                 com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')} → ${response.status.value}")
@@ -298,6 +339,7 @@ class EhApi internal constructor(
         val url = archiverUrl(gid, token, key)
         val html = withContext(Dispatchers.IO) {
             limiter.acquire("page", Limits.page)
+            val sentAs = if (isLoggedIn) credentials.memberId else null
             val response = try {
                 http.post(url) {
                     header(HttpHeaders.Cookie, cookieHeader(url))
@@ -311,7 +353,7 @@ class EhApi internal constructor(
             } catch (e: Exception) {
                 throw EhException.Network(e.message ?: e.toString())
             }
-            remember(response)
+            remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
             response.bodyAsText()
         }
@@ -390,6 +432,7 @@ class EhApi internal constructor(
         val url = galleryUrl(gid, token) + "?hc=1"
         val html = withContext(Dispatchers.IO) {
             limiter.acquire("page", Limits.page)
+            val sentAs = if (isLoggedIn) credentials.memberId else null
             val response = try {
                 http.post(url) {
                     header(HttpHeaders.Cookie, cookieHeader(url))
@@ -400,7 +443,7 @@ class EhApi internal constructor(
             } catch (e: Exception) {
                 throw EhException.Network(e.message ?: e.toString())
             }
-            remember(response)
+            remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
             response.bodyAsText()
         }
@@ -417,6 +460,7 @@ class EhApi internal constructor(
         val url = "$host/gallerypopups.php?gid=$gid&t=$token&act=addfav"
         withContext(Dispatchers.IO) {
             limiter.acquire("page", Limits.page)
+            val sentAs = if (isLoggedIn) credentials.memberId else null
             val response = try {
                 http.post(url) {
                     header(HttpHeaders.Cookie, cookieHeader(url))
@@ -436,7 +480,7 @@ class EhApi internal constructor(
             } catch (e: Exception) {
                 throw EhException.Network(e.message ?: e.toString())
             }
-            remember(response)
+            remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
         }
     }
@@ -543,6 +587,21 @@ class EhApi internal constructor(
     }
 
     // MARK: Account
+
+    /**
+     * Checks login cookies with the site, without touching the saved login:
+     * the app saves them only when they work. Also asks exhentai.org, which
+     * answers an account with access with its `igneous` cookie.
+     */
+    @Throws(EhException::class, CancellationException::class)
+    suspend fun checkLogin(memberId: String, passHash: String, igneous: String?): EhLoginCheck {
+        val login = EhLoginCookies(memberId, passHash, igneous)
+        val html = getPage("$EH/home.php", login = login)
+        if (!(html.contains("Image Limits") || html.contains("homebox"))) return EhLoginCheck(false, null)
+        var given: String? = null
+        runCatching { getPage("$EX/", login = login, found = { given = it }) }
+        return EhLoginCheck(true, given ?: igneous?.takeIf { it.isNotEmpty() })
+    }
 
     /** Checks the saved cookies by loading a page that needs them; also picks up ExHentai access. */
     @Throws(EhException::class, CancellationException::class)

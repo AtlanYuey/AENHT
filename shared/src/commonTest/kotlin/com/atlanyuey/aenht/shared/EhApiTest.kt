@@ -20,15 +20,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
-private class MemoryEhCredentials(
+internal class MemoryEhCredentials(
     override var memberId: String? = null,
     override var passHash: String? = null,
     override var igneous: String? = null,
 ) : EhCredentialStorage {
-    override fun save(memberId: String, passHash: String, igneous: String?) {
+    override fun save(memberId: String, passHash: String, igneous: String?): Boolean {
         this.memberId = memberId
         this.passHash = passHash
         this.igneous = igneous
+        return true
+    }
+
+    override fun updateIgneous(memberId: String, igneous: String): Boolean {
+        if (this.memberId != memberId) return false
+        this.igneous = igneous
+        return true
     }
 
     override fun clear() {

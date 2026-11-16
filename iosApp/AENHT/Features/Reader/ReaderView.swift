@@ -504,41 +504,59 @@ struct ReaderView: View {
                     .font(.footnote.monospacedDigit())
                     .frame(minWidth: 28)
             }
-            HStack {
+            // Each control is touched over at least 44 × 44 pt (the glyphs alone are
+            // too small to hit on iPad), and a touch between them stays on the panel.
+            HStack(spacing: 0) {
                 Button {
                     goFromPanel(step(forward: isRTL))
                 } label: {
-                    Image(systemName: "chevron.left")
+                    Image(systemName: "chevron.left").panelTarget()
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Button {
                     autoRead.toggle()
                 } label: {
                     Label(autoRead ? "Stop Auto Read" as LocalizedStringKey : "Auto Read",
                           systemImage: autoRead ? "pause.fill" : "play.fill")
+                        .panelTarget()
                 }
-                Spacer()
+                Spacer(minLength: 8)
                 Button {
                     showSettings = true
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
+                    Image(systemName: "slider.horizontal.3").panelTarget()
                 }
-                Spacer()
+                .accessibilityLabel("Reader Settings")
+                Spacer(minLength: 8)
                 Button {
                     goFromPanel(step(forward: !isRTL))
                 } label: {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.right").panelTarget()
                 }
             }
+            .buttonStyle(.borderless)
             .font(.body.weight(.medium))
             .labelStyle(.titleAndIcon)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .padding(.top, 14)
+        .padding(.bottom, 6)
         .modifier(GlassPanel())
+        // The whole panel takes touches: one that misses a control doesn't
+        // reach the page under it (which would hide the controls).
+        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
         .frame(maxWidth: 640)
+    }
+}
+
+private extension View {
+    /// A control of the reader's panel: at least 44 × 44 pt to touch, all of it.
+    func panelTarget() -> some View {
+        frame(minWidth: 44, minHeight: 44)
+            .padding(.horizontal, 4)
+            .contentShape(Rectangle())
     }
 }
 

@@ -7,6 +7,10 @@ enum NHError: LocalizedError {
     case invalidResponse
     case needsVerification
     case network(String)
+    /// The login changed while the request waited (another account, or logged out).
+    case loginChanged
+    /// A new login couldn't be saved on the device; the one there was stays.
+    case notSaved
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +24,10 @@ enum NHError: LocalizedError {
             String(localized: "Please log in first")
         case let .network(message):
             message
+        case .loginChanged:
+            String(localized: "Please log in first")
+        case .notSaved:
+            String(localized: "The login couldn't be saved on this device.")
         }
     }
 }
@@ -99,6 +107,8 @@ final class NHClient: @unchecked Sendable {
         case "notLoggedIn": return NHError.notLoggedIn
         case "needsVerification": return NHError.needsVerification
         case "network": return NHError.network(exception.message ?? "")
+        case "loginChanged": return NHError.loginChanged
+        case "notSaved": return NHError.notSaved
         default: return NHError.invalidResponse
         }
     }

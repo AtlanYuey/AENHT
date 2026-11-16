@@ -65,6 +65,12 @@ tasks.configureEach {
 // Release signing from the environment (CI secrets); unsigned otherwise.
 val keystorePath: String? = System.getenv("ANDROID_KEYSTORE_PATH")
 
+/** The reviewed screenshots to compare with (-PscreenshotsVerify=<folder>), or null: record them. */
+val screenshotsGolden: String? = (project.findProperty("screenshotsVerify") as String?)?.let { value ->
+    require(value.isNotBlank() && value != "true") { "Name the folder of reviewed screenshots: -PscreenshotsVerify=<folder>" }
+    value
+}
+
 android {
     namespace = "com.atlanyuey.aenht"
     compileSdk = 37
@@ -149,9 +155,10 @@ android {
             isIncludeAndroidResources = true
             all {
                 // Screenshots are written to build/screens (the default). With
-                // -PscreenshotsVerify they are compared with the ones already there
-                // (recorded and looked at before) and a difference fails the test.
-                if (project.hasProperty("screenshotsVerify")) {
+                // -PscreenshotsVerify=<folder> they are compared with the reviewed
+                // set in that folder instead (see the tasks below), and a
+                // difference, or a missing screenshot, fails the test.
+                if (screenshotsGolden != null) {
                     it.systemProperty("roborazzi.test.verify", "true")
                 } else {
                     it.systemProperty("roborazzi.test.record", "true")
@@ -168,6 +175,27 @@ android {
                 )
             }
         }
+    }
+}
+
+// Screenshot verification: the reviewed screenshots are an input of the test
+// task (a changed one runs the tests again, never "up to date"), copied into
+// build/screens where each test compares what it draws with its own.
+if (screenshotsGolden != null) {
+    val golden = file(screenshotsGolden)
+    val prepareScreenshotGolden by tasks.registering(Sync::class) {
+        doFirst {
+            require(golden.isDirectory && !golden.listFiles().isNullOrEmpty()) {
+                "No reviewed screenshots in $golden: record them first (a run without -PscreenshotsVerify) and keep the folder."
+            }
+        }
+        from(golden) { include("*.png") }
+        into(layout.buildDirectory.dir("screens"))
+    }
+    tasks.withType<Test>().configureEach {
+        dependsOn(prepareScreenshotGolden)
+        inputs.dir(golden).withPropertyName("reviewedScreenshots")
+        outputs.upToDateWhen { false }
     }
 }
 

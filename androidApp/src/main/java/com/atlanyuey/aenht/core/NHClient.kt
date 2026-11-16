@@ -79,6 +79,8 @@ object NHClient {
         is NhException.InvalidResponse -> L10n.string("Unexpected response from the server")
         is NhException.NotLoggedIn -> L10n.string("Please log in first")
         is NhException.NeedsVerification -> L10n.string("Please log in first")
+        is NhException.LoginChanged -> L10n.string("Please log in first")
+        is NhException.NotSaved -> L10n.string("The login couldn't be saved on this device.")
     }
 
     suspend fun galleries(query: String, sort: SearchSort, page: Int) = call { galleries(query, sort.raw, page) }
@@ -114,24 +116,43 @@ class SecureStore(private val keyAlias: String) {
         putAll(mapOf(name to value))
     }
 
+    private val lock = Any()
+
+    /** Runs [block] with no other change to this store in between (read, compare, write). */
+    fun <T> locked(block: () -> T): T = synchronized(lock, block)
+
     /**
      * Saves [values] (null or empty removes one), all of them or none: false
-     * when the Keystore or the disk refused, and what was saved stays.
+     * when the Keystore or the disk refused, and what was saved stays (also
+     * in memory: a write the disk refused is undone). When even that fails,
+     * the values are removed, so no mix of two logins is ever left.
      */
-    fun putAll(values: Map<String, String?>): Boolean {
+    fun putAll(values: Map<String, String?>): Boolean = locked {
         val encrypted = values.mapValues { (name, value) ->
             if (value.isNullOrEmpty()) null else encrypt(value) ?: run {
                 com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't save \"$name\"")
-                return false
+                return@locked false
             }
         }
+        val before = values.keys.associateWith { prefs.getString(it, null) }
+        if (write(encrypted)) return@locked true
+        com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't write ${values.keys}")
+        // SharedPreferences changed in memory before the disk refused: put the old values back.
+        if (!write(before)) {
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't restore ${values.keys}: removed")
+            write(values.keys.associateWith { null })
+        }
+        false
+    }
+
+    private fun write(values: Map<String, String?>): Boolean {
         val edit = prefs.edit()
-        encrypted.forEach { (name, value) -> if (value == null) edit.remove(name) else edit.putString(name, value) }
-        return edit.commit().also { if (!it) com.atlanyuey.aenht.shared.app.Diagnostics.log("keystore", "Couldn't write ${values.keys}") }
+        values.forEach { (name, value) -> if (value == null) edit.remove(name) else edit.putString(name, value) }
+        return edit.commit()
     }
 
     fun clear() {
-        prefs.edit().clear().apply()
+        locked { prefs.edit().clear().commit() }
     }
 
     private fun key(): SecretKey {
@@ -175,14 +196,20 @@ object Auth : TokenStorage {
     override val refreshToken: String? get() = store["refresh"]
     val isLoggedIn: Boolean get() = accessToken != null
 
-    override fun save(access: String, refresh: String?) {
-        val previous = accessToken
-        val saved = store.putAll(buildMap {
-            put("access", access)
-            if (!refresh.isNullOrEmpty()) put("refresh", refresh)
-        })
-        // A renewed login: the saved account gets the new tokens (it stays the active one).
-        if (saved && previous != null && previous != access) AccountBook.tokensRenewed(previous, access, refreshToken)
+    override fun renew(previousAccess: String, access: String, refresh: String?): Boolean {
+        val saved = store.locked {
+            accessToken == previousAccess && store.putAll(buildMap {
+                put("access", access)
+                if (!refresh.isNullOrEmpty()) put("refresh", refresh)
+            })
+        }
+        // The saved account gets the new tokens (it stays the active one).
+        if (saved && previousAccess != access) AccountBook.tokensRenewed(previousAccess, access, refreshToken)
+        return saved
+    }
+
+    override fun replace(expected: String?, access: String, refresh: String?): Boolean = store.locked {
+        accessToken == expected && store.putAll(mapOf("access" to access, "refresh" to refresh))
     }
 
     /** Puts a new login in place of the one there is (both tokens); false when it couldn't be saved, and the old one stays. */
@@ -233,13 +260,16 @@ object Session {
     suspend fun loginWithApiKey(key: String) {
         val mine = ++generation
         val current = try {
+            // Checked on its own and saved only if the login is still the one there was.
             NHClient.api.loginWithApiKey(key)
+        } catch (_: com.atlanyuey.aenht.shared.nh.NhException.LoginChanged) {
+            return // Logged out or into another account meanwhile: that one stays.
+        } catch (_: com.atlanyuey.aenht.shared.nh.NhException.NotSaved) {
+            throw NHException(L10n.string("The login couldn't be saved on this device."))
         } catch (e: com.atlanyuey.aenht.shared.nh.NhException) {
             throw NHException(e.message ?: L10n.string("Couldn't Log In"))
         }
-        // Logged out or into another account meanwhile: that one stays.
         if (mine != generation) return
-        if (Auth.accessToken == null) throw NHException(L10n.string("The login couldn't be saved on this device."))
         user = current
         isLoggedIn = true
         needsVerification = false

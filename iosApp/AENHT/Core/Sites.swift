@@ -97,22 +97,33 @@ final class EhCredentials: NSObject, EhCredentialStorage, @unchecked Sendable {
     var passHash: String? { Keychain.read("eh_pass_hash") }
     var igneous: String? { Keychain.read("eh_igneous") }
 
-    func save(memberId: String, passHash: String, igneous: String?) {
+    /// Read, compare and write in one step (the shared module saves from its own threads).
+    private let lock = NSLock()
+
+    func save(memberId: String, passHash: String, igneous: String?) -> Bool {
         store(memberId: memberId, passHash: passHash, igneous: igneous)
     }
 
     /// Saves a login (all three cookies or none); false when it couldn't be saved, and the one there was stays.
     @discardableResult
     func store(memberId: String, passHash: String, igneous: String?) -> Bool {
-        let saved = Keychain.writeAll([("eh_member_id", memberId), ("eh_pass_hash", passHash), ("eh_igneous", igneous)])
+        let saved = lock.withLock {
+            Keychain.writeAll([("eh_member_id", memberId), ("eh_pass_hash", passHash), ("eh_igneous", igneous)])
+        }
         Task { @MainActor in EhSession.shared.refresh() }
         return saved
     }
 
+    func updateIgneous(memberId: String, igneous: String) -> Bool {
+        let saved = lock.withLock {
+            self.memberId == memberId && Keychain.writeAll([("eh_igneous", igneous)])
+        }
+        if saved { Task { @MainActor in EhSession.shared.refresh() } }
+        return saved
+    }
+
     func clear() {
-        Keychain.delete("eh_member_id")
-        Keychain.delete("eh_pass_hash")
-        Keychain.delete("eh_igneous")
+        lock.withLock { Keychain.deleteAll(["eh_member_id", "eh_pass_hash", "eh_igneous"]) }
         Task { @MainActor in EhSession.shared.refresh() }
     }
 }
@@ -165,38 +176,29 @@ final class EhSession {
     private func check(memberId: String, passHash: String, igneous: String?) async -> Bool {
         generation += 1
         let mine = generation
-        let c = EhCredentials.shared
-        let before = (c.memberId, c.passHash, c.igneous)
         loginError = nil
-        guard c.store(memberId: memberId.trimmingCharacters(in: .whitespaces),
-                      passHash: passHash.trimmingCharacters(in: .whitespaces),
-                      igneous: igneous?.trimmingCharacters(in: .whitespaces)) else {
-            // Checking would check the login there is, not this one.
+        let member = memberId.trimmingCharacters(in: .whitespaces)
+        let hash = passHash.trimmingCharacters(in: .whitespaces)
+        let given = igneous?.trimmingCharacters(in: .whitespaces)
+        // Checked on its own: the saved login isn't touched while the site answers.
+        let check: EhLoginCheck
+        do {
+            check = try await EhService.shared.api.checkLogin(memberId: member, passHash: hash,
+                                                             igneous: (given?.isEmpty ?? true) ? nil : given)
+        } catch {
+            if mine == generation { loginError = EhService.map(error).localizedDescription }
+            return false
+        }
+        // The login changed while this one was checked: that one stays, this one isn't used.
+        guard mine == generation, check.ok else { return false }
+        guard EhCredentials.shared.store(memberId: member, passHash: hash, igneous: check.igneous) else {
             loginError = String(localized: "The login couldn't be saved on this device.")
             return false
         }
-        var ok = false
-        var failure: String?
-        do {
-            ok = try await EhService.shared.api.verifyLogin().boolValue
-        } catch {
-            failure = EhService.map(error).localizedDescription
-        }
-        // The login changed while this one was checked: that one stays, this one isn't used.
-        guard mine == generation else { return false }
-        loginError = failure
-        if !ok {
-            c.clear()
-            if let member = before.0, let hash = before.1, !member.isEmpty, !hash.isEmpty {
-                c.save(memberId: member, passHash: hash, igneous: before.2)
-            }
-        }
         refresh()
-        if ok {
-            AccountBook.shared.rememberEh()
-            await FavoritesStore.shared.accountChanged(.ehentai)
-        }
-        return ok
+        AccountBook.shared.rememberEh()
+        await FavoritesStore.shared.accountChanged(.ehentai)
+        return true
     }
 
     func logout() {

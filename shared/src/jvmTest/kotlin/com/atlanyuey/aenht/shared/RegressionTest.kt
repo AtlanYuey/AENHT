@@ -244,7 +244,8 @@ class RegressionTest {
         override var memberId: String? = "1"
         override var passHash: String? = "h"
         override var igneous: String? = null
-        override fun save(memberId: String, passHash: String, igneous: String?) {}
+        override fun save(memberId: String, passHash: String, igneous: String?) = true
+        override fun updateIgneous(memberId: String, igneous: String) = false
         override fun clear() {}
     }
 
@@ -273,6 +274,88 @@ class RegressionTest {
         }
         assertEquals("", EhParser.parseFavoriteNote("""<form><textarea name="favnote"></textarea></form>"""))
         assertEquals("read later", EhParser.parseFavoriteNote("""<form><textarea name="favnote" cols="40">read later</textarea></form>"""))
+    }
+
+    // MARK: Logins that change while a request waits (D001)
+
+    private val jsonHeaders = headersOf(io.ktor.http.HttpHeaders.ContentType, "application/json")
+
+    @Test
+    fun aKeyCheckedWhileLoggingOutDoesNotLogBackIn() = runTest {
+        val tokens = MemoryTokens("previous", "previous-refresh")
+        var answer = HttpStatusCode.Unauthorized
+        val engine = MockEngine {
+            tokens.clear() // The user logs out while the key is checked.
+            respond("""{"id":7,"username":"reader","avatar_url":""}""", answer, jsonHeaders)
+        }
+        val api = com.atlanyuey.aenht.shared.nh.NhApi(tokens, buildHttpClient(engine))
+        assertFailsWith<com.atlanyuey.aenht.shared.nh.NhException.Http> { api.loginWithApiKey("wrong") }
+        assertNull(tokens.accessToken)
+        answer = HttpStatusCode.OK
+        tokens.accessToken = "previous"
+        assertFailsWith<com.atlanyuey.aenht.shared.nh.NhException.LoginChanged> { api.loginWithApiKey("good") }
+        assertNull(tokens.accessToken)
+        assertNull(tokens.refreshToken)
+    }
+
+    @Test
+    fun aKeyThatCannotBeSavedLeavesTheLogin() = runTest {
+        val tokens = MemoryTokens("previous", "previous-refresh").apply { refuses = true }
+        val engine = MockEngine { respond("""{"id":7,"username":"reader","avatar_url":""}""", HttpStatusCode.OK, jsonHeaders) }
+        val api = com.atlanyuey.aenht.shared.nh.NhApi(tokens, buildHttpClient(engine))
+        assertFailsWith<com.atlanyuey.aenht.shared.nh.NhException.NotSaved> { api.loginWithApiKey("good") }
+        assertEquals("previous", tokens.accessToken)
+        assertEquals("previous-refresh", tokens.refreshToken)
+    }
+
+    @Test
+    fun aRenewalOfTheLoginBeforeDoesNotReplaceTheNewOne() = runTest {
+        val tokens = MemoryTokens("A", "A-refresh")
+        val engine = MockEngine { request ->
+            if (request.url.encodedPath.endsWith("/auth/refresh")) {
+                // Switched to B while A's renewal was on its way.
+                tokens.accessToken = "B"; tokens.refreshToken = "B-refresh"
+                respond("""{"access_token":"A-renewed","refresh_token":"A-refresh-new"}""", HttpStatusCode.OK, jsonHeaders)
+            } else {
+                respond("""{"detail":"expired"}""", HttpStatusCode.Unauthorized, jsonHeaders)
+            }
+        }
+        val api = com.atlanyuey.aenht.shared.nh.NhApi(tokens, buildHttpClient(engine))
+        var verify = false
+        api.onNeedsVerification = { verify = true }
+        assertFailsWith<com.atlanyuey.aenht.shared.nh.NhException.LoginChanged> { api.currentUser() }
+        assertEquals("B", tokens.accessToken)
+        assertEquals("B-refresh", tokens.refreshToken)
+        assertFalse(verify, "B isn't asked to verify for A's expired login")
+    }
+
+    @Test
+    fun anExHentaiCookieForTheLoginBeforeIsNotSavedWithTheNewOne() = runTest {
+        val creds = MemoryEhCredentials("A", "A-hash")
+        val engine = MockEngine {
+            creds.memberId = "B"; creds.passHash = "B-hash"; creds.igneous = null // Logged in as B meanwhile.
+            respond("<html></html>", HttpStatusCode.OK, headersOf(io.ktor.http.HttpHeaders.SetCookie, "igneous=A-new-cookie; path=/"))
+        }
+        val api = EhApi(creds, buildHttpClient(engine)).apply { useExHentai = true }
+        runCatching { api.list(EhListSource.Search()) }
+        assertEquals("B", creds.memberId)
+        assertNull(creds.igneous)
+    }
+
+    @Test
+    fun anEhLoginIsCheckedWithoutTouchingTheSavedOne() = runTest {
+        val creds = MemoryEhCredentials("A", "A-hash", "A-igneous")
+        val engine = MockEngine { request ->
+            val cookie = request.headers[io.ktor.http.HttpHeaders.Cookie].orEmpty()
+            assertTrue("ipb_member_id=B" in cookie && "A-" !in cookie, cookie)
+            if (request.url.host == "e-hentai.org") respond("<div class=\"homebox\">Image Limits</div>", HttpStatusCode.OK)
+            else respond("", HttpStatusCode.OK, headersOf(io.ktor.http.HttpHeaders.SetCookie, "igneous=B-igneous; path=/"))
+        }
+        val check = EhApi(creds, buildHttpClient(engine)).checkLogin("B", "B-hash", null)
+        assertTrue(check.ok)
+        assertEquals("B-igneous", check.igneous)
+        assertEquals("A", creds.memberId)
+        assertEquals("A-igneous", creds.igneous)
     }
 
     // MARK: Search history (F035)

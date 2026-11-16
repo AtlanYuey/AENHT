@@ -88,10 +88,22 @@ class ApiKeyTest {
     }
 }
 
-private class MemoryTokens(override var accessToken: String?, override var refreshToken: String?) : TokenStorage {
-    override fun save(access: String, refresh: String?) {
+internal class MemoryTokens(override var accessToken: String?, override var refreshToken: String?) : TokenStorage {
+    /** Refuses every write (a storage that's full or locked). */
+    var refuses = false
+
+    override fun renew(previousAccess: String, access: String, refresh: String?): Boolean {
+        if (refuses || accessToken != previousAccess) return false
         accessToken = access
         if (refresh != null) refreshToken = refresh
+        return true
+    }
+
+    override fun replace(expected: String?, access: String, refresh: String?): Boolean {
+        if (refuses || accessToken != expected) return false
+        accessToken = access
+        refreshToken = refresh
+        return true
     }
 
     override fun clear() {

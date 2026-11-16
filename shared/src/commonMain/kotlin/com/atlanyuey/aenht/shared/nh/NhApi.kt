@@ -55,6 +55,15 @@ sealed class NhException(message: String, val kind: String, val code: Int = 0, v
      * is kept (not logged out); the user is asked to verify it again.
      */
     class NeedsVerification : NhException("The login needs to be verified again", "needsVerification")
+
+    /**
+     * The login changed while this request waited (another account, or
+     * logged out): its answer and its renewal belong to the login before.
+     */
+    class LoginChanged : NhException("The login changed", "loginChanged")
+
+    /** The new login couldn't be saved on the device; the one there was stays. */
+    class NotSaved : NhException("The login couldn't be saved on this device", "notSaved")
 }
 
 /** Where the app keeps the API tokens (Keychain on iOS, encrypted storage on Android). */
@@ -64,7 +73,22 @@ const val API_KEY_PREFIX = "key:"
 interface TokenStorage {
     val accessToken: String?
     val refreshToken: String?
-    fun save(access: String, refresh: String?)
+
+    /**
+     * The login [previousAccess] was renewed: saves [access] and [refresh]
+     * only while [previousAccess] is still the saved token (checked and
+     * written in one step). False when the login changed meanwhile or the
+     * tokens couldn't be saved; nothing changed then.
+     */
+    fun renew(previousAccess: String, access: String, refresh: String?): Boolean
+
+    /**
+     * Puts a new login in place, only while the saved token is still
+     * [expected] (null: none saved), in one step. False when it changed
+     * meanwhile or couldn't be saved; nothing changed then.
+     */
+    fun replace(expected: String?, access: String, refresh: String?): Boolean
+
     fun clear()
 }
 
@@ -108,32 +132,24 @@ class NhApi internal constructor(
     /** Logged in with an API key (nhentai.net › Settings › API Keys) instead of a login. */
     val usesApiKey: Boolean get() = tokens.accessToken?.startsWith(API_KEY_PREFIX) == true
 
-    /** Checking a new API key: a rejection is the answer, not an expired login. */
-    private var checkingKey = false
-
     /**
      * Logs in with an API key (`Authorization: Key …`): kept like a login
-     * token, it never expires and needs no renewal. Answers the account; a
-     * wrong key leaves the previous login as it was.
+     * token, it never expires and needs no renewal. Answers the account.
+     *
+     * The key is checked on its own, without touching the saved login; only
+     * a working key replaces it, and only if that login is still the one
+     * there was when the check started (a logout or another login meanwhile
+     * wins: [NhException.LoginChanged]).
      */
     @Throws(NhException::class, CancellationException::class)
     suspend fun loginWithApiKey(key: String): CurrentUser {
-        val previousAccess = tokens.accessToken
-        val previousRefresh = tokens.refreshToken
-        // Cleared first: saving without a refresh token keeps the one there is,
-        // and the previous login's must not stay with the key.
-        tokens.clear()
-        tokens.save(API_KEY_PREFIX + key.trim(), null)
-        checkingKey = true
-        try {
-            return currentUser()
-        } catch (e: Exception) {
-            tokens.clear()
-            if (previousAccess != null) tokens.save(previousAccess, previousRefresh)
-            throw e
-        } finally {
-            checkingKey = false
+        val expected = tokens.accessToken
+        val candidate = API_KEY_PREFIX + key.trim()
+        val user = CurrentUser.parse(send("user", "user", Limits.user, candidate = candidate).objOrThrow())
+        if (!tokens.replace(expected, candidate, null)) {
+            throw if (tokens.accessToken != expected) NhException.LoginChanged() else NhException.NotSaved()
         }
+        return user
     }
 
     /** Called when the login can no longer be renewed (the account is kept). */
@@ -150,9 +166,11 @@ class NhApi internal constructor(
         body: JsonObject? = null,
         replayAfterRefresh: Boolean = method == HttpMethod.Get,
         retried: Boolean = false,
+        /** A login being checked, sent instead of the saved one (never renewed, never saved here). */
+        candidate: String? = null,
     ): JsonElement = withContext(Dispatchers.IO) {
         limiter.acquire(bucket, limit)
-        val token = tokens.accessToken?.takeIf { it.isNotEmpty() }
+        val token = candidate ?: tokens.accessToken?.takeIf { it.isNotEmpty() }
         val (code, text, retryAfter) = try {
             val response = http.request("${NHHost.SITE}/api/v2/$path") {
                 this.method = method
@@ -182,16 +200,17 @@ class NhApi internal constructor(
             // Someone else (another app, the browser) used the quota: wait and try once more.
             val wait = retryAfter?.toLongOrNull()?.coerceIn(1, 120) ?: 30
             limiter.backOff(bucket, limit, wait.seconds)
-            return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true)
+            return@withContext send(path, bucket, limit, method, query, body, replayAfterRefresh, retried = true, candidate = candidate)
         }
+        // A key being checked: a rejection is the answer, not an expired login.
+        if (code == 401 && candidate != null) throw NhException.Http(401, message(text) ?: "Invalid API key")
         if (code == 401 && token != null && token.startsWith(API_KEY_PREFIX)) {
             // An API key isn't renewed: it was revoked (or is wrong).
-            if (checkingKey) throw NhException.Http(401, message(text) ?: "Invalid API key")
             onNeedsVerification?.invoke()
             throw NhException.NeedsVerification()
         }
         if (code == 401 && token != null && !retried) {
-            if (refresh(token)) {
+            if (refresh(token, path)) {
                 // A rejected request did nothing on the server, so reads are sent
                 // again; actions that need a fresh challenge are restarted by their caller.
                 if (replayAfterRefresh) {
@@ -398,23 +417,41 @@ class NhApi internal constructor(
 
     // MARK: Auth
 
+    /** The last renewal: the token that was rejected and the one that replaced it. */
+    private var lastRenewal: Pair<String, String>? = null
+
     /**
      * Renews the access token once, shared by concurrent requests. [failedToken]
      * is the token that was rejected: if another request already renewed it,
      * this returns true without asking the server again.
+     *
+     * A request of a login that was replaced meanwhile (another account, a
+     * logout) is neither renewed nor sent again with the new login:
+     * [NhException.LoginChanged].
      */
-    private suspend fun refresh(failedToken: String): Boolean = refreshMutex.withLock {
-        if (tokens.accessToken != failedToken) return@withLock !tokens.accessToken.isNullOrEmpty()
+    private suspend fun refresh(failedToken: String, path: String): Boolean = refreshMutex.withLock {
+        val current = tokens.accessToken
+        if (current != failedToken) {
+            if (current != null && lastRenewal == (failedToken to current)) return@withLock true
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "$path: the login changed while it waited")
+            throw NhException.LoginChanged()
+        }
         val refreshToken = tokens.refreshToken ?: return@withLock false
-        try {
-            val (access, refresh) = refreshTokens(refreshToken)
-            tokens.save(access, refresh)
-            true
+        val (access, refresh) = try {
+            refreshTokens(refreshToken)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            false
+            return@withLock false
         }
+        // Saved only for the login it renews (a switch or logout meanwhile wins).
+        if (!tokens.renew(failedToken, access, refresh ?: refreshToken)) {
+            if (tokens.accessToken != failedToken) throw NhException.LoginChanged()
+            com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "The renewed login couldn't be saved")
+            return@withLock false
+        }
+        lastRenewal = failedToken to access
+        true
     }
 
     /** Exchanges a refresh token (no Authorization header). */

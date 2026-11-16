@@ -172,6 +172,40 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/23_reader_idle.png")
     }
 
+    @Test fun readerRetry() {
+        // D004: a page that failed loads again on Retry (a new request reaches the loader), twice in a row.
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val page = "https://i.nhentai.net/galleries/9/4.jpg"
+        var asked = 0
+        var offline = true
+        SingletonImageLoader.setUnsafe(ImageLoader.Builder(context).components {
+            add(Interceptor { chain ->
+                if (chain.request.data.toString() == page) {
+                    asked++
+                    if (offline) return@Interceptor coil3.request.ErrorResult(null, chain.request, java.io.IOException("offline"))
+                }
+                FakeImages.intercept(chain)
+            })
+        }.build())
+        val tabs = Tabs()
+        val source = ReaderSource(
+            500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
+            "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
+        )
+        tabs.home.push(ReaderScreen(source, 3))
+        shoot("54_reader_failed", tabs, settle = 500)
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
+        val first = asked
+        compose.onNodeWithText("Retry").performClick()
+        compose.waitUntil(5_000) { asked > first && compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
+        val second = asked
+        offline = false
+        compose.onNodeWithText("Retry").performClick()
+        compose.waitUntil(5_000) { asked > second && compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isEmpty() }
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/55_reader_retried.png")
+    }
+
     @Test fun readerFade() {
         // Without the page turn animation, a tap on the edge fades the next page in where it is.
         AppSettings.animatePageTurns = false

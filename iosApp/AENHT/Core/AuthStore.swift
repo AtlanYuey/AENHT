@@ -15,27 +15,39 @@ final class AuthStore: NSObject, TokenStorage, @unchecked Sendable {
     var refreshToken: String? { Keychain.read(refreshKey) }
     var isLoggedIn: Bool { !(accessToken ?? "").isEmpty }
 
-    func save(access: String, refresh: String?) {
-        let previous = accessToken
-        var values: [(String, String?)] = [(accessKey, access)]
-        if let refresh, !refresh.isEmpty { values.append((refreshKey, refresh)) }
-        guard Keychain.writeAll(values) else { return }
-        // A renewed login: the saved account gets the new tokens (it stays the active one).
-        if let previous, previous != access {
+    /// Read, compare and write in one step (the shared module renews from its own threads).
+    private let lock = NSLock()
+
+    func renew(previousAccess: String, access: String, refresh: String?) -> Bool {
+        let saved: Bool = lock.withLock {
+            guard accessToken == previousAccess else { return false }
+            var values: [(String, String?)] = [(accessKey, access)]
+            if let refresh, !refresh.isEmpty { values.append((refreshKey, refresh)) }
+            return Keychain.writeAll(values)
+        }
+        // The saved account gets the new tokens (it stays the active one).
+        if saved, previousAccess != access {
             let renewed = refreshToken
-            Task { @MainActor in AccountBook.shared.tokensRenewed(previousAccess: previous, access: access, refresh: renewed) }
+            Task { @MainActor in AccountBook.shared.tokensRenewed(previousAccess: previousAccess, access: access, refresh: renewed) }
+        }
+        return saved
+    }
+
+    func replace(expected: String?, access: String, refresh: String?) -> Bool {
+        lock.withLock {
+            guard accessToken == expected else { return false }
+            return Keychain.writeAll([(accessKey, access), (refreshKey, refresh)])
         }
     }
 
     /// Puts a new login in place of the one there is (both tokens); false
     /// when it couldn't be saved, and the old one stays.
     func replace(access: String, refresh: String?) -> Bool {
-        Keychain.writeAll([(accessKey, access), (refreshKey, refresh)])
+        lock.withLock { Keychain.writeAll([(accessKey, access), (refreshKey, refresh)]) }
     }
 
     func clear() {
-        Keychain.delete(accessKey)
-        Keychain.delete(refreshKey)
+        lock.withLock { Keychain.deleteAll([accessKey, refreshKey]) }
     }
 }
 
@@ -82,30 +94,48 @@ enum Keychain {
         return status == errSecSuccess
     }
 
-    /// Writes several values (nil or empty removes one), all of them or none:
-    /// false when the Keychain refused, and what was saved stays.
+    /// Writes several values (nil or empty removes one). The Keychain has no
+    /// transactions: when one write or removal is refused, the values there
+    /// were are put back; when even that fails, all of them are removed, so a
+    /// mix of two logins is never left (false in both cases).
     static func writeAll(_ values: [(String, String?)]) -> Bool {
         let before = values.map { ($0.0, read($0.0)) }
         for (key, value) in values {
-            if let value, !value.isEmpty {
-                if write(key, value) { continue }
-                for (key, old) in before {
-                    if let old { write(key, old) } else { delete(key) }
-                }
-                return false
+            let done: Bool
+            if let value, !value.isEmpty { done = write(key, value) } else { done = delete(key) }
+            if done { continue }
+            let restored = before.allSatisfy { key, old in
+                if let old { write(key, old) } else { delete(key) }
             }
-            delete(key)
+            if !restored {
+                Diagnostics.shared.log(category: "keychain", message: "Couldn't restore \(values.map(\.0)): removed")
+                deleteAll(values.map(\.0))
+            }
+            return false
         }
         return true
     }
 
-    static func delete(_ key: String) {
+    /// Removes a value; false when the Keychain refused (one that isn't there is removed).
+    @discardableResult
+    static func delete(_ key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
         ]
-        SecItemDelete(query as CFDictionary)
+        let status = SecItemDelete(query as CFDictionary)
+        if status != errSecSuccess, status != errSecItemNotFound {
+            Diagnostics.shared.log(category: "keychain", message: "Couldn't remove \"\(key)\" (\(status))")
+            return false
+        }
+        return true
+    }
+
+    /// Removes several values (all those it can).
+    @discardableResult
+    static func deleteAll(_ keys: [String]) -> Bool {
+        keys.map { delete($0) }.allSatisfy { $0 }
     }
 }
 
@@ -143,12 +173,13 @@ final class UserSession {
     func loginWithApiKey(_ key: String) async throws {
         generation += 1
         let mine = generation
-        try await NHClient.shared.loginWithApiKey(key)
-        // Logged out or into another account meanwhile: that one stays.
-        guard mine == generation else { return }
-        guard AuthStore.shared.isLoggedIn else {
-            throw NHError.network(String(localized: "The login couldn't be saved on this device."))
+        // Checked on its own and saved only if the login is still the one there was.
+        do {
+            try await NHClient.shared.loginWithApiKey(key)
+        } catch NHError.loginChanged {
+            return // Logged out or into another account meanwhile: that one stays.
         }
+        guard mine == generation else { return }
         user = nil
         await reload()
         await accountChanged()

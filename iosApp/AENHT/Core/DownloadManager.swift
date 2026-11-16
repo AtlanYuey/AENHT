@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import Observation
 import UIKit
 import Shared
@@ -536,11 +537,13 @@ final class DownloadManager {
     /// its own stated length is missing).
     nonisolated static func imageExtension(of data: Data) -> String? {
         let size = data.count
-        return imageType(size: Int64(size)) { offset, count in
+        let type = imageType(size: Int64(size)) { offset, count in
+            guard offset >= 0, offset <= Int64(size), count <= size - Int(offset) else { return nil }
             let start = data.startIndex + Int(offset)
-            guard offset >= 0, Int(offset) + count <= size else { return nil }
             return data.subdata(in: start..<start + count)
         }
+        guard let type, hasPicture(CGImageSourceCreateWithData(data as CFData, nil)) else { return nil }
+        return type
     }
 
     /// The type of the picture in a file, or nil when it is missing, isn't one, or was cut off.
@@ -548,11 +551,13 @@ final class DownloadManager {
         guard let handle = try? FileHandle(forReadingFrom: file),
               let size = try? handle.seekToEnd() else { return nil }
         defer { try? handle.close() }
-        return imageType(size: Int64(size)) { offset, count in
-            guard (try? handle.seek(toOffset: UInt64(offset))) != nil,
+        let type = imageType(size: Int64(size)) { offset, count in
+            guard offset >= 0, (try? handle.seek(toOffset: UInt64(offset))) != nil,
                   let bytes = try? handle.read(upToCount: count), bytes.count == count else { return nil }
             return bytes
         }
+        guard let type, hasPicture(CGImageSourceCreateWithURL(file as CFURL, nil)) else { return nil }
+        return type
     }
 
     /// The checks of `imageExtension`, on bytes read with `read(offset, count)`.
@@ -588,33 +593,80 @@ final class DownloadManager {
         // The end of image marker (some files carry a few bytes after it).
         case "jpg": complete = contains(tail(512), [0xFF, 0xD9])
         case "png": complete = contains(tail(64), Array("IEND".utf8) + [0xAE, 0x42, 0x60, 0x82]) // With its CRC.
-        case "gif": complete = tail(1) == [0x3B] // The trailer.
+        case "gif": complete = tail(1) == [0x3B] && gifHasImage(size: size, read: read) // The trailer, and a picture before it.
         // The length the file says it has.
         case "webp": complete = number(head, 4, 4, littleEndian: true) + 8 <= size
         case "bmp": complete = (26...max(26, size)).contains(number(head, 2, 4, littleEndian: true))
-        // Boxes one after the other, each within the file, the last ending at its end.
+        // Boxes one after the other, each within the file, the last ending at
+        // its end, with the picture's data (mdat) among them. A length is
+        // checked against what's left before it's added: a broken or hostile
+        // one can't overflow.
         default:
             var offset: Int64 = 0
             var boxes = 0
             var ends = true
+            var data = false
             walk: while offset < size {
                 boxes += 1
-                guard size - offset >= 8, boxes <= 4096, let header = read(offset, 8) else { ends = false; break }
-                var length = number([UInt8](header), 0, 4, littleEndian: false)
+                let left = size - offset
+                guard left >= 8, boxes <= 4096, let header = read(offset, 8) else { ends = false; break }
+                let bytes = [UInt8](header)
+                var length = number(bytes, 0, 4, littleEndian: false)
                 switch length {
-                case 0: offset = size; break walk // To the end of the file.
+                case 0: length = left // To the end of the file.
                 case 1:
-                    guard size - offset >= 16, let large = read(offset + 8, 8) else { ends = false; break walk }
+                    guard left >= 16, let large = read(offset + 8, 8) else { ends = false; break walk }
                     length = number([UInt8](large), 0, 8, littleEndian: false)
                     guard length >= 16 else { ends = false; break walk }
                 default:
                     guard length >= 8 else { ends = false; break walk }
                 }
+                guard length <= left else { ends = false; break walk }
+                if bytes[4..<8].elementsEqual("mdat".utf8), length > 16 { data = true }
                 offset += length
             }
-            complete = ends && offset == size
+            complete = ends && data && offset == size
         }
         return complete ? type : nil
+    }
+
+    /// A GIF has an image (an image descriptor, after the header, its colour
+    /// table and any extension blocks), not only a header and its trailer.
+    nonisolated private static func gifHasImage(size: Int64, read: (Int64, Int) -> Data?) -> Bool {
+        guard size >= 24, let screen = read(0, 13).map({ [UInt8]($0) }) else { return false }
+        var offset: Int64 = 13 + (screen[10] & 0x80 != 0 ? 3 * (Int64(1) << (Int64(screen[10] & 0x07) + 1)) : 0)
+        var blocks = 0
+        while offset < size, blocks < 10_000 {
+            blocks += 1
+            guard let byte = read(offset, 1)?.first else { return false }
+            switch byte {
+            case 0x2C: return offset + 10 < size // An image descriptor.
+            case 0x21:
+                // An extension: its label, then sub-blocks until an empty one.
+                offset += 2
+                while true {
+                    guard offset < size, let length = read(offset, 1)?.first else { return false }
+                    offset += 1 + Int64(length)
+                    if length == 0 { break }
+                }
+            default: return false
+            }
+        }
+        return false
+    }
+
+    /// The largest side a page may have (a bigger size is a broken file, not a page).
+    nonisolated private static let maxSide = 30_000
+
+    /// Whether ImageIO reads a whole picture from `source`: complete, with a size
+    /// a page can have (from its header: nothing is decoded).
+    nonisolated private static func hasPicture(_ source: CGImageSource?) -> Bool {
+        guard let source, CGImageSourceGetCount(source) > 0,
+              CGImageSourceGetStatus(source) == .statusComplete,
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int else { return false }
+        return (1...maxSide).contains(width) && (1...maxSide).contains(height)
     }
 
     /// Bytes used by downloads.

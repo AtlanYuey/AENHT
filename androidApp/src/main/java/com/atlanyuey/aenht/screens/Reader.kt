@@ -668,14 +668,18 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         // Each half loads (and is retried) on its own: the other one stays.
                         var attempt by remember(p) { mutableIntStateOf(0) }
                         var failed by remember(p, attempt) { mutableStateOf(false) }
-                        coil3.compose.AsyncImage(
-                            model = remember(p, crop, attempt) { pageRequest(context, p, crop) },
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            alignment = align,
-                            modifier = Modifier.fillMaxSize(),
-                            onState = { failed = it is coil3.compose.AsyncImagePainter.State.Error },
-                        )
+                        // A new image node per attempt: Coil takes an equal request for the same
+                        // one (a failed one stays failed), and only this half loads again.
+                        androidx.compose.runtime.key(attempt) {
+                            coil3.compose.AsyncImage(
+                                model = remember(p, crop) { pageRequest(context, p, crop) },
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                alignment = align,
+                                modifier = Modifier.fillMaxSize(),
+                                onState = { failed = it is coil3.compose.AsyncImagePainter.State.Error },
+                            )
+                        }
                         if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { attempt++ } }
                     }
                 }
@@ -696,8 +700,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val context = LocalContext.current
             val crop = AppSettings.autoCrop
             var attempt by remember(index) { mutableIntStateOf(0) }
-            var failed by remember(index, attempt) { mutableStateOf(false) }
-            val model = remember(index, crop, attempt) { pageRequest(context, index, crop) { failed = true } }
+            // One state for every attempt: the request (made once) reports into it.
+            var failed by remember(index) { mutableStateOf(false) }
+            val model = remember(index, crop) { pageRequest(context, index, crop) { failed = true } }
             // Super resolution: the page sharpened to the screen's resolution
             // replaces it once ready (the original stays as the placeholder,
             // and fades into the sharper one: no reload, no flash).
@@ -727,15 +732,18 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
                     .build()
             }
-            ZoomableAsyncImage(
-                model = sharp ?: model,
-                contentDescription = null,
-                state = imageState,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit,
-            )
+            // A new image node per attempt (see SpreadPage): the zoom stays.
+            androidx.compose.runtime.key(attempt) {
+                ZoomableAsyncImage(
+                    model = sharp ?: model,
+                    contentDescription = null,
+                    state = imageState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
+                )
+            }
             when {
-                failed -> PageRetry { attempt++ }
+                failed -> PageRetry { failed = false; attempt++ }
                 !imageState.isImageDisplayed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
             }
         }
@@ -770,18 +778,18 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 val ratio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
                     ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] } ?: readerPage.aspectRatio
                 Box(Modifier.fillMaxWidth().aspectRatio(ratio.coerceIn(0.2f, 5f)), contentAlignment = Alignment.Center) {
-                    val context = LocalContext.current
                     var attempt by remember(readerPage.index) { mutableIntStateOf(0) }
                     var state by remember(readerPage.index, attempt) { mutableStateOf<coil3.compose.AsyncImagePainter.State?>(null) }
-                    coil3.compose.AsyncImage(
-                        model = remember(readerPage.index, attempt) {
-                            if (attempt == 0) readerPage.url else pageRequest(context, readerPage.index, crop = false)
-                        },
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
-                        onState = { state = it },
-                    )
+                    // A new image node per attempt (see SpreadPage).
+                    androidx.compose.runtime.key(attempt) {
+                        coil3.compose.AsyncImage(
+                            model = readerPage.url,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                            onState = { state = it },
+                        )
+                    }
                     when (state) {
                         is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { attempt++ }
                         is coil3.compose.AsyncImagePainter.State.Success -> {}

@@ -26,9 +26,11 @@ object EhAuth : EhCredentialStorage {
     override val passHash: String? get() = store["hash"]
     override val igneous: String? get() = store["igneous"]
 
-    override fun save(memberId: String, passHash: String, igneous: String?) {
-        store(memberId, passHash, igneous)
-    }
+    override fun save(memberId: String, passHash: String, igneous: String?): Boolean = store(memberId, passHash, igneous)
+
+    override fun updateIgneous(memberId: String, igneous: String): Boolean = store.locked {
+        this.memberId == memberId && store.putAll(mapOf("igneous" to igneous))
+    }.also { if (it) EhSession.refresh() }
 
     /** Saves a login (all three cookies or none); false when it couldn't be saved, and the one there was stays. */
     fun store(memberId: String, passHash: String, igneous: String?): Boolean =
@@ -58,37 +60,35 @@ object EhSession {
 
     /**
      * Checks cookies from the login page or typed by the user with the site
-     * and logs in with them. When they are refused, or the site can't be
-     * reached, the login there was before stays.
+     * and logs in with them. They are checked on their own (the saved login
+     * isn't touched while the site answers) and saved only when they work:
+     * when they are refused, or the site can't be reached, the login there
+     * was stays.
      */
     suspend fun login(memberId: String, passHash: String, igneous: String?): Boolean = loginLock.withLock {
         // One login checked at a time; a logout or account switch meanwhile wins (see [generation]).
         val mine = ++generation
-        val before = Triple(EhAuth.memberId, EhAuth.passHash, EhAuth.igneous)
         loginError = null
-        if (!EhAuth.store(memberId.trim(), passHash.trim(), igneous?.trim()?.takeIf { it.isNotEmpty() })) {
-            // Checking would check the login there is, not this one.
-            loginError = L10n.string("The login couldn't be saved on this device.")
-            return@withLock false
-        }
-        val ok = try {
-            EhClient.api.verifyLogin()
+        val member = memberId.trim()
+        val hash = passHash.trim()
+        val check = try {
+            EhClient.api.checkLogin(member, hash, igneous?.trim()?.takeIf { it.isNotEmpty() })
         } catch (e: kotlinx.coroutines.CancellationException) {
-            if (mine == generation) restore(before)
             throw e
         } catch (e: Exception) {
             if (mine == generation) loginError = EhClient.localized(e)
-            false
+            return@withLock false
         }
         // The login changed while this one was checked: that one stays, this one isn't used.
-        if (mine != generation) return@withLock false
-        if (!ok) restore(before)
-        refresh()
-        if (ok) {
-            AccountBook.rememberEh()
-            FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
+        if (mine != generation || !check.ok) return@withLock false
+        if (!EhAuth.store(member, hash, check.igneous)) {
+            loginError = L10n.string("The login couldn't be saved on this device.")
+            return@withLock false
         }
-        return ok
+        refresh()
+        AccountBook.rememberEh()
+        FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
+        true
     }
 
     private val loginLock = kotlinx.coroutines.sync.Mutex()
@@ -99,12 +99,6 @@ object EhSession {
 
     /** Another login was put in place (switching accounts). */
     fun loginReplaced() { generation++ }
-
-    private fun restore(login: Triple<String?, String?, String?>) {
-        EhAuth.clear()
-        val (member, hash, igneous) = login
-        if (!member.isNullOrEmpty() && !hash.isNullOrEmpty()) EhAuth.save(member, hash, igneous)
-    }
 
     fun logout() {
         generation++
