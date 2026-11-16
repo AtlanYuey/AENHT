@@ -118,21 +118,24 @@ struct TabTapScrolling: ViewModifier {
     private static let doubleTap: TimeInterval = 0.3
 
     func body(content: Content) -> some View {
-        content
-            .scrollPosition($scroll)
-            .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
-                ScrollPlace(geometry)
-            } action: { old, new in
-                offset = new.offset
-                // Turned (or resized): the list stays where it was, not back at the top.
-                place.changed(from: old, to: new) { scroll.scrollTo(y: $0) }
-            }
-            .background(TabNavigationFinder(tab: tab).frame(width: 0, height: 0))
-            .onAppear { visible = true }
-            .onDisappear { visible = false }
-            .onChange(of: chrome.tabTap) { _, tap in
-                if tap.tab == tab { tapped() }
-            }
+        ScrollViewReader { proxy in
+            content
+                .scrollPosition($scroll)
+                .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
+                    ScrollPlace(geometry)
+                } action: { old, new in
+                    offset = new.offset
+                    // Turned (or resized): the list stays where it was, not back at the top.
+                    place.changed(from: old, to: new) { scroll.scrollTo(y: $0) } scrollToCard: { proxy.scrollTo($0, anchor: .top) }
+                }
+                .environment(\.visibleCards, place.cards)
+                .background(TabNavigationFinder(tab: tab).frame(width: 0, height: 0))
+                .onAppear { visible = true }
+                .onDisappear { visible = false }
+                .onChange(of: chrome.tabTap) { _, tap in
+                    if tap.tab == tab { tapped() }
+                }
+        }
     }
 
     private func tapped() {
@@ -184,32 +187,68 @@ struct ScrollPlace: Equatable {
     }
 }
 
+/// The gallery cards a list shows, told by the cards themselves
+/// (`GalleryCollection`): the first of them is what the user is looking at,
+/// the card the list comes back to when it is laid out again.
+@MainActor
+final class VisibleCards {
+    /// The cards on screen, by their place in the list.
+    private var shown: [String: Int] = [:]
+    /// The first card on screen after each change, with when it changed.
+    private var history: [(time: Date, uid: String?)] = []
+
+    func changed(_ uid: String, index: Int, visible: Bool) {
+        shown[uid] = visible ? index : nil
+        history.append((Date(), shown.min { $0.value < $1.value }?.key))
+        if history.count > 12 { history.removeFirst(history.count - 12) }
+    }
+
+    /// The first card on screen before the list began to be laid out again
+    /// (the changes of the last moment are the new layout's, not the user's).
+    func first(before time: Date) -> String? {
+        history.last { $0.time < time.addingTimeInterval(-0.08) }?.uid ?? history.first?.uid
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var visibleCards: VisibleCards? = nil
+}
+
 /// Keeps a list where it was when its width changes (the device is turned,
 /// Split View is resized): the cards are laid out again in another number
-/// of columns, the list has another length, and without this it starts
-/// again at the top. The place is kept as a share of the list's length.
+/// of columns, the rows above them may change too, and without this the
+/// list starts again at the top.
+///
+/// The list goes back to the card that was first on screen, at once (in
+/// the same update as the new layout, not after it has been shown): first
+/// near where it should be, so that the card is laid out, then exactly to it.
 @MainActor
 final class KeptPlace {
-    /// The place before the change, as a share of the list's length.
+    let cards = VisibleCards()
+    /// The place before the change: the card first on screen, and as a share of the list's length.
+    private var anchor: String?
     private var share: CGFloat?
-    private var length: CGFloat = 0
-    private var task: Task<Void, Never>?
+    private var settle: Task<Void, Never>?
 
-    func changed(from old: ScrollPlace, to new: ScrollPlace, scrollTo: @escaping (CGFloat) -> Void) {
-        length = new.length
+    func changed(from old: ScrollPlace, to new: ScrollPlace,
+                 scrollTo: @escaping (CGFloat) -> Void, scrollToCard: @escaping (String) -> Void) {
         guard old.width > 0, abs(new.width - old.width) > 1 else { return }
         // The first step of the change has the place as it was (later ones are already laid out again).
         if share == nil {
             guard old.offset > 1, old.length > 0 else { return }
             share = old.offset / old.length
+            anchor = cards.first(before: Date())
         }
-        // Once the new layout has settled.
-        task?.cancel()
-        task = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled, let self, let share = self.share else { return }
+        if let share { scrollTo(share * new.length) }
+        if let anchor { scrollToCard(anchor) }
+        // Once the lazy layout has measured the cards around it, exactly to the card again.
+        settle?.cancel()
+        settle = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled, let self else { return }
+            if let anchor = self.anchor { scrollToCard(anchor) }
+            self.anchor = nil
             self.share = nil
-            scrollTo(share * self.length)
         }
     }
 }
@@ -220,13 +259,16 @@ private struct KeepsPlaceOnResize: ViewModifier {
     @State private var place = KeptPlace()
 
     func body(content: Content) -> some View {
-        content
-            .scrollPosition($scroll)
-            .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
-                ScrollPlace(geometry)
-            } action: { old, new in
-                place.changed(from: old, to: new) { scroll.scrollTo(y: $0) }
-            }
+        ScrollViewReader { proxy in
+            content
+                .scrollPosition($scroll)
+                .onScrollGeometryChange(for: ScrollPlace.self) { geometry in
+                    ScrollPlace(geometry)
+                } action: { old, new in
+                    place.changed(from: old, to: new) { scroll.scrollTo(y: $0) } scrollToCard: { proxy.scrollTo($0, anchor: .top) }
+                }
+                .environment(\.visibleCards, place.cards)
+        }
     }
 }
 
