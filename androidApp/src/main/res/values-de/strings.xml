@@ -547,13 +547,12 @@
     <string name="l_544">Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.</string>
     <string name="l_545">Die Anmeldung konnte auf diesem Gerät nicht gespeichert werden.</string>
     <string name="l_546">Ein anderes Gerät synchronisiert gerade gleichzeitig. Es wurde nichts überschrieben; versuche es gleich noch einmal.</string>
-    <string name="l_547">Übersicht</string>
-    <string name="l_548">Nicht eingerichtet</string>
-    <string name="l_549">Noch nicht synchronisiert</string>
-    <string name="l_550">Version</string>
-    <string name="l_551">Einstellungen sichern</string>
-    <string name="l_552">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_553">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_554">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_555">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_547">Nicht eingerichtet</string>
+    <string name="l_548">Noch nicht synchronisiert</string>
+    <string name="l_549">Version</string>
+    <string name="l_550">Einstellungen sichern</string>
+    <string name="l_551">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_552">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_553">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_554">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

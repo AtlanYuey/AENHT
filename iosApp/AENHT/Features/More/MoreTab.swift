@@ -7,12 +7,10 @@ import SwiftUI
 /// further stay on the right). Otherwise the Me page, whose entries push
 /// their pages.
 struct MoreTab: View {
-    /// The left column's width; the tab bar sits in the middle of it (PadRootView).
     static let columnWidth: CGFloat = 400
 
     @State private var wide = false
     @State private var page: MorePage? = .overview
-    @State private var chrome = AppChrome.shared
 
     var body: some View {
         Group {
@@ -34,8 +32,6 @@ struct MoreTab: View {
                     .id(page ?? .overview)
                 }
                 .navigationSplitViewStyle(.balanced)
-                .onAppear { chrome.meColumnWidth = Self.columnWidth }
-                .onDisappear { chrome.meColumnWidth = nil }
             } else {
                 RoutedNavigationStack {
                     MoreView().galleryDestinations()
@@ -127,7 +123,7 @@ struct MoreOverview: View {
                 }
             }
         }
-        .navigationTitle("Overview")
+        .navigationTitle("All")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: downloads.records.count) {
             usage = await Task.detached { DownloadManager.diskUsage() }.value

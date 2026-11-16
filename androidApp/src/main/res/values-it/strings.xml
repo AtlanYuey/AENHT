@@ -547,13 +547,12 @@
     <string name="l_544">Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.</string>
     <string name="l_545">Impossibile salvare l’accesso su questo dispositivo.</string>
     <string name="l_546">Un altro dispositivo sta sincronizzando nello stesso momento. Non è stato sovrascritto nulla; riprova tra poco.</string>
-    <string name="l_547">Panoramica</string>
-    <string name="l_548">Non configurato</string>
-    <string name="l_549">Non ancora sincronizzato</string>
-    <string name="l_550">Versione</string>
-    <string name="l_551">Backup impostazioni</string>
-    <string name="l_552">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_553">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_554">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_555">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_547">Non configurato</string>
+    <string name="l_548">Non ancora sincronizzato</string>
+    <string name="l_549">Versione</string>
+    <string name="l_550">Backup impostazioni</string>
+    <string name="l_551">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_552">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_553">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_554">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

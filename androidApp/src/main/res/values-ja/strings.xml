@@ -547,13 +547,12 @@
     <string name="l_544">「スワイプでフェード」をオンにすると、ページは指に合わせて動きません。スワイプすると前後のページに切り替わり、新しいページはスワイプした方向に沿ってフェードして現れます。</string>
     <string name="l_545">このデバイスにログイン情報を保存できませんでした。</string>
     <string name="l_546">別のデバイスが同時に同期しています。何も上書きされていません。しばらくしてからもう一度お試しください。</string>
-    <string name="l_547">概要</string>
-    <string name="l_548">未設定</string>
-    <string name="l_549">まだ同期していません</string>
-    <string name="l_550">バージョン</string>
-    <string name="l_551">設定のバックアップ</string>
-    <string name="l_552">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_553">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_554">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_555">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_547">未設定</string>
+    <string name="l_548">まだ同期していません</string>
+    <string name="l_549">バージョン</string>
+    <string name="l_550">設定のバックアップ</string>
+    <string name="l_551">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_552">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_553">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_554">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

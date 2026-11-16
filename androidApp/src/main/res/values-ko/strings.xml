@@ -547,13 +547,12 @@
     <string name="l_544">\'쓸어서 페이드로 넘기기\'를 켜면 페이지가 손가락을 따라 움직이지 않습니다. 쓸어넘기면 이전 또는 다음 페이지로 넘어가고, 새 페이지는 쓸어넘긴 방향을 따라 서서히 나타납니다.</string>
     <string name="l_545">이 기기에 로그인 정보를 저장할 수 없습니다.</string>
     <string name="l_546">다른 기기가 동시에 동기화하고 있습니다. 덮어쓴 내용은 없습니다. 잠시 후 다시 시도하세요.</string>
-    <string name="l_547">개요</string>
-    <string name="l_548">설정 안 됨</string>
-    <string name="l_549">아직 동기화 안 됨</string>
-    <string name="l_550">버전</string>
-    <string name="l_551">설정 백업</string>
-    <string name="l_552">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_553">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_554">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_555">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_547">설정 안 됨</string>
+    <string name="l_548">아직 동기화 안 됨</string>
+    <string name="l_549">버전</string>
+    <string name="l_550">설정 백업</string>
+    <string name="l_551">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_552">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_553">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_554">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

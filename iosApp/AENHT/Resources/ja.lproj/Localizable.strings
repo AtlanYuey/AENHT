@@ -546,7 +546,6 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "「スワイプでフェード」をオンにすると、ページは指に合わせて動きません。スワイプすると前後のページに切り替わり、新しいページはスワイプした方向に沿ってフェードして現れます。";
 "The login couldn't be saved on this device." = "このデバイスにログイン情報を保存できませんでした。";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "別のデバイスが同時に同期しています。何も上書きされていません。しばらくしてからもう一度お試しください。";
-"Overview" = "概要";
 "Not set up" = "未設定";
 "Not synced yet" = "まだ同期していません";
 "Version" = "バージョン";

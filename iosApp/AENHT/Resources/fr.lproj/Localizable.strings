@@ -546,7 +546,6 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Avec « Fondu au balayage », les pages ne suivent pas le doigt : un balayage passe à la page suivante ou précédente, et la nouvelle apparaît en fondu qui avance dans le sens du geste.";
 "The login couldn't be saved on this device." = "Impossible d’enregistrer la connexion sur cet appareil.";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Un autre appareil synchronise en même temps. Rien n’a été écrasé ; réessayez dans un instant.";
-"Overview" = "Aperçu";
 "Not set up" = "Non configuré";
 "Not synced yet" = "Pas encore synchronisé";
 "Version" = "Version";

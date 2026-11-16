@@ -546,7 +546,6 @@ T = [
     "Avec « Fondu au balayage », les pages ne suivent pas le doigt : un balayage passe à la page suivante ou précédente, et la nouvelle apparaît en fondu qui avance dans le sens du geste.",
     "Impossible d’enregistrer la connexion sur cet appareil.",
     "Un autre appareil synchronise en même temps. Rien n’a été écrasé ; réessayez dans un instant.",
-    "Aperçu",
     "Non configuré",
     "Pas encore synchronisé",
     "Version",

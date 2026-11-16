@@ -74,11 +74,6 @@ struct MoreView: View {
     }
 
     @ViewBuilder private var rows: some View {
-        if selection != nil {
-            Section {
-                row(.overview) { SettingsLabel("Overview", systemImage: "square.grid.2x2.fill", color: .purple) }
-            }
-        }
         Section {
             // Both sites' accounts are one row; the next screen has a section per site.
             row(.accounts) {
@@ -115,6 +110,10 @@ struct MoreView: View {
         }
 
         Section {
+            // In the left column: everything at a glance (what the right one shows first).
+            if selection != nil {
+                row(.overview) { SettingsLabel("All", systemImage: "square.grid.2x2.fill", color: .purple) }
+            }
             row(.language) { SettingsLabel("Language", systemImage: "globe", color: .teal) }
             row(.about) { SettingsLabel("About", systemImage: "info", color: .indigo) }
         }

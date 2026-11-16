@@ -546,7 +546,6 @@
 "With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "С параметром «Проявление при смахивании» страницы не двигаются за пальцем: смахивание переключает на следующую или предыдущую страницу, и новая проявляется в направлении жеста.";
 "The login couldn't be saved on this device." = "Не удалось сохранить данные входа на этом устройстве.";
 "Another device is syncing at the same time. Nothing was overwritten; try again in a moment." = "Другое устройство синхронизируется одновременно. Ничего не перезаписано; повторите попытку чуть позже.";
-"Overview" = "Обзор";
 "Not set up" = "Не настроено";
 "Not synced yet" = "Ещё не синхронизировано";
 "Version" = "Версия";

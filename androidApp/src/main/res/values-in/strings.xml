@@ -547,13 +547,12 @@
     <string name="l_544">Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.</string>
     <string name="l_545">Login tidak dapat disimpan di perangkat ini.</string>
     <string name="l_546">Perangkat lain sedang menyinkronkan pada saat yang sama. Tidak ada yang ditimpa; coba lagi sebentar lagi.</string>
-    <string name="l_547">Ringkasan</string>
-    <string name="l_548">Belum diatur</string>
-    <string name="l_549">Belum disinkronkan</string>
-    <string name="l_550">Versi</string>
-    <string name="l_551">Cadangan Pengaturan</string>
-    <string name="l_552">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_553">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_554">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_555">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_547">Belum diatur</string>
+    <string name="l_548">Belum disinkronkan</string>
+    <string name="l_549">Versi</string>
+    <string name="l_550">Cadangan Pengaturan</string>
+    <string name="l_551">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_552">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_553">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_554">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

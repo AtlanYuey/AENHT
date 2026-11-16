@@ -547,13 +547,12 @@
     <string name="l_544">Khi bật “Mờ dần khi vuốt”, trang không di chuyển theo ngón tay: vuốt sẽ chuyển sang trang sau hoặc trang trước, và trang mới hiện dần theo hướng bạn vuốt.</string>
     <string name="l_545">Không thể lưu thông tin đăng nhập trên thiết bị này.</string>
     <string name="l_546">Một thiết bị khác đang đồng bộ cùng lúc. Không có gì bị ghi đè; hãy thử lại sau giây lát.</string>
-    <string name="l_547">Tổng quan</string>
-    <string name="l_548">Chưa thiết lập</string>
-    <string name="l_549">Chưa đồng bộ</string>
-    <string name="l_550">Phiên bản</string>
-    <string name="l_551">Sao lưu cài đặt</string>
-    <string name="l_552">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_553">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_554">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_555">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_547">Chưa thiết lập</string>
+    <string name="l_548">Chưa đồng bộ</string>
+    <string name="l_549">Phiên bản</string>
+    <string name="l_550">Sao lưu cài đặt</string>
+    <string name="l_551">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_552">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_553">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_554">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>
