@@ -128,13 +128,14 @@ struct GalleryDetailView: View {
                     // Its translations and other versions, then galleries like it.
                     if !model.versions.isEmpty {
                         SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
-                        PopularRow(items: model.versions)
+                        PopularRow(items: model.versions, cutEdges: wide ? .trailing : [])
                     }
                     if !detail.related.isEmpty {
                         SectionTitle(title: "More Like This")
-                        PopularRow(items: detail.related.filter { item in !model.versions.contains { $0.id == item.id } })
+                        PopularRow(items: detail.related.filter { item in !model.versions.contains { $0.id == item.id } },
+                                   cutEdges: wide ? .trailing : [])
                     }
-                    CommentsPreview(detail: detail, comments: model.comments)
+                    CommentsPreview(detail: detail, comments: model.comments, cut: wide)
                 } else if let error = model.error {
                     ContentUnavailableView {
                         Label("Couldn't Load", systemImage: "wifi.exclamationmark")
@@ -159,18 +160,16 @@ struct GalleryDetailView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        // Wide: cut off at the card on the right with a soft edge, not a straight line.
-        .fadedEdges(.trailing, length: wide ? 28 : 0)
         if wide, let detail = model.detail {
-            WideCard {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        SectionHeader(title: "Pages") { EmptyView() }
-                        PageGrid(detail: detail).padding(.horizontal)
-                    }
-                    .padding(.bottom, 24)
+            // The pages run the full height, blurring out under the bars.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionHeader(title: "Pages") { EmptyView() }
+                    PageGrid(detail: detail).padding(.horizontal)
                 }
+                .padding(.bottom, 24)
             }
+            .softScrollEdges()
             .frame(maxWidth: .infinity)
         }
         }
@@ -778,6 +777,8 @@ struct PagesView: View {
 private struct CommentsPreview: View {
     let detail: GalleryDetail
     let comments: [GalleryComment]
+    /// Cut off on the right (a wide page): the comments fade out there.
+    var cut = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -808,6 +809,7 @@ private struct CommentsPreview: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollTargetBehavior(.viewAligned)
+                .fadedEdges(.trailing, length: cut ? 36 : 0)
             }
         }
         .padding(.top, 8)

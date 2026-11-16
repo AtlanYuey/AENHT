@@ -161,11 +161,11 @@ struct EhGalleryView: View {
                     // Its translations and other versions, then galleries like it.
                     if !model.versions.isEmpty {
                         SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
-                        PopularRow(items: model.versions)
+                        PopularRow(items: model.versions, cutEdges: wide ? .trailing : [])
                     }
                     if !model.similar.isEmpty {
                         SectionTitle(title: "More Like This")
-                        PopularRow(items: model.similar)
+                        PopularRow(items: model.similar, cutEdges: wide ? .trailing : [])
                     }
                     comments(detail)
                 } else if let error = model.error {
@@ -200,14 +200,12 @@ struct EhGalleryView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        // Wide: cut off at the card on the right with a soft edge, not a straight line.
-        .fadedEdges(.trailing, length: wide ? 28 : 0)
         if wide, let detail = model.detail, let card = model.card {
-            WideCard {
-                EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
-                            loaded: detail, embedded: true)
-            }
-            .frame(maxWidth: .infinity)
+            // The pages run the full height, blurring out under the bars.
+            EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
+                        loaded: detail, embedded: true)
+                .softScrollEdges()
+                .frame(maxWidth: .infinity)
         }
         }
         .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
@@ -562,6 +560,8 @@ struct EhGalleryView: View {
                     .padding(.horizontal)
                 }
                 .scrollIndicators(.hidden)
+                // Wide: the comments cut off where the details meet the pages fade out.
+                .fadedEdges(.trailing, length: wide ? 36 : 0)
             }
         }
     }
@@ -664,7 +664,7 @@ struct EhPagesView: View {
                 }
             }
             .padding(embedded ? [.horizontal, .bottom] : .all)
-            .padding(.bottom, embedded ? 8 : 0)
+            .padding(.bottom, embedded ? 16 : 0)
         }
         .task {
             if detail == nil {

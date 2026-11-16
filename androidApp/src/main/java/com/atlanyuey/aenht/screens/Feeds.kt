@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.cutCards
 import com.atlanyuey.aenht.ui.components.fadeEdges
 import com.atlanyuey.aenht.ui.components.prompt
 import com.atlanyuey.aenht.core.label
@@ -193,14 +194,24 @@ fun VersionsTitle() {
     }
 }
 
+/**
+ * Horizontally scrolling row of covers, out to the screen's edges. Where it
+ * is cut off instead ([cutStart], [cutEnd]: next to the other half of a wide
+ * page), the covers end in round corners and their titles fade out.
+ */
 @Composable
-fun PopularRow(items: List<GallerySummary>) {
+fun PopularRow(items: List<GallerySummary>, cutStart: Boolean = false, cutEnd: Boolean = false) {
     val state = rememberLazyListState()
-    BoxWithConstraints(Modifier.fillMaxWidth().bleed(16.dp)) {
-        val cardWidth = if (maxWidth > 600.dp) 170.dp else 132.dp
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val cardWidth = if (maxWidth + 32.dp > 600.dp) 170.dp else 132.dp
+        // Out to the edge of the screen, except where it is cut off.
+        val before = if (cutStart) 0.dp else 16.dp
+        val after = if (cutEnd) 0.dp else 16.dp
+        val cut = if (cutStart || cutEnd) Modifier.cutCards(cutStart, cutEnd, imageHeight = cardWidth * 4 / 3) else Modifier
         LazyRow(
+            Modifier.fillMaxWidth().bleedSides(before, after).then(cut),
             state = state,
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(start = before, end = after),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             flingBehavior = rememberSnapFlingBehavior(state),
         ) {
@@ -209,6 +220,14 @@ fun PopularRow(items: List<GallerySummary>) {
             }
         }
     }
+}
+
+/** Extends into the side padding by [start] and [end]. */
+private fun Modifier.bleedSides(start: androidx.compose.ui.unit.Dp, end: androidx.compose.ui.unit.Dp) = layout { measurable, constraints ->
+    val s = start.roundToPx()
+    val e = end.roundToPx()
+    val placeable = measurable.measure(constraints.copy(minWidth = constraints.minWidth + s + e, maxWidth = constraints.maxWidth + s + e))
+    layout(constraints.maxWidth, placeable.height) { placeable.placeRelative(-s, 0) }
 }
 
 @Composable
@@ -501,11 +520,10 @@ class HomeScreen : Screen(), TabRoot {
                                 // Wide (a tablet held sideways): the two rows side by side.
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     pinned.forEachIndexed { i, (row, items) ->
-                                        // Each row scrolls inside its own half, the cards it cuts
-                                        // off fading out where the halves meet.
-                                        Column(Modifier.weight(1f).clipToBounds()) {
+                                        // Each row scrolls inside its own half, cut off where the halves meet.
+                                        Column(Modifier.weight(1f)) {
                                             FeedTitle(tr(row.title), null)
-                                            Box(Modifier.fadeEdges(start = i == 1, end = i == 0, length = 36.dp)) { PopularRow(items) }
+                                            PopularRow(items, cutStart = i == 1, cutEnd = i == 0)
                                         }
                                     }
                                 }

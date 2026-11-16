@@ -152,6 +152,8 @@ struct ReaderView: View {
 
     var body: some View {
         content
+            // Back from the left edge only: a swipe in the middle is the reader's.
+            .background(EdgeOnlyBackSwipe().frame(width: 0, height: 0))
             .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
@@ -1479,6 +1481,33 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 }
 
 // MARK: - Back swipe
+
+/// iOS 26 goes back with a swipe from anywhere on the screen. In the reader
+/// a swipe in the middle is the reader's (turning pages, its swipe
+/// actions): only the swipe from the left edge goes back.
+private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+
+    final class Controller: UIViewController {
+        private weak var blocked: UIGestureRecognizer?
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            if #available(iOS 26.0, *), let swipe = navigationController?.interactiveContentPopGestureRecognizer {
+                swipe.isEnabled = false
+                blocked = swipe
+            }
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            // Leaving the reader (or starting to): the other screens have it again.
+            blocked?.isEnabled = true
+            blocked = nil
+        }
+    }
+}
 
 /// Keeps the edge swipe-back working when a pushed screen hides its
 /// navigation bar (the reader with its controls hidden).

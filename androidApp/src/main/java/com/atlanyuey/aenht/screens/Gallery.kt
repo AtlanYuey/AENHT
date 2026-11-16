@@ -303,8 +303,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
             PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
               Row(Modifier.fillMaxSize()) {
                 LazyColumn(
-                    // Wide: cut off at the card on the right with a soft edge.
-                    Modifier.weight(1f).fillMaxHeight().fadeEdges(end = true, length = if (wide) 28.dp else 0.dp),
+                    Modifier.weight(1f).fillMaxHeight(),
                     state = list,
                     // Room under the comments, clear of the tab bar.
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
@@ -319,14 +318,14 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         // Its translations and other versions, then galleries like it.
                         if (versions.isNotEmpty()) {
                             item("versionsTitle") { VersionsTitle() }
-                            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions) } }
+                            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions, cutEnd = wide) } }
                         }
                         val related = d.related.filter { r -> versions.none { it.key.id == r.id.toLong() } }
                         if (related.isNotEmpty()) {
                             item("relatedTitle") { SectionTitle(tr("More Like This")) }
-                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(related.map(GallerySummary::from)) } }
+                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(related.map(GallerySummary::from), cutEnd = wide) } }
                         }
-                        item("comments") { CommentsPreview(d) }
+                        item("comments") { CommentsPreview(d, cutEnd = wide) }
                     } else if (error != null) {
                         item("error") {
                             EmptyState(
@@ -344,9 +343,13 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 }
                 val d = detail
                 if (wide && d != null) {
-                    com.atlanyuey.aenht.ui.components.WideCard(padding.calculateTopPadding(), padding.calculateBottomPadding(), Modifier.weight(1f).fillMaxHeight()) {
-                        PagesGrid(d, PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp), Modifier.fillMaxSize(), titled = true)
-                    }
+                    // The pages run the full height, under the bars' soft edges like the details.
+                    PagesGrid(
+                        d,
+                        PaddingValues(start = 12.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 16.dp),
+                        Modifier.weight(1f).fillMaxHeight(),
+                        titled = true,
+                    )
                 }
               }
             }
@@ -625,7 +628,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
     }
 
     @Composable
-    private fun CommentsPreview(d: GalleryDetail) {
+    private fun CommentsPreview(d: GalleryDetail, cutEnd: Boolean = false) {
         val navigator = LocalNavigator.current
         Column {
             SectionTitle(tr("Comments")) {
@@ -637,7 +640,12 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
             if (comments.isEmpty()) {
                 Txt(tr("No comments yet"), Modifier.padding(horizontal = 20.dp), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
             } else {
-                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Wide: the comments cut off where the details meet the pages fade out.
+                LazyRow(
+                    if (cutEnd) Modifier.fadeEdges(end = true, length = 36.dp) else Modifier,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }.take(10), key = { it.id }) { comment ->
                         Box(
                             Modifier

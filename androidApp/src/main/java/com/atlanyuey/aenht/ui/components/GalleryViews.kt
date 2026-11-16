@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -445,21 +446,43 @@ fun Modifier.fadeEdges(
     }
 
 /**
- * The right half of a wide page: a card with round corners next to the
- * details (not a straight cut), its content fading out at the top and the
- * bottom as it scrolls.
+ * A row of covers cut off at [start] or [end] (where it meets the other half
+ * of a wide page): the covers end in round corners like their own, as if
+ * cut by a card, and the titles under them ([imageHeight] on) fade out.
  */
-@Composable
-fun WideCard(topInset: androidx.compose.ui.unit.Dp, bottomInset: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(
-        modifier
-            .padding(start = 4.dp, end = 12.dp, top = topInset + 8.dp, bottom = bottomInset + 12.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(if (AppTheme.colors.isDark) AppTheme.colors.secondaryGroupedBackground else AppTheme.colors.secondaryBackground),
-    ) {
-        Box(Modifier.fadeEdges(top = true, bottom = true, length = 20.dp)) { content() }
+fun Modifier.cutCards(
+    start: Boolean,
+    end: Boolean,
+    imageHeight: androidx.compose.ui.unit.Dp,
+    radius: androidx.compose.ui.unit.Dp = 12.dp,
+    fade: androidx.compose.ui.unit.Dp = 36.dp,
+): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        val h = imageHeight.toPx().coerceAtMost(size.height)
+        val r = androidx.compose.ui.geometry.CornerRadius(radius.toPx())
+        val none = androidx.compose.ui.geometry.CornerRadius.Zero
+        val shape = androidx.compose.ui.graphics.Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    0f, 0f, size.width, h,
+                    topLeftCornerRadius = if (start) r else none,
+                    topRightCornerRadius = if (end) r else none,
+                    bottomRightCornerRadius = if (end) r else none,
+                    bottomLeftCornerRadius = if (start) r else none,
+                ),
+            )
+            addRect(androidx.compose.ui.geometry.Rect(0f, h, size.width, size.height))
+        }
+        clipPath(shape) { this@drawWithContent.drawContent() }
+        // Under the covers: the titles fade out at the cut.
+        val f = fade.toPx()
+        val below = androidx.compose.ui.geometry.Size(size.width, size.height - h)
+        val at = androidx.compose.ui.geometry.Offset(0f, h)
+        val dstIn = androidx.compose.ui.graphics.BlendMode.DstIn
+        if (end) drawRect(Brush.horizontalGradient(0f to Color.Black, 1f to Color.Transparent, startX = size.width - f, endX = size.width), at, below, blendMode = dstIn)
+        if (start) drawRect(Brush.horizontalGradient(0f to Color.Transparent, 1f to Color.Black, startX = 0f, endX = f), at, below, blendMode = dstIn)
     }
-}
 
 /**
  * The window is wide enough for two halves side by side (a tablet held

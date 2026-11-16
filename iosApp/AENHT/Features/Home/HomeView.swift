@@ -56,15 +56,12 @@ struct HomeView: View {
                     // Wide (a tablet held sideways): the two rows side by side.
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(Array(pinned.enumerated()), id: \.element.id) { index, entry in
-                            // Each row scrolls inside its own half, the cards it cuts
-                            // off fading out where the halves meet.
+                            // Each row scrolls inside its own half, cut off where the halves meet.
                             VStack(alignment: .leading, spacing: 0) {
                                 SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
-                                PopularRow(items: entry.items)
-                                    .fadedEdges(index == 0 ? .trailing : .leading, length: 36)
+                                PopularRow(items: entry.items, cutEdges: index == 0 ? .trailing : .leading)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .clipped()
                         }
                     }
                 } else {
@@ -359,15 +356,18 @@ struct SectionTitle: View {
 /// Horizontally scrolling row of covers.
 struct PopularRow: View {
     let items: [GalleryItem]
+    /// Where the row is cut off (next to the other half of a wide page), not at the screen's edge.
+    var cutEdges: Edge.Set = []
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        let width: CGFloat = sizeClass == .regular ? 170 : 132
         ScrollView(.horizontal) {
             LazyHStack(alignment: .top, spacing: 12) {
                 ForEach(items) { item in
                     GalleryCard(item: item, style: .grid)
-                        .frame(width: sizeClass == .regular ? 170 : 132)
+                        .frame(width: width)
                 }
             }
             .scrollTargetLayout()
@@ -375,5 +375,7 @@ struct PopularRow: View {
         }
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.viewAligned)
+        // The covers are 3:4.
+        .cutCards(cutEdges, imageHeight: width * 4 / 3)
     }
 }
