@@ -230,12 +230,14 @@ struct PadRootView: View {
     private func tab<Content: View>(_ value: AppTab, ownsNavigation: Bool = false, @ViewBuilder content: () -> Content) -> some View {
         // There is no search tab: Home has the search.
         let selected = selection == value || (value == .home && selection == .search)
+        // Made here: the stack keeps its content to draw later.
+        let page = content()
         return Group {
             if ownsNavigation {
-                content()
+                page
             } else {
                 RoutedNavigationStack {
-                    content().galleryDestinations()
+                    page.galleryDestinations()
                         .background(TabNavigationFinder(tab: value).frame(width: 0, height: 0))
                 }
             }
