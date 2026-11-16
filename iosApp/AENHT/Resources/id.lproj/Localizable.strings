@@ -172,8 +172,6 @@
 "Import Settings" = "Impor Pengaturan";
 "Save the settings as a file, for example in iCloud Drive, and import it on another device." = "Simpan pengaturan sebagai file, misalnya di iCloud Drive, lalu impor di perangkat lain.";
 "The settings were imported." = "Pengaturan telah diimpor.";
-"A modified version of eros_n by honjow." = "Versi modifikasi dari eros_n karya honjow.";
-"Original Project" = "Proyek Asli";
 "Open Source Licenses" = "Lisensi Sumber Terbuka";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "Terjemahan tag berasal dari basis data EhTagTranslation, berlisensi CC BY-NC-SA 3.0 (atribusi, nonkomersial, berbagi serupa). Data diunduh saat app memperbarui tag.";
 "System Language" = "Bahasa Sistem";
@@ -549,3 +547,12 @@
 "Not set up" = "Belum diatur";
 "Not synced yet" = "Belum disinkronkan";
 "Version" = "Versi";
+"References" = "Referensi";
+"The project AENHT started from" = "Proyek awal AENHT";
+"The earlier version of this app" = "Versi sebelumnya dari aplikasi ini";
+"How the E-Hentai features behave" = "Perilaku fitur E-Hentai";
+"How the nhentai features behave" = "Perilaku fitur nhentai";
+"The settings of AI translation services" = "Pengaturan layanan terjemahan AI";
+"nhentai's tag data" = "Data tag nhentai";
+"Chinese translations of tags" = "Terjemahan tag ke bahasa Mandarin";
+"Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.";

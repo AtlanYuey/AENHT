@@ -172,8 +172,6 @@
 "Import Settings" = "Einstellungen importieren";
 "Save the settings as a file, for example in iCloud Drive, and import it on another device." = "Speichere die Einstellungen als Datei, zum Beispiel in iCloud Drive, und importiere sie auf einem anderen Gerät.";
 "The settings were imported." = "Die Einstellungen wurden importiert.";
-"A modified version of eros_n by honjow." = "Eine geänderte Version von eros_n von honjow.";
-"Original Project" = "Ursprüngliches Projekt";
 "Open Source Licenses" = "Open-Source-Lizenzen";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "Die Tag-Übersetzungen stammen aus der EhTagTranslation-Datenbank, lizenziert unter CC BY-NC-SA 3.0 (Namensnennung, nicht kommerziell, Weitergabe unter gleichen Bedingungen). Sie werden geladen, wenn die App ihre Tags aktualisiert.";
 "System Language" = "Systemsprache";
@@ -549,3 +547,12 @@
 "Not set up" = "Nicht eingerichtet";
 "Not synced yet" = "Noch nicht synchronisiert";
 "Version" = "Version";
+"References" = "Referenzen";
+"The project AENHT started from" = "Das Projekt, mit dem AENHT begann";
+"The earlier version of this app" = "Die frühere Version dieser App";
+"How the E-Hentai features behave" = "Wie sich die E-Hentai-Funktionen verhalten";
+"How the nhentai features behave" = "Wie sich die nhentai-Funktionen verhalten";
+"The settings of AI translation services" = "Die Einstellungen der KI-Übersetzungsdienste";
+"nhentai's tag data" = "Die Tag-Daten von nhentai";
+"Chinese translations of tags" = "Chinesische Übersetzungen der Tags";
+"Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Danke an alle hinter diesen Projekten. Ihre Lizenzen stehen unter Open-Source-Lizenzen.";

@@ -381,30 +381,28 @@ struct PopularRow: View {
     }
 }
 
-/// The site switch: the site's name in the middle of the bar, white and a
-/// little larger and bolder than a button's label (it names the site), as a
-/// glass button like the ones at its sides (the system's own glass style).
-/// It opens a small list of the sites under it: not a menu, which grows out
-/// of its label and left the label's glass cut off by the bar afterwards.
-/// Only when there is a site to switch to; otherwise just the title.
+/// The site switch: the site's name in the middle of the bar, white and bold
+/// (it names the site), a menu of the sites in the system's glass button
+/// style, like the bar's own buttons. At the button's own size: a taller
+/// capsule than the bar gives the middle was cut off by the bar once the
+/// menu had grown out of it and back. Only when there is a site to switch
+/// to; otherwise just the title.
 private struct SiteTitleMenu: ViewModifier {
     let sites: [SiteKind]
     let current: SiteKind
     let select: (SiteKind) -> Void
-
-    @State private var choosing = false
 
     func body(content: Content) -> some View {
         if sites.count > 1 {
             if #available(iOS 26.0, *) {
                 // Its own glass, not the bar's shared background around it too.
                 content.toolbar {
-                    ToolbarItem(placement: .principal) { button }
+                    ToolbarItem(placement: .principal) { menu }
                         .sharedBackgroundVisibility(.hidden)
                 }
             } else {
                 content.toolbar {
-                    ToolbarItem(placement: .principal) { button }
+                    ToolbarItem(placement: .principal) { menu }
                 }
             }
         } else {
@@ -412,58 +410,38 @@ private struct SiteTitleMenu: ViewModifier {
         }
     }
 
-    private var button: some View {
-        Button { choosing = true } label: {
-            HStack(spacing: 5) {
+    private var menu: some View {
+        Menu {
+            Picker("Site", selection: Binding(get: { current }, set: select)) {
+                ForEach(sites) { Text($0.displayName).tag($0) }
+            }
+        } label: {
+            HStack(spacing: 4) {
                 Text(current.displayName)
-                    .font(.title3.weight(.bold))
+                    .font(.headline.weight(.bold))
                 Image(systemName: "chevron.down")
-                    .font(.footnote.weight(.bold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
             }
             .foregroundStyle(.primary)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 4)
         }
         .modifier(SiteGlassButton())
+        // White (the label color), not the accent the button style would take.
+        .tint(.primary)
         .accessibilityLabel(Text(current.displayName))
-        .popover(isPresented: $choosing, arrowEdge: .top) {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(sites) { site in
-                    Button {
-                        choosing = false
-                        select(site)
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "checkmark")
-                                .font(.body.weight(.semibold))
-                                .opacity(site == current ? 1 : 0)
-                            Text(site.displayName)
-                            Spacer(minLength: 0)
-                        }
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 16)
-                        .frame(minWidth: 200, minHeight: 44)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.vertical, 6)
-            .presentationCompactAdaptation(.popover)
-        }
     }
 }
 
-/// The system's glass button (iOS 26), like the bar's buttons; a material capsule before.
+/// The system's glass button style (iOS 26), like the bar's buttons; a material capsule before.
 private struct SiteGlassButton: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.buttonStyle(.glass)
+            content.menuStyle(.button).buttonStyle(.glass)
         } else {
             content
-                .buttonStyle(.plain)
-                .padding(.horizontal, 10)
-                .frame(minHeight: 36)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
                 .background(.regularMaterial, in: Capsule())
         }
     }

@@ -843,10 +843,6 @@ struct AboutView: View {
                     Text("Version \(version)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("A modified version of eros_n by honjow.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -855,9 +851,6 @@ struct AboutView: View {
             Section {
                 Link(destination: URL(string: "https://github.com/AtlanYuey/AENHT")!) {
                     LabeledContent("Source Code", value: "GitHub")
-                }
-                Link(destination: URL(string: "https://github.com/honjow/eros_n")!) {
-                    LabeledContent("Original Project", value: "honjow/eros_n")
                 }
                 Link(destination: NHHost.site) {
                     LabeledContent("Website", value: "nhentai.net")
@@ -871,6 +864,11 @@ struct AboutView: View {
             }
             Section {
                 NavigationLink {
+                    ReferencesView()
+                } label: {
+                    Text("References")
+                }
+                NavigationLink {
                     AcknowledgementsView()
                 } label: {
                     Text("Open Source Licenses")
@@ -880,6 +878,59 @@ struct AboutView: View {
         // The easter egg flies over the whole page, not just its row.
         .overlay { AboutEggEffects(egg: egg) }
         .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// The projects AENHT draws on, all alike: where it started, what its
+/// features follow, and the data it uses. (Their licenses are in Open Source
+/// Licenses.)
+struct ReferencesView: View {
+    private struct Project: Identifiable {
+        let name: String
+        let author: String
+        let role: LocalizedStringKey
+        let url: String
+        var id: String { url }
+    }
+
+    private let projects = [
+        Project(name: "eros_n", author: "honjow", role: "The project AENHT started from",
+                url: "https://github.com/honjow/eros_n"),
+        Project(name: "AEros-NHT", author: "AtlanYuey", role: "The earlier version of this app",
+                url: "https://github.com/AtlanYuey/AEros-NHT"),
+        Project(name: "NextE", author: "erosTeam", role: "How the E-Hentai features behave",
+                url: "https://github.com/erosTeam/NextE"),
+        Project(name: "NextN", author: "erosTeam", role: "How the nhentai features behave",
+                url: "https://github.com/erosTeam/NextN"),
+        Project(name: "AY Translate", author: "AtlanYuey", role: "The settings of AI translation services",
+                url: "https://github.com/AtlanYuey/AY_Translate"),
+        Project(name: "nhentai_tags_fetcher", author: "honjow", role: "nhentai's tag data",
+                url: "https://github.com/honjow/nhentai_tags_fetcher"),
+        Project(name: "EhTagTranslation", author: "EhTagTranslation", role: "Chinese translations of tags",
+                url: "https://github.com/EhTagTranslation/Database"),
+    ]
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(projects) { project in
+                    Link(destination: URL(string: project.url)!) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(verbatim: project.name).font(.headline).foregroundStyle(.primary)
+                                Text(verbatim: project.author).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            Text(project.role).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            } footer: {
+                Text("Thanks to everyone behind these projects. Their licenses are under Open Source Licenses.")
+            }
+        }
+        .navigationTitle("References")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

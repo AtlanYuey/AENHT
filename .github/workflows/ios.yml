@@ -8,6 +8,9 @@ on:
     paths-ignore: ['androidApp/**', '**.md', 'docs/**']
   pull_request:
   workflow_dispatch:
+  # Publishing a release on GitHub builds it and attaches the IPA.
+  release:
+    types: [published]
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -235,3 +238,14 @@ jobs:
             gh release create dev-latest --prerelease --target dev --title "Development build" --notes "$NOTES" || true
           for i in 1 2 3; do gh release upload dev-latest iosApp/build/AENHT.ipa --clobber && break; sleep 10; done
           gh release edit dev-latest --notes "$NOTES" || true
+
+      # A release published on GitHub gets the unsigned IPA from this build (the
+      # tag's commit; never the signed one, which carries the owner's identity).
+      - name: Attach the IPA to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep -oE 'MARKETING_VERSION: "[^"]+"' iosApp/project.yml | sed -E 's/.*"(.*)"/\1/')
+          cp iosApp/build/AENHT.ipa "iosApp/build/AENHT-${VERSION}.ipa"
+          for i in 1 2 3; do gh release upload "${{ github.event.release.tag_name }}" "iosApp/build/AENHT-${VERSION}.ipa" --clobber && break; sleep 10; done

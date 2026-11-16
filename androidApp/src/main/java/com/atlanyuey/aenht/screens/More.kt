@@ -970,12 +970,10 @@ class AboutScreen : Screen() {
                     AboutIcon()
                     Txt("AENHT", style = Type.title2)
                     Txt(tr("Version %@", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
-                    Txt(tr("A modified version of eros_n by honjow."), style = Type.footnote, color = AppTheme.colors.secondaryLabel, align = TextAlign.Center)
                 }
             }
             section {
                 ListRow(tr("Source Code"), value = "GitHub", chevron = true, onClick = { open("https://github.com/AtlanYuey/AENHT") })
-                ListRow(tr("Original Project"), value = "honjow/eros_n", chevron = true, onClick = { open("https://github.com/honjow/eros_n") })
                 ListRow(tr("Website"), value = "nhentai.net", chevron = true, last = true, onClick = { open(NHHost.SITE) })
             }
             section(footer = { FooterText(tr("The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys.")) }) {
@@ -1000,6 +998,7 @@ class AboutScreen : Screen() {
                 })
             }
             section {
+                ListRow(tr("References"), chevron = true, onClick = { navigator.push(ReferencesScreen()) })
                 ListRow(tr("Open Source Licenses"), chevron = true, last = true, onClick = { navigator.push(LicensesScreen()) })
             }
         }
@@ -1029,6 +1028,38 @@ private val licenses = listOf(
     License("nhentai_tags_fetcher", "honjow", "MIT License", R.raw.nhentai_tags_fetcher, "https://github.com/honjow/nhentai_tags_fetcher"),
     License("EhTagTranslation Database", "EhTagTranslation", "CC BY-NC-SA 3.0", null, "https://github.com/EhTagTranslation/Database"),
 )
+
+/**
+ * The projects AENHT draws on, all alike: where it started, what its
+ * features follow, and the data it uses (their licenses: Open Source Licenses).
+ */
+class ReferencesScreen : Screen() {
+    private class Project(val name: String, val author: String, val role: String, val url: String)
+
+    private val projects = listOf(
+        Project("eros_n", "honjow", "The project AENHT started from", "https://github.com/honjow/eros_n"),
+        Project("AEros-NHT", "AtlanYuey", "The earlier version of this app", "https://github.com/AtlanYuey/AEros-NHT"),
+        Project("NextE", "erosTeam", "How the E-Hentai features behave", "https://github.com/erosTeam/NextE"),
+        Project("NextN", "erosTeam", "How the nhentai features behave", "https://github.com/erosTeam/NextN"),
+        Project("AY Translate", "AtlanYuey", "The settings of AI translation services", "https://github.com/AtlanYuey/AY_Translate"),
+        Project("nhentai_tags_fetcher", "honjow", "nhentai's tag data", "https://github.com/honjow/nhentai_tags_fetcher"),
+        Project("EhTagTranslation", "EhTagTranslation", "Chinese translations of tags", "https://github.com/EhTagTranslation/Database"),
+    )
+
+    @Composable
+    override fun Content() {
+        val context = LocalContext.current
+        GroupedListScreen(tr("References")) {
+            section(footer = { FooterText(tr("Thanks to everyone behind these projects. Their licenses are under Open Source Licenses.")) }) {
+                projects.forEachIndexed { i, project ->
+                    ListRow("${project.name} · ${project.author}", subtitle = tr(project.role), chevron = true,
+                        last = i == projects.lastIndex,
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(project.url))) })
+                }
+            }
+        }
+    }
+}
 
 class LicensesScreen : Screen() {
     @Composable

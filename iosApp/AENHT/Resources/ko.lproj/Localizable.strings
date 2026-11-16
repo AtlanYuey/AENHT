@@ -172,8 +172,6 @@
 "Import Settings" = "설정 가져오기";
 "Save the settings as a file, for example in iCloud Drive, and import it on another device." = "설정을 파일로 저장하고(예: iCloud Drive) 다른 기기에서 가져올 수 있습니다.";
 "The settings were imported." = "설정을 가져왔습니다.";
-"A modified version of eros_n by honjow." = "honjow의 eros_n을 수정한 버전입니다.";
-"Original Project" = "원본 프로젝트";
 "Open Source Licenses" = "오픈 소스 라이선스";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "태그 번역은 EhTagTranslation 데이터베이스(CC BY-NC-SA 3.0: 저작자 표시, 비영리, 동일조건 변경허락)에서 가져오며, 앱이 태그를 업데이트할 때 다운로드됩니다.";
 "System Language" = "시스템 언어";
@@ -549,3 +547,12 @@
 "Not set up" = "설정 안 됨";
 "Not synced yet" = "아직 동기화 안 됨";
 "Version" = "버전";
+"References" = "참고 프로젝트";
+"The project AENHT started from" = "AENHT의 출발점";
+"The earlier version of this app" = "이 앱의 이전 버전";
+"How the E-Hentai features behave" = "E-Hentai 기능 동작 참고";
+"How the nhentai features behave" = "nhentai 기능 동작 참고";
+"The settings of AI translation services" = "AI 번역 서비스 설정";
+"nhentai's tag data" = "nhentai 태그 데이터";
+"Chinese translations of tags" = "태그의 중국어 번역";
+"Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "이 프로젝트들을 만든 모든 분께 감사드립니다. 라이선스는 「오픈 소스 라이선스」에 있습니다.";

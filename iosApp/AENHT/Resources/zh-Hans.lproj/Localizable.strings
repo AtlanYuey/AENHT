@@ -198,8 +198,6 @@
 "The settings were imported." = "设置已导入。";
 
 /* About / licenses */
-"A modified version of eros_n by honjow." = "基于 honjow 的 eros_n 修改而来。";
-"Original Project" = "原项目";
 "Open Source Licenses" = "开源许可";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "标签翻译来自 EhTagTranslation 数据库，采用 CC BY-NC-SA 3.0 协议（署名、非商业性使用、相同方式共享），在 App 更新标签库时下载。";
 
@@ -591,3 +589,12 @@
 "Not set up" = "未设置";
 "Not synced yet" = "尚未同步";
 "Version" = "版本";
+"References" = "参考项目";
+"The project AENHT started from" = "AENHT 最初的起点";
+"The earlier version of this app" = "本应用的早期版本";
+"How the E-Hentai features behave" = "E-Hentai 功能的行为参考";
+"How the nhentai features behave" = "nhentai 功能的行为参考";
+"The settings of AI translation services" = "AI 翻译服务的设置";
+"nhentai's tag data" = "nhentai 标签数据";
+"Chinese translations of tags" = "标签的中文翻译";
+"Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "感谢这些项目背后的每一个人。它们的许可见「开源许可」。";

@@ -172,8 +172,6 @@
 "Import Settings" = "Nhập cài đặt";
 "Save the settings as a file, for example in iCloud Drive, and import it on another device." = "Lưu cài đặt thành tệp, ví dụ trong iCloud Drive, rồi nhập trên thiết bị khác.";
 "The settings were imported." = "Đã nhập cài đặt.";
-"A modified version of eros_n by honjow." = "Phiên bản chỉnh sửa từ eros_n của honjow.";
-"Original Project" = "Dự án gốc";
 "Open Source Licenses" = "Giấy phép mã nguồn mở";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "Bản dịch thẻ lấy từ cơ sở dữ liệu EhTagTranslation, theo giấy phép CC BY-NC-SA 3.0 (ghi công, phi thương mại, chia sẻ tương tự). Dữ liệu được tải khi ứng dụng cập nhật thẻ.";
 "System Language" = "Ngôn ngữ hệ thống";
@@ -549,3 +547,12 @@
 "Not set up" = "Chưa thiết lập";
 "Not synced yet" = "Chưa đồng bộ";
 "Version" = "Phiên bản";
+"References" = "Dự án tham khảo";
+"The project AENHT started from" = "Dự án khởi đầu của AENHT";
+"The earlier version of this app" = "Phiên bản trước của ứng dụng này";
+"How the E-Hentai features behave" = "Cách các tính năng E-Hentai hoạt động";
+"How the nhentai features behave" = "Cách các tính năng nhentai hoạt động";
+"The settings of AI translation services" = "Cài đặt dịch vụ dịch AI";
+"nhentai's tag data" = "Dữ liệu thẻ của nhentai";
+"Chinese translations of tags" = "Bản dịch tiếng Trung của thẻ";
+"Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Cảm ơn tất cả những người đứng sau các dự án này. Giấy phép của chúng nằm trong Giấy phép mã nguồn mở.";
