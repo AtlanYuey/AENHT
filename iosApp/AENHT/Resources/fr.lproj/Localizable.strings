@@ -541,5 +541,6 @@
 "The site limits requests. Continuing in %lld s." = "Le site limite les requêtes. Reprise dans %lld s.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.";
 "Turn One Page at a Time" = "Tourner une page à la fois";
-"Fade Follows the Finger" = "Le fondu suit le doigt";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite. Avec « Le fondu suit le doigt », les pages restent en place pendant le balayage et la suivante se dévoile à partir du doigt ; en relâchant, la page tourne ou revient selon la distance et la vitesse du balayage.";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite.";
+"Fade on Swipe" = "Fondu au balayage";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Avec « Fondu au balayage », les pages ne suivent pas le doigt : un balayage passe à la page suivante ou précédente, et la nouvelle apparaît en fondu qui avance dans le sens du geste.";

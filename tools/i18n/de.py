@@ -541,6 +541,7 @@ T = [
     "Die Seite begrenzt Anfragen. Weiter in %lld s.",
     "Die Datei auf dem Server wurde von einer neueren AENHT-Version geschrieben. Aktualisiere die App, um zu synchronisieren.",
     "Jeweils eine Seite blättern",
-    "Überblendung folgt dem Finger",
-    "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern. Mit „Überblendung folgt dem Finger“ bleiben die Seiten beim Wischen stehen und die nächste wird vom Finger aus aufgedeckt; beim Loslassen wird je nach Weite und Tempo des Wischens geblättert oder zurückgekehrt.",
+    "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern.",
+    "Überblenden beim Wischen",
+    "Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.",
 ]

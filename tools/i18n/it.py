@@ -541,6 +541,7 @@ T = [
     "Il sito limita le richieste. Si riprende tra %lld s.",
     "Il file sul server è stato scritto da una versione più recente di AENHT. Aggiorna l’app per sincronizzare.",
     "Sfoglia una pagina alla volta",
-    "La dissolvenza segue il dito",
-    "Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta. Con «La dissolvenza segue il dito», scorrendo le pagine restano ferme e la successiva si scopre a partire dal dito; al rilascio si volta pagina o si torna indietro in base a quanto e quanto velocemente hai scorso.",
+    "Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta.",
+    "Dissolvenza allo scorrimento",
+    "Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.",
 ]

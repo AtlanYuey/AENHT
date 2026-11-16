@@ -186,9 +186,9 @@ class ScreenshotTest {
         }
     }
 
-    @Test fun readerReveal() {
-        // Fade Follows the Finger: a swipe uncovers the next page from the finger on; the pages stay in place.
-        AppSettings.fadeFollowsFinger = true
+    @Test fun readerSwipeFade() {
+        // Fade on Swipe: a swipe turns the page with a fade sweeping the way it went; the pages don't move.
+        AppSettings.swipeFades = true
         try {
             val tabs = Tabs()
             val source = ReaderSource(
@@ -196,21 +196,22 @@ class ScreenshotTest {
                 "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
             )
             tabs.home.push(ReaderScreen(source, 3))
-            shoot("46_reader_reveal_before", tabs, settle = 500)
+            shoot("46_reader_swipe_before", tabs, settle = 500)
             compose.mainClock.autoAdvance = false
-            // The finger has gone 40 % of the width to the left and is still down.
+            // A slow swipe to the left, a little at a time: the page doesn't move while the finger does.
             compose.onRoot().performTouchInput {
                 down(androidx.compose.ui.geometry.Offset(width * 0.8f, centerY))
-                repeat(8) { moveBy(androidx.compose.ui.geometry.Offset(-width * 0.05f, 0f)) }
+                repeat(8) { moveBy(androidx.compose.ui.geometry.Offset(-width * 0.05f, 0f)); advanceEventTime(120) }
             }
-            compose.mainClock.advanceTimeBy(300)
-            compose.onRoot().captureRoboImage("build/screens/47_reader_reveal_mid.png")
-            // Let go before half way and without speed: back to the page it was on.
+            compose.mainClock.advanceTimeBy(100)
+            compose.onRoot().captureRoboImage("build/screens/47_reader_swipe_held.png")
             compose.onRoot().performTouchInput { up() }
-            compose.mainClock.advanceTimeBy(1500)
-            compose.onRoot().captureRoboImage("build/screens/48_reader_reveal_back.png")
+            compose.mainClock.advanceTimeBy(150)
+            compose.onRoot().captureRoboImage("build/screens/48_reader_swipe_mid.png")
+            compose.mainClock.advanceTimeBy(600)
+            compose.onRoot().captureRoboImage("build/screens/49_reader_swipe_after.png")
         } finally {
-            AppSettings.fadeFollowsFinger = false
+            AppSettings.swipeFades = false
         }
     }
 

@@ -541,5 +541,6 @@
 "The site limits requests. Continuing in %lld s." = "Die Seite begrenzt Anfragen. Weiter in %lld s.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Die Datei auf dem Server wurde von einer neueren AENHT-Version geschrieben. Aktualisiere die App, um zu synchronisieren.";
 "Turn One Page at a Time" = "Jeweils eine Seite blättern";
-"Fade Follows the Finger" = "Überblendung folgt dem Finger";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern. Mit „Überblendung folgt dem Finger“ bleiben die Seiten beim Wischen stehen und die nächste wird vom Finger aus aufgedeckt; beim Loslassen wird je nach Weite und Tempo des Wischens geblättert oder zurückgekehrt.";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Mit Überblenden gleiten die Seiten nicht: Die nächste erscheint an derselben Stelle – angenehmer für die Augen beim schnellen Blättern.";
+"Fade on Swipe" = "Überblenden beim Wischen";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Mit „Überblenden beim Wischen“ bewegen sich die Seiten nicht mit dem Finger: Ein Wischen blättert zur nächsten oder vorigen Seite, und die neue wird in Wischrichtung eingeblendet.";

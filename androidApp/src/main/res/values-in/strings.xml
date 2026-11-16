@@ -542,11 +542,12 @@
     <string name="l_539">Situs membatasi permintaan. Melanjutkan dalam %d dtk.</string>
     <string name="l_540">File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.</string>
     <string name="l_541">Balik Satu Halaman Sekaligus</string>
-    <string name="l_542">Pudar Mengikuti Jari</string>
-    <string name="l_543">Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat. Dengan “Pudar Mengikuti Jari”, halaman tetap di tempat saat digeser dan halaman berikutnya tersingkap dari posisi jari; saat dilepas, halaman dibalik atau kembali tergantung jarak dan kecepatan geseran.</string>
-    <string name="l_544">Cadangan Pengaturan</string>
-    <string name="l_545">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_546">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_547">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_548">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_542">Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat.</string>
+    <string name="l_543">Pudar Saat Menggeser</string>
+    <string name="l_544">Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.</string>
+    <string name="l_545">Cadangan Pengaturan</string>
+    <string name="l_546">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_547">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_548">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_549">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

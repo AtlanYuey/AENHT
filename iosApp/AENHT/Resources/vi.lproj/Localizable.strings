@@ -541,5 +541,6 @@
 "The site limits requests. Continuing in %lld s." = "Trang web giới hạn số yêu cầu. Tiếp tục sau %lld giây.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Tệp trên máy chủ được ghi bởi phiên bản AENHT mới hơn. Hãy cập nhật ứng dụng để đồng bộ.";
 "Turn One Page at a Time" = "Lật từng trang một";
-"Fade Follows the Finger" = "Mờ dần theo ngón tay";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh. Khi bật “Mờ dần theo ngón tay”, lúc vuốt các trang đứng yên và trang sau lộ dần từ vị trí ngón tay; khi thả tay, trang sẽ lật hoặc quay lại tùy theo khoảng cách và tốc độ vuốt.";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Khi chuyển trang mờ dần, trang không trượt: trang sau hiện ra tại chỗ, dễ chịu cho mắt khi lật nhanh.";
+"Fade on Swipe" = "Mờ dần khi vuốt";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Khi bật “Mờ dần khi vuốt”, trang không di chuyển theo ngón tay: vuốt sẽ chuyển sang trang sau hoặc trang trước, và trang mới hiện dần theo hướng bạn vuốt.";

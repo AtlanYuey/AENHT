@@ -232,8 +232,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private fun go(target: Int) {
         if (target !in 0 until count) return
         val paged = AppSettings.readMode.isPaged
-        // Fade Follows the Finger: a tap (no finger to follow) fades, as without the animation.
-        val animate = AppSettings.animatePageTurns && !AppSettings.fadeFollowsFinger
+        val animate = AppSettings.animatePageTurns
         if (paged && !animate) {
             // A turn during another one ends that one and starts its own.
             fadeJob?.cancel()
@@ -251,18 +250,50 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         page = target
     }
 
-    /** Shows [target] in place: the page shown now fades out over it (no motion). */
-    private suspend fun fadeTo(target: Int) {
+    /**
+     * Shows [target] in place: the page shown now fades out over it (no
+     * motion). With [sweep] (a swipe) it fades away from one side to the
+     * other with a soft edge, the way the finger went.
+     */
+    private suspend fun fadeTo(target: Int, sweep: Sweep? = null) {
         val cover = runCatching { pagesLayer?.toImageBitmap() }.getOrNull()
         pager.scrollToPage(slot(target))
         if (cover == null) return
         fadeCover = cover
+        fadeSweep = sweep
         try {
             fadeAlpha.snapTo(1f)
-            fadeAlpha.animateTo(0f, androidx.compose.animation.core.tween(250))
+            fadeAlpha.animateTo(0f, androidx.compose.animation.core.tween(if (sweep != null) 320 else 250))
         } finally {
             if (fadeCover === cover) fadeCover = null
         }
+    }
+
+    /** Which way a swipe went: across ([vertical] false) or up and down; [toStart]: left or up. */
+    private data class Sweep(val vertical: Boolean, val toStart: Boolean)
+
+    /** The way the fade of a swipe turn sweeps (null: the page fades as a whole). */
+    private var fadeSweep by mutableStateOf<Sweep?>(null)
+
+    /**
+     * Fade on Swipe: a swipe the way the pages go turns to the next or the
+     * previous page (by its direction) with a fade sweeping the way it went.
+     * Answers whether the swipe was one.
+     */
+    private fun swipeTurn(delta: Offset, minimum: Float): Boolean {
+        val vertical = AppSettings.readMode == ReadMode.VerticalPaged
+        val along = if (vertical) delta.y else delta.x
+        val across = if (vertical) delta.x else delta.y
+        if (kotlin.math.abs(along) < minimum || kotlin.math.abs(along) < 1.5f * kotlin.math.abs(across)) return false
+        // Left (or up) is forward, except right to left.
+        val forward = if (isRtl) along > 0 else along < 0
+        val target = step(turnBase, forward)
+        chromeVisible = false
+        if (target !in 0 until count) return true
+        fadeJob?.cancel()
+        fadeJob = uiScope.launch { fadeTo(target, Sweep(vertical, toStart = along < 0)) }
+        page = target
+        return true
     }
 
     /** The page a turn starts from (the target while a turn is running). */
@@ -428,16 +459,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
-            interactions.interactions.collect { interaction ->
-                if (interaction is DragInteraction.Start) chromeVisible = false
-                // …and (Fade Follows the Finger) brings the edge under the finger, until it lets go.
-                if (mode.isPaged) launch {
-                    if (interaction is DragInteraction.Start) fingerGrip.animateTo(1f, androidx.compose.animation.core.tween(140))
-                    else if (interaction is DragInteraction.Stop || interaction is DragInteraction.Cancel) {
-                        fingerGrip.animateTo(0f, androidx.compose.animation.core.tween(220))
-                    }
-                }
-            }
+            interactions.interactions.collect { if (it is DragInteraction.Start) chromeVisible = false }
         }
         // …and so does leaving them alone for a while (Reading settings, 3 s
         // at least; not while a finger is down or a menu or sheet is open).
@@ -470,7 +492,6 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
                             touching = event.changes.any { it.pressed }
-                            event.changes.firstOrNull { it.pressed }?.let { finger = it.position }
                             if (event.type == PointerEventType.Press) {
                                 chromeActivity++
                                 lastTouch = android.os.SystemClock.uptimeMillis()
@@ -522,7 +543,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val up = waitForUpOrCancellation(PointerEventPass.Initial) ?: return@awaitEachGesture
             val delta = up.position - down.position
             if (delta.getDistance() > viewConfiguration.touchSlop) {
-                if (!zoomed() && up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, maxOf(150.dp.toPx(), 0.2f * size.height))
+                if (!zoomed()) {
+                    // Fade on Swipe: the pages don't follow the finger; a swipe the way they go turns them.
+                    if (paged && AppSettings.swipeFades && swipeTurn(delta, 40.dp.toPx())) return@awaitEachGesture
+                    if (up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, maxOf(150.dp.toPx(), 0.2f * size.height))
+                }
                 return@awaitEachGesture
             }
             if (up.uptimeMillis - down.uptimeMillis > 400) return@awaitEachGesture
@@ -567,83 +592,53 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         drawLayer(layer)
                     },
             ) {
-                val reveal = AppSettings.fadeFollowsFinger
+                // Fade on Swipe: the pages don't move with the finger (the swipe is the reader's).
+                val drag = !AppSettings.swipeFades
                 if (mode == ReadMode.VerticalPaged) {
-                    VerticalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { index ->
-                        if (reveal) Box(Modifier.fillMaxSize().revealTurn(index, vertical = true, rtl = false)) { content(index) } else content(index)
-                    }
+                    VerticalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, userScrollEnabled = drag, key = { it }) { content(it) }
                 } else {
-                    val rtl = mode == ReadMode.RightToLeft
-                    val direction = if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+                    val direction = if (mode == ReadMode.RightToLeft) LayoutDirection.Rtl else LayoutDirection.Ltr
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                        HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { index ->
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                if (reveal) Box(Modifier.fillMaxSize().revealTurn(index, vertical = false, rtl = rtl)) { content(index) } else content(index)
-                            }
+                        HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, userScrollEnabled = drag, key = { it }) { index ->
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { content(index) }
                         }
                     }
                 }
             }
             fadeCover?.let { cover ->
+                val sweep = fadeSweep
                 androidx.compose.foundation.Image(
                     cover, null,
-                    Modifier.fillMaxSize().graphicsLayer { alpha = fadeAlpha.value },
+                    if (sweep == null) {
+                        Modifier.fillMaxSize().graphicsLayer { alpha = fadeAlpha.value }
+                    } else {
+                        // The old page goes from the side the finger started on, with a soft edge.
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                drawContent()
+                                val length = if (sweep.vertical) size.height else size.width
+                                val soft = length * 0.22f
+                                // Kept: before the edge (left / up swipes) or after it (right / down ones).
+                                val kept = fadeAlpha.value * (length + soft)
+                                val (start, end, stops) = if (sweep.toStart) {
+                                    Triple(kept - soft, kept, arrayOf(0f to Color.Black, 1f to Color.Transparent))
+                                } else {
+                                    Triple(length - kept, length - kept + soft, arrayOf(0f to Color.Transparent, 1f to Color.Black))
+                                }
+                                val brush = if (sweep.vertical) {
+                                    androidx.compose.ui.graphics.Brush.verticalGradient(*stops, startY = start, endY = end)
+                                } else {
+                                    androidx.compose.ui.graphics.Brush.horizontalGradient(*stops, startX = start, endX = end)
+                                }
+                                drawRect(brush, blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
+                            }
+                    },
                     contentScale = ContentScale.FillBounds,
                 )
             }
         }
-    }
-
-    /**
-     * Fade Follows the Finger: while a page is turned the pages stay where
-     * they are, and the later of the two is uncovered (or covered again)
-     * from the side the next page comes from, up to where the swipe has got
-     * to, with a soft edge. Letting go is the pager's: it settles on the
-     * next page or back, by how far and how fast the swipe went.
-     */
-    /** Where the finger is on the screen (the edge of the uncovered part goes to it). */
-    private var finger by mutableStateOf(Offset.Zero)
-
-    /** How much the edge is held under the finger: 1 while a page is dragged, back to 0 when let go. */
-    private val fingerGrip = androidx.compose.animation.core.Animatable(0f)
-
-    private fun Modifier.revealTurn(index: Int, vertical: Boolean, rtl: Boolean): Modifier {
-        // How many pages this one is after the place the pager is at (0: it is the page shown).
-        fun distance() = (index - pager.currentPage) - pager.currentPageOffsetFraction
-        return this
-            // The later page is over the earlier one.
-            .zIndex(index.toFloat())
-            .graphicsLayer {
-                val d = distance()
-                if (d <= -1f || d >= 1f || d == 0f) return@graphicsLayer
-                // The pager moved the page by this much: taken back, it stays in place.
-                val moved = d * ((if (vertical) size.height else size.width) + 16.dp.toPx())
-                if (vertical) translationY = -moved else translationX = if (rtl) moved else -moved
-                if (d > 0f) compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
-            }
-            .drawWithContent {
-                drawContent()
-                val d = distance()
-                if (d <= 0f || d >= 1f) return@drawWithContent
-                // Kept: from the edge of the uncovered part on (see-through before it).
-                // The edge is where the turn has got to; while the finger drags, it is
-                // under the finger (measured from the side the earlier page stays on).
-                val length = if (vertical) size.height else size.width
-                val soft = length * 0.14f
-                val touch = if (vertical) finger.y else if (rtl) length - finger.x else finger.x
-                val grip = fingerGrip.value
-                // (The soft edge is centred on the finger.)
-                val underFinger = (touch + soft / 2) * length / (length + soft)
-                val edge = ((d * length) * (1 - grip) + underFinger * grip).coerceIn(0f, length)
-                val from = edge / length * (length + soft) - soft
-                val stops = arrayOf(0f to Color.Transparent, 1f to Color.Black)
-                val brush = when {
-                    vertical -> androidx.compose.ui.graphics.Brush.verticalGradient(*stops, startY = from, endY = from + soft)
-                    rtl -> androidx.compose.ui.graphics.Brush.horizontalGradient(*stops, startX = length - from, endX = length - from - soft)
-                    else -> androidx.compose.ui.graphics.Brush.horizontalGradient(*stops, startX = from, endX = from + soft)
-                }
-                drawRect(brush, blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
-            }
     }
 
     /** Two pages side by side, zoomed together; the seam in the middle. */
@@ -1014,12 +1009,16 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
-    section {
+    section(footer = if (AppSettings.readMode.isPaged) ({ FooterText(tr("With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.")) }) else null) {
         PickerRow(
             tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
             label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
             last = !(AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) && !AppSettings.readMode.isPaged && AppSettings.readMode != ReadMode.VerticalGap,
         )
+        // How a swipe turns the pages (not the taps: those are in Controls).
+        if (AppSettings.readMode.isPaged) {
+            ToggleRow(tr("Fade on Swipe"), AppSettings.swipeFades, { AppSettings.swipeFades = it })
+        }
         if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
             PickerRow(
                 tr("Double Page"), DoublePage.entries, AppSettings.doublePage,
@@ -1157,12 +1156,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
-    section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped.")) }) {
+    section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
         ToggleRow(tr("Tap to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
         PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
             label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it })
         ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
-        ToggleRow(tr("Fade Follows the Finger"), AppSettings.fadeFollowsFinger, { AppSettings.fadeFollowsFinger = it })
         ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
     }
     section("Swipes", footer = { FooterText(tr("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")) }) {

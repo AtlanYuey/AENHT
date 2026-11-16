@@ -541,6 +541,7 @@ T = [
     "O site limita as solicitações. Continuando em %lld s.",
     "O arquivo no servidor foi gravado por uma versão mais recente do AENHT. Atualize o app para sincronizar.",
     "Virar uma página por vez",
-    "O esmaecimento segue o dedo",
-    "Com o esmaecimento, as páginas não deslizam: a próxima aparece no lugar, mais confortável ao virar rápido. Com “O esmaecimento segue o dedo”, as páginas ficam paradas ao deslizar e a próxima é revelada a partir do dedo; ao soltar, a página vira ou volta conforme a distância e a velocidade do gesto.",
+    "Com o esmaecimento, as páginas não deslizam: a próxima aparece no lugar, mais confortável ao virar rápido.",
+    "Esmaecer ao deslizar",
+    "Com “Esmaecer ao deslizar”, as páginas não acompanham o dedo: um deslize vira para a próxima página ou a anterior, e a nova aparece esmaecendo na direção do gesto.",
 ]

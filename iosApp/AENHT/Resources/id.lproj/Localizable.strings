@@ -541,5 +541,6 @@
 "The site limits requests. Continuing in %lld s." = "Situs membatasi permintaan. Melanjutkan dalam %lld dtk.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.";
 "Turn One Page at a Time" = "Balik Satu Halaman Sekaligus";
-"Fade Follows the Finger" = "Pudar Mengikuti Jari";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat. Dengan “Pudar Mengikuti Jari”, halaman tetap di tempat saat digeser dan halaman berikutnya tersingkap dari posisi jari; saat dilepas, halaman dibalik atau kembali tergantung jarak dan kecepatan geseran.";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat.";
+"Fade on Swipe" = "Pudar Saat Menggeser";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.";

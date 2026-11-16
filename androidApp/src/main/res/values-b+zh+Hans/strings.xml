@@ -542,11 +542,12 @@
     <string name="l_539">站点限制了请求频率，%d 秒后自动继续。</string>
     <string name="l_540">服务器上的文件是由更新版本的 AENHT 写入的。请更新 App 后再同步。</string>
     <string name="l_541">每次翻一页</string>
-    <string name="l_542">渐变跟随手指</string>
-    <string name="l_543">开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。开启「渐变跟随手指」后，滑动时页面保持不动，下一页从手指的位置逐渐显现；松手时根据滑动的距离和速度决定翻页还是回到原页。</string>
-    <string name="l_544">设置备份</string>
-    <string name="l_545">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_546">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_547">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_548">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_542">开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。</string>
+    <string name="l_543">滑动渐变翻页</string>
+    <string name="l_544">开启「滑动渐变翻页」后，页面不再随手指移动：滑动一下就翻到上一页或下一页，新页面沿着你滑动的方向渐变出现。</string>
+    <string name="l_545">设置备份</string>
+    <string name="l_546">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_547">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_548">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_549">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

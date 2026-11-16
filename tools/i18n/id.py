@@ -541,6 +541,7 @@ T = [
     "Situs membatasi permintaan. Melanjutkan dalam %lld dtk.",
     "File di server ditulis oleh versi AENHT yang lebih baru. Perbarui app untuk menyinkronkan.",
     "Balik Satu Halaman Sekaligus",
-    "Pudar Mengikuti Jari",
-    "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat. Dengan “Pudar Mengikuti Jari”, halaman tetap di tempat saat digeser dan halaman berikutnya tersingkap dari posisi jari; saat dilepas, halaman dibalik atau kembali tergantung jarak dan kecepatan geseran.",
+    "Dengan efek memudar, halaman tidak bergeser: halaman berikutnya muncul di tempat, lebih nyaman di mata saat membalik cepat.",
+    "Pudar Saat Menggeser",
+    "Dengan “Pudar Saat Menggeser”, halaman tidak bergerak mengikuti jari: geseran berpindah ke halaman berikutnya atau sebelumnya, dan halaman baru muncul memudar mengikuti arah geseran Anda.",
 ]

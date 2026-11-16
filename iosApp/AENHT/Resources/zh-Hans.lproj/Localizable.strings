@@ -583,5 +583,6 @@
 "The site limits requests. Continuing in %lld s." = "站点限制了请求频率，%lld 秒后自动继续。";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "服务器上的文件是由更新版本的 AENHT 写入的。请更新 App 后再同步。";
 "Turn One Page at a Time" = "每次翻一页";
-"Fade Follows the Finger" = "渐变跟随手指";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。开启「渐变跟随手指」后，滑动时页面保持不动，下一页从手指的位置逐渐显现；松手时根据滑动的距离和速度决定翻页还是回到原页。";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "开启渐变翻页后，页面不再滑动，而是在原位淡入下一页，快速翻页时更护眼。";
+"Fade on Swipe" = "滑动渐变翻页";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "开启「滑动渐变翻页」后，页面不再随手指移动：滑动一下就翻到上一页或下一页，新页面沿着你滑动的方向渐变出现。";

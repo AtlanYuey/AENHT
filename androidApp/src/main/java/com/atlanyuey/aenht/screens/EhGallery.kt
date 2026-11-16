@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.fadeEdges
 import com.atlanyuey.aenht.ui.components.readerThumb
 import com.atlanyuey.aenht.core.privacyText
 import android.content.ClipData
@@ -302,7 +303,8 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
               Row(Modifier.fillMaxSize()) {
                 LazyColumn(
-                    Modifier.weight(1f).fillMaxHeight(),
+                    // Wide: cut off at the card on the right with a soft edge.
+                    Modifier.weight(1f).fillMaxHeight().fadeEdges(end = true, length = if (wide) 28.dp else 0.dp),
                     state = list,
                     // Room under the comments, clear of the tab bar.
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
@@ -337,14 +339,10 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 val d = detail
                 val card = summary
                 if (wide && d != null && card != null) {
-                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(AppTheme.colors.separator))
                     val pages = remember(d) { EhPagesState(d, scope) }
-                    EhPagesGrid(
-                        pages, card,
-                        PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 110.dp),
-                        Modifier.weight(1f).fillMaxHeight(),
-                        titled = true,
-                    )
+                    com.atlanyuey.aenht.ui.components.WideCard(padding.calculateTopPadding(), padding.calculateBottomPadding(), Modifier.weight(1f).fillMaxHeight()) {
+                        EhPagesGrid(pages, card, PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp), Modifier.fillMaxSize(), titled = true)
+                    }
                 }
               }
             }

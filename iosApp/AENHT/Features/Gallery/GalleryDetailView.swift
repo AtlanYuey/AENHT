@@ -159,14 +159,17 @@ struct GalleryDetailView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        // Wide: cut off at the card on the right with a soft edge, not a straight line.
+        .fadedEdges(.trailing, length: wide ? 28 : 0)
         if wide, let detail = model.detail {
-            Divider().ignoresSafeArea(edges: .bottom)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    SectionHeader(title: "Pages") { EmptyView() }
-                    PageGrid(detail: detail).padding(.horizontal)
+            WideCard {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        SectionHeader(title: "Pages") { EmptyView() }
+                        PageGrid(detail: detail).padding(.horizontal)
+                    }
+                    .padding(.bottom, 24)
                 }
-                .padding(.bottom, 120)
             }
             .frame(maxWidth: .infinity)
         }

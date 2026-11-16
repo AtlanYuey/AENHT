@@ -55,11 +55,13 @@ struct HomeView: View {
                 if wide, pinned.count == 2 {
                     // Wide (a tablet held sideways): the two rows side by side.
                     HStack(alignment: .top, spacing: 12) {
-                        ForEach(pinned) { entry in
-                            // Each row scrolls inside its own half.
+                        ForEach(Array(pinned.enumerated()), id: \.element.id) { index, entry in
+                            // Each row scrolls inside its own half, the cards it cuts
+                            // off fading out where the halves meet.
                             VStack(alignment: .leading, spacing: 0) {
                                 SectionTitle(title: LocalizedStringKey(entry.row.titleKey))
                                 PopularRow(items: entry.items)
+                                    .fadedEdges(index == 0 ? .trailing : .leading, length: 36)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .clipped()

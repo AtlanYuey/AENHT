@@ -541,5 +541,6 @@
 "The site limits requests. Continuing in %lld s." = "Il sito limita le richieste. Si riprende tra %lld s.";
 "The file on the server was written by a newer version of AENHT. Update the app to sync." = "Il file sul server è stato scritto da una versione più recente di AENHT. Aggiorna l’app per sincronizzare.";
 "Turn One Page at a Time" = "Sfoglia una pagina alla volta";
-"Fade Follows the Finger" = "La dissolvenza segue il dito";
-"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped." = "Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta. Con «La dissolvenza segue il dito», scorrendo le pagine restano ferme e la successiva si scopre a partire dal dito; al rilascio si volta pagina o si torna indietro in base a quanto e quanto velocemente hai scorso.";
+"With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta.";
+"Fade on Swipe" = "Dissolvenza allo scorrimento";
+"With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped." = "Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.";

@@ -200,11 +200,14 @@ struct EhGalleryView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        // Wide: cut off at the card on the right with a soft edge, not a straight line.
+        .fadedEdges(.trailing, length: wide ? 28 : 0)
         if wide, let detail = model.detail, let card = model.card {
-            Divider().ignoresSafeArea(edges: .bottom)
-            EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
-                        loaded: detail, embedded: true)
-                .frame(maxWidth: .infinity)
+            WideCard {
+                EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
+                            loaded: detail, embedded: true)
+            }
+            .frame(maxWidth: .infinity)
         }
         }
         .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
@@ -661,7 +664,7 @@ struct EhPagesView: View {
                 }
             }
             .padding(embedded ? [.horizontal, .bottom] : .all)
-            .padding(.bottom, embedded ? 104 : 0)
+            .padding(.bottom, embedded ? 8 : 0)
         }
         .task {
             if detail == nil {

@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -417,6 +418,48 @@ fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: St
 }
 
 // MARK: - Collections
+
+/**
+ * Fades the content out over [length] at the chosen edges: what a pane cuts
+ * off ends in a soft edge, not a straight line.
+ */
+fun Modifier.fadeEdges(
+    start: Boolean = false,
+    end: Boolean = false,
+    top: Boolean = false,
+    bottom: Boolean = false,
+    length: androidx.compose.ui.unit.Dp = 28.dp,
+): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val l = length.toPx()
+        if (l <= 0f) return@drawWithContent
+        val clear = Color.Transparent
+        val kept = Color.Black
+        val dstIn = androidx.compose.ui.graphics.BlendMode.DstIn
+        if (start) drawRect(Brush.horizontalGradient(0f to clear, 1f to kept, startX = 0f, endX = l), blendMode = dstIn)
+        if (end) drawRect(Brush.horizontalGradient(0f to kept, 1f to clear, startX = size.width - l, endX = size.width), blendMode = dstIn)
+        if (top) drawRect(Brush.verticalGradient(0f to clear, 1f to kept, startY = 0f, endY = l), blendMode = dstIn)
+        if (bottom) drawRect(Brush.verticalGradient(0f to kept, 1f to clear, startY = size.height - l, endY = size.height), blendMode = dstIn)
+    }
+
+/**
+ * The right half of a wide page: a card with round corners next to the
+ * details (not a straight cut), its content fading out at the top and the
+ * bottom as it scrolls.
+ */
+@Composable
+fun WideCard(topInset: androidx.compose.ui.unit.Dp, bottomInset: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier
+            .padding(start = 4.dp, end = 12.dp, top = topInset + 8.dp, bottom = bottomInset + 12.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(if (AppTheme.colors.isDark) AppTheme.colors.secondaryGroupedBackground else AppTheme.colors.secondaryBackground),
+    ) {
+        Box(Modifier.fadeEdges(top = true, bottom = true, length = 20.dp)) { content() }
+    }
+}
 
 /**
  * The window is wide enough for two halves side by side (a tablet held

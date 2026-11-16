@@ -542,11 +542,12 @@
     <string name="l_539">The site limits requests. Continuing in %d s.</string>
     <string name="l_540">The file on the server was written by a newer version of AENHT. Update the app to sync.</string>
     <string name="l_541">Turn One Page at a Time</string>
-    <string name="l_542">Fade Follows the Finger</string>
-    <string name="l_543">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly. With Fade Follows the Finger, a swipe uncovers the next page from under your finger while the pages stay in place; letting go turns the page or goes back, by how far and how fast you swiped.</string>
-    <string name="l_544">Settings Backup</string>
-    <string name="l_545">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_546">Android\'s own backup also keeps these settings.</string>
-    <string name="l_547">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_548">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_542">With fading page turns, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
+    <string name="l_543">Fade on Swipe</string>
+    <string name="l_544">With Fade on Swipe, the pages don\'t move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.</string>
+    <string name="l_545">Settings Backup</string>
+    <string name="l_546">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_547">Android\'s own backup also keeps these settings.</string>
+    <string name="l_548">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_549">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

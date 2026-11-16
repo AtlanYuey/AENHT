@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.fadeEdges
 import com.atlanyuey.aenht.ui.components.prompt
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.shortLabel
@@ -498,12 +499,13 @@ class HomeScreen : Screen(), TabRoot {
                         fullLine("pinned") {
                             if (pinned.size == 2 && com.atlanyuey.aenht.ui.components.isWidePage()) {
                                 // Wide (a tablet held sideways): the two rows side by side.
-                                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                                    pinned.forEach { (row, items) ->
-                                        // Each row scrolls inside its own half.
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    pinned.forEachIndexed { i, (row, items) ->
+                                        // Each row scrolls inside its own half, the cards it cuts
+                                        // off fading out where the halves meet.
                                         Column(Modifier.weight(1f).clipToBounds()) {
                                             FeedTitle(tr(row.title), null)
-                                            PopularRow(items)
+                                            Box(Modifier.fadeEdges(start = i == 1, end = i == 0, length = 36.dp)) { PopularRow(items) }
                                         }
                                     }
                                 }

@@ -541,6 +541,7 @@ T = [
     "Le site limite les requêtes. Reprise dans %lld s.",
     "Le fichier du serveur a été écrit par une version plus récente d’AENHT. Mettez l’app à jour pour synchroniser.",
     "Tourner une page à la fois",
-    "Le fondu suit le doigt",
-    "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite. Avec « Le fondu suit le doigt », les pages restent en place pendant le balayage et la suivante se dévoile à partir du doigt ; en relâchant, la page tourne ou revient selon la distance et la vitesse du balayage.",
+    "Avec le fondu, les pages ne glissent pas : la suivante apparaît sur place, plus reposant quand on tourne vite.",
+    "Fondu au balayage",
+    "Avec « Fondu au balayage », les pages ne suivent pas le doigt : un balayage passe à la page suivante ou précédente, et la nouvelle apparaît en fondu qui avance dans le sens du geste.",
 ]

@@ -542,11 +542,12 @@
     <string name="l_539">Il sito limita le richieste. Si riprende tra %d s.</string>
     <string name="l_540">Il file sul server è stato scritto da una versione più recente di AENHT. Aggiorna l’app per sincronizzare.</string>
     <string name="l_541">Sfoglia una pagina alla volta</string>
-    <string name="l_542">La dissolvenza segue il dito</string>
-    <string name="l_543">Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta. Con «La dissolvenza segue il dito», scorrendo le pagine restano ferme e la successiva si scopre a partire dal dito; al rilascio si volta pagina o si torna indietro in base a quanto e quanto velocemente hai scorso.</string>
-    <string name="l_544">Backup impostazioni</string>
-    <string name="l_545">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_546">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_547">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_548">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_542">Con la dissolvenza le pagine non scorrono: la successiva appare sul posto, più riposante quando si sfoglia in fretta.</string>
+    <string name="l_543">Dissolvenza allo scorrimento</string>
+    <string name="l_544">Con «Dissolvenza allo scorrimento» le pagine non seguono il dito: scorrendo si passa alla pagina successiva o precedente, e la nuova appare in dissolvenza nella direzione del gesto.</string>
+    <string name="l_545">Backup impostazioni</string>
+    <string name="l_546">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_547">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_548">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_549">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

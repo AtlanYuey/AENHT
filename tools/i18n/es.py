@@ -541,6 +541,7 @@ T = [
     "El sitio limita las solicitudes. Se continuará en %lld s.",
     "El archivo del servidor fue escrito por una versión más reciente de AENHT. Actualiza la app para sincronizar.",
     "Pasar de una en una página",
-    "El fundido sigue el dedo",
-    "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido. Con «El fundido sigue el dedo», al deslizar las páginas no se mueven y la siguiente se descubre desde donde está el dedo; al soltar, pasa la página o vuelve atrás según cuánto y con qué rapidez deslizaste.",
+    "Con el fundido, las páginas no se deslizan: la siguiente aparece en el mismo sitio, más cómodo al pasar rápido.",
+    "Fundido al deslizar",
+    "Con «Fundido al deslizar», las páginas no se mueven con el dedo: al deslizar se pasa a la página siguiente o anterior, y la nueva aparece con un fundido que avanza en la dirección del gesto.",
 ]
