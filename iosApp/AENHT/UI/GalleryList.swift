@@ -158,7 +158,8 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
     private var refresh: (() async -> Void)?
     private var onScroll: ((CGFloat, CGFloat) -> Void)?
     private var hidesBars = true
-    private var tab: AppTab?
+    /// The tab whose first page this is (UIViewController's own `tab` is UIKit's).
+    private var appTab: AppTab?
     private var tabTapEnabled = true
     private var lastTabTap: TabTap?
 
@@ -220,7 +221,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         onItemAppear = list.onItemAppear
         onScroll = list.onScroll
         hidesBars = list.hidesBars
-        tab = list.tab
+        appTab = list.tab
         tabTapEnabled = list.tabTapEnabled
         setRefresh(list.refresh)
 
@@ -231,7 +232,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         claimScrollEdges(always: false)
 
         if let tabTap {
-            if let last = lastTabTap, last != tabTap, tabTap.tab == tab { tabTapped() }
+            if let last = lastTabTap, last != tabTap, tabTap.tab == appTab { tabTapped() }
             lastTabTap = tabTap
         }
     }
