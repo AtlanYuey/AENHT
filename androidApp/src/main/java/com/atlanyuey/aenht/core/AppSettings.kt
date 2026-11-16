@@ -760,7 +760,8 @@ object AppSettings {
                 "downloadsSite" -> string?.let { downloadsSite = SiteChoice.of(it, downloadsSite) }
                 "searchSite" -> string?.let { searchSite = SiteChoice.of(it, searchSite) }
                 "searchBothSites" -> bool?.let { searchBothSites = it }
-                "filterRules" -> string?.let { filterRules = it }
+                // Imported or synced rules: loaded lists filter again.
+                "filterRules" -> string?.let { if (it != filterRules) { filterRules = it; Filters.changed() } }
                 "llmServices" -> string?.let { llmServices = it }
                 "volumeKeyTurns" -> bool?.let { volumeKeyTurns = it }
                 "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
@@ -788,7 +789,7 @@ object AppSettings {
                 "downloadInterval" -> number?.let { downloadInterval = it.toDouble().coerceIn(0.0, 5.0) }
                 "ehOriginalImages" -> bool?.let { ehOriginalImages = it }
                 "backgroundPrivacy" -> string?.let { backgroundPrivacy = BackgroundPrivacy.of(it) }
-                "useNhBlacklist" -> bool?.let { useNhBlacklist = it }
+                "useNhBlacklist" -> bool?.let { if (it != useNhBlacklist) { useNhBlacklist = it; Filters.changed() } }
                 "favoritesAllFolders" -> string?.let { favoritesAllFolders = it.split(",").mapNotNull { v -> v.toIntOrNull() }.toSet() }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }

@@ -704,7 +704,11 @@ final class AppSettings {
         case "downloadsSite": set(\.downloadsSite, string.flatMap(SiteChoice.init(rawValue:)))
         case "searchSite": set(\.searchSite, string.flatMap(SiteChoice.init(rawValue:)))
         case "searchBothSites": set(\.searchBothSites, number?.boolValue)
-        case "filterRules": set(\.filterRules, string)
+        case "filterRules":
+            // Imported or synced rules: loaded lists filter again.
+            let before = filterRules
+            set(\.filterRules, string)
+            if filterRules != before { Task { @MainActor in Filters.shared.changed() } }
         case "llmServices": set(\.llmServices, string)
         case "readerBrightness": set(\.readerBrightness, number.map { min(max($0.doubleValue, 0.2), 1) })
         case "readerGrayscale": set(\.readerGrayscale, number?.boolValue)
@@ -731,7 +735,10 @@ final class AppSettings {
         case "downloadInterval": set(\.downloadInterval, number.map { min(max($0.doubleValue, 0), 5) })
         case "ehOriginalImages": set(\.ehOriginalImages, number?.boolValue)
         case "backgroundPrivacy": set(\.backgroundPrivacy, string.flatMap(BackgroundPrivacy.init(rawValue:)))
-        case "useNhBlacklist": set(\.useNhBlacklist, number?.boolValue)
+        case "useNhBlacklist":
+            let before = useNhBlacklist
+            set(\.useNhBlacklist, number?.boolValue)
+            if useNhBlacklist != before { Task { @MainActor in Filters.shared.changed() } }
         case "favoritesAllFolders": set(\.favoritesAllFolders, string.map { $0.split(separator: ",").compactMap { Int($0) } })
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break
