@@ -204,7 +204,7 @@ struct EhGalleryView: View {
             // The pages run the full height, blurring out under the bars.
             EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
                         loaded: detail, embedded: true)
-                .softScrollEdges()
+                .paneScrollEdges()
                 .frame(maxWidth: .infinity)
         }
         }

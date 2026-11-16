@@ -80,7 +80,7 @@ extension View {
 /// Soft edges at the top and the bottom of a scrolling pane, under the bars,
 /// like iOS 26's scroll edge effect: the content blurs and fades out there
 /// instead of ending on a line.
-private struct SoftScrollEdges: ViewModifier {
+private struct PaneScrollEdges: ViewModifier {
     func body(content: Content) -> some View {
         content
             .modifier(NoSystemEdgeEffect())
@@ -118,5 +118,5 @@ private struct NoSystemEdgeEffect: ViewModifier {
 
 extension View {
     /// The top and bottom of a scrolling pane blur and fade out under the bars.
-    func softScrollEdges() -> some View { modifier(SoftScrollEdges()) }
+    func paneScrollEdges() -> some View { modifier(PaneScrollEdges()) }
 }

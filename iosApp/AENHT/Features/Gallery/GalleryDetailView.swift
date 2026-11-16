@@ -169,7 +169,7 @@ struct GalleryDetailView: View {
                 }
                 .padding(.bottom, 24)
             }
-            .softScrollEdges()
+            .paneScrollEdges()
             .frame(maxWidth: .infinity)
         }
         }
