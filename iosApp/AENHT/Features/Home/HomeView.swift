@@ -382,10 +382,11 @@ struct PopularRow: View {
     }
 }
 
-/// The site switch: the site's name in the middle of the bar, a menu of the
-/// sites, with room around it to touch (the system's title menu is just the
-/// text, and a touch a little above it scrolls the list to the top). Only
-/// when there is a site to switch to; otherwise just the title.
+/// The site switch: the site's name in the middle of the bar, in a glass
+/// capsule like the buttons at its sides (iOS 26), a menu of the sites, with
+/// room to touch (the system's title menu is just the text, and a touch a
+/// little above it scrolls the list to the top). Only when there is a site
+/// to switch to; otherwise just the title.
 private struct SiteTitleMenu: ViewModifier {
     let sites: [SiteKind]
     let current: SiteKind
@@ -393,15 +394,8 @@ private struct SiteTitleMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         if sites.count > 1 {
-            if #available(iOS 26.0, *) {
-                content.toolbar {
-                    ToolbarItem(placement: .principal) { menu }
-                        .sharedBackgroundVisibility(.hidden)
-                }
-            } else {
-                content.toolbar {
-                    ToolbarItem(placement: .principal) { menu }
-                }
+            content.toolbar {
+                ToolbarItem(placement: .principal) { menu }
             }
         } else {
             content
@@ -422,8 +416,8 @@ private struct SiteTitleMenu: ViewModifier {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 28)
-            .frame(minHeight: 44)
+            .padding(.horizontal, 16)
+            .frame(minWidth: 120, minHeight: 44)
             .contentShape(Rectangle())
         }
         .accessibilityLabel(Text(current.displayName))
