@@ -63,15 +63,40 @@ class UpdateChecker internal constructor(private val http: HttpClient) {
     }
 
     companion object {
-        /** "v1.2.0" is newer than "1.1.9". */
+        /** Compare numeric versions and SemVer prereleases; build metadata has no precedence. */
         fun isNewer(tag: String, current: String): Boolean {
-            fun parts(v: String) = v.trim().removePrefix("v").split('.', '-').mapNotNull { it.toIntOrNull() }
-            val a = parts(tag)
-            val b = parts(current)
-            for (i in 0 until maxOf(a.size, b.size)) {
-                val x = a.getOrElse(i) { 0 }
-                val y = b.getOrElse(i) { 0 }
-                if (x != y) return x > y
+            data class Version(val core: List<Long>, val pre: List<String>?)
+            fun parse(value: String): Version? {
+                val clean = value.trim().removePrefix("v").substringBefore('+')
+                val pieces = clean.split('-', limit = 2)
+                val core = pieces[0].split('.')
+                if (core.size !in 1..3 || core.any { it.isEmpty() || it.any { c -> c !in '0'..'9' } }) return null
+                val numbers = core.map { it.toLongOrNull() ?: return null }
+                val pre = pieces.getOrNull(1)?.split('.')
+                if (pre != null && pre.any { it.isEmpty() || it.any { c -> c !in '0'..'9' && c !in 'A'..'Z' && c !in 'a'..'z' && c != '-' } }) return null
+                return Version(numbers, pre)
+            }
+            val a = parse(tag) ?: return false
+            val b = parse(current) ?: return false
+            for (i in 0..2) {
+                val comparison = a.core.getOrElse(i) { 0 }.compareTo(b.core.getOrElse(i) { 0 })
+                if (comparison != 0) return comparison > 0
+            }
+            if (a.pre == null || b.pre == null) return a.pre == null && b.pre != null
+            for (i in 0 until maxOf(a.pre.size, b.pre.size)) {
+                val x = a.pre.getOrNull(i) ?: return false
+                val y = b.pre.getOrNull(i) ?: return true
+                if (x == y) continue
+                val xn = x.all { it in '0'..'9' }
+                val yn = y.all { it in '0'..'9' }
+                val comparison = if (xn && yn) {
+                    val xx = x.trimStart('0').ifEmpty { "0" }
+                    val yy = y.trimStart('0').ifEmpty { "0" }
+                    xx.length.compareTo(yy.length).takeIf { it != 0 } ?: xx.compareTo(yy)
+                } else if (xn != yn) {
+                    if (xn) -1 else 1
+                } else x.compareTo(y)
+                if (comparison != 0) return comparison > 0
             }
             return false
         }

@@ -25,6 +25,7 @@ final class ReaderScrollDriver: NSObject {
     private weak var scrollView: UIScrollView?
     private var anchors: [Int: Anchor] = [:]
     private var images: [Int: ImageStatus] = [:]
+    private var motion = ReaderScrollMotion()
     private var displayLink: CADisplayLink?
     private var previousTimestamp: CFTimeInterval?
     private var tickTarget: TickTarget?
@@ -86,6 +87,7 @@ final class ReaderScrollDriver: NSObject {
         displayLink = nil
         tickTarget = nil
         previousTimestamp = nil
+        motion.reset()
     }
 
     func disconnect() {
@@ -95,6 +97,7 @@ final class ReaderScrollDriver: NSObject {
     }
 
     func userInteractionStarted() {
+        motion.reset()
         if running, !continueOnDrag { finish(.interaction) }
     }
 
@@ -135,6 +138,7 @@ final class ReaderScrollDriver: NSObject {
         guard running, let scroll = scrollView else { return }
         defer { reportPage() }
         if scroll.isTracking || scroll.isDragging || scroll.isDecelerating {
+            motion.reset()
             if !continueOnDrag, scroll.isDragging || scroll.isDecelerating { finish(.interaction) }
             return
         }
@@ -144,12 +148,14 @@ final class ReaderScrollDriver: NSObject {
         let bottom = scroll.contentOffset.y + scroll.bounds.height - inset.bottom
         let scale = suppliedScale ?? scroll.window?.screen.scale ?? scroll.traitCollection.displayScale
         let rows = frames(in: scroll)
-        guard height > 0, !rows.isEmpty else { return }
-        var distance = ReaderScrollMotion.distance(viewport: height, secondsPerScreen: secondsPerScreen, elapsed: elapsed)
+        guard height > 0, !rows.isEmpty else { motion.reset(); return }
+        var distance = motion.distance(viewport: height, secondsPerScreen: secondsPerScreen, elapsed: elapsed)
         for row in rows where row.rect.maxY > top && row.rect.minY <= bottom + distance {
             if case .failed = images[row.index] { finish(.failed(row.index)); return }
             if !ready(row.index, rect: row.rect) {
-                distance = min(distance, max(0, row.rect.minY - bottom))
+                let limited = min(distance, max(0, row.rect.minY - bottom))
+                if limited < distance { motion.limit(to: limited) }
+                distance = limited
             }
         }
         if let last = rows.first(where: { $0.index == lastPage }), ready(last.index, rect: last.rect),
@@ -161,11 +167,13 @@ final class ReaderScrollDriver: NSObject {
         let maximum = max(-inset.top, scroll.contentSize.height - scroll.bounds.height + inset.bottom)
         let next = min(maximum, actual + distance)
         // Lazy layout may correct content size/offset. Never fight it by writing an old absolute target.
-        guard distance > 0, next > actual else { return }
+        guard distance > 0 else { motion.moved(by: 0, scale: scale); return }
+        guard next > actual else { motion.reset(); return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: next), animated: false)
         CATransaction.commit()
+        motion.moved(by: scroll.contentOffset.y - actual, scale: scale)
     }
 
     private func displayFrame(_ link: CADisplayLink) {

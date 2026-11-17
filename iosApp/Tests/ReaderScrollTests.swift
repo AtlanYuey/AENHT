@@ -65,35 +65,45 @@ final class ReaderScrollTests: XCTestCase {
 
     func testFastMotionHasTheSameSpeedAt60And120Hz() {
         for hz in [60, 120] {
+            var motion = ReaderScrollMotion()
             var total: CGFloat = 0
-            for _ in 0..<hz { total += ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 1.0 / Double(hz)) }
+            for _ in 0..<hz { total += motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 1.0 / Double(hz)) }
             XCTAssertEqual(total, 800, accuracy: 0.5)
         }
     }
 
     func testSlowMotionRetainsSubpixelsAt120Hz() {
+        var motion = ReaderScrollMotion()
         var total: CGFloat = 0
-        for _ in 0..<3600 { total += ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 30, elapsed: 1.0 / 120) }
+        for _ in 0..<3600 { total += motion.distance(viewport: 800, secondsPerScreen: 30, elapsed: 1.0 / 120) }
         XCTAssertEqual(total, 800, accuracy: 1.0 / 3)
     }
 
     func testAStalledFrameDoesNotSkipSecondsOfUnreadContent() {
-        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 5), 40)
-        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: -1), 0)
-        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: .nan, elapsed: 0.016), 0)
+        var motion = ReaderScrollMotion()
+        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 5), 40)
+        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: -1), 0)
+        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: .nan, elapsed: 0.016), 0)
     }
 
-    func testThreeSecondsUsesEvenNativeStepsInsteadOfAlternatingPixelSteps() {
+    func testThreeSecondsKeepsNativePixelRoundingErrorBoundedInsteadOfLosingDistance() {
         let (driver, scroll, _) = fixture()
         defer { driver.stop() }
         driver.secondsPerScreen = 3
         driver.start()
-        let expected: CGFloat = 800 / 3 / 60
-        for _ in 0..<60 {
-            let before = scroll.contentOffset.y
-            driver.advance(elapsed: 1.0 / 60, scale: 2)
-            XCTAssertEqual(scroll.contentOffset.y - before, expected, accuracy: 0.000001)
+        let scale = max(1, scroll.traitCollection.displayScale)
+        let perFrame: CGFloat = 800 / 3 / 60
+        for frame in 1...60 {
+            driver.advance(elapsed: 1.0 / 60, scale: scale)
+            XCTAssertEqual(scroll.contentOffset.y, perFrame * CGFloat(frame), accuracy: 1 / scale + 0.000001)
         }
+    }
+
+    func testLayoutCorrectionsDoNotBecomeRoundingCompensation() {
+        var motion = ReaderScrollMotion()
+        let distance = motion.distance(viewport: 800, secondsPerScreen: 3, elapsed: 1.0 / 60)
+        motion.moved(by: distance + 100, scale: 3)
+        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: 3, elapsed: 1.0 / 60), distance)
     }
 
     func testPageProgressFollowsAutomaticMotionManualDragAndStoppedScrolling() {

@@ -829,10 +829,7 @@ struct GeneralSettingsView: View {
 
 struct AboutView: View {
     private var version: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "-"
-        let build = info?["CFBundleVersion"] as? String ?? "-"
-        return "\(short) (\(build))"
+        AppVersion.display
     }
 
     @State private var egg = AboutEgg()
@@ -1087,9 +1084,8 @@ struct DownloadSettingsView: View {
 @MainActor
 enum DiagnosticReport {
     static func text() -> String {
-        let info = Bundle.main.infoDictionary
         let settings = AppSettings.shared
-        var header = "AENHT \(info?["CFBundleShortVersionString"] as? String ?? "?") (\(info?["CFBundleVersion"] as? String ?? "?"))\n"
+        var header = "AENHT \(AppVersion.display)\n"
         header += "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion), \(UIDevice.current.model)\n"
         header += "Sites: \(settings.enabledSites.map(\.rawValue).joined(separator: ", "))"
         header += " · nhentai login: \(UserSession.shared.isLoggedIn) · E-Hentai login: \(EhSession.shared.isLoggedIn)"
@@ -1104,7 +1100,7 @@ struct UpdatesView: View {
     @State private var info: UpdateInfo?
     @State private var error: String?
 
-    private var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
+    private var version: String { AppVersion.current }
 
     var body: some View {
         List {

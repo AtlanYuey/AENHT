@@ -21,6 +21,7 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.2.2"
     CURRENT_PROJECT_VERSION: "5"
+    AENHT_PRERELEASE: "beta.1"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
 
@@ -32,6 +33,8 @@ targets:
       - path: AENHT/Features/Reader/ReaderScrollMotion.swift
       - path: AENHT/Features/Reader/ReaderScrollDriver.swift
       - path: Tests/ReaderScrollTests.swift
+      - path: AENHT/Core/AppVersion.swift
+      - path: Tests/AppVersionTests.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.AENHT.ReaderTests
@@ -90,6 +93,7 @@ targets:
         CFBundleName: AENHT
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AENHTPrerelease: $(AENHT_PRERELEASE)
         CFBundleLocalizations: [en, ja, zh-Hans, zh-Hant, ko, es, fr, de, it, pt-BR, ru, vi, th, id]
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false

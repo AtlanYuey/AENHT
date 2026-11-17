@@ -85,7 +85,7 @@ final class NHClient: @unchecked Sendable {
     private let decoder = JSONDecoder()
 
     private init() {
-        AppInfo.shared.version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1"
+        AppInfo.shared.version = AppVersion.current
         api = NhApi(tokens: AuthStore.shared)
     }
 
