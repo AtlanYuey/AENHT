@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.atlanyuey.aenht.shared.reader.ReaderAutoScroll
@@ -382,6 +384,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private fun ReaderBody() {
         val view = LocalView.current
         val context = LocalContext.current
+        val density by rememberUpdatedState(LocalDensity.current.density)
         val mode = AppSettings.readMode
         LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { autoRead = false }
         LaunchedEffect(mode) { autoRead = false }
@@ -538,7 +541,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         fun ready(item: androidx.compose.foundation.lazy.LazyListItemInfo): Boolean {
                             if (pageLoads[item.index] != PageLoad.Ready) return false
                             val ratio = pageRatios[item.index] ?: return false
-                            val expected = (layout.viewportSize.width / ratio).coerceAtMost(50_000f * context.resources.displayMetrics.density)
+                            val expected = (layout.viewportSize.width / ratio).coerceAtMost(50_000f * density)
                             return abs(item.size - expected) <= maxOf(2f, expected * 0.001f)
                         }
                         val failed = approaching.firstOrNull { pageLoads[it.index] == PageLoad.Failed }

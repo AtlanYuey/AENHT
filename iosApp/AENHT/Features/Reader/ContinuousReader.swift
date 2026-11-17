@@ -199,6 +199,7 @@ private final class ContinuousScrollDriver {
         }
         target = min(max(0, geometry.contentHeight - height), max(0, target))
         targetOffset = target
+        if abs(target - geometry.offset) < 0.0001 { return .wait }
         return .scroll(target)
     }
 }
