@@ -252,7 +252,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 numFavorites = offline.numFavorites
                 HistoryStore.record(offline)
             } else if (detail == null) {
-                error = e.localizedMessage
+                error = com.atlanyuey.aenht.core.errorText(e)
             }
         }
         detail?.let { scope.launch { loadVersions(it) } }
@@ -278,7 +278,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 else com.atlanyuey.aenht.core.FavoritesStore.removed(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId))
             } catch (e: Exception) {
                 isFavorited = !target
-                onError(e.localizedMessage ?: "")
+                onError(com.atlanyuey.aenht.core.errorText(e))
             }
             toggling = false
         }
@@ -775,7 +775,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            if (mine == generation) error = e.localizedMessage ?: ""
+            if (mine == generation) error = com.atlanyuey.aenht.core.errorText(e)
         } finally {
             if (mine == generation) pulling = false
         }
@@ -798,7 +798,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (mine == generation) error = e.localizedMessage ?: ""
+                if (mine == generation) error = com.atlanyuey.aenht.core.errorText(e)
             } finally {
                 if (mine == generation) loadingMore = false
             }
@@ -822,7 +822,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                                     comments.add(0, NHClient.postComment(galleryId, text))
                                     draft = ""
                                 } catch (e: Exception) {
-                                    overlays.alert(errorTitle, e.localizedMessage)
+                                    overlays.alert(errorTitle, com.atlanyuey.aenht.core.errorText(e))
                                 }
                                 posting = false
                             }

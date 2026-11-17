@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "感謝這些專案背後的每一個人。它們的授權見「開放原始碼授權」。";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "此 Android 版本無法解碼 AVIF 圖像。這些頁面未標記為已下載。";
 "The logout couldn't be saved. Your account is still signed in." = "無法儲存登出狀態，帳號仍保持登入。";
+"No internet connection." = "沒有網路連線。";
+"The connection timed out. Try again." = "連線逾時，請重試。";
+"Couldn't reach the server. Check your network or proxy." = "無法連線到伺服器，請檢查網路或代理。";
+"Couldn't make a secure connection to the server." = "無法與伺服器建立安全連線。";
+"The connection failed. Try again." = "連線失敗，請重試。";

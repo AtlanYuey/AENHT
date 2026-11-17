@@ -69,7 +69,7 @@ struct MoreView: View {
         } else if page == .downloads {
             NavigationLink(value: DownloadsRoute()) { label() }
         } else {
-            NavigationLink { MorePage.view(for: page, selection: .constant(nil)) } label: { label() }
+            NavigationLink { MorePage.view(for: page, selection: .constant(nil)).pageTint() } label: { label() }
         }
     }
 
@@ -238,7 +238,7 @@ struct DownloadsView: View {
         .barToolbar {
             ToolbarItem(placement: .topBarTrailing) { SiteFilterMenu(site: $site) }
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { DownloadSettingsView() } label: { Label("Download Settings", systemImage: "gearshape") }
+                NavigationLink { DownloadSettingsView().pageTint() } label: { Label("Download Settings", systemImage: "gearshape") }
             }
             if settings.libraryStyle != .cards, !records.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -521,9 +521,9 @@ struct AppearanceSettingsView: View {
                 Picker("History and Downloads", selection: $settings.libraryStyle) {
                     ForEach(LibraryStyle.allCases) { Text($0.title).tag($0) }
                 }
-                NavigationLink {
+                NavigationLink { Group {
                     CardSizeView()
-                } label: {
+                }.pageTint() } label: {
                     LabeledContent("Card Size",
                                    value: "\(settings.columns(isLandscape: false)) / \(settings.columns(isLandscape: true))")
                 }
@@ -756,7 +756,7 @@ struct GeneralSettingsView: View {
         @Bindable var settings = settings
         Form {
             Section("Home") {
-                NavigationLink("Pinned Rows") { HomeRowsSettingsView() }
+                NavigationLink("Pinned Rows") { HomeRowsSettingsView().pageTint() }
                 Picker("Language", selection: $settings.homeLanguage) {
                     ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
                 }
@@ -859,20 +859,20 @@ struct AboutView: View {
                 }
             }
             Section {
-                NavigationLink("Check for Updates") { UpdatesView() }
+                NavigationLink("Check for Updates") { UpdatesView().pageTint() }
                 Button("Share Diagnostic Log") { ShareSheet.present([DiagnosticReport.text()]) }
             } footer: {
                 Text("The diagnostic log lists what went wrong in this session (failed requests, translations, sync), without tokens, cookies or keys.")
             }
             Section {
-                NavigationLink {
+                NavigationLink { Group {
                     ReferencesView()
-                } label: {
+                }.pageTint() } label: {
                     Text("References")
                 }
-                NavigationLink {
+                NavigationLink { Group {
                     AcknowledgementsView()
-                } label: {
+                }.pageTint() } label: {
                     Text("Open Source Licenses")
                 }
             }
@@ -981,9 +981,9 @@ struct AcknowledgementsView: View {
             Section {
                 ForEach(items) { item in
                     if let file = item.file {
-                        NavigationLink {
+                        NavigationLink { Group {
                             LicenseTextView(title: item.name, file: file, url: item.url)
-                        } label: {
+                        }.pageTint() } label: {
                             row(item)
                         }
                     } else {
@@ -1147,7 +1147,7 @@ struct UpdatesView: View {
             do {
                 info = try await UpdateChecker().check(currentVersion: version)
             } catch {
-                self.error = error.localizedDescription
+                self.error = ErrorText.of(error)
             }
         }
     }

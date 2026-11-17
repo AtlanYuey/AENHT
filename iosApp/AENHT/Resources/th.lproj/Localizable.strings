@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "ขอบคุณทุกคนที่อยู่เบื้องหลังโปรเจกต์เหล่านี้ สัญญาอนุญาตอยู่ในส่วนสัญญาอนุญาตโอเพนซอร์ส";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Android เวอร์ชันนี้ไม่สามารถถอดรหัสภาพ AVIF ได้ หน้าเหล่านี้จึงยังไม่ถูกทำเครื่องหมายว่าดาวน์โหลดแล้ว";
 "The logout couldn't be saved. Your account is still signed in." = "ไม่สามารถบันทึกการออกจากระบบได้ บัญชีของคุณยังคงเข้าสู่ระบบอยู่";
+"No internet connection." = "ไม่มีการเชื่อมต่ออินเทอร์เน็ต";
+"The connection timed out. Try again." = "การเชื่อมต่อหมดเวลา ลองอีกครั้ง";
+"Couldn't reach the server. Check your network or proxy." = "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบเครือข่ายหรือพร็อกซี";
+"Couldn't make a secure connection to the server." = "สร้างการเชื่อมต่อที่ปลอดภัยกับเซิร์ฟเวอร์ไม่ได้";
+"The connection failed. Try again." = "การเชื่อมต่อล้มเหลว ลองอีกครั้ง";

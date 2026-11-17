@@ -54,7 +54,14 @@ struct LoginWebView: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = true
         configuration.websiteDataStore.httpCookieStore.add(context.coordinator)
         context.coordinator.cookieStore = configuration.websiteDataStore.httpCookieStore
-        webView.load(URLRequest(url: NHHost.site.appendingPathComponent("login/")))
+        // The login there was (logged out, or the account being added to) isn't
+        // picked up again: the page asks for an account.
+        let coordinator = context.coordinator
+        Task { @MainActor in
+            await WebLogins.forget(WebLogins.nhentai)
+            coordinator.ready = true
+            webView.load(URLRequest(url: NHHost.site.appendingPathComponent("login/")))
+        }
         return webView
     }
 
@@ -67,6 +74,8 @@ struct LoginWebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKHTTPCookieStoreObserver {
         var parent: LoginWebView
         weak var cookieStore: WKHTTPCookieStore?
+        /// The old login cookies are gone: cookies seen from now on are the new login's.
+        var ready = false
         private var done = false
 
         init(_ parent: LoginWebView) {
@@ -91,6 +100,7 @@ struct LoginWebView: UIViewRepresentable {
         }
 
         private func check(_ store: WKHTTPCookieStore) {
+            guard ready else { return }
             store.getAllCookies { [weak self] cookies in
                 guard let self, !self.done else { return }
                 let site = cookies.filter { $0.domain.hasSuffix("nhentai.net") }
@@ -102,6 +112,24 @@ struct LoginWebView: UIViewRepresentable {
                 self.parent.onToken(access.removingPercentEncoding ?? access,
                                     refresh?.removingPercentEncoding ?? refresh)
             }
+        }
+    }
+}
+
+/// The login cookies the web views keep for a site. The login pages start
+/// without them (else the site signs straight back in to the account there
+/// was), and a logout removes them. Cloudflare's own cookies stay.
+enum WebLogins {
+    static let nhentai = ["nhentai.net"]
+    static let ehentai = ["e-hentai.org", "exhentai.org"]
+
+    @MainActor
+    static func forget(_ domains: [String]) async {
+        let store = WKWebsiteDataStore.default().httpCookieStore
+        for cookie in await store.allCookies()
+        where domains.contains(where: { cookie.domain.hasSuffix($0) })
+            && !cookie.name.hasPrefix("cf_") && !cookie.name.hasPrefix("__cf") {
+            await store.deleteCookie(cookie)
         }
     }
 }

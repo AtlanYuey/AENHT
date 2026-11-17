@@ -81,7 +81,7 @@ object WebDavService {
         e is WebDavException && e.unauthorized -> L10n.string("The server refused the user name or password.")
         e is WebDavException && e.newerVersion -> L10n.string("The file on the server was written by a newer version of AENHT. Update the app to sync.")
         e is WebDavException && e.conflict -> L10n.string("Another device is syncing at the same time. Nothing was overwritten; try again in a moment.")
-        else -> e.message ?: L10n.string("Couldn't connect to the server.")
+        else -> errorText(e)
     }
 
     /** Checks the address and sign-in; null when they work, else what went wrong. */

@@ -559,9 +559,14 @@
     <string name="l_556">Thanks to everyone behind these projects. Their licenses are under Open Source Licenses.</string>
     <string name="l_557">This Android version can\'t decode AVIF images. These pages were not marked as downloaded.</string>
     <string name="l_558">The logout couldn\'t be saved. Your account is still signed in.</string>
-    <string name="l_559">Settings Backup</string>
-    <string name="l_560">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_561">Android\'s own backup also keeps these settings.</string>
-    <string name="l_562">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_563">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_559">No internet connection.</string>
+    <string name="l_560">The connection timed out. Try again.</string>
+    <string name="l_561">Couldn\'t reach the server. Check your network or proxy.</string>
+    <string name="l_562">Couldn\'t make a secure connection to the server.</string>
+    <string name="l_563">The connection failed. Try again.</string>
+    <string name="l_564">Settings Backup</string>
+    <string name="l_565">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_566">Android\'s own backup also keeps these settings.</string>
+    <string name="l_567">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_568">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

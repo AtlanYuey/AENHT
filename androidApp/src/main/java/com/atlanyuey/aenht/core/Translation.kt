@@ -63,7 +63,7 @@ object TranslationService {
     suspend fun models(baseUrl: String, key: String): List<String> = try {
         translator.models(baseUrl, key)
     } catch (e: TranslationException) {
-        throw NHException(e.message ?: L10n.string("Couldn't connect to the server."))
+        throw NHException(e.message?.let { L10n.string(it) } ?: L10n.string("Couldn't connect to the server."))
     }
 
     suspend fun publishedPrice(baseUrl: String, key: String, model: String): List<Double>? = translator.publishedPrice(baseUrl, key, model)
@@ -79,7 +79,7 @@ object TranslationService {
         return try {
             translator.test(service, key, text, target).also { saveUsage() }
         } catch (e: TranslationException) {
-            throw NHException(e.message ?: L10n.string("Couldn't translate."))
+            throw NHException(errorText(e))
         }
     }
 
@@ -144,7 +144,7 @@ object TranslationService {
         return try {
             translator.translate(text, target, kind, list, keys, DeviceTranslator.takeIf { AppSettings.deviceTranslation }).also { cache[key] = it }
         } catch (e: Exception) {
-            throw NHException(e.message ?: L10n.string("Couldn't translate."))
+            throw NHException(errorText(e))
         } finally {
             saveUsage()
         }

@@ -41,7 +41,7 @@ final class GalleryModel {
                 isFavorited = offline.isFavorited ?? false
                 numFavorites = offline.numFavorites
             } else if detail == nil {
-                self.error = error.localizedDescription
+                self.error = ErrorText.of(error)
             }
         }
         comments = (try? await NHClient.shared.comments(id)) ?? comments
@@ -84,7 +84,7 @@ final class GalleryModel {
             }
         } catch {
             isFavorited = !target
-            actionError = error.localizedDescription
+            actionError = ErrorText.of(error)
         }
     }
 }
@@ -782,9 +782,9 @@ private struct CommentsPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SectionHeader(title: "Comments") {
-                NavigationLink {
+                NavigationLink { Group {
                     CommentsView(galleryID: detail.id, initial: comments)
-                } label: {
+                }.pageTint() } label: {
                     Text(comments.isEmpty ? "Add a comment…" : ("See All (\(comments.count))" as LocalizedStringKey))
                 }
             }

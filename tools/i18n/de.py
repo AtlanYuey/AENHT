@@ -556,7 +556,11 @@ T = [
     "Die Tag-Daten von nhentai",
     "Chinesische Übersetzungen der Tags",
     "Danke an alle hinter diesen Projekten. Ihre Lizenzen stehen unter Open-Source-Lizenzen.",
+    "Diese Android-Version kann AVIF-Bilder nicht dekodieren. Diese Seiten wurden nicht als heruntergeladen markiert.",
+    "Die Abmeldung konnte nicht gespeichert werden. Ihr Konto ist weiterhin angemeldet.",
+    "Keine Internetverbindung.",
+    "Zeitüberschreitung der Verbindung. Versuche es erneut.",
+    "Server nicht erreichbar. Prüfe dein Netzwerk oder deinen Proxy.",
+    "Keine sichere Verbindung zum Server möglich.",
+    "Verbindung fehlgeschlagen. Versuche es erneut.",
 ]
-
-# Download verification and atomic logout feedback.
-T += ["Diese Android-Version kann AVIF-Bilder nicht dekodieren. Diese Seiten wurden nicht als heruntergeladen markiert.", "Die Abmeldung konnte nicht gespeichert werden. Ihr Konto ist weiterhin angemeldet."]

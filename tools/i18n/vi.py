@@ -556,7 +556,11 @@ T = [
     "Dữ liệu thẻ của nhentai",
     "Bản dịch tiếng Trung của thẻ",
     "Cảm ơn tất cả những người đứng sau các dự án này. Giấy phép của chúng nằm trong Giấy phép mã nguồn mở.",
+    "Phiên bản Android này không thể giải mã ảnh AVIF. Các trang này chưa được đánh dấu là đã tải xuống.",
+    "Không thể lưu trạng thái đăng xuất. Tài khoản của bạn vẫn đang đăng nhập.",
+    "Không có kết nối Internet.",
+    "Kết nối đã hết thời gian. Hãy thử lại.",
+    "Không thể kết nối máy chủ. Hãy kiểm tra mạng hoặc proxy.",
+    "Không thể tạo kết nối bảo mật tới máy chủ.",
+    "Kết nối thất bại. Hãy thử lại.",
 ]
-
-# Download verification and atomic logout feedback.
-T += ["Phiên bản Android này không thể giải mã ảnh AVIF. Các trang này chưa được đánh dấu là đã tải xuống.", "Không thể lưu trạng thái đăng xuất. Tài khoản của bạn vẫn đang đăng nhập."]

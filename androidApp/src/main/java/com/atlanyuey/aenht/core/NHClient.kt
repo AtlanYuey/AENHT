@@ -76,7 +76,7 @@ object NHClient {
     }
 
     private fun localized(e: NhException): String = when (e) {
-        is NhException.Network -> e.message ?: L10n.string("Unexpected response from the server")
+        is NhException.Network -> L10n.string(e.message ?: com.atlanyuey.aenht.shared.net.NetFailure.OTHER)
         is NhException.Http -> e.serverMessage ?: L10n.string("Request failed (%lld)", e.code)
         is NhException.InvalidResponse -> L10n.string("Unexpected response from the server")
         is NhException.NotLoggedIn -> L10n.string("Please log in first")
@@ -334,6 +334,7 @@ object Session {
         generation++
         AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.NHENTAI)
         Auth.clear()
+        WebLogins.forget(WebLogins.NHENTAI)
         user = null
         isLoggedIn = false
         needsVerification = false

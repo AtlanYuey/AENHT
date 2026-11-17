@@ -81,7 +81,7 @@ struct SyncSettingsView: View {
             AppSettings.shared.apply(values, fromSync: false)
             message = String(localized: "The settings were imported.")
         } catch {
-            message = error.localizedDescription
+            message = ErrorText.of(error)
         }
     }
 }

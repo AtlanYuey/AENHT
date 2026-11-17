@@ -199,7 +199,7 @@ struct HomeView: View {
                 openRoute?(.nh(GalleryRoute(id: id, preview: nil)))
             } catch {
                 guard !Task.isCancelled, randomRequest == request, settings.currentSite == .nhentai else { return }
-                randomError = error.localizedDescription
+                randomError = ErrorText.of(error)
             }
         }
     }

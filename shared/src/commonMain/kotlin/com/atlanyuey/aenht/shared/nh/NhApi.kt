@@ -188,7 +188,7 @@ class NhApi internal constructor(
             throw e
         } catch (e: Exception) {
             com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "${method.value} $path: ${e.message ?: e::class.simpleName}")
-            throw NhException.Network(e.message ?: e.toString())
+            throw NhException.Network(com.atlanyuey.aenht.shared.net.NetFailure.describe(e))
         }
         if (code !in 200..299) com.atlanyuey.aenht.shared.app.Diagnostics.log("nhentai", "${method.value} $path → $code ${message(text) ?: ""}")
 

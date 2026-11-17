@@ -42,7 +42,7 @@ final class EhGalleryModel {
                 context.recordHistory(item: card, title: loaded.title, numPages: Int(loaded.pages))
             }
         } catch {
-            if detail == nil { self.error = error.localizedDescription }
+            if detail == nil { self.error = ErrorText.of(error) }
         }
         await EhSession.shared.loadFolders()
         await loadRelated()
@@ -98,7 +98,7 @@ final class EhGalleryModel {
             return nil
         } catch {
             folder = before
-            return error.localizedDescription
+            return ErrorText.of(error)
         }
     }
 
@@ -108,7 +108,7 @@ final class EhGalleryModel {
             rating = try await EhService.shared.rate(detail, stars: stars)
             return nil
         } catch {
-            return error.localizedDescription
+            return ErrorText.of(error)
         }
     }
 }
@@ -219,22 +219,22 @@ struct EhGalleryView: View {
                     }
                     if let detail = model.detail, EhSession.shared.isLoggedIn {
                         if detail.archiverKey != nil {
-                            NavigationLink {
+                            NavigationLink { Group {
                                 EhArchiveView(detail: detail)
-                            } label: {
+                            }.pageTint() } label: {
                                 Label("Download Archive", systemImage: "doc.zipper")
                             }
                         }
-                        NavigationLink {
+                        NavigationLink { Group {
                             EhTagVoteView(detail: detail)
-                        } label: {
+                        }.pageTint() } label: {
                             Label("Vote on Tags", systemImage: "tag")
                         }
                     }
                     if let detail = model.detail, detail.torrentCount > 0 {
-                        NavigationLink {
+                        NavigationLink { Group {
                             EhTorrentsView(gid: model.gid, token: model.token)
-                        } label: {
+                        }.pageTint() } label: {
                             Label("Torrents (\(Int(detail.torrentCount)))", systemImage: "arrow.down.circle")
                         }
                     }
@@ -246,7 +246,7 @@ struct EhGalleryView: View {
                                     note = try await EhService.shared.favoriteNote(gid: model.gid, token: model.token)
                                     editingNote = true
                                 } catch {
-                                    alertMessage = error.localizedDescription
+                                    alertMessage = ErrorText.of(error)
                                 }
                             }
                         }
@@ -274,7 +274,7 @@ struct EhGalleryView: View {
                     do {
                         try await EhService.shared.setFavorite(gid: model.gid, token: model.token, folder: folder, note: String(note.prefix(200)))
                     } catch {
-                        alertMessage = error.localizedDescription
+                        alertMessage = ErrorText.of(error)
                     }
                 }
             }
@@ -537,9 +537,9 @@ struct EhGalleryView: View {
         VStack(alignment: .leading, spacing: 0) {
             SectionHeader(title: "Comments") {
                 if !detail.comments.isEmpty || EhSession.shared.isLoggedIn {
-                    NavigationLink {
+                    NavigationLink { Group {
                         EhCommentsView(detail: detail)
-                    } label: {
+                    }.pageTint() } label: {
                         if detail.comments.isEmpty { Text("Add a comment…") } else { Text("See All (\(detail.comments.count))") }
                     }
                 }
@@ -810,7 +810,7 @@ struct EhCommentsView: View {
                                         text: c.text, isUploader: c.isUploader)
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
     }
 
@@ -824,7 +824,7 @@ struct EhCommentsView: View {
             draft = ""
             composing = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
     }
 }
@@ -871,7 +871,7 @@ struct EhTorrentsView: View {
         .navigationTitle("Torrents")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            do { torrents = try await EhService.shared.torrents(gid: gid, token: token) } catch { self.error = error.localizedDescription }
+            do { torrents = try await EhService.shared.torrents(gid: gid, token: token) } catch { self.error = ErrorText.of(error) }
         }
     }
 }
@@ -924,7 +924,7 @@ struct EhArchiveView: View {
         .navigationTitle("Download Archive")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            do { info = try await EhService.shared.archiveInfo(detail) } catch { self.error = error.localizedDescription }
+            do { info = try await EhService.shared.archiveInfo(detail) } catch { self.error = ErrorText.of(error) }
         }
         .confirmationDialog("Download Archive?", isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
                             titleVisibility: .visible) {
@@ -952,7 +952,7 @@ struct EhArchiveView: View {
             file = target
             ShareSheet.present([target])
         } catch {
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
     }
 }
@@ -1026,7 +1026,7 @@ struct EhTagVoteView: View {
                 voted[mark] = up
             }
         } catch {
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
     }
 }

@@ -61,7 +61,7 @@ fun TranslateLine(
                         try {
                             result = TranslationService.translate(text, kind).also { onResult?.invoke(it) }
                         } catch (e: Exception) {
-                            error = e.localizedMessage
+                            error = com.atlanyuey.aenht.core.errorText(e)
                         }
                         working = false
                     }

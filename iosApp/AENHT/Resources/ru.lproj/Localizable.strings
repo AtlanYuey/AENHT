@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Спасибо всем, кто стоит за этими проектами. Их лицензии — в разделе «Лицензии открытого ПО».";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Эта версия Android не поддерживает декодирование AVIF. Эти страницы не отмечены как загруженные.";
 "The logout couldn't be saved. Your account is still signed in." = "Не удалось сохранить выход из аккаунта. Вы всё ещё вошли в аккаунт.";
+"No internet connection." = "Нет подключения к интернету.";
+"The connection timed out. Try again." = "Время ожидания истекло. Попробуйте ещё раз.";
+"Couldn't reach the server. Check your network or proxy." = "Не удалось связаться с сервером. Проверьте сеть или прокси.";
+"Couldn't make a secure connection to the server." = "Не удалось установить защищённое соединение с сервером.";
+"The connection failed. Try again." = "Не удалось подключиться. Попробуйте ещё раз.";

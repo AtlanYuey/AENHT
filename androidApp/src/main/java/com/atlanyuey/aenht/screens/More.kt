@@ -332,6 +332,8 @@ class LoginScreen : Screen() {
                                 }
                             }
                         }
+                        // The page asks for an account instead of picking up the login there was.
+                        com.atlanyuey.aenht.core.WebLogins.forget(com.atlanyuey.aenht.core.WebLogins.NHENTAI)
                         loadUrl("${NHHost.SITE}/login/")
                     }
                 },
@@ -1169,7 +1171,7 @@ class UpdatesScreen : Screen() {
             try {
                 info = com.atlanyuey.aenht.shared.app.UpdateChecker().check(com.atlanyuey.aenht.BuildConfig.VERSION_NAME)
             } catch (e: Exception) {
-                error = e.localizedMessage ?: e.toString()
+                error = com.atlanyuey.aenht.core.errorText(e)
             }
         }
         GroupedListScreen(tr("Check for Updates")) {

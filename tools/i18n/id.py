@@ -556,7 +556,11 @@ T = [
     "Data tag nhentai",
     "Terjemahan tag ke bahasa Mandarin",
     "Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.",
+    "Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.",
+    "Gagal menyimpan status keluar. Akun Anda masih masuk.",
+    "Tidak ada koneksi internet.",
+    "Koneksi habis waktu. Coba lagi.",
+    "Tidak dapat menjangkau server. Periksa jaringan atau proxy Anda.",
+    "Tidak dapat membuat koneksi aman ke server.",
+    "Koneksi gagal. Coba lagi.",
 ]
-
-# Download verification and atomic logout feedback.
-T += ["Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.", "Gagal menyimpan status keluar. Akun Anda masih masuk."]

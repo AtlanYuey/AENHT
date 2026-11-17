@@ -72,6 +72,13 @@ struct LeavingPageIgnoresTouches: UIViewControllerRepresentable {
 }
 
 extension View {
+    /// A page pushed on a stack: its controls (switches, buttons, links) in the
+    /// accent. Pushed pages take the stack's environment, whose tint is the
+    /// label color for the back button.
+    func pageTint() -> some View {
+        tint(AppSettings.shared.accent.color)
+    }
+
     /// The bar's buttons in the label color (white in Dark Mode, black in
     /// Light), not the accent: the page under the bar keeps the accent.
     func barToolbar<Content: ToolbarContent>(@ToolbarContentBuilder _ content: () -> Content) -> some View {

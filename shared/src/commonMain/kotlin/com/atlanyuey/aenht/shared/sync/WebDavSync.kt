@@ -96,7 +96,7 @@ class WebDavSync internal constructor(private val db: AenhtDatabase, private val
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                throw WebDavException(e.message ?: "Network error")
+                throw WebDavException(com.atlanyuey.aenht.shared.net.NetFailure.describe(e))
             }
         }
 

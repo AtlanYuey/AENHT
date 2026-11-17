@@ -218,7 +218,10 @@ final class EhSession {
         EhService.shared.api.logout()
         AppSettings.shared.useExHentai = false
         refresh()
-        Task { await FavoritesStore.shared.accountChanged(.ehentai) }
+        Task { @MainActor in
+            await WebLogins.forget(WebLogins.ehentai)
+            await FavoritesStore.shared.accountChanged(.ehentai)
+        }
         return true
     }
 
@@ -278,7 +281,8 @@ final class EhService: @unchecked Sendable {
         case "notLoggedIn": String(localized: "Log in to your E-Hentai account first.")
         case "limitReached": String(localized: "The image limit of this account has been reached. Try again later.")
         case "http": String(localized: "Request failed (\(Int(exception.code)))")
-        case "network", "rejected": exception.message ?? String(localized: "Unexpected response from the server")
+        case "network": ErrorText.localized(exception.message ?? NetFailure.shared.OTHER)
+        case "rejected": exception.message ?? String(localized: "Unexpected response from the server")
         default: String(localized: "Unexpected response from the server")
         }
         return EhError.failed(message)

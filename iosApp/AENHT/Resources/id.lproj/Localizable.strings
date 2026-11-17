@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.";
 "The logout couldn't be saved. Your account is still signed in." = "Gagal menyimpan status keluar. Akun Anda masih masuk.";
+"No internet connection." = "Tidak ada koneksi internet.";
+"The connection timed out. Try again." = "Koneksi habis waktu. Coba lagi.";
+"Couldn't reach the server. Check your network or proxy." = "Tidak dapat menjangkau server. Periksa jaringan atau proxy Anda.";
+"Couldn't make a secure connection to the server." = "Tidak dapat membuat koneksi aman ke server.";
+"The connection failed. Try again." = "Koneksi gagal. Coba lagi.";

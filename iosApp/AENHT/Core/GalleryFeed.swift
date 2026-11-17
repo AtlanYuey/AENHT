@@ -86,7 +86,7 @@ final class GalleryFeed {
         } catch is CancellationError {
         } catch {
             guard current == generation else { return }
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
         if current == generation {
             isLoading = false
@@ -112,7 +112,7 @@ final class GalleryFeed {
         } catch is CancellationError {
         } catch {
             guard current == generation else { return }
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
         if current == generation {
             isLoading = false

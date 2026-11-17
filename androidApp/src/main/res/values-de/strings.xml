@@ -559,9 +559,14 @@
     <string name="l_556">Danke an alle hinter diesen Projekten. Ihre Lizenzen stehen unter Open-Source-Lizenzen.</string>
     <string name="l_557">Diese Android-Version kann AVIF-Bilder nicht dekodieren. Diese Seiten wurden nicht als heruntergeladen markiert.</string>
     <string name="l_558">Die Abmeldung konnte nicht gespeichert werden. Ihr Konto ist weiterhin angemeldet.</string>
-    <string name="l_559">Einstellungen sichern</string>
-    <string name="l_560">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_561">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_562">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_563">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_559">Keine Internetverbindung.</string>
+    <string name="l_560">Zeitüberschreitung der Verbindung. Versuche es erneut.</string>
+    <string name="l_561">Server nicht erreichbar. Prüfe dein Netzwerk oder deinen Proxy.</string>
+    <string name="l_562">Keine sichere Verbindung zum Server möglich.</string>
+    <string name="l_563">Verbindung fehlgeschlagen. Versuche es erneut.</string>
+    <string name="l_564">Einstellungen sichern</string>
+    <string name="l_565">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_566">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_567">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_568">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

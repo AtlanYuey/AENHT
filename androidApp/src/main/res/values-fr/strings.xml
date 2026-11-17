@@ -559,9 +559,14 @@
     <string name="l_556">Merci à toutes les personnes derrière ces projets. Leurs licences se trouvent dans Licences open source.</string>
     <string name="l_557">Cette version d’Android ne peut pas décoder les images AVIF. Ces pages ne sont pas marquées comme téléchargées.</string>
     <string name="l_558">La déconnexion n’a pas pu être enregistrée. Votre compte est toujours connecté.</string>
-    <string name="l_559">Sauvegarde des réglages</string>
-    <string name="l_560">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_561">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_562">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_563">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_559">Aucune connexion Internet.</string>
+    <string name="l_560">La connexion a expiré. Réessayez.</string>
+    <string name="l_561">Impossible de joindre le serveur. Vérifiez votre réseau ou votre proxy.</string>
+    <string name="l_562">Impossible d\'établir une connexion sécurisée avec le serveur.</string>
+    <string name="l_563">La connexion a échoué. Réessayez.</string>
+    <string name="l_564">Sauvegarde des réglages</string>
+    <string name="l_565">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_566">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_567">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_568">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

@@ -72,9 +72,9 @@ final class WebDavService {
             if e.unauthorized { return String(localized: "The server refused the user name or password.") }
             if e.newerVersion { return String(localized: "The file on the server was written by a newer version of AENHT. Update the app to sync.") }
             if e.conflict { return String(localized: "Another device is syncing at the same time. Nothing was overwritten; try again in a moment.") }
-            return e.message ?? String(localized: "Couldn't connect to the server.")
+            return ErrorText.of(error)
         }
-        return (kotlin as? KotlinThrowable)?.message ?? error.localizedDescription
+        return ErrorText.of(error)
     }
 
     /// Checks the address and sign-in; nil when they work, else what went wrong.

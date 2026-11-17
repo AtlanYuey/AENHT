@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "Gracias a todas las personas detrás de estos proyectos. Sus licencias están en Licencias de código abierto.";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "Esta versión de Android no puede decodificar imágenes AVIF. Estas páginas no se han marcado como descargadas.";
 "The logout couldn't be saved. Your account is still signed in." = "No se pudo guardar el cierre de sesión. La cuenta sigue conectada.";
+"No internet connection." = "No hay conexión a internet.";
+"The connection timed out. Try again." = "Se agotó el tiempo de conexión. Inténtalo de nuevo.";
+"Couldn't reach the server. Check your network or proxy." = "No se pudo conectar con el servidor. Revisa tu red o proxy.";
+"Couldn't make a secure connection to the server." = "No se pudo establecer una conexión segura con el servidor.";
+"The connection failed. Try again." = "La conexión falló. Inténtalo de nuevo.";

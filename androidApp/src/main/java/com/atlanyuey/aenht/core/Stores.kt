@@ -1032,7 +1032,7 @@ class GalleryFeed(
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (current == generation) error = e.localizedMessage
+                if (current == generation) error = com.atlanyuey.aenht.core.errorText(e)
             }
             if (current == generation) {
                 isLoading = false
@@ -1059,7 +1059,7 @@ class GalleryFeed(
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (current == generation) error = e.localizedMessage
+                if (current == generation) error = com.atlanyuey.aenht.core.errorText(e)
             }
             if (current == generation) isLoading = false
         }

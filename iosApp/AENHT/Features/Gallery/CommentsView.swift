@@ -113,7 +113,7 @@ struct CommentsView: View {
             loadError = nil
         } catch is CancellationError {
         } catch {
-            if mine == generation { loadError = error.localizedDescription }
+            if mine == generation { loadError = ErrorText.of(error) }
         }
     }
 
@@ -134,7 +134,7 @@ struct CommentsView: View {
             loadError = nil
         } catch is CancellationError {
         } catch {
-            if mine == generation { loadError = error.localizedDescription }
+            if mine == generation { loadError = ErrorText.of(error) }
         }
     }
 
@@ -149,7 +149,7 @@ struct CommentsView: View {
             draft = ""
             composing = false
         } catch {
-            self.error = error.localizedDescription
+            self.error = ErrorText.of(error)
         }
     }
 }

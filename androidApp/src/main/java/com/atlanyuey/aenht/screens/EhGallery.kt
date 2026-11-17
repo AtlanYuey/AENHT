@@ -196,7 +196,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 rating = offline.rating
                 HistoryStore.record(offline.summary(preview))
             } else if (detail == null) {
-                error = e.localizedMessage
+                error = com.atlanyuey.aenht.core.errorText(e)
             }
         }
         pulling = false
@@ -219,7 +219,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 if (target != null) card?.let { FavoritesStore.added(it, target) } else FavoritesStore.removed(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token))
             } catch (e: Exception) {
                 folder = before
-                onError(e.localizedMessage ?: "")
+                onError(com.atlanyuey.aenht.core.errorText(e))
             }
             busy = false
         }
@@ -235,7 +235,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                overlays.alert(labels[5], e.localizedMessage)
+                overlays.alert(labels[5], com.atlanyuey.aenht.core.errorText(e))
                 return@launch
             }
             overlays.prompt(labels[2], initial = note, confirm = labels[3], cancel = labels[4], singleLine = false) { text ->
@@ -243,7 +243,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     try {
                         EhClient.setFavorite(gid, token, current, text.take(200))
                     } catch (e: Exception) {
-                        overlays.alert(labels[5], e.localizedMessage)
+                        overlays.alert(labels[5], com.atlanyuey.aenht.core.errorText(e))
                     }
                 }
             }
@@ -256,7 +256,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             try {
                 rating = EhClient.rate(d, stars)
             } catch (e: Exception) {
-                onError(e.localizedMessage ?: "")
+                onError(com.atlanyuey.aenht.core.errorText(e))
             }
         }
     }
@@ -689,7 +689,7 @@ class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
                     val i = comments.indexOfFirst { it.id == comment.id }
                     if (i >= 0 && score != null) comments[i] = comments[i].copy(score = score)
                 } catch (e: Exception) {
-                    overlays.alert(l.voteError, e.localizedMessage)
+                    overlays.alert(l.voteError, com.atlanyuey.aenht.core.errorText(e))
                 }
             }
             Unit
@@ -734,7 +734,7 @@ class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
                                     comments.addAll(updated)
                                     draft = ""
                                 } catch (e: Exception) {
-                                    overlays.alert(errorTitle, e.localizedMessage)
+                                    overlays.alert(errorTitle, com.atlanyuey.aenht.core.errorText(e))
                                 }
                                 posting = false
                             }
@@ -818,7 +818,7 @@ class EhArchiveScreen(private val detail: EhGalleryDetail) : Screen() {
         val failed = tr("Couldn't Download")
         val saved = tr("Saved to Downloads › AENHT.")
         LaunchedEffect(Unit) {
-            try { info = EhClient.archiveInfo(detail) } catch (e: Exception) { error = e.localizedMessage }
+            try { info = EhClient.archiveInfo(detail) } catch (e: Exception) { error = com.atlanyuey.aenht.core.errorText(e) }
         }
         GroupedListScreen(tr("Download Archive")) {
             val i = info
@@ -842,7 +842,7 @@ class EhArchiveScreen(private val detail: EhGalleryDetail) : Screen() {
                                                     download(context, EhClient.requestArchive(detail, option))
                                                 } catch (e: Exception) {
                                                     progress = null
-                                                    overlays.alert(failed, e.localizedMessage)
+                                                    overlays.alert(failed, com.atlanyuey.aenht.core.errorText(e))
                                                 }
                                             }
                                         },
@@ -897,7 +897,7 @@ class EhTagVoteScreen(private val detail: EhGalleryDetail) : Screen() {
                 try {
                     EhClient.voteTags(detail, tags, up)?.let { overlays.alert(failed, it) } ?: mark?.let { voted[it] = up }
                 } catch (e: Exception) {
-                    overlays.alert(failed, e.localizedMessage)
+                    overlays.alert(failed, com.atlanyuey.aenht.core.errorText(e))
                 }
             }
         }
@@ -934,7 +934,7 @@ class EhTorrentsScreen(private val gid: Long, private val token: String) : Scree
     override fun Content() {
         val context = LocalContext.current
         LaunchedEffect(Unit) {
-            try { torrents = EhClient.torrents(gid, token) } catch (e: Exception) { error = e.localizedMessage }
+            try { torrents = EhClient.torrents(gid, token) } catch (e: Exception) { error = com.atlanyuey.aenht.core.errorText(e) }
         }
         GroupedListScreen(tr("Torrents")) {
             val list = torrents

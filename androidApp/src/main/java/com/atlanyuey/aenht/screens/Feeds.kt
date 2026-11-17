@@ -445,7 +445,7 @@ class HomeScreen : Screen(), TabRoot {
                 try {
                     navigator.push(GalleryScreen(NHClient.randomId(), null))
                 } catch (e: Exception) {
-                    overlaysHome.alert(randomError, e.localizedMessage)
+                    overlaysHome.alert(randomError, com.atlanyuey.aenht.core.errorText(e))
                 }
             }
         }

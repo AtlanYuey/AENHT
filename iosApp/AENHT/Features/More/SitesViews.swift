@@ -24,7 +24,7 @@ struct AccountsView: View {
                         savedRow(account) { AccountView() }
                     }
                     if book.accounts(for: .nhentai).isEmpty, session.isLoggedIn {
-                        NavigationLink { AccountView() } label: {
+                        NavigationLink { AccountView().pageTint() } label: {
                             HStack(spacing: 12) {
                                 AvatarView(url: session.user?.avatar, size: 44)
                                 VStack(alignment: .leading) {
@@ -53,7 +53,7 @@ struct AccountsView: View {
                         savedRow(account) { EhAccountView() }
                     }
                     if book.accounts(for: .ehentai).isEmpty, ehSession.isLoggedIn {
-                        NavigationLink { EhAccountView() } label: {
+                        NavigationLink { EhAccountView().pageTint() } label: {
                             accountRow("Logged In", ehSession.hasExHentai ? "E-Hentai account · ExHentai access" : "E-Hentai account",
                                        monogram: "EH")
                         }
@@ -62,7 +62,7 @@ struct AccountsView: View {
                         accountRow(ehSession.isLoggedIn ? "Add Account" : "Log In",
                                    ehSession.isLoggedIn ? nil : "Favorites, ratings, watched tags and ExHentai")
                     }
-                    NavigationLink("Log In with Cookies") { EhCookieLoginView() }
+                    NavigationLink("Log In with Cookies") { EhCookieLoginView().pageTint() }
                 } header: {
                     Text(SiteKind.ehentai.displayName)
                 } footer: {
@@ -80,7 +80,7 @@ struct AccountsView: View {
                 let key = apiKey.trimmingCharacters(in: .whitespaces)
                 guard !key.isEmpty else { return }
                 Task {
-                    do { try await session.loginWithApiKey(key) } catch { self.error = error.localizedDescription }
+                    do { try await session.loginWithApiKey(key) } catch { self.error = ErrorText.of(error) }
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -108,7 +108,7 @@ struct AccountsView: View {
             if book.isActive(account) { Image(systemName: "checkmark").foregroundStyle(.tint) }
         }
         if book.isActive(account) {
-            NavigationLink { destination() } label: { label }
+            NavigationLink { destination().pageTint() } label: { label }
         } else {
             Button {
                 Task {
@@ -182,8 +182,8 @@ struct EhAccountView: View {
                 Text("Viewing and downloading pages counts toward this limit; it recovers over time.")
             }
             Section {
-                NavigationLink("E-Hentai Settings") { EhWebPage(path: "/uconfig.php", title: "E-Hentai Settings") }
-                NavigationLink("My Tags") { EhWebPage(path: "/mytags", title: "My Tags") }
+                NavigationLink("E-Hentai Settings") { EhWebPage(path: "/uconfig.php", title: "E-Hentai Settings").pageTint() }
+                NavigationLink("My Tags") { EhWebPage(path: "/mytags", title: "My Tags").pageTint() }
             } footer: {
                 Text("The site's own pages, signed in with this account.")
             }
@@ -258,7 +258,13 @@ struct EhLoginWebView: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = true
         configuration.websiteDataStore.httpCookieStore.add(context.coordinator)
         context.coordinator.cookieStore = configuration.websiteDataStore.httpCookieStore
-        webView.load(URLRequest(url: URL(string: "https://forums.e-hentai.org/index.php?act=Login&CODE=00")!))
+        // The forum asks for an account instead of signing back in to the one there was.
+        let coordinator = context.coordinator
+        Task { @MainActor in
+            await WebLogins.forget(WebLogins.ehentai)
+            coordinator.ready = true
+            webView.load(URLRequest(url: URL(string: "https://forums.e-hentai.org/index.php?act=Login&CODE=00")!))
+        }
         return webView
     }
 
@@ -271,6 +277,7 @@ struct EhLoginWebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKHTTPCookieStoreObserver {
         var parent: EhLoginWebView
         weak var cookieStore: WKHTTPCookieStore?
+        var ready = false
         private var done = false
 
         init(_ parent: EhLoginWebView) { self.parent = parent }
@@ -289,7 +296,7 @@ struct EhLoginWebView: UIViewRepresentable {
         }
 
         private func check(_ store: WKHTTPCookieStore) {
-            guard !done else { return }
+            guard ready, !done else { return }
             store.getAllCookies { cookies in
                 let ours = cookies.filter { $0.domain.hasSuffix("e-hentai.org") }
                 guard let member = ours.first(where: { $0.name == "ipb_member_id" })?.value, !member.isEmpty, member != "0",
@@ -410,9 +417,9 @@ struct SitesSettingsView: View {
             }
             if settings.ehentaiEnabled {
                 Section("E-Hentai") {
-                    NavigationLink {
+                    NavigationLink { Group {
                         if ehSession.isLoggedIn { EhAccountView() } else { EhCookieLoginView() }
-                    } label: {
+                    }.pageTint() } label: {
                         LabeledContent("Account", value: ehSession.isLoggedIn ? String(localized: "Logged In") : String(localized: "Not logged in"))
                     }
                 }

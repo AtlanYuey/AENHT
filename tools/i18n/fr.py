@@ -556,7 +556,11 @@ T = [
     "Les données des tags de nhentai",
     "Traductions chinoises des tags",
     "Merci à toutes les personnes derrière ces projets. Leurs licences se trouvent dans Licences open source.",
+    "Cette version d’Android ne peut pas décoder les images AVIF. Ces pages ne sont pas marquées comme téléchargées.",
+    "La déconnexion n’a pas pu être enregistrée. Votre compte est toujours connecté.",
+    "Aucune connexion Internet.",
+    "La connexion a expiré. Réessayez.",
+    "Impossible de joindre le serveur. Vérifiez votre réseau ou votre proxy.",
+    "Impossible d'établir une connexion sécurisée avec le serveur.",
+    "La connexion a échoué. Réessayez.",
 ]
-
-# Download verification and atomic logout feedback.
-T += ["Cette version d’Android ne peut pas décoder les images AVIF. Ces pages ne sont pas marquées comme téléchargées.", "La déconnexion n’a pas pu être enregistrée. Votre compte est toujours connecté."]

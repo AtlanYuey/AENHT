@@ -559,9 +559,14 @@
     <string name="l_556">Gracias a todas las personas detrás de estos proyectos. Sus licencias están en Licencias de código abierto.</string>
     <string name="l_557">Esta versión de Android no puede decodificar imágenes AVIF. Estas páginas no se han marcado como descargadas.</string>
     <string name="l_558">No se pudo guardar el cierre de sesión. La cuenta sigue conectada.</string>
-    <string name="l_559">Copia de los ajustes</string>
-    <string name="l_560">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_561">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_562">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_563">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_559">No hay conexión a internet.</string>
+    <string name="l_560">Se agotó el tiempo de conexión. Inténtalo de nuevo.</string>
+    <string name="l_561">No se pudo conectar con el servidor. Revisa tu red o proxy.</string>
+    <string name="l_562">No se pudo establecer una conexión segura con el servidor.</string>
+    <string name="l_563">La conexión falló. Inténtalo de nuevo.</string>
+    <string name="l_564">Copia de los ajustes</string>
+    <string name="l_565">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_566">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_567">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_568">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

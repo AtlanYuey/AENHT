@@ -559,9 +559,14 @@
     <string name="l_556">感謝這些專案背後的每一個人。它們的授權見「開放原始碼授權」。</string>
     <string name="l_557">此 Android 版本無法解碼 AVIF 圖像。這些頁面未標記為已下載。</string>
     <string name="l_558">無法儲存登出狀態，帳號仍保持登入。</string>
-    <string name="l_559">設定備份</string>
-    <string name="l_560">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_561">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_562">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_563">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_559">沒有網路連線。</string>
+    <string name="l_560">連線逾時，請重試。</string>
+    <string name="l_561">無法連線到伺服器，請檢查網路或代理。</string>
+    <string name="l_562">無法與伺服器建立安全連線。</string>
+    <string name="l_563">連線失敗，請重試。</string>
+    <string name="l_564">設定備份</string>
+    <string name="l_565">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_566">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_567">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_568">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

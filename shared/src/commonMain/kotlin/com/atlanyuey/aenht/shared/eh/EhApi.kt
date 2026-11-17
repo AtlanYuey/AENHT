@@ -109,6 +109,12 @@ class EhApi internal constructor(
     private val http: HttpClient,
     val limiter: RateLimiter = RateLimiter(),
 ) {
+    /** A failed connection: the details to the log, a short sentence to the user. */
+    private fun networkFailure(e: Exception): EhException.Network {
+        com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", e.message ?: e::class.simpleName ?: "network")
+        return EhException.Network(com.atlanyuey.aenht.shared.net.NetFailure.describe(e))
+    }
+
     constructor(credentials: EhCredentialStorage) : this(credentials, buildHttpClient())
 
     internal object Limits {
@@ -215,7 +221,7 @@ class EhApi internal constructor(
                 throw e
             } catch (e: Exception) {
                 com.atlanyuey.aenht.shared.app.Diagnostics.log("e-hentai", "GET ${url.substringBefore('?')}: ${e.message ?: e::class.simpleName}")
-                throw EhException.Network(e.message ?: e.toString())
+                throw EhException.Network(com.atlanyuey.aenht.shared.net.NetFailure.describe(e))
             }
             if (login == null) remember(response, sentAs) else found?.invoke(igneousOf(response))
             val text = response.bodyAsText()
@@ -351,7 +357,7 @@ class EhApi internal constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                throw EhException.Network(e.message ?: e.toString())
+                throw networkFailure(e)
             }
             remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
@@ -441,7 +447,7 @@ class EhApi internal constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                throw EhException.Network(e.message ?: e.toString())
+                throw networkFailure(e)
             }
             remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
@@ -478,7 +484,7 @@ class EhApi internal constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                throw EhException.Network(e.message ?: e.toString())
+                throw networkFailure(e)
             }
             remember(response, sentAs)
             if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
@@ -509,7 +515,7 @@ class EhApi internal constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            throw EhException.Network(e.message ?: e.toString())
+            throw networkFailure(e)
         }
         if (response.status.value !in 200..299) throw EhException.Http(response.status.value)
         try {

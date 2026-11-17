@@ -559,9 +559,14 @@
     <string name="l_556">Terima kasih kepada semua orang di balik proyek-proyek ini. Lisensinya ada di Lisensi Sumber Terbuka.</string>
     <string name="l_557">Versi Android ini tidak dapat mendekode gambar AVIF. Halaman ini belum ditandai sebagai sudah diunduh.</string>
     <string name="l_558">Gagal menyimpan status keluar. Akun Anda masih masuk.</string>
-    <string name="l_559">Cadangan Pengaturan</string>
-    <string name="l_560">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_561">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_562">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_563">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_559">Tidak ada koneksi internet.</string>
+    <string name="l_560">Koneksi habis waktu. Coba lagi.</string>
+    <string name="l_561">Tidak dapat menjangkau server. Periksa jaringan atau proxy Anda.</string>
+    <string name="l_562">Tidak dapat membuat koneksi aman ke server.</string>
+    <string name="l_563">Koneksi gagal. Coba lagi.</string>
+    <string name="l_564">Cadangan Pengaturan</string>
+    <string name="l_565">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_566">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_567">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_568">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

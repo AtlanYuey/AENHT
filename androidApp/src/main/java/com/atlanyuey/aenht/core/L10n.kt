@@ -109,3 +109,15 @@ object AppLanguage {
         return all.firstOrNull { it.code == language }
     }
 }
+
+/**
+ * What an error says to the user: a failed connection in one short sentence
+ * (never the system's whole error text), else its own message, translated
+ * when it is one of the app's sentences.
+ */
+fun errorText(e: Throwable): String {
+    val message = e.message
+    if (message != null && message in com.atlanyuey.aenht.shared.net.NetFailure.all) return L10n.string(message)
+    com.atlanyuey.aenht.shared.net.NetFailure.describeOrNull(e)?.let { return L10n.string(it) }
+    return message?.let { L10n.string(it) } ?: e.toString()
+}

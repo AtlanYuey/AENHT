@@ -23,35 +23,43 @@ struct GalleryDestinations: ViewModifier {
             .environment(\.galleryNamespace, namespace)
             .navigationDestination(for: GalleryRoute.self) { route in
                 GalleryDetailView(route: route)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
                     .navigationTransition(.zoom(sourceID: "nh:\(route.id)", in: namespace))
             }
             .navigationDestination(for: SearchRoute.self) { route in
                 SearchResultsView(route: route)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: ReaderRoute.self) { route in
                 ReaderDestination(route: route, namespace: namespace)
+                    .pageTint()
             }
             .navigationDestination(for: PagesRoute.self) { route in
                 PagesView(detail: route.detail)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: EhGalleryRoute.self) { route in
                 EhGalleryView(route: route)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
                     .navigationTransition(.zoom(sourceID: "eh:\(route.gid)", in: namespace))
             }
             .navigationDestination(for: EhSearchRoute.self) { route in
                 EhListView(route: route)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: EhPagesRoute.self) { route in
                 EhPagesView(route: route)
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: DownloadsRoute.self) { _ in
                 DownloadsView()
+                    .pageTint()
                     .environment(\.galleryNamespace, namespace)
             }
     }

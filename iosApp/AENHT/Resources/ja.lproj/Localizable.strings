@@ -558,3 +558,8 @@
 "Thanks to everyone behind these projects. Their licenses are under Open Source Licenses." = "これらのプロジェクトに携わったすべての方に感謝します。ライセンスは「オープンソースライセンス」にあります。";
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "このAndroidバージョンはAVIF画像をデコードできません。これらのページはダウンロード済みになっていません。";
 "The logout couldn't be saved. Your account is still signed in." = "ログアウト状態を保存できませんでした。アカウントはログインしたままです。";
+"No internet connection." = "インターネットに接続されていません。";
+"The connection timed out. Try again." = "接続がタイムアウトしました。もう一度お試しください。";
+"Couldn't reach the server. Check your network or proxy." = "サーバーに接続できません。ネットワークまたはプロキシを確認してください。";
+"Couldn't make a secure connection to the server." = "サーバーと安全な接続を確立できませんでした。";
+"The connection failed. Try again." = "接続に失敗しました。もう一度お試しください。";

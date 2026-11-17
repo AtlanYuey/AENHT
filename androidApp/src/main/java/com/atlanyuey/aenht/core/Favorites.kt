@@ -188,7 +188,7 @@ object FavoritesStore {
                 } catch (e: com.atlanyuey.aenht.shared.eh.EhException) {
                     error = EhClient.localized(e)
                 } catch (e: Exception) {
-                    error = e.localizedMessage
+                    error = com.atlanyuey.aenht.core.errorText(e)
                 }
             }
             syncing = null

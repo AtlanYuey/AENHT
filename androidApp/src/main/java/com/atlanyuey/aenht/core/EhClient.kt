@@ -104,6 +104,7 @@ object EhSession {
         generation++
         AccountBook.forgetActive(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
         EhClient.api.logout()
+        WebLogins.forget(WebLogins.EHENTAI)
         refresh()
         FavoritesStore.accountChanged(com.atlanyuey.aenht.shared.site.Site.EHENTAI)
     }
@@ -127,8 +128,8 @@ object EhClient {
         is EhException.LimitReached -> L10n.string("The image limit of this account has been reached. Try again later.")
         is EhException.Http -> L10n.string("Request failed (%lld)", e.code)
         is EhException.Parse -> L10n.string("Unexpected response from the server")
-        is EhException.Network -> e.message ?: L10n.string("Unexpected response from the server")
-        else -> e.localizedMessage ?: e.toString()
+        is EhException.Network -> L10n.string(e.message ?: com.atlanyuey.aenht.shared.net.NetFailure.OTHER)
+        else -> com.atlanyuey.aenht.core.errorText(e)
     }
 
     private suspend fun <T> call(block: suspend EhApi.() -> T): T = try {

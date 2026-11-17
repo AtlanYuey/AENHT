@@ -559,9 +559,14 @@
     <string name="l_556">これらのプロジェクトに携わったすべての方に感謝します。ライセンスは「オープンソースライセンス」にあります。</string>
     <string name="l_557">このAndroidバージョンはAVIF画像をデコードできません。これらのページはダウンロード済みになっていません。</string>
     <string name="l_558">ログアウト状態を保存できませんでした。アカウントはログインしたままです。</string>
-    <string name="l_559">設定のバックアップ</string>
-    <string name="l_560">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_561">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_562">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_563">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_559">インターネットに接続されていません。</string>
+    <string name="l_560">接続がタイムアウトしました。もう一度お試しください。</string>
+    <string name="l_561">サーバーに接続できません。ネットワークまたはプロキシを確認してください。</string>
+    <string name="l_562">サーバーと安全な接続を確立できませんでした。</string>
+    <string name="l_563">接続に失敗しました。もう一度お試しください。</string>
+    <string name="l_564">設定のバックアップ</string>
+    <string name="l_565">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_566">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_567">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_568">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

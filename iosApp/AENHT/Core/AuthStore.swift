@@ -263,7 +263,10 @@ final class UserSession {
         if let active { AccountBook.shared.forget(active) }
         user = nil
         isLoggedIn = false
-        Task { @MainActor in await accountChanged() }
+        Task { @MainActor in
+            await WebLogins.forget(WebLogins.nhentai)
+            await accountChanged()
+        }
         return true
     }
 }

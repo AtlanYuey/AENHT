@@ -23,7 +23,7 @@ enum NHError: LocalizedError {
         case .needsVerification:
             String(localized: "Please log in first")
         case let .network(message):
-            message
+            ErrorText.localized(message)
         case .loginChanged:
             String(localized: "Please log in first")
         case .notSaved:

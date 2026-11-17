@@ -111,9 +111,7 @@ final class TranslationService {
         }
     }
 
-    private static func message(_ error: Error) -> String {
-        ((error as NSError).userInfo["KotlinException"] as? KotlinThrowable)?.message ?? error.localizedDescription
-    }
+    private static func message(_ error: Error) -> String { ErrorText.of(error) }
 
     var microsoftKey: String {
         get { _ = revision; return Keychain.read("translator_microsoft") ?? "" }
@@ -220,7 +218,7 @@ struct TranslateLine: View {
                     service.store(t, for: text, kind: kind)
                     result = t
                 case .failure(let failure):
-                    error = failure.localizedDescription
+                    error = ErrorText.of(failure)
                 }
                 working = false
             })
@@ -242,7 +240,7 @@ struct TranslateLine: View {
                     fellBack = true
                     deviceRequest = UUID()
                 } else {
-                    self.error = error.localizedDescription
+                    self.error = ErrorText.of(error)
                     working = false
                 }
             }
@@ -266,9 +264,9 @@ struct TranslationSettingsView: View {
             let services = service.services
             Section {
                 ForEach(services, id: \.id) { s in
-                    NavigationLink {
+                    NavigationLink { Group {
                         LlmServiceEditor(original: s)
-                    } label: {
+                    }.pageTint() } label: {
                         serviceRow(s)
                     }
                 }
@@ -383,9 +381,9 @@ private struct LlmPresetPicker: View {
 
     var body: some View {
         List(LlmPreset.entries, id: \.key) { preset in
-            NavigationLink {
+            NavigationLink { Group {
                 LlmServiceEditor(original: LlmService.companion.create(id: UUID().uuidString, preset: preset), isNew: true) { dismiss() }
-            } label: {
+            }.pageTint() } label: {
                 HStack(spacing: 12) {
                     ProviderIcon(preset: preset)
                     VStack(alignment: .leading, spacing: 2) {
@@ -533,9 +531,9 @@ struct LlmServiceEditor: View {
                 Text("Pasting a key fetches the provider’s model list. If listing is unavailable, choose Other Model and enter its ID.")
             }
             Section {
-                NavigationLink {
+                NavigationLink { Group {
                     LlmRequestOptionsView(preset: $parameterPreset, bodyJSON: $bodyJSON, draft: { draft })
-                } label: {
+                }.pageTint() } label: {
                     LabeledContent("Request Parameters", value: String(localized: String.LocalizationValue(LlmParameterPreset.companion.of(key: parameterPreset).displayName)))
                 }
             }
@@ -605,7 +603,7 @@ struct LlmServiceEditor: View {
                 if model.isEmpty, let first = available.first { model = first }
                 modelSelection = available.contains(model) ? model : Self.otherModel
             } catch {
-                if identity == discoveryIdentity { discoveryError = error.localizedDescription }
+                if identity == discoveryIdentity { discoveryError = ErrorText.of(error) }
             }
             if identity == discoveryIdentity { discovering = false }
         }
@@ -698,7 +696,7 @@ struct LlmServiceEditor: View {
                 testResult = "\(r.text)\n\(String(format: "%.1f", Double(r.millis) / 1000)) s · \(LlmFormat.tokens(r.inputTokens + r.outputTokens))"
             } catch {
                 guard !Task.isCancelled else { return }
-                testResult = error.localizedDescription
+                testResult = ErrorText.of(error)
             }
             testing = false
         }

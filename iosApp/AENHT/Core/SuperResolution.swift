@@ -109,7 +109,7 @@ final class SuperResolutionModels {
                 try await install()
                 state = .ready
             } catch {
-                state = .failed(error.localizedDescription)
+                state = .failed(ErrorText.of(error))
             }
             task = nil
         }

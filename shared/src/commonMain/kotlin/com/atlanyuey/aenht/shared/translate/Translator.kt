@@ -276,7 +276,7 @@ class Translator internal constructor(private val http: HttpClient, private val 
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            throw TranslationException(e.message ?: "Network error")
+            throw TranslationException(com.atlanyuey.aenht.shared.net.NetFailure.describe(e))
         }
         if (response.status.value !in 200..299) throw TranslationException("HTTP ${response.status.value}")
         val o = runCatching { lenientJson.parseToJsonElement(response.bodyAsText()) as? JsonObject }.getOrNull()

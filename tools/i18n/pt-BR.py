@@ -556,7 +556,11 @@ T = [
     "Os dados de tags do nhentai",
     "Traduções das tags para chinês",
     "Obrigado a todos por trás desses projetos. As licenças estão em Licenças de código aberto.",
+    "Esta versão do Android não consegue decodificar imagens AVIF. Estas páginas não foram marcadas como baixadas.",
+    "Não foi possível salvar a saída. Sua conta continua conectada.",
+    "Sem conexão com a internet.",
+    "A conexão expirou. Tente novamente.",
+    "Não foi possível acessar o servidor. Verifique sua rede ou proxy.",
+    "Não foi possível estabelecer uma conexão segura com o servidor.",
+    "A conexão falhou. Tente novamente.",
 ]
-
-# Download verification and atomic logout feedback.
-T += ["Esta versão do Android não consegue decodificar imagens AVIF. Estas páginas não foram marcadas como baixadas.", "Não foi possível salvar a saída. Sua conta continua conectada."]

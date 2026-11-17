@@ -71,7 +71,7 @@ class AccountsScreen : Screen() {
                                 try {
                                     Session.loginWithApiKey(key)
                                 } catch (e: Exception) {
-                                    overlays.alert(failed, e.localizedMessage)
+                                    overlays.alert(failed, com.atlanyuey.aenht.core.errorText(e))
                                 }
                             }
                         }
@@ -253,6 +253,8 @@ class EhLoginScreen : Screen() {
                                 }
                             }
                         }
+                        // The forum asks for an account instead of signing back in to the one there was.
+                        com.atlanyuey.aenht.core.WebLogins.forget(com.atlanyuey.aenht.core.WebLogins.EHENTAI)
                         loadUrl("https://forums.e-hentai.org/index.php?act=Login&CODE=00")
                     }
                 },
@@ -621,7 +623,7 @@ class LlmServiceScreen(private val original: LlmService, private val isNew: Bool
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                discoveryError = e.localizedMessage
+                discoveryError = com.atlanyuey.aenht.core.errorText(e)
             } finally {
                 discovering = false
             }
@@ -696,7 +698,7 @@ class LlmServiceScreen(private val original: LlmService, private val isNew: Bool
                             } catch (e: kotlinx.coroutines.CancellationException) {
                                 throw e
                             } catch (e: Exception) {
-                                e.localizedMessage
+                                com.atlanyuey.aenht.core.errorText(e)
                             }
                             testing = false
                         }
