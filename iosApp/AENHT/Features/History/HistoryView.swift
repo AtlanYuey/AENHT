@@ -65,16 +65,16 @@ struct HistoryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Clear", systemImage: "trash") { confirmClear = true }
                     .disabled(entries.isEmpty || clearing)
+                    .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
+                        Button("Clear History", role: .destructive) {
+                            clearHistory()
+                        }
+                    }
             }
         }
         .environment(\.showsSiteBadge, showsSites)
         .onAppear {
             if settings.historySite == .follow { site = settings.site(.follow) }
-        }
-        .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {
-            Button("Clear History", role: .destructive) {
-                clearHistory()
-            }
         }
         .alert("Couldn't Save", isPresented: Binding(
             get: { storageError != nil }, set: { if !$0 { storageError = nil } }

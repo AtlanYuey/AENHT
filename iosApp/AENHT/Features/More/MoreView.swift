@@ -186,6 +186,12 @@ struct AccountView: View {
             Section {
                 Button("Log Out", role: .destructive) { confirmLogout = true }
                     .frame(maxWidth: .infinity)
+                    // On the button: on iPad the question shows next to it.
+                    .confirmationDialog("Log out of nhentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
+                        Button("Log Out", role: .destructive) {
+                            if session.logout() { dismiss() }
+                        }
+                    }
             }
         }
         .navigationTitle("Account")
@@ -194,11 +200,6 @@ struct AccountView: View {
         .alert("Couldn't Save", isPresented: Binding(
             get: { session.storageError != nil }, set: { if !$0 { session.storageError = nil } }
         )) { Button("OK") { session.storageError = nil } } message: { Text(session.storageError ?? "") }
-        .confirmationDialog("Log out of nhentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
-            Button("Log Out", role: .destructive) {
-                if session.logout() { dismiss() }
-            }
-        }
     }
 }
 
@@ -804,6 +805,12 @@ struct GeneralSettingsView: View {
                     }
                 }
                 Button("Clear Image Cache", role: .destructive) { confirmClearCache = true }
+                    .confirmationDialog("Clear the image cache?", isPresented: $confirmClearCache, titleVisibility: .visible) {
+                        Button("Clear Image Cache", role: .destructive) {
+                            ImageSetup.clearCache()
+                            Task { await refreshCacheSize() }
+                        }
+                    }
             } header: {
                 Text("Storage")
             }
@@ -811,12 +818,6 @@ struct GeneralSettingsView: View {
         .navigationTitle("General")
         .navigationBarTitleDisplayMode(.inline)
         .task { await refreshCacheSize() }
-        .confirmationDialog("Clear the image cache?", isPresented: $confirmClearCache, titleVisibility: .visible) {
-            Button("Clear Image Cache", role: .destructive) {
-                ImageSetup.clearCache()
-                Task { await refreshCacheSize() }
-            }
-        }
     }
 
     private func refreshCacheSize() async {

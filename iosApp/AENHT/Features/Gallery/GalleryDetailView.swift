@@ -203,10 +203,6 @@ struct GalleryDetailView: View {
         } message: {
             Text(model.actionError ?? "")
         }
-        .confirmationDialog("Delete the downloaded pages?", isPresented: $confirmDeleteDownload,
-                            titleVisibility: .visible) {
-            Button("Delete Download", role: .destructive) { downloads.delete(model.id) }
-        }
     }
 
     // MARK: Header
@@ -321,6 +317,10 @@ struct GalleryDetailView: View {
         case .finished:
             CircleButton(systemImage: "checkmark.circle", label: "Downloaded", tint: .green, size: actionHeight) {
                 confirmDeleteDownload = true
+            }
+            .confirmationDialog("Delete the downloaded pages?", isPresented: $confirmDeleteDownload,
+                                titleVisibility: .visible) {
+                Button("Delete Download", role: .destructive) { downloads.delete(detail.id) }
             }
         case .downloading, .queued:
             CircleButton(systemImage: "pause.fill", label: "Pause Download",

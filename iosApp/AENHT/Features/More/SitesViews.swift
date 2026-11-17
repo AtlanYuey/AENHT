@@ -189,6 +189,11 @@ struct EhAccountView: View {
             }
             Section {
                 Button("Log Out", role: .destructive) { confirmLogout = true }
+                    .confirmationDialog("Log out of E-Hentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
+                        Button("Log Out", role: .destructive) {
+                            if ehSession.logout() { dismiss() }
+                        }
+                    }
             }
         }
         .navigationTitle("E-Hentai")
@@ -197,11 +202,6 @@ struct EhAccountView: View {
         .alert("Couldn't Save", isPresented: Binding(
             get: { ehSession.storageError != nil }, set: { if !$0 { ehSession.storageError = nil } }
         )) { Button("OK") { ehSession.storageError = nil } } message: { Text(ehSession.storageError ?? "") }
-        .confirmationDialog("Log out of E-Hentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
-            Button("Log Out", role: .destructive) {
-                if ehSession.logout() { dismiss() }
-            }
-        }
     }
 }
 
