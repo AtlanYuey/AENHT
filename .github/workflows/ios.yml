@@ -19,7 +19,8 @@ concurrency:
 jobs:
   build:
     name: Build IPA
-    runs-on: macos-26
+    # This image also includes Xcode 26; select it explicitly below.
+    runs-on: macos-15
     timeout-minutes: 60
     permissions:
       contents: write
@@ -47,7 +48,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          key: konan-${{ runner.os }}-${{ runner.arch }}-macos15-${{ hashFiles('gradle/libs.versions.toml') }}
 
       - name: Install XcodeGen
         run: brew install xcodegen
