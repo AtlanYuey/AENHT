@@ -32,7 +32,7 @@
 
 - [iOS 编译任务](https://github.com/AtlanYuey/AENHT/actions/runs/44084058486)，提交 `f73115e`，结果成功。
 - [Android 构建任务](https://github.com/AtlanYuey/AENHT/actions/runs/44084058421)，相同运行代码，结果成功。
-- [追加测试的 Android 任务](https://github.com/AtlanYuey/AENHT/actions/runs/44085142357)，含失败后暂停与重试场景；本地对应的完整 64 项已通过，远端结果可在该链接查看。
+- [追加测试的 Android 任务](https://github.com/AtlanYuey/AENHT/actions/runs/44085142357)，含失败后暂停与重试场景；本地对应的完整 64 项已通过，远端任务也已成功。
 
 ## 签名包
 
