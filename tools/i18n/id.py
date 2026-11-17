@@ -568,4 +568,6 @@ T = [
     "Kecepatan gulir otomatis",
     " dtk / layar",
     "Gulir otomatis dijeda",
+    "Lanjutkan setelah menggulir manual",
+    "Kecepatan mungkin terlalu tinggi untuk membaca",
 ]

@@ -574,10 +574,12 @@ object L10nKeys {
         "Auto Scroll Speed" to R.string.l_566,
         " s / screen" to R.string.l_567,
         "Auto Scroll Paused" to R.string.l_568,
-        "Settings Backup" to R.string.l_569,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_570,
-        "Android's own backup also keeps these settings." to R.string.l_571,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_572,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_573,
+        "Continue Auto Scroll While Dragging" to R.string.l_569,
+        "Speed may be too fast for comfortable reading" to R.string.l_570,
+        "Settings Backup" to R.string.l_571,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_572,
+        "Android's own backup also keeps these settings." to R.string.l_573,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_574,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_575,
     )
 }

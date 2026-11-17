@@ -569,9 +569,11 @@
     <string name="l_566">Scrollgeschwindigkeit</string>
     <string name="l_567">" s / Bildschirm"</string>
     <string name="l_568">Automatisches Scrollen pausiert</string>
-    <string name="l_569">Einstellungen sichern</string>
-    <string name="l_570">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_571">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_572">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_573">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_569">Nach manuellem Scrollen fortsetzen</string>
+    <string name="l_570">Möglicherweise zu schnell zum Lesen</string>
+    <string name="l_571">Einstellungen sichern</string>
+    <string name="l_572">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_573">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_574">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_575">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

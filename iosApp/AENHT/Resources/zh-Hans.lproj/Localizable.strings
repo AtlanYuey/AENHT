@@ -611,3 +611,5 @@
 "Auto Scroll Speed" = "自动滚动速度";
 " s / screen" = " 秒/屏";
 "Auto Scroll Paused" = "自动滚动已暂停";
+"Continue Auto Scroll While Dragging" = "滑动时继续自动滚动";
+"Speed may be too fast for comfortable reading" = "可能速度过快，无法正常阅读";

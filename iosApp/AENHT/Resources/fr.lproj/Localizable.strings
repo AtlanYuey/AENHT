@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "Vitesse de défilement";
 " s / screen" = " s / écran";
 "Auto Scroll Paused" = "Défilement en pause";
+"Continue Auto Scroll While Dragging" = "Continuer après un défilement manuel";
+"Speed may be too fast for comfortable reading" = "La vitesse peut gêner la lecture";

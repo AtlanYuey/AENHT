@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "Scrollgeschwindigkeit";
 " s / screen" = " s / Bildschirm";
 "Auto Scroll Paused" = "Automatisches Scrollen pausiert";
+"Continue Auto Scroll While Dragging" = "Nach manuellem Scrollen fortsetzen";
+"Speed may be too fast for comfortable reading" = "Möglicherweise zu schnell zum Lesen";

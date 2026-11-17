@@ -89,4 +89,26 @@ class ReadingSettingsScopeTest {
         compose.onNodeWithText("1.5 s / screen").assertIsDisplayed()
         compose.onRoot().captureRoboImage("build/screens/auto-scroll-speed-range.png")
     }
+
+    @Test fun fastWarningIncludesThreeSecondsAndDragOptionIsBelowSpeed() {
+        show(ReadMode.Vertical)
+        val warning = "Speed may be too fast for comfortable reading"
+        val option = "Continue Auto Scroll While Dragging"
+        compose.onNodeWithText(option).assertIsDisplayed()
+        val title = compose.onNodeWithText("Auto Scroll Speed").fetchSemanticsNode().boundsInRoot
+        val toggle = compose.onNodeWithText(option).fetchSemanticsNode().boundsInRoot
+        org.junit.Assert.assertTrue(toggle.top > title.bottom)
+        for (seconds in listOf(3.0, 2.5, 1.0)) {
+            compose.runOnIdle { AppSettings.autoScrollSecondsPerScreen = seconds }
+            compose.waitForIdle()
+            compose.onNodeWithText(warning).assertIsDisplayed()
+        }
+        compose.onRoot().captureRoboImage("build/screens/auto-scroll-fast-warning.png")
+        compose.runOnIdle { AppSettings.autoScrollSecondsPerScreen = 3.5 }
+        compose.waitForIdle()
+        compose.onNodeWithText(warning).assertDoesNotExist()
+        compose.runOnIdle { AppSettings.readMode = ReadMode.LeftToRight }
+        compose.waitForIdle()
+        compose.onNodeWithText(option).assertDoesNotExist()
+    }
 }

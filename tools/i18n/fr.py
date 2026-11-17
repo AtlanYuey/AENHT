@@ -568,4 +568,6 @@ T = [
     "Vitesse de défilement",
     " s / écran",
     "Défilement en pause",
+    "Continuer après un défilement manuel",
+    "La vitesse peut gêner la lecture",
 ]

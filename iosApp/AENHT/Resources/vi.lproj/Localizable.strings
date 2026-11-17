@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "Tốc độ cuộn tự động";
 " s / screen" = " giây / màn hình";
 "Auto Scroll Paused" = "Đã tạm dừng cuộn tự động";
+"Continue Auto Scroll While Dragging" = "Tiếp tục sau khi cuộn thủ công";
+"Speed may be too fast for comfortable reading" = "Tốc độ có thể quá nhanh để đọc";

@@ -569,9 +569,11 @@
     <string name="l_566">Auto Scroll Speed</string>
     <string name="l_567">" s / screen"</string>
     <string name="l_568">Auto Scroll Paused</string>
-    <string name="l_569">Settings Backup</string>
-    <string name="l_570">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_571">Android\'s own backup also keeps these settings.</string>
-    <string name="l_572">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_573">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_569">Continue Auto Scroll While Dragging</string>
+    <string name="l_570">Speed may be too fast for comfortable reading</string>
+    <string name="l_571">Settings Backup</string>
+    <string name="l_572">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_573">Android\'s own backup also keeps these settings.</string>
+    <string name="l_574">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_575">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

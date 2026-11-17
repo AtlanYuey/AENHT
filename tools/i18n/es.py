@@ -568,4 +568,6 @@ T = [
     "Velocidad de desplazamiento",
     " s / pantalla",
     "Desplazamiento en pausa",
+    "Continuar tras desplazar manualmente",
+    "La velocidad puede dificultar la lectura",
 ]

@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "自動捲動速度";
 " s / screen" = " 秒／螢幕";
 "Auto Scroll Paused" = "自動捲動已暫停";
+"Continue Auto Scroll While Dragging" = "滑動時繼續自動捲動";
+"Speed may be too fast for comfortable reading" = "速度可能過快，無法正常閱讀";

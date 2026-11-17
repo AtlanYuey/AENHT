@@ -567,5 +567,7 @@
  "Pause Auto Scroll",
  "Auto Scroll Speed",
  " s / screen",
- "Auto Scroll Paused"
+ "Auto Scroll Paused",
+ "Continue Auto Scroll While Dragging",
+ "Speed may be too fast for comfortable reading"
 ]

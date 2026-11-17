@@ -569,9 +569,11 @@
     <string name="l_566">Velocità di scorrimento</string>
     <string name="l_567">" s / schermata"</string>
     <string name="l_568">Scorrimento in pausa</string>
-    <string name="l_569">Backup impostazioni</string>
-    <string name="l_570">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_571">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_572">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_573">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_569">Continua dopo lo scorrimento manuale</string>
+    <string name="l_570">La velocità potrebbe rendere difficile la lettura</string>
+    <string name="l_571">Backup impostazioni</string>
+    <string name="l_572">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_573">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_574">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_575">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

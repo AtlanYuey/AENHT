@@ -569,9 +569,11 @@
     <string name="l_566">Velocidad de desplazamiento</string>
     <string name="l_567">" s / pantalla"</string>
     <string name="l_568">Desplazamiento en pausa</string>
-    <string name="l_569">Copia de los ajustes</string>
-    <string name="l_570">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_571">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_572">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_573">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_569">Continuar tras desplazar manualmente</string>
+    <string name="l_570">La velocidad puede dificultar la lectura</string>
+    <string name="l_571">Copia de los ajustes</string>
+    <string name="l_572">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_573">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_574">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_575">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

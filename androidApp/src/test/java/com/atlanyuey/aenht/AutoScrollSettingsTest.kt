@@ -12,6 +12,24 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class AutoScrollSettingsTest {
+    @Test fun continueOnDragDefaultsOffAndSurvivesExportAndRestart() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        AppSettings.init(context)
+        val previous = AppSettings.toJson()
+        try {
+            context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit().remove("continueAutoScrollOnDrag").commit()
+            AppSettings.init(context)
+            org.junit.Assert.assertFalse(AppSettings.continueAutoScrollOnDrag)
+            AppSettings.continueAutoScrollOnDrag = true
+            val exported = AppSettings.toJson()
+            AppSettings.init(context)
+            org.junit.Assert.assertTrue(AppSettings.continueAutoScrollOnDrag)
+            AppSettings.continueAutoScrollOnDrag = false
+            AppSettings.applyJson(exported)
+            org.junit.Assert.assertTrue(AppSettings.continueAutoScrollOnDrag)
+        } finally { AppSettings.applyJson(previous) }
+    }
+
     @Test fun scrollingSpeedPersistsAndDoesNotReplacePagedInterval() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         AppSettings.init(context)

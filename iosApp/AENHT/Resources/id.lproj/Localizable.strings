@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "Kecepatan gulir otomatis";
 " s / screen" = " dtk / layar";
 "Auto Scroll Paused" = "Gulir otomatis dijeda";
+"Continue Auto Scroll While Dragging" = "Lanjutkan setelah menggulir manual";
+"Speed may be too fast for comfortable reading" = "Kecepatan mungkin terlalu tinggi untuk membaca";

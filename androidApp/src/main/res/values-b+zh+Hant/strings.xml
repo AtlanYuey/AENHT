@@ -569,9 +569,11 @@
     <string name="l_566">自動捲動速度</string>
     <string name="l_567">" 秒／螢幕"</string>
     <string name="l_568">自動捲動已暫停</string>
-    <string name="l_569">設定備份</string>
-    <string name="l_570">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_571">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_572">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_573">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_569">滑動時繼續自動捲動</string>
+    <string name="l_570">速度可能過快，無法正常閱讀</string>
+    <string name="l_571">設定備份</string>
+    <string name="l_572">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_573">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_574">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_575">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

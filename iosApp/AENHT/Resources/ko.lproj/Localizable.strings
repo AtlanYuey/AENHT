@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "자동 스크롤 속도";
 " s / screen" = " 초/화면";
 "Auto Scroll Paused" = "자동 스크롤이 일시 정지됨";
+"Continue Auto Scroll While Dragging" = "수동 스크롤 후에도 자동 스크롤 유지";
+"Speed may be too fast for comfortable reading" = "너무 빨라 정상적으로 읽기 어려울 수 있습니다";

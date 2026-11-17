@@ -42,22 +42,25 @@ import org.robolectric.annotation.GraphicsMode
 class SmoothAutoScrollTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun open(mode: ReadMode, gate: CompletableDeferred<Unit>? = null, offline: AtomicBoolean? = null): ReaderScreen {
+    private fun open(mode: ReadMode, gate: CompletableDeferred<Unit>? = null, offline: AtomicBoolean? = null,
+                     continueOnDrag: Boolean = false, pageCount: Int = 1, shortPages: Boolean = false): ReaderScreen {
         ScreenshotTest().setUp()
         AppSettings.readMode = mode
         AppSettings.autoScrollSecondsPerScreen = 5.0
+        AppSettings.continueAutoScrollOnDrag = continueOnDrag
         AppSettings.superResolution = SrMode.Off
         val context = ApplicationProvider.getApplicationContext<Context>()
+        val fixtureImage = Bitmap.createBitmap(160, if (shortPages) 100 else 3200, Bitmap.Config.ARGB_8888).asImage()
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(context).components {
             add(Interceptor { chain ->
                 gate?.await()
                 if (offline?.get() == true) return@Interceptor ErrorResult(null, chain.request, IOException("synthetic offline image"))
-                SuccessResult(Bitmap.createBitmap(160, 3200, Bitmap.Config.ARGB_8888).asImage(), chain.request, DataSource.NETWORK)
+                SuccessResult(fixtureImage, chain.request, DataSource.NETWORK)
             })
         }.build())
         val reader = ReaderScreen(ReaderSource(
-            980006, "Synthetic long strip", listOf(ReaderPage(0, "https://fixture.invalid/strip.png", .7f)),
-            "https://nhentai.net/g/980006/", GallerySummary.from(GalleryItem(980006, numPages = 1)),
+            980006, "Synthetic long strip", (0 until pageCount).map { ReaderPage(it, if (shortPages) fixtureImage else "https://fixture.invalid/strip-$it.png", if (shortPages) 1.6f else .7f) },
+            "https://nhentai.net/g/980006/", GallerySummary.from(GalleryItem(980006, numPages = pageCount)),
         ), 0)
         val tabs = Tabs().also { it.home.push(reader) }
         val linked = mutableStateOf<GalleryLink?>(null)
@@ -79,6 +82,7 @@ class SmoothAutoScrollTest {
     private fun reset() {
         AppSettings.readMode = ReadMode.LeftToRight
         AppSettings.autoScrollSecondsPerScreen = 10.0
+        AppSettings.continueAutoScrollOnDrag = false
     }
 
     @Test fun lastLongImageKeepsMovingAndManualDragPausesWithoutSnappingBack() {
@@ -99,6 +103,58 @@ class SmoothAutoScrollTest {
             assertEquals("Manual dragging must leave automatic scrolling paused", paused, list.firstVisibleItemScrollOffset)
             assertTrue("Recording the same page must not return to the top", paused > beforeDrag)
         } finally { reset() }
+    }
+
+    @Test fun enabledOptionResumesAfterManualDragWithoutNeedingPlayAgain() {
+        try {
+            val reader = open(ReadMode.Vertical, continueOnDrag = true)
+            val list = list(reader)
+            compose.waitUntil(10_000) { list.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let { it > list.layoutInfo.viewportSize.height * 5 } == true }
+            compose.mainClock.autoAdvance = false
+            compose.onNodeWithText("Auto Scroll").performClick()
+            advance(800)
+            val before = list.firstVisibleItemScrollOffset
+            compose.onRoot().performTouchInput { swipeUp(durationMillis = 600) }
+            advance(2500)
+            val resumed = list.firstVisibleItemScrollOffset
+            advance(1000)
+            assertTrue(resumed > before)
+            assertTrue("Automatic scrolling should resume at the newly selected position", list.firstVisibleItemScrollOffset > resumed)
+            compose.onRoot().performTouchInput { click(center) }
+            compose.waitUntil(3000) {
+                compose.mainClock.advanceTimeBy(32)
+                compose.onAllNodesWithText("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+            }
+            advance(300)
+            compose.onNodeWithText("Pause Auto Scroll").assertIsDisplayed()
+        } finally { reset() }
+    }
+
+    @Test fun controlsStayVisibleAcrossFastPageBoundariesUntilTheNormalTimeout() {
+        val previousDelay = AppSettings.readerControlsDelay
+        try {
+            val reader = open(ReadMode.Vertical, pageCount = 30, shortPages = true)
+            val list = list(reader)
+            AppSettings.autoScrollSecondsPerScreen = 1.0
+            AppSettings.readerControlsDelay = 3.0
+            compose.mainClock.autoAdvance = false
+            compose.onNodeWithText("Auto Scroll").performClick()
+            advance(300)
+            compose.onRoot().performTouchInput { click(center) }
+            compose.waitUntil(3000) {
+                compose.mainClock.advanceTimeBy(32)
+                compose.onAllNodesWithText("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+            }
+            advance(300)
+            val first = list.firstVisibleItemIndex
+            advance(1200)
+            assertTrue("This must cross image boundaries while the controls are visible", list.firstVisibleItemIndex > first)
+            compose.onNodeWithText("Pause Auto Scroll").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Options").assertIsDisplayed()
+            advance(2300)
+            compose.onNodeWithText("Pause Auto Scroll").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Options").assertDoesNotExist()
+        } finally { AppSettings.readerControlsDelay = previousDelay; reset() }
     }
 
     @Test fun continuousWithGapsStopsOnlyAtTheBottomOfTheLastStrip() {

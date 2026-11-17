@@ -568,4 +568,6 @@ T = [
     "Scrollgeschwindigkeit",
     " s / Bildschirm",
     "Automatisches Scrollen pausiert",
+    "Nach manuellem Scrollen fortsetzen",
+    "Möglicherweise zu schnell zum Lesen",
 ]

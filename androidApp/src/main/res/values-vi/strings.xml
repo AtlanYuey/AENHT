@@ -569,9 +569,11 @@
     <string name="l_566">Tốc độ cuộn tự động</string>
     <string name="l_567">" giây / màn hình"</string>
     <string name="l_568">Đã tạm dừng cuộn tự động</string>
-    <string name="l_569">Sao lưu cài đặt</string>
-    <string name="l_570">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_571">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_572">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_573">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_569">Tiếp tục sau khi cuộn thủ công</string>
+    <string name="l_570">Tốc độ có thể quá nhanh để đọc</string>
+    <string name="l_571">Sao lưu cài đặt</string>
+    <string name="l_572">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_573">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_574">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_575">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

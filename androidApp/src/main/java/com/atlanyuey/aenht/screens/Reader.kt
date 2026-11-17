@@ -1,6 +1,5 @@
 package com.atlanyuey.aenht.screens
 
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateMapOf
@@ -500,7 +499,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
             interactions.interactions.collect {
                 if (it is DragInteraction.Start) {
-                    autoRead = false
+                    if (mode.isPaged || !AppSettings.continueAutoScrollOnDrag) autoRead = false
                     chromeVisible = false
                 }
             }
@@ -533,6 +532,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         val now = withFrameNanos { it }
                         val elapsed = (now - previous) / 1_000_000_000.0
                         previous = now
+                        // The finger and inertial scrolling own the list until they finish. Keep the
+                        // playback flag on when requested, but never push against a user's gesture.
+                        if (touching || list.isScrollInProgress) continue
                         val layout = list.layoutInfo
                         val viewport = layout.viewportEndOffset - layout.viewportStartOffset
                         if (viewport <= 0 || layout.visibleItemsInfo.isEmpty()) continue
@@ -558,7 +560,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         }
                         val last = layout.visibleItemsInfo.lastOrNull()
                         if (!list.canScrollForward && last?.index == count - 1 && ready(last)) break
-                        if (distance > 0) list.scrollBy(distance.toFloat())
+                        // Only the idle list is moved. Raw delta preserves LazyListState's fractional
+                        // pixels without opening/closing a scroll mutation on every display frame.
+                        if (distance > 0) list.dispatchRawDelta(distance.toFloat())
                     }
                 }
             } finally {
@@ -874,7 +878,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 items(source.pages, key = { it.index }) { readerPage ->
                     val attempt = pageRetries[readerPage.index] ?: 0
                     var state by remember(readerPage.index, attempt) { mutableStateOf<coil3.compose.AsyncImagePainter.State?>(null) }
-                    var decodedRatio by remember(readerPage.index) { mutableStateOf<Float?>(null) }
+                    var decodedRatio by remember(readerPage.index) { mutableStateOf(pageRatios[readerPage.index]) }
                     val knownRatio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
                         ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] }
                     val ratio = (decodedRatio ?: knownRatio ?: readerPage.aspectRatio).takeIf { it.isFinite() && it > 0 } ?: 0.7f
@@ -883,7 +887,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             .size(1400, 8192).scale(coil3.size.Scale.FIT).build()
                     }
                     DisposableEffect(readerPage.index) {
-                        onDispose { pageLoads.remove(readerPage.index); pageRatios.remove(readerPage.index) }
+                        onDispose { pageLoads.remove(readerPage.index) }
                     }
                     // Compose's packed constraints need a finite height, even for malformed metadata.
                     Box(Modifier.fillMaxWidth().height((width.value / ratio).coerceAtMost(50_000f).dp), contentAlignment = Alignment.Center) {
@@ -1244,15 +1248,26 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
                 val speedLabel = tr("Auto Scroll Speed")
                 val timeLabel = java.text.NumberFormat.getNumberInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
                     .apply { maximumFractionDigits = 1 }.format(AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen")
-                Row {
-                    Txt(speedLabel, Modifier.weight(1f))
-                    Txt(timeLabel, color = AppTheme.colors.secondaryLabel)
+                val fast = AppSettings.autoScrollSecondsPerScreen <= 3
+                val warning = tr("Speed may be too fast for comfortable reading")
+                val warningColor = Color(0xFFFF453A)
+                if (fast) {
+                    Txt(speedLabel)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Txt(warning, Modifier.weight(1f), style = Type.caption1, color = warningColor)
+                        Txt(timeLabel, color = warningColor)
+                    }
+                } else {
+                    Row {
+                        Txt(speedLabel, Modifier.weight(1f))
+                        Txt(timeLabel, color = AppTheme.colors.secondaryLabel)
+                    }
                 }
                 GlassSlider(
                     (31 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
                     { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round((31 - it) * 2) / 2.0) },
                     1f..30f,
-                    modifier = Modifier.semantics { stateDescription = timeLabel },
+                    modifier = Modifier.semantics { stateDescription = if (fast) "$warning, $timeLabel" else timeLabel },
                     label = speedLabel,
                 )
                 Row {
@@ -1262,6 +1277,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
             }
         }
         RowSeparator()
+        if (!AppSettings.readMode.isPaged) {
+            ToggleRow(tr("Continue Auto Scroll While Dragging"), AppSettings.continueAutoScrollOnDrag, { AppSettings.continueAutoScrollOnDrag = it })
+        }
         ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {
             Stepper(AppSettings.preloadPages, 1..10) { AppSettings.preloadPages = it }
         }

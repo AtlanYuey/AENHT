@@ -20,11 +20,24 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.2.1"
-    CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "4"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
 
 targets:
+  AENHTReaderTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AENHT/Features/Reader/ReaderScrollMotion.swift
+      - path: AENHT/Features/Reader/ReaderScrollDriver.swift
+      - path: Tests/ReaderScrollTests.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.AENHT.ReaderTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
   AENHTCredentialTests:
     type: bundle.unit-test
     platform: iOS
@@ -101,6 +114,13 @@ targets:
 
 # The credential tests are hostless and use an injected in-memory secret store.
 schemes:
+  AENHTReaderTests:
+    build:
+      targets:
+        AENHTReaderTests: all
+    test:
+      targets:
+        - AENHTReaderTests
   AENHT:
     build:
       targets:

@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "Скорость автопрокрутки";
 " s / screen" = " с / экран";
 "Auto Scroll Paused" = "Автопрокрутка приостановлена";
+"Continue Auto Scroll While Dragging" = "Продолжать после ручной прокрутки";
+"Speed may be too fast for comfortable reading" = "Скорость может мешать чтению";

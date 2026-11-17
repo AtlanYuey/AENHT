@@ -568,4 +568,6 @@ T = [
     "Velocidade de rolagem",
     " s / tela",
     "Rolagem automática pausada",
+    "Continuar após rolagem manual",
+    "A velocidade pode dificultar a leitura",
 ]

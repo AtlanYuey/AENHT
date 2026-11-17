@@ -260,10 +260,10 @@ struct ReaderView: View {
                 ReaderProgress.shared.set(new, gallery: source.item.transitionKey)
                 sliderValue = Double(new)
                 prefetch(around: new)
-                // Turning or scrolling pages hides the controls.
+                // Continuous scrolling hides controls on a real drag or the idle timer, not on a page boundary.
                 if turnFromPanel {
                     turnFromPanel = false
-                } else if !sliderEditing {
+                } else if !sliderEditing, settings.readMode.isPaged, !autoRead {
                     chromeVisible = false
                 }
             }
@@ -728,9 +728,21 @@ struct ReadingSettingsSections: View {
                 }
             } else {
                 VStack(alignment: .leading) {
-                    LabeledContent("Auto Scroll Speed") {
-                        Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
-                            + Text(" s / screen")
+                    if settings.autoScrollSecondsPerScreen <= 3 {
+                        Text("Auto Scroll Speed")
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text("Speed may be too fast for comfortable reading")
+                                .font(.caption).fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
+                                + Text(" s / screen")
+                        }
+                        .foregroundStyle(.red)
+                    } else {
+                        LabeledContent("Auto Scroll Speed") {
+                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
+                                + Text(" s / screen")
+                        }
                     }
                     // The right end is faster; elapsed time per screen is stored, not pixels per tick.
                     Slider(value: Binding(
@@ -744,6 +756,7 @@ struct ReadingSettingsSections: View {
                         Text("Fast")
                     }
                 }
+                Toggle("Continue Auto Scroll While Dragging", isOn: $settings.continueAutoScrollOnDrag)
             }
             Stepper(value: $settings.preloadPages, in: 1...10) {
                 LabeledContent("Preload Pages", value: "\(settings.preloadPages)")

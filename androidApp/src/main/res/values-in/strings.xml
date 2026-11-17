@@ -569,9 +569,11 @@
     <string name="l_566">Kecepatan gulir otomatis</string>
     <string name="l_567">" dtk / layar"</string>
     <string name="l_568">Gulir otomatis dijeda</string>
-    <string name="l_569">Cadangan Pengaturan</string>
-    <string name="l_570">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_571">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_572">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_573">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_569">Lanjutkan setelah menggulir manual</string>
+    <string name="l_570">Kecepatan mungkin terlalu tinggi untuk membaca</string>
+    <string name="l_571">Cadangan Pengaturan</string>
+    <string name="l_572">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_573">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_574">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_575">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

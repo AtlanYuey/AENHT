@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "自動スクロール速度";
 " s / screen" = " 秒／画面";
 "Auto Scroll Paused" = "自動スクロールを一時停止しました";
+"Continue Auto Scroll While Dragging" = "手動スクロール後も自動で続ける";
+"Speed may be too fast for comfortable reading" = "速度が速すぎて読みづらい場合があります";

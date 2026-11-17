@@ -309,6 +309,7 @@ object AppSettings {
         readMode = ReadMode.of(p.getString("readMode", null))
         autoReadInterval = p.getFloat("autoReadInterval", 3f).toDouble()
         autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(p.getFloat("autoScrollSecondsPerScreen", 10f).toDouble())
+        continueAutoScrollOnDrag = p.getBoolean("continueAutoScrollOnDrag", false)
         preloadPages = p.getInt("preloadPages", 4)
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
@@ -434,6 +435,7 @@ object AppSettings {
     var readMode by Pref(ReadMode.LeftToRight) { save("readMode", it.raw) }
     var autoReadInterval by Pref(3.0) { save("autoReadInterval", it) }
     var autoScrollSecondsPerScreen by Pref(10.0) { save("autoScrollSecondsPerScreen", it) }
+    var continueAutoScrollOnDrag by Pref(false) { save("continueAutoScrollOnDrag", it) }
     var preloadPages by Pref(4) { save("preloadPages", it) }
     var tapToTurnPages by Pref(true) { save("tapToTurnPages", it) }
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
@@ -627,6 +629,7 @@ object AppSettings {
         "readMode" to readMode.raw,
         "autoReadInterval" to autoReadInterval,
         "autoScrollSecondsPerScreen" to autoScrollSecondsPerScreen,
+        "continueAutoScrollOnDrag" to continueAutoScrollOnDrag,
         "preloadPages" to preloadPages,
         "tapToTurnPages" to tapToTurnPages,
         "animatePageTurns" to animatePageTurns,
@@ -736,6 +739,7 @@ object AppSettings {
                 "readMode" -> string?.let { readMode = ReadMode.of(it) }
                 "autoReadInterval" -> number?.let { autoReadInterval = it.toDouble().coerceIn(1.0, 10.0) }
                 "autoScrollSecondsPerScreen" -> number?.let { autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(it.toDouble()) }
+                "continueAutoScrollOnDrag" -> bool?.let { continueAutoScrollOnDrag = it }
                 "preloadPages" -> number?.let { preloadPages = it.toInt().coerceIn(1, 10) }
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
                 "animatePageTurns" -> bool?.let { animatePageTurns = it }

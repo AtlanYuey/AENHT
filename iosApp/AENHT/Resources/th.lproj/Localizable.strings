@@ -568,3 +568,5 @@
 "Auto Scroll Speed" = "ความเร็วการเลื่อนอัตโนมัติ";
 " s / screen" = " วินาที / หน้าจอ";
 "Auto Scroll Paused" = "หยุดเลื่อนอัตโนมัติชั่วคราวแล้ว";
+"Continue Auto Scroll While Dragging" = "เลื่อนอัตโนมัติต่อหลังเลื่อนด้วยมือ";
+"Speed may be too fast for comfortable reading" = "ความเร็วอาจสูงเกินไปจนอ่านได้ยาก";

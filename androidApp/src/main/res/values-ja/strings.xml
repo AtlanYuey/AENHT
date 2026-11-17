@@ -569,9 +569,11 @@
     <string name="l_566">自動スクロール速度</string>
     <string name="l_567">" 秒／画面"</string>
     <string name="l_568">自動スクロールを一時停止しました</string>
-    <string name="l_569">設定のバックアップ</string>
-    <string name="l_570">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_571">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_572">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_573">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_569">手動スクロール後も自動で続ける</string>
+    <string name="l_570">速度が速すぎて読みづらい場合があります</string>
+    <string name="l_571">設定のバックアップ</string>
+    <string name="l_572">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_573">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_574">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_575">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

@@ -62,6 +62,27 @@ jobs:
           path: iosApp/build/SourcePackages
           key: spm-${{ hashFiles('iosApp/project.yml') }}
 
+      - name: Reader motion tests
+        working-directory: iosApp
+        run: |
+          set -o pipefail
+          SIMULATOR=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(v["udid"] for k,vs in sorted(d["devices"].items(), reverse=True) if "iOS" in k for v in vs if "iPhone" in v["name"]))')
+          xcodebuild -project AENHT.xcodeproj -scheme AENHTReaderTests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR" \
+            -clonedSourcePackagesDirPath build/SourcePackages -derivedDataPath build/ReaderTests \
+            -resultBundlePath build/ReaderTests.xcresult CODE_SIGNING_ALLOWED=NO \
+            test 2>&1 | tee reader-tests.log | tail -70
+
+      - name: Upload reader test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aenht-ios-reader-tests
+          path: |
+            iosApp/reader-tests.log
+            iosApp/build/ReaderTests.xcresult
+          if-no-files-found: ignore
+
       - name: Build
         working-directory: iosApp
         run: |
@@ -82,8 +103,11 @@ jobs:
         if: failure()
         working-directory: iosApp
         run: |
-          grep -E "error:|e: " -A3 build.log | head -200 || true
-          tail -80 build.log
+          for LOG in build.log reader-tests.log; do
+            [ -f "$LOG" ] || continue
+            grep -E "error:|e: " -A3 "$LOG" | head -200 || true
+            tail -80 "$LOG"
+          done
 
       # The unsigned IPA is the public download (dev-latest, releases): anyone
       # signs it with their own Apple ID. The signed one below holds the

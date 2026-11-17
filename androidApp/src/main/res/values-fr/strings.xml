@@ -569,9 +569,11 @@
     <string name="l_566">Vitesse de défilement</string>
     <string name="l_567">" s / écran"</string>
     <string name="l_568">Défilement en pause</string>
-    <string name="l_569">Sauvegarde des réglages</string>
-    <string name="l_570">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_571">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_572">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_573">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_569">Continuer après un défilement manuel</string>
+    <string name="l_570">La vitesse peut gêner la lecture</string>
+    <string name="l_571">Sauvegarde des réglages</string>
+    <string name="l_572">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_573">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_574">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_575">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

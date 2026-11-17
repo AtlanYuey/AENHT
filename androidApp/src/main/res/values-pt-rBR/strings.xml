@@ -569,9 +569,11 @@
     <string name="l_566">Velocidade de rolagem</string>
     <string name="l_567">" s / tela"</string>
     <string name="l_568">Rolagem automática pausada</string>
-    <string name="l_569">Backup dos ajustes</string>
-    <string name="l_570">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_571">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_572">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_573">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_569">Continuar após rolagem manual</string>
+    <string name="l_570">A velocidade pode dificultar a leitura</string>
+    <string name="l_571">Backup dos ajustes</string>
+    <string name="l_572">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_573">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_574">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_575">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

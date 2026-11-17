@@ -568,4 +568,6 @@ T = [
     "Velocità di scorrimento",
     " s / schermata",
     "Scorrimento in pausa",
+    "Continua dopo lo scorrimento manuale",
+    "La velocità potrebbe rendere difficile la lettura",
 ]

@@ -568,4 +568,6 @@ T = [
     "Tốc độ cuộn tự động",
     " giây / màn hình",
     "Đã tạm dừng cuộn tự động",
+    "Tiếp tục sau khi cuộn thủ công",
+    "Tốc độ có thể quá nhanh để đọc",
 ]
