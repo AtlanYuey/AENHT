@@ -99,6 +99,7 @@ struct ReaderView: View {
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
     @State private var isLandscape = false
+    @State private var viewportPixels: CGSize = .zero
     @Environment(\.privacyMode) private var privacy
     @State private var askPage = false
     @State private var pageText = ""
@@ -110,10 +111,7 @@ struct ReaderView: View {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var prefetcher = ImagePrefetcher(
-        pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
-    )
-    @State private var stripPrefetcher = ImagePrefetcher(
+    @State private var diskPrefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .diskCache, maxConcurrentRequestCount: 3
     )
     /// What the prefetcher is loading now.
@@ -128,6 +126,13 @@ struct ReaderView: View {
     }
 
     private var pageCount: Int { source.pages.count }
+
+    private var imageOptions: ReaderImageOptions {
+        let model: SuperResolutionModel = settings.superResolutionModel == .high && SuperResolutionModels.shared.isReady
+            ? .high : .standard
+        return ReaderImageOptions(viewport: viewportPixels, displayScale: displayScale, crop: settings.autoCrop,
+                                  mode: settings.superResolution, model: model)
+    }
 
     /// Double page: pages side by side, or nil for one at a time.
     private var spreads: Spreads? {
@@ -184,8 +189,7 @@ struct ReaderView: View {
                 autoRead = false
                 hider.cancel()
                 awake.stop()
-                prefetcher.stopPrefetching()
-                stripPrefetcher.stopPrefetching()
+                diskPrefetcher.stopPrefetching()
                 recordPage()
             }
             .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
@@ -257,7 +261,7 @@ struct ReaderView: View {
             .background(Color.black)
             .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscape = $0 }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
-                ReaderScreen.pixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
+                viewportPixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
             }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
@@ -324,7 +328,8 @@ struct ReaderView: View {
     private var content: some View {
         if settings.readMode.isPaged {
             let spreads = spreads
-            PagedReader(units: units(spreads), mode: settings.readMode, page: Binding(
+            PagedReader(units: units(spreads), mode: settings.readMode, imageOptions: imageOptions,
+                        isActive: scenePhase == .active, page: Binding(
                 get: { spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page },
                 set: { slot in
                     let first = spreads.map { Int($0.firstPage(slot: Int32(slot))) } ?? slot
@@ -340,7 +345,8 @@ struct ReaderView: View {
             })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)")
         } else {
-            ContinuousReader(pages: source.pages, page: $page, request: scrollRequest, running: $autoRead) {
+            ContinuousReader(pages: source.pages, imageOptions: imageOptions, page: $page,
+                             request: scrollRequest, running: $autoRead) {
                 chromeVisible = false
             }
             .contentShape(Rectangle())
@@ -468,14 +474,12 @@ struct ReaderView: View {
         let lower = max(0, index - 2)
         guard lower < upper else { return }
         let urls = source.pages[lower..<upper].compactMap(\.url).filter { !$0.isFileURL }
-        // Keep compressed strip data ahead on disk; decoding several full-height originals
-        // into the memory cache would defeat the visible page's thumbnail budget.
-        let loader = settings.readMode.isPaged ? prefetcher : stripPrefetcher
-        (settings.readMode.isPaged ? stripPrefetcher : prefetcher).stopPrefetching()
+        // Keep the settings-controlled window on disk. The two upcoming turns
+        // use their actual display requests in the reader's preparation queue.
         let stale = prefetched.subtracting(urls)
-        if !stale.isEmpty { loader.stopPrefetching(with: Array(stale)) }
+        if !stale.isEmpty { diskPrefetcher.stopPrefetching(with: Array(stale)) }
         prefetched = Set(urls)
-        loader.startPrefetching(with: urls)
+        diskPrefetcher.startPrefetching(with: urls)
     }
 
     private func runAutoRead() async {
@@ -945,6 +949,8 @@ struct PagedReader: UIViewControllerRepresentable {
     /// One or two pages (double page) per turn.
     let units: [[ReaderPage]]
     let mode: ReadMode
+    let imageOptions: ReaderImageOptions
+    let isActive: Bool
     @Binding var page: Int
     let onTap: (CGPoint) -> Void
     let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
@@ -968,12 +974,15 @@ struct PagedReader: UIViewControllerRepresentable {
         if let first = context.coordinator.controller(for: page) {
             controller.setViewControllers([first], direction: .forward, animated: false)
         }
+        context.coordinator.prepare(after: page)
         return controller
     }
 
     func updateUIViewController(_ controller: UIPageViewController, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
+        (controller.viewControllers?.first as? PageController)?.configure(imageOptions, active: isActive)
+        coordinator.prepare(after: page)
         let swipeFades = AppSettings.shared.swipeFades
         if (controller.dataSource == nil) != swipeFades { controller.dataSource = swipeFades ? nil : coordinator }
         let sweep = coordinator.pendingSweep
@@ -988,6 +997,10 @@ struct PagedReader: UIViewControllerRepresentable {
         coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
+    static func dismantleUIViewController(_ controller: UIPageViewController, coordinator: Coordinator) {
+        coordinator.stopPreparation()
+    }
+
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: PagedReader
         /// The page turn drawn over the page view controller, if one runs.
@@ -996,12 +1009,29 @@ struct PagedReader: UIViewControllerRepresentable {
         /// Page controllers near the current page, reused so a tap shows
         /// the very page that was already laid out next to this one.
         private var cache: [Int: PageController] = [:]
+        private let imagePreparation = ReaderImagePreparation()
         /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
         var pendingSweep: PageTurn?
 
         init(_ parent: PagedReader) {
             self.parent = parent
         }
+
+        func prepare(after index: Int) {
+            guard parent.isActive else { imagePreparation.stop(); return }
+            let options = parent.imageOptions
+            let upcoming = parent.units.dropFirst(index + 1).prefix(ReaderImagePreparation.turns)
+            let items = upcoming.flatMap { unit in
+                unit.compactMap { page -> ReaderImagePreparation.Item? in
+                    guard let url = page.url else { return nil }
+                    return .init(request: AutoCropProcessor.request(url, crop: options.crop, priority: .low),
+                                 enhancement: options.enhancement(for: url, pagesPerTurn: unit.count))
+                }
+            }
+            imagePreparation.prepare(items)
+        }
+
+        func stopPreparation() { imagePreparation.stop() }
 
         /// A swipe of [t] ended: with Fade on Swipe, one the way the pages go
         /// turns them (left or up is forward, except right to left). Answers
@@ -1019,14 +1049,19 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func controller(for index: Int) -> PageController? {
             guard parent.units.indices.contains(index) else { return nil }
-            if let cached = cache[index] { return cached }
-            let controller = PageController(index: index, urls: parent.units[index].map(\.url), rightToLeft: parent.mode == .rightToLeft)
+            if let cached = cache[index] {
+                cached.configure(parent.imageOptions, active: parent.isActive)
+                return cached
+            }
+            let controller = PageController(index: index, urls: parent.units[index].map(\.url),
+                                            rightToLeft: parent.mode == .rightToLeft,
+                                            options: parent.imageOptions, active: parent.isActive)
             controller.onTap = { [weak self] point in self?.parent.onTap(point) }
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
             cache[index] = controller
             let current = parent.page
-            cache = cache.filter { abs($0.key - current) <= 3 || $0.key == index }
+            cache = cache.filter { (current - 1...current + ReaderImagePreparation.turns).contains($0.key) || $0.key == index }
             return controller
         }
 
@@ -1162,6 +1197,7 @@ struct PagedReader: UIViewControllerRepresentable {
             if parent.page != current.index {
                 parent.page = current.index
             }
+            prepare(after: current.index)
         }
     }
 }
@@ -1176,11 +1212,16 @@ final class PageController: UIViewController {
     /// Fade on Swipe: a swipe's translation when it ended; answers whether it turned the page.
     var onSwipeTurn: ((CGPoint) -> Bool)?
     private let zoomView = ZoomableImageView()
+    private var options: ReaderImageOptions
+    private var active: Bool
+    private var visible = false
 
-    init(index: Int, urls: [URL?], rightToLeft: Bool) {
+    init(index: Int, urls: [URL?], rightToLeft: Bool, options: ReaderImageOptions, active: Bool) {
         self.index = index
         self.urls = urls
         self.rightToLeft = rightToLeft
+        self.options = options
+        self.active = active
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -1197,22 +1238,28 @@ final class PageController: UIViewController {
         zoomView.onTap = { [weak self] point in self?.onTap?(point) }
         zoomView.onSwipe = { [weak self] direction in self?.onSwipe?(direction) }
         zoomView.onSwipeTurn = { [weak self] t in self?.onSwipeTurn?(t) ?? false }
-        if urls.count > 1 {
-            zoomView.loadSpread(urls, rightToLeft: rightToLeft)
-        } else {
-            zoomView.load(urls.first ?? nil)
-            // Fast devices sharpen the pages around the one shown too.
-            if SuperResolutionSpeed.isFast { zoomView.enhanceWhenReady() }
-        }
+        zoomView.load(urls, rightToLeft: rightToLeft, options: options)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if urls.count == 1 { zoomView.enhanceWhenReady() }
+    func configure(_ options: ReaderImageOptions, active: Bool) {
+        let cropChanged = self.options.crop != options.crop
+        self.options = options
+        self.active = active
+        guard isViewLoaded else { return }
+        if cropChanged { zoomView.load(urls, rightToLeft: rightToLeft, options: options) }
+        zoomView.updatePresentation(options, enhanceNow: visible && active)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        visible = true
+        zoomView.updatePresentation(options, enhanceNow: active, refresh: true)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        visible = false
+        zoomView.updatePresentation(options, enhanceNow: false)
         zoomView.resetZoom()
     }
 }
@@ -1240,9 +1287,15 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         return UIButton(configuration: configuration)
     }()
     private var retryLoad: (() -> Void)?
-    private var task: ImageTask?
-    private var spreadTask: Task<Void, Never>?
-    private var currentURL: URL?
+    private var loadTask: Task<Void, Never>?
+    private var enhanceTask: Task<Void, Never>?
+    private var originals: [UIImage] = []
+    private var urls: [URL] = []
+    private var options: ReaderImageOptions?
+    private var rightToLeft = false
+    private var enhanceNow = false
+    private var renderedImages: [ObjectIdentifier] = []
+    private var renderedViewport: CGSize?
     private var pendingTap: DispatchWorkItem?
     private var lastTapTime: CFTimeInterval = 0
     private var lastTapPoint: CGPoint = .zero
@@ -1309,45 +1362,61 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     deinit {
-        task?.cancel()
-        spreadTask?.cancel()
-        pendingTap?.cancel()
+        loadTask?.cancel()
         enhanceTask?.cancel()
+        pendingTap?.cancel()
     }
 
-    // MARK: Super resolution
-
-    private var enhanceTask: Task<Void, Never>?
-    private var wantsEnhance = false
-    private var enhancedURL: URL?
-
-    /// Sharpens the page once it has loaded (Super Resolution settings).
-    func enhanceWhenReady() {
-        wantsEnhance = true
-        startEnhance()
+    func updatePresentation(_ options: ReaderImageOptions, enhanceNow: Bool, refresh: Bool = false) {
+        guard refresh || self.options != options || self.enhanceNow != enhanceNow else { return }
+        self.options = options
+        self.enhanceNow = enhanceNow
+        enhanceTask?.cancel()
+        enhanceTask = nil
+        refreshPresentation(animated: false)
     }
 
-    private func startEnhance() {
-        guard wantsEnhance, enhanceTask == nil, let url = currentURL, enhancedURL != url,
-              let image = imageView.image else { return }
-        let settings = AppSettings.shared
-        let mode = settings.superResolution
-        guard mode != .off else { return }
-        let kind: SuperResolutionModel = settings.superResolutionModel == .high && SuperResolutionModels.shared.isReady
-            ? .high : .standard
-        let key = url.absoluteString + (settings.autoCrop ? "|crop" : "")
-        let target = ReaderScreen.pixels
+    private func refreshPresentation(animated: Bool) {
+        guard let options, !originals.isEmpty else { return }
+        let images = originals
+        let plans = urls.map { options.enhancement(for: $0, pagesPerTurn: images.count) }
+        let cached = zip(images, plans).map { image, plan in plan?.cached(image) }
+        show(zip(images, cached).map { $1 ?? $0 }, options: options, animated: animated)
+        guard enhanceNow, zip(plans, cached).contains(where: { $0 != nil && $1 == nil }) else { return }
         enhanceTask = Task { [weak self] in
-            let enhanced = await SuperResolver.shared.enhance(image, key: key, target: target, mode: mode, kind: kind)
-            guard let self, !Task.isCancelled else { return }
-            self.enhanceTask = nil
-            guard let enhanced, self.currentURL == url else { return }
-            self.enhancedURL = url
-            // The same picture, sharper: a slow cross-fade, no reload.
-            UIView.transition(with: self.imageView, duration: 0.35,
-                              options: [.transitionCrossDissolve, .allowUserInteraction]) {
-                self.imageView.image = enhanced
+            var ready = zip(images, cached).map { $1 ?? $0 }
+            for index in images.indices {
+                guard !Task.isCancelled else { return }
+                if cached[index] == nil, let plan = plans[index], let image = await plan.enhance(images[index]) {
+                    ready[index] = image
+                }
             }
+            guard !Task.isCancelled, let self else { return }
+            self.enhanceTask = nil
+            self.show(ready, options: options, animated: true)
+        }
+    }
+
+    private func show(_ images: [UIImage], options: ReaderImageOptions, animated: Bool) {
+        guard let first = images.first else { return }
+        let identifiers = images.map(ObjectIdentifier.init)
+        guard renderedImages != identifiers || renderedViewport != options.viewport else { return }
+        renderedImages = identifiers
+        renderedViewport = options.viewport
+        let image: UIImage
+        if images.count == 2 {
+            image = Self.join(rightToLeft ? images[1] : first, rightToLeft ? first : images[1],
+                              gap: 6, screen: options.viewport, scale: options.displayScale)
+        } else {
+            image = first
+        }
+        spinner.stopAnimating()
+        if animated {
+            UIView.transition(with: imageView, duration: 0.2, options: [.transitionCrossDissolve, .allowUserInteraction]) {
+                imageView.image = image
+            }
+        } else {
+            imageView.image = image
         }
     }
 
@@ -1382,73 +1451,46 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
     }
 
-    func load(_ url: URL?) {
-        guard url != currentURL else { return }
-        task?.cancel()
-        spreadTask?.cancel()
+    func load(_ requested: [URL?], rightToLeft: Bool, options: ReaderImageOptions) {
+        loadTask?.cancel()
         enhanceTask?.cancel()
         enhanceTask = nil
-        enhancedURL = nil
-        currentURL = url
+        self.options = options
+        self.rightToLeft = rightToLeft
+        urls = requested.compactMap { $0 }
+        originals = []
+        renderedImages = []
+        renderedViewport = nil
         imageView.image = nil
         resetZoom()
         hideFailure()
-        guard let url else { return }
-        let request = AutoCropProcessor.request(url)
-        if let cached = ImagePipeline.shared.cache[request] {
-            imageView.image = cached.image
-            startEnhance()
+        let requests = urls.map { AutoCropProcessor.request($0, crop: options.crop) }
+        guard !requests.isEmpty else { return }
+        let cached = requests.compactMap { request -> UIImage? in
+            guard let value = ImagePipeline.shared.cache[request], !value.isPreview else { return nil }
+            return value.image
+        }
+        if cached.count == requests.count {
+            originals = cached
+            refreshPresentation(animated: false)
             return
         }
         spinner.startAnimating()
-        task = ImagePipeline.shared.loadImage(with: request) { [weak self] result in
-            guard let self, self.currentURL == url else { return }
-            self.spinner.stopAnimating()
-            switch result {
-            case let .success(response):
-                UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
-                    self.imageView.image = response.image
+        loadTask = Task { [weak self] in
+            do {
+                var images: [UIImage] = []
+                for request in requests {
+                    images.append(try await ImagePipeline.shared.image(for: request))
                 }
-                self.startEnhance()
-            case .failure:
-                // Not left black: the page says it failed and loads again on a tap.
+                guard !Task.isCancelled, let self else { return }
+                self.originals = images
+                self.refreshPresentation(animated: true)
+            } catch {
+                guard !Task.isCancelled, let self else { return }
                 self.showFailure { [weak self] in
-                    self?.currentURL = nil
-                    self?.load(url)
+                    guard let self, let current = self.options else { return }
+                    self.load(requested, rightToLeft: rightToLeft, options: current)
                 }
-            }
-        }
-    }
-
-    /// Two pages joined into one image (the first on the left, or on the
-    /// right when reading right to left), zoomed as one.
-    func loadSpread(_ urls: [URL?], rightToLeft: Bool) {
-        let key = urls.compactMap { $0 }
-        guard key.count == 2 else { load(urls.first ?? nil); return }
-        task?.cancel()
-        spreadTask?.cancel()
-        currentURL = nil
-        imageView.image = nil
-        resetZoom()
-        hideFailure()
-        spinner.startAnimating()
-        let requests = key.map(AutoCropProcessor.request)
-        spreadTask = Task { [weak self] in
-            async let a = ImagePipeline.shared.image(for: requests[0])
-            async let b = ImagePipeline.shared.image(for: requests[1])
-            let (left, right) = (try? await a, try? await b)
-            guard !Task.isCancelled, let self else { return }
-            guard let first = left, let second = right else {
-                // One of the two failed: the spinner doesn't turn forever.
-                self.showFailure { [weak self] in self?.loadSpread(urls, rightToLeft: rightToLeft) }
-                return
-            }
-            let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second,
-                                  gap: 6, screen: ReaderScreen.pixels,
-                                  scale: self.window?.screen.scale ?? self.traitCollection.displayScale)
-            self.spinner.stopAnimating()
-            UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
-                self.imageView.image = image
             }
         }
     }

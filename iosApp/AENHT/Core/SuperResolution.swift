@@ -44,22 +44,6 @@ enum SuperResolutionModel: String, CaseIterable, Identifiable {
     }
 }
 
-/// The screen the reader is on, in pixels (pages are enlarged to fit it).
-@MainActor
-enum ReaderScreen {
-    static var pixels = CGSize(width: 1179, height: 2556)
-}
-
-/// Whether this device is fast enough to sharpen the pages around the one
-/// shown too, measured on the first pages (no list of models).
-@MainActor
-enum SuperResolutionSpeed {
-    /// Seconds per 256 × 256 tile, a running average; nil until measured.
-    static var tileSeconds: Double?
-    /// About a second for a typical page (some 25 tiles) at most.
-    static var isFast: Bool { (tileSeconds ?? .infinity) < 0.045 }
-}
-
 // MARK: - Downloaded model
 
 /// The High Quality model: downloaded, checked and compiled on request.
@@ -227,10 +211,16 @@ actor SuperResolver {
     private static let pad = 12
 
     private var models: [SuperResolutionModel: MLModel] = [:]
-    /// The first run of a model includes its preparation: not timed.
-    private var warmed: Set<SuperResolutionModel> = []
     private var writes = 0
-    private let memory = NSCache<NSString, UIImage>()
+    // NSCache supports concurrent lookups, so a ready result is available on the first frame.
+    private nonisolated(unsafe) let memory = NSCache<NSString, UIImage>()
+    private struct Inference {
+        let id: UUID
+        let name: String
+        let task: Task<UIImage?, Never>
+        var ahead: Bool
+    }
+    private var inference: Inference?
 
     private init() {
         memory.countLimit = 6
@@ -247,7 +237,6 @@ actor SuperResolver {
 
     func forget(_ kind: SuperResolutionModel) {
         models[kind] = nil
-        warmed.remove(kind)
     }
 
     private func model(_ kind: SuperResolutionModel) throws -> MLModel {
@@ -271,36 +260,90 @@ actor SuperResolver {
         URL.cachesDirectory.appending(path: "SuperResolution", directoryHint: .isDirectory)
     }
 
-    /// The page enlarged to fit [target] (pixels), or nil when it's sharp
-    /// enough already (or super-resolution is off).
-    func enhance(_ image: UIImage, key: String, target: CGSize,
-                 mode: SuperResolutionMode, kind: SuperResolutionModel) async -> UIImage? {
-        guard let threshold = mode.threshold, let cgImage = image.cgImage else { return nil }
-        let width = cgImage.width
-        let height = cgImage.height
-        guard width > 16, height > 16 else { return nil }
+    private struct Plan {
+        let scale: CGFloat
+        let width: Int
+        let height: Int
+        let name: String
+    }
+
+    private nonisolated static func plan(for image: CGImage, key: String, target: CGSize,
+                                         mode: SuperResolutionMode, kind: SuperResolutionModel) -> Plan? {
+        let width = image.width
+        let height = image.height
+        guard let threshold = mode.threshold, width > 16, height > 16 else { return nil }
         let fit = min(target.width / CGFloat(width), target.height / CGFloat(height))
         guard fit >= threshold else { return nil }
         // At most 4× (the model's), and at most 24 megapixels.
-        var scale = min(fit, 4)
-        scale = min(scale, sqrt(24_000_000 / CGFloat(width * height)))
+        let scale = min(fit, 4, sqrt(24_000_000 / (CGFloat(width) * CGFloat(height))))
         guard scale >= threshold else { return nil }
         let outWidth = Int((CGFloat(width) * scale).rounded())
         let outHeight = Int((CGFloat(height) * scale).rounded())
+        return Plan(scale: scale, width: outWidth, height: outHeight,
+                    name: cacheName(key: key, kind: kind, width: outWidth))
+    }
 
-        let name = Self.cacheName(key: key, kind: kind, width: outWidth)
-        if let cached = memory.object(forKey: name as NSString) { return cached }
-        let file = Self.cacheDirectory.appending(path: name)
+    nonisolated func cached(_ image: UIImage, key: String, target: CGSize,
+                            mode: SuperResolutionMode, kind: SuperResolutionModel) -> UIImage? {
+        guard let cgImage = image.cgImage,
+              let plan = Self.plan(for: cgImage, key: key, target: target, mode: mode, kind: kind) else { return nil }
+        return memory.object(forKey: plan.name as NSString)
+    }
+
+    /// Only one page runs Core ML at a time. A visible request joins matching
+    /// work or interrupts a different page's speculative inference.
+    func enhance(_ image: UIImage, key: String, target: CGSize, mode: SuperResolutionMode,
+                 kind: SuperResolutionModel, ahead: Bool = false) async -> UIImage? {
+        guard let cgImage = image.cgImage,
+              let plan = Self.plan(for: cgImage, key: key, target: target, mode: mode, kind: kind) else { return nil }
+        while let running = inference {
+            guard !Task.isCancelled else { return nil }
+            if let cached = memory.object(forKey: plan.name as NSString) { return cached }
+            if running.name == plan.name {
+                if !ahead { inference?.ahead = false }
+                let result = await running.task.value
+                if let result { return result }
+                if ahead || !running.ahead { return nil }
+                continue
+            }
+            if !ahead, running.ahead { running.task.cancel() }
+            _ = await running.task.value
+        }
+        guard !Task.isCancelled else { return nil }
+        if let cached = memory.object(forKey: plan.name as NSString) { return cached }
+        let id = UUID()
+        let task = Task(priority: ahead ? .utility : .userInitiated) {
+            defer { inference = nil }
+            return await resolve(cgImage, plan: plan, kind: kind, orientation: image.imageOrientation)
+        }
+        inference = Inference(id: id, name: plan.name, task: task, ahead: ahead)
+        return await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            if ahead { Task { await self.cancelAhead(id) } }
+        }
+    }
+
+    private func cancelAhead(_ id: UUID) {
+        if let inference, inference.id == id, inference.ahead { inference.task.cancel() }
+    }
+
+    private func resolve(_ image: CGImage, plan: Plan, kind: SuperResolutionModel,
+                         orientation: UIImage.Orientation) async -> UIImage? {
+        let file = Self.cacheDirectory.appending(path: plan.name)
         if let data = try? Data(contentsOf: file), let cached = UIImage(data: data) {
-            remember(cached, name)
-            return cached
+            let ready = cached.preparingForDisplay() ?? cached
+            remember(ready, plan.name)
+            return ready
         }
         do {
+            try Task.checkCancellation()
             let model = try model(kind)
-            let result = try await run(model, kind: kind, image: cgImage, scale: scale,
-                                       outWidth: outWidth, outHeight: outHeight)
-            let enhanced = UIImage(cgImage: result, scale: 1, orientation: .up)
-            remember(enhanced, name)
+            let result = try await run(model, image: image, scale: plan.scale,
+                                       outWidth: plan.width, outHeight: plan.height)
+            try Task.checkCancellation()
+            let enhanced = UIImage(cgImage: result, scale: 1, orientation: orientation)
+            remember(enhanced, plan.name)
             save(enhanced, to: file)
             return enhanced
         } catch {
@@ -308,7 +351,7 @@ actor SuperResolver {
         }
     }
 
-    private static func cacheName(key: String, kind: SuperResolutionModel, width: Int) -> String {
+    private nonisolated static func cacheName(key: String, kind: SuperResolutionModel, width: Int) -> String {
         let digest = SHA256.hash(data: Data("\(key)|\(kind.rawValue)|\(width)".utf8))
         return digest.prefix(16).map { String(format: "%02x", $0) }.joined() + ".jpg"
     }
@@ -340,7 +383,7 @@ actor SuperResolver {
         try? FileManager.default.removeItem(at: cacheDirectory)
     }
 
-    private func run(_ model: MLModel, kind: SuperResolutionModel, image: CGImage, scale: CGFloat,
+    private func run(_ model: MLModel, image: CGImage, scale: CGFloat,
                      outWidth: Int, outHeight: Int) async throws -> CGImage {
         let width = image.width
         let height = image.height
@@ -391,10 +434,8 @@ actor SuperResolver {
                     }
                 }
 
-                let started = CACurrentMediaTime()
                 let features = try MLDictionaryFeatureProvider(dictionary: ["input": MLFeatureValue(multiArray: input)])
                 let prediction = try await model.prediction(from: features)
-                await record(CACurrentMediaTime() - started, kind: kind)
                 guard let result = prediction.featureValue(for: "output")?.multiArrayValue else {
                     throw CocoaError(.coderInvalidValue)
                 }
@@ -413,19 +454,6 @@ actor SuperResolver {
         }
         guard let image = output.makeImage() else { throw CocoaError(.coderInvalidValue) }
         return image
-    }
-
-    private func record(_ seconds: Double, kind: SuperResolutionModel) async {
-        guard warmed.contains(kind) else {
-            warmed.insert(kind)
-            return
-        }
-        // The Standard model is the one the speed is judged by.
-        guard kind == .standard else { return }
-        await MainActor.run {
-            let previous = SuperResolutionSpeed.tileSeconds
-            SuperResolutionSpeed.tileSeconds = previous.map { $0 * 0.8 + seconds * 0.2 } ?? seconds
-        }
     }
 
     /// Part of the model's output (1 × 3 × H × W, RGB 0–1) as an image.

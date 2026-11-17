@@ -10,7 +10,12 @@ struct AutoCropProcessor: ImageProcessing, Hashable {
     /// A page request, cropped when Auto Crop is on.
     @MainActor
     static func request(_ url: URL) -> ImageRequest {
-        ImageRequest(url: url, processors: AppSettings.shared.autoCrop ? [AutoCropProcessor()] : [])
+        request(url, crop: AppSettings.shared.autoCrop)
+    }
+
+    static func request(_ url: URL, crop: Bool, priority: ImageRequest.Priority = .normal) -> ImageRequest {
+        guard crop else { return ImageRequest(url: url, priority: priority) }
+        return ReaderStripImages.processedRequest(for: url, priority: priority, processors: [AutoCropProcessor()])
     }
 
     func process(_ image: UIImage) -> UIImage? {

@@ -18,8 +18,10 @@ struct RemoteImage: View {
     var fallback: (() -> URL?)? = nil
     /// Reader pages need an explicit recovery action without leaving their scroll position.
     var retryOnFailure = false
-    /// Continuous reader pages bound decoding in both dimensions, including very tall strips.
-    var thumbnailSize: CGSize? = nil
+    /// Allows continuous reading to share its display request with image preparation.
+    var makeRequest: ((URL) -> ImageRequest)? = nil
+    var enhancement: ReaderImageEnhancement? = nil
+    var enhanceNow = false
     var onLoadState: ((RemoteImageLoadState) -> Void)? = nil
     @State private var attempt = 0
     /// The picture couldn't be loaded: it is loaded again when the network comes back.
@@ -29,15 +31,21 @@ struct RemoteImage: View {
     var body: some View {
         LazyImage(request: request) { state in
             if let image = state.image {
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: contentMode)
-                    .blur(radius: blur ? 18 : privacy == .blurImages || privacy == .blurContent ? 28 : 0, opaque: true)
-                    .transition(.opacity)
-                    .onAppear { onLoadState?(.ready(state.imageContainer?.image.size ?? .zero)) }
+                Group {
+                    if let enhancement, let original = state.imageContainer?.image {
+                        EnhancedRemoteImage(original: original, enhancement: enhancement, active: enhanceNow,
+                                            contentMode: contentMode)
+                    } else {
+                        image.resizable().aspectRatio(contentMode: contentMode)
+                    }
+                }
+                .blur(radius: blur ? 18 : privacy == .blurImages || privacy == .blurContent ? 28 : 0, opaque: true)
+                .transition(.opacity)
+                .onAppear { onLoadState?(.ready(state.imageContainer?.image.size ?? .zero)) }
             } else if state.error != nil, let other = fallback?(), other != url {
                 RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur,
-                            retryOnFailure: retryOnFailure, thumbnailSize: thumbnailSize, onLoadState: onLoadState)
+                            retryOnFailure: retryOnFailure, makeRequest: makeRequest,
+                            enhancement: enhancement, enhanceNow: enhanceNow, onLoadState: onLoadState)
             } else if state.error != nil {
                 Rectangle()
                     .fill(.quaternary)
@@ -77,15 +85,32 @@ struct RemoteImage: View {
 
     private var request: ImageRequest? {
         guard let url else { return nil }
+        if let makeRequest { return makeRequest(url) }
         var processors: [any ImageProcessing] = []
         if let targetWidth {
             processors.append(.resize(width: targetWidth))
         }
-        var request = ImageRequest(url: url, processors: processors)
-        if let thumbnailSize {
-            request.userInfo[.thumbnailKey] = ImageRequest.ThumbnailOptions(size: thumbnailSize, unit: .pixels, contentMode: .aspectFit)
-        }
-        return request
+        return ImageRequest(url: url, processors: processors)
+    }
+}
+
+private struct EnhancedRemoteImage: View {
+    let original: UIImage
+    let enhancement: ReaderImageEnhancement
+    let active: Bool
+    let contentMode: ContentMode
+    @State private var result: (ReaderImageEnhancement, UIImage)?
+
+    var body: some View {
+        let prepared = (result?.0 == enhancement ? result?.1 : nil) ?? enhancement.cached(original)
+        Image(uiImage: prepared ?? original)
+            .resizable()
+            .aspectRatio(contentMode: contentMode)
+            .task(id: active ? enhancement : nil) {
+                guard active, prepared == nil,
+                      let image = await enhancement.enhance(original), !Task.isCancelled else { return }
+                result = (enhancement, image)
+            }
     }
 }
 

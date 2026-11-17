@@ -210,6 +210,27 @@ final class ReaderScrollTests: XCTestCase {
         XCTAssertLessThan(scroll.contentOffset.y, 1215)
     }
 
+    func testPreparationTracksTheBottomOfTheViewportBeforeTheReadingPageChanges() {
+        let scroll = ManualScrollView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        scroll.contentInsetAdjustmentBehavior = .never
+        scroll.contentSize = CGSize(width: 400, height: 3200)
+        let driver = ReaderScrollDriver()
+        for (index, frame) in [CGRect(x: 0, y: 0, width: 400, height: 750),
+                               CGRect(x: 0, y: 750, width: 400, height: 120),
+                               CGRect(x: 0, y: 870, width: 400, height: 2330)].enumerated() {
+            let view = UIView(frame: frame)
+            scroll.addSubview(view)
+            driver.register(index: index, view: view)
+        }
+        var windows: [ClosedRange<Int>] = []
+        driver.onVisiblePages = { windows.append($0) }
+        driver.reportPage()
+        scroll.contentOffset.y = 100
+        driver.reportPage()
+        driver.reportPage()
+        XCTAssertEqual(windows, [0...1, 0...2])
+    }
+
     func testFailureStopsAndReportsTheImageNeedingRetry() {
         let (driver, scroll, _) = fixture()
         defer { driver.stop() }

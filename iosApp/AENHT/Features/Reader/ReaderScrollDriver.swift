@@ -19,6 +19,7 @@ final class ReaderScrollDriver: NSObject {
     var continueOnDrag = false
     var lastPage: Int?
     var onPage: ((Int) -> Void)?
+    var onVisiblePages: ((ClosedRange<Int>) -> Void)?
     var onStop: ((StopReason) -> Void)?
     private(set) var running = false
     private(set) var knownRatios: [Int: CGFloat] = [:]
@@ -30,6 +31,7 @@ final class ReaderScrollDriver: NSObject {
     private var previousTimestamp: CFTimeInterval?
     private var tickTarget: TickTarget?
     private var lastReportedPage: Int?
+    private var lastVisiblePages: ClosedRange<Int>?
     private var reportScheduled = false
     private var viewportWidth: CGFloat = 0
 
@@ -79,6 +81,7 @@ final class ReaderScrollDriver: NSObject {
         link.preferredFrameRateRange = CAFrameRateRange(minimum: min(30, maximum), maximum: maximum, preferred: maximum)
         displayLink = link
         link.add(to: .main, forMode: .common)
+        reportPage()
     }
 
     func stop() {
@@ -93,6 +96,9 @@ final class ReaderScrollDriver: NSObject {
     func disconnect() {
         stop()
         onPage = nil
+        onVisiblePages = nil
+        lastVisiblePages = nil
+        lastReportedPage = nil
         onStop = nil
     }
 
@@ -121,10 +127,22 @@ final class ReaderScrollDriver: NSObject {
         guard let scroll = scrollView else { return }
         let top = scroll.contentOffset.y + scroll.adjustedContentInset.top
         let bottom = scroll.contentOffset.y + scroll.bounds.height - scroll.adjustedContentInset.bottom
-        guard let first = frames(in: scroll).first(where: { $0.rect.maxY > top + 0.5 && $0.rect.minY < bottom }),
-              first.index != lastReportedPage else { return }
-        lastReportedPage = first.index
-        onPage?(first.index)
+        let rows = frames(in: scroll)
+        func isVisible(_ row: (index: Int, rect: CGRect)) -> Bool {
+            row.rect.maxY > top + 0.5 && row.rect.minY < bottom
+        }
+        guard let first = rows.first(where: isVisible) else { return }
+        if first.index != lastReportedPage {
+            lastReportedPage = first.index
+            onPage?(first.index)
+        }
+        if let last = rows.last(where: isVisible) {
+            let visible = first.index...last.index
+            if visible != lastVisiblePages {
+                lastVisiblePages = visible
+                onVisiblePages?(visible)
+            }
+        }
     }
 
     private func ready(_ index: Int, rect: CGRect) -> Bool {
