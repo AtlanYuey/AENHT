@@ -228,10 +228,12 @@ fun <T> PickerRow(
 
 /** A plain centered text button row (destructive or tinted). */
 @Composable
-fun ButtonRow(title: String, onClick: () -> Unit, destructive: Boolean = false, last: Boolean = false, enabled: Boolean = true) {
+fun ButtonRow(title: String, onClick: () -> Unit, destructive: Boolean = false, last: Boolean = false, enabled: Boolean = true,
+              modifier: Modifier = Modifier) {
     val colors = AppTheme.colors
     ListRow(
         title,
+        modifier,
         titleColor = when {
             !enabled -> colors.tertiaryLabel
             destructive -> colors.red

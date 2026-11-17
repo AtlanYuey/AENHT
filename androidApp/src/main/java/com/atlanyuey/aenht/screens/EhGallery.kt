@@ -487,11 +487,15 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 enabled = !busy,
             )
             when (record?.state) {
-                DownloadRecord.FINISHED -> GlassCircleButton(
-                    Icons.CheckCircle, tr("Downloaded"),
-                    onClick = { overlays.actionSheet(deleteTitle, null, listOf(DialogButton(deleteLabel, ButtonRole.Destructive) { Downloads.delete(d.key) })) },
-                    size = 46.dp, iconColor = AppTheme.colors.green,
-                )
+                DownloadRecord.FINISHED -> {
+                    val anchor = rememberAnchor()
+                    GlassCircleButton(
+                        Icons.CheckCircle, tr("Downloaded"),
+                        onClick = { overlays.confirm(anchor.bounds, deleteTitle, deleteLabel) { Downloads.delete(d.key) } },
+                        modifier = Modifier.anchor(anchor),
+                        size = 46.dp, iconColor = AppTheme.colors.green,
+                    )
+                }
                 DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED ->
                     GlassCircleButton(Icons.Pause, tr("Pause Download"), onClick = { Downloads.pause(d.key) }, size = 46.dp, iconColor = AppTheme.tint, iconSize = 18.dp)
                 DownloadRecord.PAUSED, DownloadRecord.FAILED ->

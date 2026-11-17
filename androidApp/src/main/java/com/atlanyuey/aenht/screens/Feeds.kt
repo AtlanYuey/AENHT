@@ -924,11 +924,11 @@ class HistoryScreen : Screen(), TabRoot {
             },
             trailing = {
                 SiteFilterButton(site, { site = it })
+                val clearAnchor = rememberAnchor()
                 GlassCircleButton(
                     Icons.Trash, tr("Clear"),
-                    onClick = {
-                        overlays.actionSheet(clearTitle, null, listOf(DialogButton(clearLabel, ButtonRole.Destructive) { HistoryStore.clear() }))
-                    },
+                    onClick = { overlays.confirm(clearAnchor.bounds, clearTitle, clearLabel) { HistoryStore.clear() } },
+                    modifier = Modifier.anchor(clearAnchor),
                     enabled = entries.isNotEmpty(),
                 )
             },

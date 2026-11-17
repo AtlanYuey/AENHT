@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.rememberAnchor
+import com.atlanyuey.aenht.ui.components.anchor
 import com.atlanyuey.aenht.ui.components.readerThumb
 import com.atlanyuey.aenht.core.privacyText
 import com.atlanyuey.aenht.core.Filters
@@ -516,13 +518,15 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 enabled = !toggling,
             )
             when (record?.state) {
-                DownloadRecord.FINISHED -> GlassCircleButton(
-                    Icons.CheckCircle, tr("Downloaded"),
-                    onClick = {
-                        overlays.actionSheet(deleteTitle, null, listOf(DialogButton(deleteLabel, ButtonRole.Destructive) { Downloads.delete(d.id) }))
-                    },
-                    size = 46.dp, iconColor = AppTheme.colors.green,
-                )
+                DownloadRecord.FINISHED -> {
+                    val anchor = rememberAnchor()
+                    GlassCircleButton(
+                        Icons.CheckCircle, tr("Downloaded"),
+                        onClick = { overlays.confirm(anchor.bounds, deleteTitle, deleteLabel) { Downloads.delete(d.id) } },
+                        modifier = Modifier.anchor(anchor),
+                        size = 46.dp, iconColor = AppTheme.colors.green,
+                    )
+                }
                 DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> ProgressCircle(record.progress) {
                     GlassCircleButton(Icons.Pause, tr("Pause Download"), onClick = { Downloads.pause(d.id) }, size = 46.dp, iconColor = AppTheme.tint, iconSize = 18.dp)
                 }

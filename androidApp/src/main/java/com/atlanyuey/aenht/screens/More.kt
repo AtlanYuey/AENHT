@@ -264,12 +264,13 @@ class AccountScreen : Screen() {
                 }
             }
             section {
+                val anchor = rememberAnchor()
                 ButtonRow(logout, {
-                    overlays.actionSheet(logoutTitle, null, listOf(DialogButton(logout, ButtonRole.Destructive) {
+                    overlays.confirm(anchor.bounds, logoutTitle, logout) {
                         Session.logout()
                         navigator.pop()
-                    }))
-                }, destructive = true, last = true)
+                    }
+                }, destructive = true, last = true, modifier = Modifier.anchor(anchor))
             }
         }
     }
@@ -872,14 +873,15 @@ class GeneralScreen : Screen() {
                 ListRow(tr("Image Cache"), value = cache?.let { Formatter.formatShortFileSize(context, it) }) {
                     if (cache == null) ActivityIndicator()
                 }
+                val clearAnchor = rememberAnchor()
                 ButtonRow(clearLabel, {
-                    overlays.actionSheet(clearTitle, null, listOf(DialogButton(clearLabel, ButtonRole.Destructive) {
+                    overlays.confirm(clearAnchor.bounds, clearTitle, clearLabel) {
                         val loader = SingletonImageLoader.get(context)
                         loader.memoryCache?.clear()
                         loader.diskCache?.clear()
                         scope.launch { refresh() }
-                    }))
-                }, destructive = true, last = true)
+                    }
+                }, destructive = true, last = true, modifier = Modifier.anchor(clearAnchor))
             }
         }
     }

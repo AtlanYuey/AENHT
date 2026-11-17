@@ -180,13 +180,14 @@ class EhAccountScreen : Screen() {
                 ListRow(tr("My Tags"), chevron = true, last = true, onClick = { navigator.push(EhWebScreen(tr0("https://e-hentai.org/mytags"), "My Tags")) })
             }
             section {
+                val anchor = rememberAnchor()
                 ButtonRow(logout, {
-                    overlays.actionSheet(logoutTitle, null, listOf(DialogButton(logout, ButtonRole.Destructive) {
+                    overlays.confirm(anchor.bounds, logoutTitle, logout) {
                         EhSession.logout()
                         AppSettings.useExHentai = false
                         navigator.pop()
-                    }))
-                }, destructive = true, last = true)
+                    }
+                }, destructive = true, last = true, modifier = Modifier.anchor(anchor))
             }
         }
     }

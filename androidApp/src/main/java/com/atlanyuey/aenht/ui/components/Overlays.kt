@@ -108,6 +108,14 @@ class OverlayController {
         items.add(Overlay.ActionSheet(title, message, buttons))
     }
 
+    /**
+     * Asks before a destructive action, next to the button that asked
+     * ([anchor]: its bounds), as a menu with the question as its title.
+     */
+    fun confirm(anchor: Rect, title: String, action: String, onConfirm: () -> Unit) {
+        menu(anchor, listOf(listOf(MenuItem(action, destructive = true, onClick = onConfirm))), title)
+    }
+
     fun sheet(content: @Composable (dismiss: () -> Unit) -> Unit) {
         items.add(Overlay.Sheet(content))
     }
