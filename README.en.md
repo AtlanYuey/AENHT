@@ -145,7 +145,7 @@ The gallery's **Pages** heading similarly switches between the first page and th
 
 ### 5. Super-resolution when needed
 
-Real-ESRGAN anime models run locally through Core ML on iOS and ncnn on Android. The original appears immediately and is replaced when processing finishes. Automatic mode targets pages noticeably smaller than the screen, processing only the current page on slower devices. A default model is bundled; higher-quality models can be downloaded in settings.
+Real-ESRGAN anime models run locally through Core ML on iOS and ncnn on Android. The original appears immediately and is replaced when processing finishes. Automatic mode targets images noticeably smaller than their display area. When super-resolution is enabled, the visible page has priority and eligible upcoming images can be processed in advance. A default model is bundled, with higher-quality models available in settings.
 
 ### 6. Translation fallbacks
 
@@ -201,7 +201,7 @@ The app switcher can blur images only, blur images and text, blur the whole app,
 - Double pages in landscape or always, a separate cover, optional one-page advances through spreads, and an optional center gap: 6 pt by default, adjustable from 2–60 pt.
 - Automatic white-border cropping, adjustable automatic page-turn intervals, and preloading of following pages.
 - Continuous auto scrolling with adjustable speed. At three seconds per screen or faster, the speed warning turns red. **Continue Auto Scroll While Dragging** is below the speed control and off by default.
-- **Known issue:** fast auto scrolling can still stutter; this remains unresolved.
+- The reader decodes the next two images below the screen in continuous mode, or the next two turns in paged mode (up to four images with two-page spreads). This runs by default. The preload page count separately controls how many pages are downloaded ahead.
 - Optional page-turn animations, a fade when disabled, and directional swipe-fade page turns without dragging the page under the finger.
 - Left/right or top/bottom tap zones; long perpendicular swipes can exit, toggle controls, or start/stop auto reading. Pinch and double tap zoom the page.
 - Keep-awake: off, five minutes, ten minutes, or always. Super-resolution: off, automatic, or always, with downloadable higher-quality models.

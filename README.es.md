@@ -144,7 +144,7 @@ El encabezado **Páginas** de una galería alterna entre la primera página y la
 
 ### 5. Superresolución cuando hace falta
 
-Los modelos de anime Real-ESRGAN se ejecutan localmente con Core ML en iOS y ncnn en Android. Primero se muestra la imagen original y se sustituye al terminar. El modo automático procesa páginas claramente menores que la pantalla; en dispositivos lentos, solo la página actual. Hay un modelo incluido y modelos de mayor calidad descargables desde los ajustes.
+Los modelos de anime Real-ESRGAN se ejecutan localmente con Core ML en iOS y ncnn en Android. Primero se muestra la imagen original y se sustituye al terminar. El modo automático procesa imágenes claramente menores que su área de visualización. Con la superresolución activada, la página visible tiene prioridad y las siguientes imágenes que cumplan los requisitos pueden procesarse por adelantado. Hay un modelo incluido y modelos de mayor calidad descargables desde los ajustes.
 
 ### 6. Traducción con alternativas
 
@@ -200,7 +200,7 @@ En el selector de aplicaciones se pueden desenfocar solo imágenes, imágenes y 
 - Doble página en horizontal o siempre, portada independiente, avance de una página por pliego y separación central opcional: 6 pt por defecto, ajustable entre 2–60 pt.
 - Recorte automático de bordes blancos, intervalo de paso automático y precarga de páginas siguientes.
 - Desplazamiento continuo a velocidad ajustable. A 3 segundos por pantalla o menos, se muestra una advertencia roja. El interruptor para continuar tras deslizar está debajo de la velocidad y desactivado por defecto.
-- **Problema conocido:** el desplazamiento automático rápido todavía puede presentar tirones; sigue sin resolverse.
+- El lector decodifica de antemano las dos imágenes que siguen bajo la pantalla en el modo continuo, o las dos siguientes vistas en el modo paginado (hasta cuatro imágenes con doble página). Esta función está siempre activa. El ajuste de precarga controla por separado cuántas páginas se descargan de antemano.
 - Animaciones opcionales, fundido al desactivarlas y paso por deslizamiento con fundido direccional sin arrastrar la página con el dedo.
 - Zonas táctiles laterales o superiores/inferiores; gestos largos perpendiculares para salir, mostrar controles o activar la lectura automática; pellizco y doble toque para ampliar.
 - Pantalla encendida: desactivado, 5 minutos, 10 minutos o siempre. Superresolución: desactivada, automática o siempre, con modelos adicionales.
