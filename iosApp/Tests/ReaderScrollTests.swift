@@ -88,7 +88,7 @@ final class ReaderScrollTests: XCTestCase {
         defer { driver.stop() }
         driver.secondsPerScreen = 3
         driver.start()
-        let expected = 800.0 / 3 / 60
+        let expected: CGFloat = 800 / 3 / 60
         for _ in 0..<60 {
             let before = scroll.contentOffset.y
             driver.advance(elapsed: 1.0 / 60, scale: 2)
