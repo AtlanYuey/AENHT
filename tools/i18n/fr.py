@@ -563,4 +563,9 @@ T = [
     "Impossible de joindre le serveur. Vérifiez votre réseau ou votre proxy.",
     "Impossible d'établir une connexion sécurisée avec le serveur.",
     "La connexion a échoué. Réessayez.",
+    "Défilement automatique",
+    "Suspendre le défilement",
+    "Vitesse de défilement",
+    " s / écran",
+    "Défilement en pause",
 ]

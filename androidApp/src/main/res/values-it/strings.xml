@@ -564,9 +564,14 @@
     <string name="l_561">Impossibile raggiungere il server. Controlla la rete o il proxy.</string>
     <string name="l_562">Impossibile stabilire una connessione sicura con il server.</string>
     <string name="l_563">Connessione non riuscita. Riprova.</string>
-    <string name="l_564">Backup impostazioni</string>
-    <string name="l_565">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_566">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_567">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_568">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_564">Scorrimento automatico</string>
+    <string name="l_565">Pausa scorrimento</string>
+    <string name="l_566">Velocità di scorrimento</string>
+    <string name="l_567">" s / schermata"</string>
+    <string name="l_568">Scorrimento in pausa</string>
+    <string name="l_569">Backup impostazioni</string>
+    <string name="l_570">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_571">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_572">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_573">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

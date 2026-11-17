@@ -562,5 +562,10 @@
  "The connection timed out. Try again.",
  "Couldn't reach the server. Check your network or proxy.",
  "Couldn't make a secure connection to the server.",
- "The connection failed. Try again."
+ "The connection failed. Try again.",
+ "Auto Scroll",
+ "Pause Auto Scroll",
+ "Auto Scroll Speed",
+ " s / screen",
+ "Auto Scroll Paused"
 ]

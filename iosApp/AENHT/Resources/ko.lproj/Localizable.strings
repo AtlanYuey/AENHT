@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "서버에 연결할 수 없습니다. 네트워크나 프록시를 확인하세요.";
 "Couldn't make a secure connection to the server." = "서버와 보안 연결을 만들 수 없습니다.";
 "The connection failed. Try again." = "연결에 실패했습니다. 다시 시도하세요.";
+"Auto Scroll" = "자동 스크롤";
+"Pause Auto Scroll" = "자동 스크롤 일시 정지";
+"Auto Scroll Speed" = "자동 스크롤 속도";
+" s / screen" = " 초/화면";
+"Auto Scroll Paused" = "자동 스크롤이 일시 정지됨";

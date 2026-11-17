@@ -563,4 +563,9 @@ T = [
     "Không thể kết nối máy chủ. Hãy kiểm tra mạng hoặc proxy.",
     "Không thể tạo kết nối bảo mật tới máy chủ.",
     "Kết nối thất bại. Hãy thử lại.",
+    "Tự động cuộn",
+    "Tạm dừng cuộn",
+    "Tốc độ cuộn tự động",
+    " giây / màn hình",
+    "Đã tạm dừng cuộn tự động",
 ]

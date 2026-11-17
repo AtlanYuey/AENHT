@@ -1,5 +1,15 @@
 package com.atlanyuey.aenht.screens
 
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.withFrameNanos
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import com.atlanyuey.aenht.shared.reader.ReaderAutoScroll
+import kotlinx.coroutines.isActive
+
 import com.atlanyuey.aenht.ui.components.LocalNavigator
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
@@ -195,6 +205,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var page by mutableIntStateOf(start.coerceIn(0, maxOf(0, source.pages.size - 1)))
     private var chromeVisible by mutableStateOf(true)
     private var autoRead by mutableStateOf(false)
+    private enum class PageLoad { Loading, Ready, Failed }
+    private val pageLoads = mutableStateMapOf<Int, PageLoad>()
+    private val pageRatios = mutableMapOf<Int, Float>()
+    private val pageRetries = mutableStateMapOf<Int, Int>()
+    private var autoScrollFailedPage by mutableStateOf<Int?>(null)
     /** Bumped by every touch: the controls hide 1 s after the last one. */
     private var chromeActivity by mutableIntStateOf(0)
     /** A finger is on the screen (dragging the slider, holding a button…). */
@@ -229,7 +244,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         HistoryStore.record(source.summary, page)
     }
 
-    private fun go(target: Int) {
+    private fun go(target: Int, automatic: Boolean = false) {
+        if (!automatic) autoRead = false
         if (target !in 0 until count) return
         val paged = AppSettings.readMode.isPaged
         val animate = AppSettings.animatePageTurns
@@ -248,6 +264,21 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
         page = target
+    }
+
+    private fun jumpToPage(target: Int) {
+        autoRead = false
+        if (target !in 0 until count) return
+        page = target
+        uiScope.launch {
+            if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target)
+        }
+    }
+
+    private fun retryContinuousPage(index: Int) {
+        pageLoads[index] = PageLoad.Loading
+        pageRetries[index] = (pageRetries[index] ?: 0) + 1
+        if (autoScrollFailedPage == index) autoScrollFailedPage = null
     }
 
     /**
@@ -285,6 +316,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val along = if (vertical) delta.y else delta.x
         val across = if (vertical) delta.x else delta.y
         if (kotlin.math.abs(along) < minimum || kotlin.math.abs(along) < 1.5f * kotlin.math.abs(across)) return false
+        autoRead = false
         // Left (or up) is forward, except right to left.
         val forward = if (isRtl) along > 0 else along < 0
         val target = step(turnBase, forward)
@@ -351,6 +383,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val view = LocalView.current
         val context = LocalContext.current
         val mode = AppSettings.readMode
+        LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { autoRead = false }
+        LaunchedEffect(mode) { autoRead = false }
         val backdrop = rememberLayerBackdrop()
         uiScope = rememberCoroutineScope()
 
@@ -382,8 +416,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         gestureOverlays.prompt(pageTitle, "1 – $count", "${page + 1}", goLabel, cancelLabel, number = true) { text ->
                             val target = (text.toIntOrNull() ?: return@prompt) - 1
                             if (target in 0 until count) {
-                                page = target
-                                uiScope.launch { if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target) }
+                                jumpToPage(target)
                             }
                         }
                 }
@@ -420,6 +453,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 (context as? Activity)?.window?.let { window ->
                     WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.systemBars())
                 }
+                autoRead = false
                 record()
             }
         }
@@ -459,27 +493,70 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
-            interactions.interactions.collect { if (it is DragInteraction.Start) chromeVisible = false }
+            interactions.interactions.collect {
+                if (it is DragInteraction.Start) {
+                    autoRead = false
+                    chromeVisible = false
+                }
+            }
         }
         // …and so does leaving them alone for a while (Reading settings, 3 s
         // at least; not while a finger is down or a menu or sheet is open).
         val overlays = LocalOverlays.current
+        LaunchedEffect(overlays.items.size) { if (overlays.items.isNotEmpty()) autoRead = false }
         LaunchedEffect(chromeVisible, chromeActivity, touching, overlays.items.size) {
             if (!chromeVisible || touching || overlays.items.isNotEmpty()) return@LaunchedEffect
             delay((AppSettings.readerControlsDelay * 1000).toLong())
             chromeVisible = false
         }
-        LaunchedEffect(autoRead) {
+        LaunchedEffect(autoRead, mode) {
             if (!autoRead) return@LaunchedEffect
             chromeVisible = false
-            while (true) {
-                delay((AppSettings.autoReadInterval * 1000).toLong())
-                val next = if (AppSettings.readMode.isPaged) step(page, true) else page + 1
-                if (next !in 0 until count) {
-                    autoRead = false
-                    break
+            autoScrollFailedPage = null
+            try {
+                if (mode.isPaged) {
+                    while (isActive) {
+                        delay((AppSettings.autoReadInterval * 1000).toLong())
+                        val next = step(page, true)
+                        if (next !in 0 until count) break
+                        go(next, automatic = true)
+                    }
+                } else {
+                    var previous = withFrameNanos { it }
+                    while (isActive) {
+                        val now = withFrameNanos { it }
+                        val elapsed = (now - previous) / 1_000_000_000.0
+                        previous = now
+                        val layout = list.layoutInfo
+                        val viewport = layout.viewportEndOffset - layout.viewportStartOffset
+                        if (viewport <= 0 || layout.visibleItemsInfo.isEmpty()) continue
+                        var distance = ReaderAutoScroll.distance(viewport.toDouble(), AppSettings.autoScrollSecondsPerScreen, elapsed)
+                        val approaching = layout.visibleItemsInfo.filter {
+                            it.offset + it.size > layout.viewportStartOffset && it.offset <= layout.viewportEndOffset + distance
+                        }
+                        fun ready(item: androidx.compose.foundation.lazy.LazyListItemInfo): Boolean {
+                            if (pageLoads[item.index] != PageLoad.Ready) return false
+                            val ratio = pageRatios[item.index] ?: return false
+                            val expected = (layout.viewportSize.width / ratio).coerceAtMost(50_000f * context.resources.displayMetrics.density)
+                            return abs(item.size - expected) <= maxOf(2f, expected * 0.001f)
+                        }
+                        val failed = approaching.firstOrNull { pageLoads[it.index] == PageLoad.Failed }
+                        if (failed != null) {
+                            autoScrollFailedPage = failed.index
+                            break
+                        }
+                        for (item in approaching) {
+                            if (!ready(item)) {
+                                distance = ReaderAutoScroll.beforeUnloadedPage(distance, layout.viewportEndOffset.toDouble(), item.offset.toDouble())
+                            }
+                        }
+                        val last = layout.visibleItemsInfo.lastOrNull()
+                        if (!list.canScrollForward && last?.index == count - 1 && ready(last)) break
+                        if (distance > 0) list.scrollBy(distance.toFloat())
+                    }
                 }
-                go(next)
+            } finally {
+                autoRead = false
             }
         }
 
@@ -513,6 +590,16 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 // The reader's own brightness: a dark layer over the pages.
                 val dim = (1.0 - AppSettings.readerBrightness).toFloat().coerceIn(0f, 0.8f)
                 if (dim > 0f) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)))
+            }
+            autoScrollFailedPage?.let { failed ->
+                Column(
+                    Modifier.align(Alignment.Center).glass(RoundedCornerShape(20.dp)).padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Txt(tr("Auto Scroll Paused"), style = Type.subheadline)
+                    TextButton(tr("Retry"), { retryContinuousPage(failed) })
+                }
             }
             CompositionLocalProvider(LocalBackdrop provides backdrop) {
                 AnimatedVisibility(chromeVisible, Modifier.align(Alignment.TopCenter), enter = fadeIn(), exit = fadeOut()) {
@@ -770,31 +857,59 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun Continuous(mode: ReadMode) {
         val gap = if (mode == ReadMode.VerticalGap) AppSettings.pageGap.dp else 0.dp
-        LazyColumn(
-            Modifier.fillMaxSize().readerTaps(zoomed = { false }, paged = false),
-            state = list,
-            verticalArrangement = Arrangement.spacedBy(gap),
-        ) {
-            items(source.pages, key = { it.index }) { readerPage ->
-                val ratio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
-                    ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] } ?: readerPage.aspectRatio
-                Box(Modifier.fillMaxWidth().aspectRatio(ratio.coerceIn(0.2f, 5f)), contentAlignment = Alignment.Center) {
-                    var attempt by remember(readerPage.index) { mutableIntStateOf(0) }
+        val context = LocalContext.current
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val width = maxWidth
+            LazyColumn(
+                Modifier.fillMaxSize().readerTaps(zoomed = { false }, paged = false),
+                state = list,
+                verticalArrangement = Arrangement.spacedBy(gap),
+            ) {
+                items(source.pages, key = { it.index }) { readerPage ->
+                    val attempt = pageRetries[readerPage.index] ?: 0
                     var state by remember(readerPage.index, attempt) { mutableStateOf<coil3.compose.AsyncImagePainter.State?>(null) }
-                    // A new image node per attempt (see SpreadPage).
-                    androidx.compose.runtime.key(attempt) {
-                        coil3.compose.AsyncImage(
-                            model = readerPage.url,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                            onState = { state = it },
-                        )
+                    var decodedRatio by remember(readerPage.index) { mutableStateOf<Float?>(null) }
+                    val knownRatio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
+                        ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] }
+                    val ratio = (decodedRatio ?: knownRatio ?: readerPage.aspectRatio).takeIf { it.isFinite() && it > 0 } ?: 0.7f
+                    val request = remember(readerPage.index, attempt) {
+                        ImageRequest.Builder(context).data(readerPage.url)
+                            .size(1400, 8192).scale(coil3.size.Scale.FIT).build()
                     }
-                    when (state) {
-                        is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { attempt++ }
-                        is coil3.compose.AsyncImagePainter.State.Success -> {}
-                        else -> ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                    DisposableEffect(readerPage.index) {
+                        onDispose { pageLoads.remove(readerPage.index); pageRatios.remove(readerPage.index) }
+                    }
+                    // Compose's packed constraints need a finite height, even for malformed metadata.
+                    Box(Modifier.fillMaxWidth().height((width.value / ratio).coerceAtMost(50_000f).dp), contentAlignment = Alignment.Center) {
+                        androidx.compose.runtime.key(attempt) {
+                            coil3.compose.AsyncImage(
+                                model = request,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize(),
+                                onState = {
+                                    state = it
+                                    pageLoads[readerPage.index] = when (it) {
+                                        is coil3.compose.AsyncImagePainter.State.Success -> {
+                                            val image = it.result.image
+                                            if (image.width > 0 && image.height > 0) {
+                                                val actualRatio = image.width.toFloat() / image.height
+                                                pageRatios[readerPage.index] = actualRatio
+                                                decodedRatio = actualRatio
+                                            }
+                                            PageLoad.Ready
+                                        }
+                                        is coil3.compose.AsyncImagePainter.State.Error -> PageLoad.Failed
+                                        else -> PageLoad.Loading
+                                    }
+                                },
+                            )
+                        }
+                        when (state) {
+                            is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { retryContinuousPage(readerPage.index) }
+                            is coil3.compose.AsyncImagePainter.State.Success -> {}
+                            else -> ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                        }
                     }
                 }
             }
@@ -867,8 +982,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             overlays.prompt(pageTitle, "1 – $count", "${page + 1}", go, cancel, number = true) { text ->
                                 val target = (text.toIntOrNull() ?: return@prompt) - 1
                                 if (target in 0 until count) {
-                                    page = target
-                                    uiScope.launch { if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target) }
+                                    jumpToPage(target)
                                 }
                             }
                         },
@@ -932,6 +1046,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     private fun openSettings(overlays: com.atlanyuey.aenht.ui.components.OverlayController) {
+        autoRead = false
         overlays.sheet { dismiss ->
             CompositionLocalProvider(LocalColors provides DarkColors, LocalIsDark provides true) {
                 Column(Modifier.fillMaxWidth().background(AppTheme.colors.groupedBackground)) {
@@ -968,13 +1083,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             GlassSlider(
                                 value = slider,
                                 onChange = { value ->
+                                    autoRead = false
                                     slider = value
                                     val target = value.toInt().coerceIn(0, count - 1)
                                     if (target != page) {
-                                        page = target
-                                        uiScope.launch {
-                                            if (AppSettings.readMode.isPaged) pager.scrollToPage(slot(target)) else list.scrollToItem(target)
-                                        }
+                                        jumpToPage(target)
                                     }
                                 },
                                 range = 0f..maxOf(1f, (count - 1).toFloat()),
@@ -987,7 +1100,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     PanelButton(Icons.ChevronBack, null) { go(step(page, forward = isRtl)) }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        PanelButton(if (autoRead) Icons.Pause else Icons.Play, if (autoRead) tr("Stop Auto Read") else tr("Auto Read")) {
+                        val label = if (AppSettings.readMode.isPaged) {
+                            if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
+                        } else {
+                            if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
+                        }
+                        PanelButton(if (autoRead) Icons.Pause else Icons.Play, label) {
                             autoRead = !autoRead
                         }
                     }
@@ -1114,15 +1232,31 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
     }
     section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-            Row {
-                Txt(tr("Auto Read Interval"), Modifier.weight(1f))
-                Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
+            if (AppSettings.readMode.isPaged) {
+                Row {
+                    Txt(tr("Auto Read Interval"), Modifier.weight(1f))
+                    Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
+                }
+                GlassSlider(
+                    AppSettings.autoReadInterval.toFloat(),
+                    { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
+                    1f..10f,
+                )
+            } else {
+                Row {
+                    Txt(tr("Auto Scroll Speed"), Modifier.weight(1f))
+                    Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.0f", AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen"), color = AppTheme.colors.secondaryLabel)
+                }
+                GlassSlider(
+                    (65 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
+                    { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round(65 - it).toDouble()) },
+                    5f..60f,
+                )
+                Row {
+                    Txt(tr("Slow"), Modifier.weight(1f), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                    Txt(tr("Fast"), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                }
             }
-            GlassSlider(
-                AppSettings.autoReadInterval.toFloat(),
-                { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
-                1f..10f,
-            )
         }
         RowSeparator()
         ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {

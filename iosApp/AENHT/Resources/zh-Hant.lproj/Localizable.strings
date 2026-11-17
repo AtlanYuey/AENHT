@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "無法連線到伺服器，請檢查網路或代理。";
 "Couldn't make a secure connection to the server." = "無法與伺服器建立安全連線。";
 "The connection failed. Try again." = "連線失敗，請重試。";
+"Auto Scroll" = "自動捲動";
+"Pause Auto Scroll" = "暫停自動捲動";
+"Auto Scroll Speed" = "自動捲動速度";
+" s / screen" = " 秒／螢幕";
+"Auto Scroll Paused" = "自動捲動已暫停";

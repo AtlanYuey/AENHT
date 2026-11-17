@@ -606,3 +606,8 @@
 "Couldn't reach the server. Check your network or proxy." = "无法连接到服务器，请检查网络或代理。";
 "Couldn't make a secure connection to the server." = "无法与服务器建立安全连接。";
 "The connection failed. Try again." = "连接失败，请重试。";
+"Auto Scroll" = "自动滚动";
+"Pause Auto Scroll" = "暂停自动滚动";
+"Auto Scroll Speed" = "自动滚动速度";
+" s / screen" = " 秒/屏";
+"Auto Scroll Paused" = "自动滚动已暂停";

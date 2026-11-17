@@ -563,4 +563,9 @@ T = [
     "Não foi possível acessar o servidor. Verifique sua rede ou proxy.",
     "Não foi possível estabelecer uma conexão segura com o servidor.",
     "A conexão falhou. Tente novamente.",
+    "Rolagem automática",
+    "Pausar rolagem",
+    "Velocidade de rolagem",
+    " s / tela",
+    "Rolagem automática pausada",
 ]

@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "サーバーに接続できません。ネットワークまたはプロキシを確認してください。";
 "Couldn't make a secure connection to the server." = "サーバーと安全な接続を確立できませんでした。";
 "The connection failed. Try again." = "接続に失敗しました。もう一度お試しください。";
+"Auto Scroll" = "自動スクロール";
+"Pause Auto Scroll" = "自動スクロールを一時停止";
+"Auto Scroll Speed" = "自動スクロール速度";
+" s / screen" = " 秒／画面";
+"Auto Scroll Paused" = "自動スクロールを一時停止しました";

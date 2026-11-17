@@ -564,9 +564,14 @@
     <string name="l_561">サーバーに接続できません。ネットワークまたはプロキシを確認してください。</string>
     <string name="l_562">サーバーと安全な接続を確立できませんでした。</string>
     <string name="l_563">接続に失敗しました。もう一度お試しください。</string>
-    <string name="l_564">設定のバックアップ</string>
-    <string name="l_565">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_566">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_567">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_568">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_564">自動スクロール</string>
+    <string name="l_565">自動スクロールを一時停止</string>
+    <string name="l_566">自動スクロール速度</string>
+    <string name="l_567">" 秒／画面"</string>
+    <string name="l_568">自動スクロールを一時停止しました</string>
+    <string name="l_569">設定のバックアップ</string>
+    <string name="l_570">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_571">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_572">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_573">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

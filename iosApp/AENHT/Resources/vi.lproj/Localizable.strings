@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "Không thể kết nối máy chủ. Hãy kiểm tra mạng hoặc proxy.";
 "Couldn't make a secure connection to the server." = "Không thể tạo kết nối bảo mật tới máy chủ.";
 "The connection failed. Try again." = "Kết nối thất bại. Hãy thử lại.";
+"Auto Scroll" = "Tự động cuộn";
+"Pause Auto Scroll" = "Tạm dừng cuộn";
+"Auto Scroll Speed" = "Tốc độ cuộn tự động";
+" s / screen" = " giây / màn hình";
+"Auto Scroll Paused" = "Đã tạm dừng cuộn tự động";

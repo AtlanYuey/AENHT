@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "Impossible de joindre le serveur. Vérifiez votre réseau ou votre proxy.";
 "Couldn't make a secure connection to the server." = "Impossible d'établir une connexion sécurisée avec le serveur.";
 "The connection failed. Try again." = "La connexion a échoué. Réessayez.";
+"Auto Scroll" = "Défilement automatique";
+"Pause Auto Scroll" = "Suspendre le défilement";
+"Auto Scroll Speed" = "Vitesse de défilement";
+" s / screen" = " s / écran";
+"Auto Scroll Paused" = "Défilement en pause";

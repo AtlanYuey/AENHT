@@ -564,9 +564,14 @@
     <string name="l_561">Không thể kết nối máy chủ. Hãy kiểm tra mạng hoặc proxy.</string>
     <string name="l_562">Không thể tạo kết nối bảo mật tới máy chủ.</string>
     <string name="l_563">Kết nối thất bại. Hãy thử lại.</string>
-    <string name="l_564">Sao lưu cài đặt</string>
-    <string name="l_565">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_566">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_567">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_568">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_564">Tự động cuộn</string>
+    <string name="l_565">Tạm dừng cuộn</string>
+    <string name="l_566">Tốc độ cuộn tự động</string>
+    <string name="l_567">" giây / màn hình"</string>
+    <string name="l_568">Đã tạm dừng cuộn tự động</string>
+    <string name="l_569">Sao lưu cài đặt</string>
+    <string name="l_570">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_571">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_572">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_573">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

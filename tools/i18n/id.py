@@ -563,4 +563,9 @@ T = [
     "Tidak dapat menjangkau server. Periksa jaringan atau proxy Anda.",
     "Tidak dapat membuat koneksi aman ke server.",
     "Koneksi gagal. Coba lagi.",
+    "Gulir otomatis",
+    "Jeda gulir otomatis",
+    "Kecepatan gulir otomatis",
+    " dtk / layar",
+    "Gulir otomatis dijeda",
 ]

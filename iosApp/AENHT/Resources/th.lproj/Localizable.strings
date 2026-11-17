@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบเครือข่ายหรือพร็อกซี";
 "Couldn't make a secure connection to the server." = "สร้างการเชื่อมต่อที่ปลอดภัยกับเซิร์ฟเวอร์ไม่ได้";
 "The connection failed. Try again." = "การเชื่อมต่อล้มเหลว ลองอีกครั้ง";
+"Auto Scroll" = "เลื่อนอัตโนมัติ";
+"Pause Auto Scroll" = "หยุดเลื่อนชั่วคราว";
+"Auto Scroll Speed" = "ความเร็วการเลื่อนอัตโนมัติ";
+" s / screen" = " วินาที / หน้าจอ";
+"Auto Scroll Paused" = "หยุดเลื่อนอัตโนมัติชั่วคราวแล้ว";

@@ -563,4 +563,9 @@ T = [
     "Server nicht erreichbar. Prüfe dein Netzwerk oder deinen Proxy.",
     "Keine sichere Verbindung zum Server möglich.",
     "Verbindung fehlgeschlagen. Versuche es erneut.",
+    "Automatisch scrollen",
+    "Scrollen pausieren",
+    "Scrollgeschwindigkeit",
+    " s / Bildschirm",
+    "Automatisches Scrollen pausiert",
 ]

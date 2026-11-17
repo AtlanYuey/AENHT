@@ -564,9 +564,14 @@
     <string name="l_561">无法连接到服务器，请检查网络或代理。</string>
     <string name="l_562">无法与服务器建立安全连接。</string>
     <string name="l_563">连接失败，请重试。</string>
-    <string name="l_564">设置备份</string>
-    <string name="l_565">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_566">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_567">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_568">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_564">自动滚动</string>
+    <string name="l_565">暂停自动滚动</string>
+    <string name="l_566">自动滚动速度</string>
+    <string name="l_567">" 秒/屏"</string>
+    <string name="l_568">自动滚动已暂停</string>
+    <string name="l_569">设置备份</string>
+    <string name="l_570">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_571">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_572">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_573">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

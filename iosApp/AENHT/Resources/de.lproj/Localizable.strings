@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "Server nicht erreichbar. Prüfe dein Netzwerk oder deinen Proxy.";
 "Couldn't make a secure connection to the server." = "Keine sichere Verbindung zum Server möglich.";
 "The connection failed. Try again." = "Verbindung fehlgeschlagen. Versuche es erneut.";
+"Auto Scroll" = "Automatisch scrollen";
+"Pause Auto Scroll" = "Scrollen pausieren";
+"Auto Scroll Speed" = "Scrollgeschwindigkeit";
+" s / screen" = " s / Bildschirm";
+"Auto Scroll Paused" = "Automatisches Scrollen pausiert";

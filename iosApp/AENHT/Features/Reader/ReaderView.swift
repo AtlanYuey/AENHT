@@ -87,7 +87,7 @@ struct ReaderView: View {
     let source: ReaderSource
 
     @State private var page: Int
-    @State private var position: Int?
+    @State private var scrollRequest: ReaderScrollRequest
     @State private var chromeVisible = true
     @State private var autoRead = false
     @State private var showSettings = false
@@ -108,6 +108,7 @@ struct ReaderView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var prefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
@@ -119,7 +120,7 @@ struct ReaderView: View {
         source = route.source
         let start = min(max(0, route.page), max(0, route.source.pages.count - 1))
         _page = State(initialValue: start)
-        _position = State(initialValue: start)
+        _scrollRequest = State(initialValue: ReaderScrollRequest(page: start))
         _sliderValue = State(initialValue: Double(start))
     }
 
@@ -241,12 +242,20 @@ struct ReaderView: View {
             })
             .onChange(of: chromeVisible) { scheduleHide() }
             .onChange(of: settings.screenOn) { awake.touched() }
-            .onChange(of: sliderEditing) { scheduleHide() }
-            .onChange(of: showSettings) { scheduleHide() }
+            .onChange(of: sliderEditing) {
+                if sliderEditing { autoRead = false }
+                scheduleHide()
+            }
+            .onChange(of: showSettings) {
+                if showSettings { autoRead = false }
+                scheduleHide()
+            }
+            .onChange(of: askPage) { if askPage { autoRead = false } }
+            .onChange(of: scenePhase) { if scenePhase != .active { autoRead = false } }
+            .onChange(of: autoRead) { if autoRead { chromeVisible = false } }
             .onChange(of: page) { _, new in
                 ReaderProgress.shared.set(new, gallery: source.item.transitionKey)
                 sliderValue = Double(new)
-                if position != new { position = new }
                 prefetch(around: new)
                 // Turning or scrolling pages hides the controls.
                 if turnFromPanel {
@@ -262,10 +271,10 @@ struct ReaderView: View {
                 guard !Task.isCancelled else { return }
                 recordPage()
             }
-            .onChange(of: position) { _, new in
-                if let new, new != page { page = new }
+            .onChange(of: settings.readMode) {
+                autoRead = false
+                scrollRequest = ReaderScrollRequest(page: page)
             }
-            .onChange(of: settings.readMode) { position = page }
             .task(id: autoRead) { await runAutoRead() }
             .onAppear { AppChrome.shared.readersOpen += 1 }
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
@@ -277,6 +286,7 @@ struct ReaderView: View {
                 scheduleHide()
             }
             .onDisappear {
+                autoRead = false
                 hider.cancel()
                 awake.stop()
                 prefetcher.stopPrefetching()
@@ -284,8 +294,8 @@ struct ReaderView: View {
             }
             .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
                 turnFromPanel = true
-                page = target
-                position = target
+                autoRead = false
+                go(target)
                 sliderValue = Double(target)
             })
             .sheet(isPresented: $showSettings) {
@@ -316,23 +326,8 @@ struct ReaderView: View {
             })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)-\(settings.spreadGapOn ? Int(settings.spreadGap) : 0)")
         } else {
-            ScrollView(.vertical) {
-                LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
-                    ForEach(source.pages) { page in
-                        Color.clear
-                            .aspectRatio(page.aspectRatio, contentMode: .fit)
-                            .overlay {
-                                RemoteImage(url: page.url, contentMode: .fit, targetWidth: 1400, retryOnFailure: true)
-                            }
-                            .id(page.index)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollPosition(id: $position, anchor: .top)
-            .scrollIndicators(.hidden)
-            .onScrollPhaseChange { _, phase in
-                if phase == .interacting, chromeVisible { chromeVisible = false }
+            ContinuousReader(pages: source.pages, page: $page, request: scrollRequest, running: $autoRead) {
+                chromeVisible = false
             }
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
@@ -434,15 +429,13 @@ struct ReaderView: View {
                                    numPages: source.numPages, page: page)
     }
 
-    private func go(_ target: Int) {
+    private func go(_ target: Int, automatic: Bool = false) {
         guard (0..<pageCount).contains(target) else { return }
+        if !automatic { autoRead = false }
         if settings.readMode.isPaged {
             page = target
-        } else if settings.animatePageTurns {
-            // Continuous modes scroll, or jump without moving.
-            withAnimation(.smooth(duration: 0.3)) { position = target }
         } else {
-            position = target
+            scrollRequest = ReaderScrollRequest(page: target, animated: settings.animatePageTurns)
         }
     }
 
@@ -468,7 +461,7 @@ struct ReaderView: View {
     }
 
     private func runAutoRead() async {
-        guard autoRead else { return }
+        guard autoRead, settings.readMode.isPaged else { return }
         chromeVisible = false
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(settings.autoReadInterval))
@@ -478,8 +471,13 @@ struct ReaderView: View {
                 autoRead = false
                 return
             }
-            go(next)
+            go(next, automatic: true)
         }
+    }
+
+    private var autoReadTitle: LocalizedStringKey {
+        if settings.readMode.isPaged { return autoRead ? "Stop Auto Read" : "Auto Read" }
+        return autoRead ? "Pause Auto Scroll" : "Auto Scroll"
     }
 
     // MARK: Bottom panel
@@ -516,7 +514,7 @@ struct ReaderView: View {
                 Button {
                     autoRead.toggle()
                 } label: {
-                    Label(autoRead ? "Stop Auto Read" as LocalizedStringKey : "Auto Read",
+                    Label(autoReadTitle,
                           systemImage: autoRead ? "pause.fill" : "play.fill")
                         .panelTarget()
                 }
@@ -716,17 +714,37 @@ struct ReadingSettingsSections: View {
             }
         }
         Section {
-            VStack(alignment: .leading) {
-                LabeledContent("Auto Read Interval") {
-                    Text(settings.autoReadInterval, format: .number.precision(.fractionLength(1)))
-                        + Text(" s")
+            if settings.readMode.isPaged {
+                VStack(alignment: .leading) {
+                    LabeledContent("Auto Read Interval") {
+                        Text(settings.autoReadInterval, format: .number.precision(.fractionLength(1)))
+                            + Text(" s")
+                    }
+                    Slider(value: $settings.autoReadInterval, in: 1...10, step: 0.5) {
+                        Text("Auto Read Interval")
+                    } minimumValueLabel: {
+                        Image(systemName: "hare")
+                    } maximumValueLabel: {
+                        Image(systemName: "tortoise")
+                    }
                 }
-                Slider(value: $settings.autoReadInterval, in: 1...10, step: 0.5) {
-                    Text("Auto Read Interval")
-                } minimumValueLabel: {
-                    Image(systemName: "hare")
-                } maximumValueLabel: {
-                    Image(systemName: "tortoise")
+            } else {
+                VStack(alignment: .leading) {
+                    LabeledContent("Auto Scroll Speed") {
+                        Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0)))
+                            + Text(" s / screen")
+                    }
+                    // The right end is faster; elapsed time per screen is stored, not pixels per tick.
+                    Slider(value: Binding(
+                        get: { 65 - settings.autoScrollSecondsPerScreen },
+                        set: { settings.autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: 65 - $0) }
+                    ), in: 5...60, step: 1) {
+                        Text("Auto Scroll Speed")
+                    } minimumValueLabel: {
+                        Text("Slow")
+                    } maximumValueLabel: {
+                        Text("Fast")
+                    }
                 }
             }
             Stepper(value: $settings.preloadPages, in: 1...10) {

@@ -2,6 +2,10 @@ import Nuke
 import NukeUI
 import SwiftUI
 
+enum RemoteImageLoadState: Equatable {
+    case loading, ready(CGSize), failed
+}
+
 /// An image from the network, cached on disk (Nuke), with a neutral
 /// placeholder while loading.
 struct RemoteImage: View {
@@ -14,6 +18,9 @@ struct RemoteImage: View {
     var fallback: (() -> URL?)? = nil
     /// Reader pages need an explicit recovery action without leaving their scroll position.
     var retryOnFailure = false
+    /// Continuous reader pages bound decoding in both dimensions, including very tall strips.
+    var thumbnailSize: CGSize? = nil
+    var onLoadState: ((RemoteImageLoadState) -> Void)? = nil
     @State private var attempt = 0
     /// The picture couldn't be loaded: it is loaded again when the network comes back.
     @State private var failed = false
@@ -27,12 +34,14 @@ struct RemoteImage: View {
                     .aspectRatio(contentMode: contentMode)
                     .blur(radius: blur ? 18 : privacy == .blurImages || privacy == .blurContent ? 28 : 0, opaque: true)
                     .transition(.opacity)
+                    .onAppear { onLoadState?(.ready(state.imageContainer?.image.size ?? .zero)) }
             } else if state.error != nil, let other = fallback?(), other != url {
-                RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur, retryOnFailure: retryOnFailure)
+                RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur,
+                            retryOnFailure: retryOnFailure, thumbnailSize: thumbnailSize, onLoadState: onLoadState)
             } else if state.error != nil {
                 Rectangle()
                     .fill(.quaternary)
-                    .onAppear { failed = true }
+                    .onAppear { failed = true; onLoadState?(.failed) }
                     .overlay {
                         VStack(spacing: 12) {
                             Image(systemName: "photo")
@@ -41,6 +50,7 @@ struct RemoteImage: View {
                             if retryOnFailure {
                                 Button("Retry") {
                                     failed = false
+                                    onLoadState?(.loading)
                                     attempt += 1
                                 }
                                     .buttonStyle(.bordered)
@@ -51,6 +61,10 @@ struct RemoteImage: View {
             } else {
                 Rectangle().fill(.quaternary.opacity(0.6))
             }
+        }
+        .onStart { _ in onLoadState?(.loading) }
+        .onCompletion { result in
+            if case .success(let response) = result { onLoadState?(.ready(response.image.size)) }
         }
         .id(attempt)
         .onChange(of: Connectivity.shared.restored) {
@@ -67,7 +81,11 @@ struct RemoteImage: View {
         if let targetWidth {
             processors.append(.resize(width: targetWidth))
         }
-        return ImageRequest(url: url, processors: processors)
+        var request = ImageRequest(url: url, processors: processors)
+        if let thumbnailSize {
+            request.userInfo[.thumbnailKey] = ImageRequest.ThumbnailOptions(size: thumbnailSize, unit: .pixels, contentMode: .aspectFit)
+        }
+        return request
     }
 }
 

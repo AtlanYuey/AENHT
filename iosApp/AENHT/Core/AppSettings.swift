@@ -1,4 +1,5 @@
 import Observation
+import Shared
 import SwiftUI
 import UIKit
 
@@ -321,6 +322,7 @@ final class AppSettings {
 
     var readMode: ReadMode { didSet { save(readMode.rawValue, "readMode") } }
     var autoReadInterval: Double { didSet { save(autoReadInterval, "autoReadInterval") } }
+    var autoScrollSecondsPerScreen: Double { didSet { save(autoScrollSecondsPerScreen, "autoScrollSecondsPerScreen") } }
     var preloadPages: Int { didSet { save(preloadPages, "preloadPages") } }
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
@@ -477,6 +479,7 @@ final class AppSettings {
         searchSort = SearchSort(rawValue: d.string(forKey: "searchSort") ?? "") ?? .popular
         readMode = ReadMode(rawValue: d.string(forKey: "readMode") ?? "") ?? .leftToRight
         autoReadInterval = d.object(forKey: "autoReadInterval") as? Double ?? 3
+        autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: d.object(forKey: "autoScrollSecondsPerScreen") as? Double ?? 15)
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
@@ -589,6 +592,7 @@ final class AppSettings {
         values["searchSort"] = searchSort.rawValue
         values["readMode"] = readMode.rawValue
         values["autoReadInterval"] = autoReadInterval
+        values["autoScrollSecondsPerScreen"] = autoScrollSecondsPerScreen
         values["preloadPages"] = preloadPages
         values["tapToTurnPages"] = tapToTurnPages
         values["animatePageTurns"] = animatePageTurns
@@ -682,6 +686,7 @@ final class AppSettings {
         case "searchSort": set(\.searchSort, string.flatMap(SearchSort.init(rawValue:)))
         case "readMode": set(\.readMode, string.flatMap(ReadMode.init(rawValue:)))
         case "autoReadInterval": set(\.autoReadInterval, number.map { min(max($0.doubleValue, 1), 10) })
+        case "autoScrollSecondsPerScreen": set(\.autoScrollSecondsPerScreen, number.map { ReaderAutoScroll.shared.secondsPerScreen(value: $0.doubleValue) })
         case "preloadPages": set(\.preloadPages, number.map { min(max($0.intValue, 1), 10) })
         case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
         case "animatePageTurns": set(\.animatePageTurns, number?.boolValue)

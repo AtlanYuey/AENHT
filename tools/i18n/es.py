@@ -563,4 +563,9 @@ T = [
     "No se pudo conectar con el servidor. Revisa tu red o proxy.",
     "No se pudo establecer una conexión segura con el servidor.",
     "La conexión falló. Inténtalo de nuevo.",
+    "Desplazamiento automático",
+    "Pausar desplazamiento",
+    "Velocidad de desplazamiento",
+    " s / pantalla",
+    "Desplazamiento en pausa",
 ]

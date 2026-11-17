@@ -564,9 +564,14 @@
     <string name="l_561">Couldn\'t reach the server. Check your network or proxy.</string>
     <string name="l_562">Couldn\'t make a secure connection to the server.</string>
     <string name="l_563">The connection failed. Try again.</string>
-    <string name="l_564">Settings Backup</string>
-    <string name="l_565">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_566">Android\'s own backup also keeps these settings.</string>
-    <string name="l_567">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_568">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_564">Auto Scroll</string>
+    <string name="l_565">Pause Auto Scroll</string>
+    <string name="l_566">Auto Scroll Speed</string>
+    <string name="l_567">" s / screen"</string>
+    <string name="l_568">Auto Scroll Paused</string>
+    <string name="l_569">Settings Backup</string>
+    <string name="l_570">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_571">Android\'s own backup also keeps these settings.</string>
+    <string name="l_572">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_573">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

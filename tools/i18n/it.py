@@ -563,4 +563,9 @@ T = [
     "Impossibile raggiungere il server. Controlla la rete o il proxy.",
     "Impossibile stabilire una connessione sicura con il server.",
     "Connessione non riuscita. Riprova.",
+    "Scorrimento automatico",
+    "Pausa scorrimento",
+    "Velocità di scorrimento",
+    " s / schermata",
+    "Scorrimento in pausa",
 ]

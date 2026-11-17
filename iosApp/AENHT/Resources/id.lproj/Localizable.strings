@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "Tidak dapat menjangkau server. Periksa jaringan atau proxy Anda.";
 "Couldn't make a secure connection to the server." = "Tidak dapat membuat koneksi aman ke server.";
 "The connection failed. Try again." = "Koneksi gagal. Coba lagi.";
+"Auto Scroll" = "Gulir otomatis";
+"Pause Auto Scroll" = "Jeda gulir otomatis";
+"Auto Scroll Speed" = "Kecepatan gulir otomatis";
+" s / screen" = " dtk / layar";
+"Auto Scroll Paused" = "Gulir otomatis dijeda";

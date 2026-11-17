@@ -563,3 +563,8 @@
 "Couldn't reach the server. Check your network or proxy." = "Не удалось связаться с сервером. Проверьте сеть или прокси.";
 "Couldn't make a secure connection to the server." = "Не удалось установить защищённое соединение с сервером.";
 "The connection failed. Try again." = "Не удалось подключиться. Попробуйте ещё раз.";
+"Auto Scroll" = "Автопрокрутка";
+"Pause Auto Scroll" = "Приостановить прокрутку";
+"Auto Scroll Speed" = "Скорость автопрокрутки";
+" s / screen" = " с / экран";
+"Auto Scroll Paused" = "Автопрокрутка приостановлена";
