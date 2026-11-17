@@ -2,7 +2,6 @@ package com.atlanyuey.aenht.core
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.SystemClock
 import android.util.LruCache
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,20 +74,7 @@ object SuperResolution {
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val worker = Dispatchers.Default.limitedParallelism(1)
     private val engines = mutableMapOf<SrModel, Long>()
-    /** The first run of a model includes its preparation: not timed. */
-    private val warmed = mutableSetOf<SrModel>()
     private var writes = 0
-
-    /** Seconds per 256 × 256 tile (Standard model), a running average; null until measured. */
-    @Volatile var tileSeconds: Double? = null
-        private set
-
-    /**
-     * Whether this device is fast enough to sharpen the pages around the one
-     * shown too: about a second for a typical page at most. Measured on the
-     * first pages, not from a list of phones.
-     */
-    val isFast: Boolean get() = (tileSeconds ?: Double.MAX_VALUE) < 0.05
 
     val available: Boolean get() = SrNative.loaded
 
@@ -105,7 +91,6 @@ object SuperResolution {
 
     fun forget(model: SrModel) {
         engines.remove(model)?.let { handle -> CoroutineScope(worker).launch { SrNative.release(handle) } }
-        warmed.remove(model)
     }
 
     private fun engine(context: Context, model: SrModel): Long {
@@ -127,10 +112,38 @@ object SuperResolution {
      */
     suspend fun enhance(context: Context, bitmap: Bitmap, key: String, targetWidth: Int, targetHeight: Int,
                         mode: SrMode, model: SrModel): Bitmap? {
-        val threshold = mode.threshold ?: return null
         if (!available) return null
-        val width = bitmap.width
-        val height = bitmap.height
+        val plan = plan(bitmap.width, bitmap.height, key, targetWidth, targetHeight, mode, model) ?: return null
+        memory.get(plan.name)?.let { return it }
+        return withContext(worker) {
+            // A reader request can queue behind a job that just prepared the same image.
+            memory.get(plan.name)?.let { return@withContext it }
+            val file = File(cacheDir(context), plan.name)
+            if (file.exists()) {
+                android.graphics.BitmapFactory.decodeFile(file.path)?.let {
+                    memory.put(plan.name, it)
+                    return@withContext it
+                }
+            }
+            runCatching {
+                val result = run(context, model, bitmap, plan.scale, plan.width, plan.height) ?: return@runCatching null
+                coroutineContext.ensureActive()
+                memory.put(plan.name, result)
+                save(context, result, file)
+                result
+            }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it else null }
+        }
+    }
+
+    fun cached(width: Int, height: Int, key: String, targetWidth: Int, targetHeight: Int,
+               mode: SrMode, model: SrModel): Bitmap? =
+        plan(width, height, key, targetWidth, targetHeight, mode, model)?.let { memory.get(it.name) }
+
+    private data class Plan(val scale: Float, val width: Int, val height: Int, val name: String)
+
+    private fun plan(width: Int, height: Int, key: String, targetWidth: Int, targetHeight: Int,
+                     mode: SrMode, model: SrModel): Plan? {
+        val threshold = mode.threshold ?: return null
         if (width <= 16 || height <= 16) return null
         val fit = min(targetWidth.toFloat() / width, targetHeight.toFloat() / height)
         if (fit < threshold) return null
@@ -140,23 +153,7 @@ object SuperResolution {
         val outWidth = (width * scale).roundToInt()
         val outHeight = (height * scale).roundToInt()
 
-        val name = cacheName(key, model, outWidth)
-        memory.get(name)?.let { return it }
-        return withContext(worker) {
-            val file = File(cacheDir(context), name)
-            if (file.exists()) {
-                android.graphics.BitmapFactory.decodeFile(file.path)?.let {
-                    memory.put(name, it)
-                    return@withContext it
-                }
-            }
-            runCatching {
-                val result = run(context, model, bitmap, scale, outWidth, outHeight) ?: return@runCatching null
-                memory.put(name, result)
-                save(context, result, file)
-                result
-            }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it else null }
-        }
+        return Plan(scale, outWidth, outHeight, cacheName(key, model, outWidth))
     }
 
     private suspend fun run(context: Context, model: SrModel, page: Bitmap, scale: Float,
@@ -185,25 +182,16 @@ object SuperResolution {
                 val dy0 = (y0 * scale).roundToInt()
                 val dy1 = ((y0 + ch) * scale).roundToInt().coerceAtMost(outHeight)
                 if (dx1 > dx0 && dy1 > dy0) {
-                    val started = SystemClock.elapsedRealtimeNanos()
                     if (!SrNative.tile(handle, input, rx, ry, rw, rh, x0, y0, cw, ch, output, dx0, dy0, dx1, dy1)) {
                         output.recycle()
                         return null
                     }
-                    record(model, (SystemClock.elapsedRealtimeNanos() - started) / 1e9 * (TILE * TILE) / (rw * rh))
                 }
                 x0 += core
             }
             y0 += core
         }
         return output
-    }
-
-    private fun record(model: SrModel, seconds: Double) {
-        if (warmed.add(model)) return
-        // The Standard model is the one the speed is judged by.
-        if (model != SrModel.Standard) return
-        tileSeconds = tileSeconds?.let { it * 0.8 + seconds * 0.2 } ?: seconds
     }
 
     private fun cacheName(key: String, model: SrModel, width: Int): String {

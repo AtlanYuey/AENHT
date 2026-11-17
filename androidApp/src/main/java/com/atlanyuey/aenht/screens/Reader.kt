@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateMapOf
@@ -17,13 +18,11 @@ import com.atlanyuey.aenht.ui.components.LocalNavigator
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import com.atlanyuey.aenht.ui.components.prompt
-import coil3.request.allowHardware
 import coil3.toBitmap
-import coil3.asImage
 import com.atlanyuey.aenht.ui.components.ButtonRow
 import coil3.request.crossfade
-import coil3.request.placeholder
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.graphics.asComposeRenderEffect
 
 import androidx.compose.foundation.interaction.DragInteraction
@@ -74,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.draw.drawWithContent
@@ -84,20 +84,30 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil3.SingletonImageLoader
+import coil3.decode.BlackholeDecoder
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import com.atlanyuey.aenht.core.AppSettings
 import com.atlanyuey.aenht.core.HistoryStore
 import com.atlanyuey.aenht.core.L10n
 import com.atlanyuey.aenht.core.ReadMode
+import com.atlanyuey.aenht.core.SrMode
+import com.atlanyuey.aenht.core.SrModel
+import com.atlanyuey.aenht.core.SrModels
+import com.atlanyuey.aenht.core.SuperResolution
 import com.atlanyuey.aenht.core.tr
 import com.atlanyuey.aenht.ui.components.AppIcon
 import com.atlanyuey.aenht.ui.components.BackButton
@@ -135,7 +145,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.zoomable
-import coil3.request.transformations
 import com.atlanyuey.aenht.shared.reader.Spreads
 import com.atlanyuey.aenht.core.DoublePage
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -387,7 +396,17 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val context = LocalContext.current
         val density by rememberUpdatedState(LocalDensity.current.density)
         val mode = AppSettings.readMode
-        LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { autoRead = false }
+        var active by remember { mutableStateOf(true) }
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { active = true }
+        LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { autoRead = false; active = false }
+        val imageOptions = ReaderImageOptions(
+            viewport = LocalWindowInfo.current.containerSize,
+            gapPixels = with(LocalDensity.current) { 6.dp.roundToPx() },
+            continuous = !mode.isPaged,
+            crop = mode.isPaged && AppSettings.autoCrop,
+            mode = AppSettings.superResolution,
+            model = if (AppSettings.superResolutionModel == SrModel.High && SrModels.isReady(context)) SrModel.High else SrModel.Standard,
+        )
         LaunchedEffect(mode) { autoRead = false }
         val backdrop = rememberLayerBackdrop()
         uiScope = rememberCoroutineScope()
@@ -458,6 +477,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.systemBars())
                 }
                 autoRead = false
+                stopDiskPrefetch()
                 record()
             }
         }
@@ -492,7 +512,16 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 snapshotFlow { list.firstVisibleItemIndex }.collect { page = it }
             }
         }
-        LaunchedEffect(page, mode) { prefetch(context, page) }
+        val diskPages = AppSettings.preloadPages
+        LaunchedEffect(page, diskPages, active) {
+            if (active) prefetch(context, page, diskPages) else stopDiskPrefetch()
+        }
+        LaunchedEffect(mode, newSpreads, imageOptions, active) {
+            if (!active) return@LaunchedEffect
+            snapshotFlow {
+                if (mode.isPaged) pager.currentPage else list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: page
+            }.collectLatest { tail -> prepareUpcoming(context, tail, if (mode.isPaged) newSpreads else null, imageOptions) }
+        }
         LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.thumbsKey, page) }
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
@@ -595,7 +624,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         .graphicsLayer { renderEffect = effect }
                         .then(if (com.atlanyuey.aenht.core.Privacy.blursImages) Modifier.blur(40.dp) else Modifier),
                 ) {
-                    if (mode.isPaged) Paged(mode) else Continuous(mode)
+                    if (mode.isPaged) Paged(mode, imageOptions, active) else Continuous(mode, imageOptions, active)
                 }
                 // The reader's own brightness: a dark layer over the pages.
                 val dim = (1.0 - AppSettings.readerBrightness).toFloat().coerceIn(0f, 0.8f)
@@ -675,8 +704,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     @Composable
-    private fun Paged(mode: ReadMode) {
-        val content: @Composable (Int) -> Unit = { index -> if (spreads != null) SpreadPage(index) else ZoomPage(index) }
+    private fun Paged(mode: ReadMode, options: ReaderImageOptions, active: Boolean) {
+        val content: @Composable (Int) -> Unit = { index ->
+            val visible = active && pager.currentPage == index
+            if (spreads != null) SpreadPage(index, options, visible) else ZoomPage(index, options, visible)
+        }
         val layer = androidx.compose.ui.graphics.rememberGraphicsLayer()
         pagesLayer = layer
         Box(Modifier.fillMaxSize()) {
@@ -740,10 +772,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     /** Two pages side by side, zoomed together; the seam in the middle. */
     @Composable
-    private fun SpreadPage(slot: Int) {
+    private fun SpreadPage(slot: Int, options: ReaderImageOptions, visible: Boolean) {
         val pages = spreads?.pages(slot).orEmpty()
         if (pages.size < 2) {
-            ZoomPage(pages.firstOrNull() ?: slot)
+            ZoomPage(pages.firstOrNull() ?: slot, options, visible)
             return
         }
         val zoomState = rememberZoomableState(ZoomSpec(maxZoomFactor = 4f))
@@ -761,15 +793,15 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     val align = if (i == 0) Alignment.CenterEnd else Alignment.CenterStart
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
                         val context = LocalContext.current
-                        val crop = AppSettings.autoCrop
                         // Each half loads (and is retried) on its own: the other one stays.
                         var attempt by remember(p) { mutableIntStateOf(0) }
                         var failed by remember(p, attempt) { mutableStateOf(false) }
+                        val sharp = enhancedPage(context, p, options, 2, visible, attempt)
                         // A new image node per attempt: Coil takes an equal request for the same
                         // one (a failed one stays failed), and only this half loads again.
                         androidx.compose.runtime.key(attempt) {
                             coil3.compose.AsyncImage(
-                                model = remember(p, crop) { pageRequest(context, p, crop) },
+                                model = remember(p, options) { options.request(context, source.pages[p].url, 2).build() },
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
                                 alignment = align,
@@ -777,6 +809,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 onState = { failed = it is coil3.compose.AsyncImagePainter.State.Error },
                             )
                         }
+                        if (sharp != null && !failed) androidx.compose.foundation.Image(
+                            sharp.asImageBitmap(), null, Modifier.fillMaxSize(), alignment = align, contentScale = ContentScale.Fit,
+                        )
                         if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { attempt++ } }
                     }
                 }
@@ -785,7 +820,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     @Composable
-    private fun ZoomPage(index: Int) {
+    private fun ZoomPage(index: Int, options: ReaderImageOptions, visible: Boolean) {
         val zoomState = rememberZoomableState(ZoomSpec(maxZoomFactor = 4f))
         val imageState = rememberZoomableImageState(zoomState)
         Box(
@@ -795,44 +830,22 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             contentAlignment = Alignment.Center,
         ) {
             val context = LocalContext.current
-            val crop = AppSettings.autoCrop
             var attempt by remember(index) { mutableIntStateOf(0) }
             // One state for every attempt: the request (made once) reports into it.
             var failed by remember(index) { mutableStateOf(false) }
-            val model = remember(index, crop) { pageRequest(context, index, crop) { failed = true } }
-            // Super resolution: the page sharpened to the screen's resolution
-            // replaces it once ready (the original stays as the placeholder,
-            // and fades into the sharper one: no reload, no flash).
-            val srMode = AppSettings.superResolution
-            val srModel = if (AppSettings.superResolutionModel == com.atlanyuey.aenht.core.SrModel.High &&
-                com.atlanyuey.aenht.core.SrModels.isReady(context)) com.atlanyuey.aenht.core.SrModel.High else com.atlanyuey.aenht.core.SrModel.Standard
-            val screen = androidx.compose.ui.platform.LocalWindowInfo.current.containerSize
-            var sharp by remember(index, crop) { mutableStateOf<coil3.request.ImageRequest?>(null) }
-            // Slower devices: only the page shown (measured, see SuperResolution.isFast).
-            val wanted = index == page || com.atlanyuey.aenht.core.SuperResolution.isFast
-            LaunchedEffect(index, crop, srMode, srModel, wanted) {
-                if (srMode == com.atlanyuey.aenht.core.SrMode.Off || !wanted) return@LaunchedEffect
-                val url = source.pages[index].url ?: return@LaunchedEffect
-                val request = coil3.request.ImageRequest.Builder(context).data(url).allowHardware(false).apply {
-                    if (crop) transformations(com.atlanyuey.aenht.core.AutoCropTransformation())
-                }.build()
-                val original = (coil3.SingletonImageLoader.get(context).execute(request) as? coil3.request.SuccessResult)
-                    ?.image?.toBitmap() ?: return@LaunchedEffect
-                val enhanced = com.atlanyuey.aenht.core.SuperResolution.enhance(
-                    context, original, "$url|$crop", screen.width, screen.height, srMode, srModel,
-                ) ?: return@LaunchedEffect
-                // Not while zoomed in (the page would move under the fingers).
-                androidx.compose.runtime.snapshotFlow { (zoomState.zoomFraction ?: 0f) < 0.01f }.first { it }
-                sharp = coil3.request.ImageRequest.Builder(context).data(enhanced)
-                    .placeholder(original.asImage())
-                    .crossfade(350)
-                    .memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
-                    .build()
+            val model = remember(index, options) {
+                options.request(context, source.pages[index].url, 1).listener(onError = { _, _ -> failed = true }).build()
+            }
+            val sharp = enhancedPage(context, index, options, 1, visible, attempt) {
+                snapshotFlow { (zoomState.zoomFraction ?: 0f) < 0.01f }.first { it }
+            }
+            val enhanced = remember(sharp) {
+                sharp?.let { ImageRequest.Builder(context).data(it).crossfade(250).memoryCachePolicy(CachePolicy.DISABLED).build() }
             }
             // A new image node per attempt (see SpreadPage): the zoom stays.
             androidx.compose.runtime.key(attempt) {
                 ZoomableAsyncImage(
-                    model = sharp ?: model,
+                    model = enhanced ?: model,
                     contentDescription = null,
                     state = imageState,
                     modifier = Modifier.fillMaxSize(),
@@ -846,15 +859,6 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
-    /**
-     * The request of page [index] (cropped when [crop]); [onError] hears when
-     * it fails. Each call makes a new request, so a retry loads it again.
-     */
-    private fun pageRequest(context: android.content.Context, index: Int, crop: Boolean, onError: () -> Unit = {}) =
-        coil3.request.ImageRequest.Builder(context).data(source.pages[index].url).apply {
-            if (crop) transformations(com.atlanyuey.aenht.core.AutoCropTransformation())
-        }.listener(onError = { _, _ -> onError() }).build()
-
     /** A page that couldn't be loaded: loads it again (the page and the place stay). */
     @Composable
     private fun PageRetry(onRetry: () -> Unit) {
@@ -865,7 +869,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     @Composable
-    private fun Continuous(mode: ReadMode) {
+    private fun Continuous(mode: ReadMode, options: ReaderImageOptions, active: Boolean) {
         val gap = if (mode == ReadMode.VerticalGap) AppSettings.pageGap.dp else 0.dp
         val context = LocalContext.current
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -882,10 +886,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     val knownRatio = (readerPage.url as? com.atlanyuey.aenht.core.EhPageRef)
                         ?.let { com.atlanyuey.aenht.core.EhPages.ratios["${it.gid}-${it.page}"] }
                     val ratio = (decodedRatio ?: knownRatio ?: readerPage.aspectRatio).takeIf { it.isFinite() && it > 0 } ?: 0.7f
-                    val request = remember(readerPage.index, attempt) {
-                        ImageRequest.Builder(context).data(readerPage.url)
-                            .size(1400, 8192).scale(coil3.size.Scale.FIT).build()
-                    }
+                    val request = remember(readerPage.index, attempt, options) { options.request(context, readerPage.url, 1).build() }
+                    val sharp = enhancedPage(context, readerPage.index, options, 1, active && readerPage.index == page, attempt)
                     DisposableEffect(readerPage.index) {
                         onDispose { pageLoads.remove(readerPage.index) }
                     }
@@ -915,10 +917,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 },
                             )
                         }
+                        if (sharp != null) androidx.compose.foundation.Image(sharp.asImageBitmap(), null,
+                            Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                         when (state) {
                             is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { retryContinuousPage(readerPage.index) }
                             is coil3.compose.AsyncImagePainter.State.Success -> {}
-                            else -> ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                            else -> if (sharp == null) ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
                         }
                     }
                 }
@@ -926,36 +930,94 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
-    /** Pages being loaded ahead, by index. */
-    private val prefetching = mutableMapOf<Int, coil3.request.Disposable>()
-    private var prefetchPaged: Boolean? = null
+    private data class PreparedPage(val index: Int, val options: ReaderImageOptions, val pagesPerTurn: Int)
+    private val preparedSizes = mutableMapOf<PreparedPage, IntSize>()
+
+    private suspend fun prepareUpcoming(context: android.content.Context, after: Int, spreads: Spreads?, options: ReaderImageOptions) {
+        val next = upcomingReaderPages(after, count, spreads)
+        val keep = pagesInTurn(after, count, spreads) + next
+        preparedSizes.keys.retainAll(keep.map { PreparedPage(it.index, options, it.pagesPerTurn) }.toSet())
+        val loader = SingletonImageLoader.get(context)
+        val decoded = mutableListOf<Pair<ReaderPageInTurn, Bitmap>>()
+        val canEnhance = options.mode != SrMode.Off && SuperResolution.available
+        // Decode all upcoming originals before running the more expensive inference.
+        for (entry in next) {
+            val data = source.pages[entry.index].url ?: continue
+            val request = options.request(context, data, entry.pagesPerTurn).build()
+            val result = loader.execute(request) as? SuccessResult ?: continue
+            val image = result.image
+            if (options.continuous && image.width > 0 && image.height > 0) {
+                pageRatios[entry.index] = image.width.toFloat() / image.height
+            }
+            if (canEnhance && options.shouldEnhance(result) && image is coil3.BitmapImage) {
+                preparedSizes[PreparedPage(entry.index, options, entry.pagesPerTurn)] = IntSize(image.width, image.height)
+                decoded += entry to image.bitmap
+            }
+        }
+        for ((entry, original) in decoded) {
+            val data = source.pages[entry.index].url ?: continue
+            val target = options.target(entry.pagesPerTurn)
+            SuperResolution.enhance(context, original, options.enhancementKey(data),
+                target.width, target.height, options.mode, options.model)
+        }
+    }
+
+    @Composable
+    private fun enhancedPage(context: android.content.Context, index: Int, options: ReaderImageOptions,
+                             pagesPerTurn: Int, visible: Boolean, attempt: Int,
+                             beforeSwap: suspend () -> Unit = {}): Bitmap? {
+        val data = source.pages[index].url ?: return null
+        if (options.mode == SrMode.Off) return null
+        val key = PreparedPage(index, options, pagesPerTurn)
+        val cacheKey = options.enhancementKey(data)
+        val target = options.target(pagesPerTurn)
+        val cached = preparedSizes[key]?.let { size ->
+            SuperResolution.cached(size.width, size.height, cacheKey, target.width, target.height, options.mode, options.model)
+        }
+        var enhanced by remember(key, attempt) { mutableStateOf(cached) }
+        LaunchedEffect(key, attempt, visible) {
+            if (!visible || enhanced != null || !SuperResolution.available) return@LaunchedEffect
+            val request = options.request(context, data, pagesPerTurn).build()
+            val result = SingletonImageLoader.get(context).execute(request) as? SuccessResult ?: return@LaunchedEffect
+            if (!options.shouldEnhance(result)) return@LaunchedEffect
+            val original = result.image.toBitmap()
+            val image = SuperResolution.enhance(context, original, cacheKey, target.width, target.height, options.mode, options.model)
+                ?: return@LaunchedEffect
+            beforeSwap()
+            enhanced = image
+        }
+        return enhanced ?: cached
+    }
+
+    private val diskPrefetch = mutableMapOf<Int, coil3.request.Disposable>()
+
+    private fun stopDiskPrefetch() {
+        diskPrefetch.values.forEach { it.dispose() }
+        diskPrefetch.clear()
+    }
 
     /**
      * Loads the pages around [index] ahead. Pages left behind by fast turning
      * are dropped: they would hold up the one being read (E-Hentai answers a
      * few page requests a second).
      */
-    private fun prefetch(context: android.content.Context, index: Int) {
-        val paged = AppSettings.readMode.isPaged
-        if (prefetchPaged != paged) {
-            prefetching.values.forEach { it.dispose() }
-            prefetching.clear()
-            prefetchPaged = paged
-        }
+    @OptIn(coil3.annotation.ExperimentalCoilApi::class)
+    private fun prefetch(context: android.content.Context, index: Int, diskPages: Int) {
         val loader = SingletonImageLoader.get(context)
-        val upper = minOf(count, index + 1 + AppSettings.preloadPages)
+        val upper = minOf(count, index + 1 + diskPages)
         val lower = maxOf(0, index - 2)
-        val wanted = lower until upper
-        prefetching.keys.filter { it !in wanted }.forEach { prefetching.remove(it)?.dispose() }
+        val wanted = (lower until upper).filter { it != index }
+        diskPrefetch.keys.filter { it !in wanted }.forEach { diskPrefetch.remove(it)?.dispose() }
         // The nearest first.
         for (i in wanted.sortedBy { kotlin.math.abs(it - index) }) {
-            if (prefetching[i]?.isDisposed == false) continue
+            if (diskPrefetch[i]?.isDisposed == false) continue
             val data = source.pages[i].url ?: continue
             if (data !is String && data !is com.atlanyuey.aenht.core.EhPageRef) continue
-            val request = ImageRequest.Builder(context).data(data).apply {
-                if (!paged) size(1400, 8192).scale(coil3.size.Scale.FIT)
-            }.build()
-            prefetching[i] = loader.enqueue(request)
+            val request = ImageRequest.Builder(context).data(data)
+                .decoderFactory(BlackholeDecoder.Factory())
+                .memoryCachePolicy(CachePolicy.DISABLED)
+                .build()
+            diskPrefetch[i] = loader.enqueue(request)
         }
     }
 
