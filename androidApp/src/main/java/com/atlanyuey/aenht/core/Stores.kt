@@ -298,6 +298,12 @@ object Downloads {
     private var lastSave = 0L
 
     fun init(context: Context) {
+        // Downloads that failed (the network went away) carry on when it comes back.
+        AppScope.launch {
+            androidx.compose.runtime.snapshotFlow { Connectivity.restored }.collect { restored ->
+                if (restored > 0) records.filter { it.state == DownloadRecord.FAILED }.forEach { resume(it.key) }
+            }
+        }
         root = File(context.filesDir, "Downloads")
         // The list of downloads, or the copy before its last save when it can't be read.
         val loaded = listOf(indexFile, indexBackup).firstNotNullOfOrNull { file ->
@@ -1011,6 +1017,13 @@ class GalleryFeed(
         // The rules, the account's blacklist or the tag names changed: what is loaded is filtered again
         // (while the screen lives, whether or not the end of the list shows).
         if (filtered) scope.launch { androidx.compose.runtime.snapshotFlow { Filters.version }.collect { refilter() } }
+        // A page that failed (offline) is loaded again when the network comes back.
+        scope.launch {
+            androidx.compose.runtime.snapshotFlow { Connectivity.restored }.collect { restored ->
+                if (restored == 0 || error == null || isLoading) return@collect
+                if (items.isEmpty()) reload() else loadMore()
+            }
+        }
     }
 
     fun reload(): Job {

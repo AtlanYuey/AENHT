@@ -35,6 +35,7 @@ struct CommentsView: View {
                     Spacer()
                     if loadError != nil, !loadingMore {
                         Button("Retry") { Task { await loadMore() } }.buttonStyle(.bordered)
+                            .retriesWhenOnline { await loadMore() }
                     } else {
                         ProgressView().task(id: page) { await loadMore() }
                     }
@@ -53,6 +54,7 @@ struct CommentsView: View {
                 } actions: {
                     Button("Try Again") { Task { await load() } }.buttonStyle(.borderedProminent)
                 }
+                .retriesWhenOnline { await load() }
             } else if comments.isEmpty {
                 ContentUnavailableView("No Comments", systemImage: "text.bubble")
             }

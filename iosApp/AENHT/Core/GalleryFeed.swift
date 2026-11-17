@@ -33,6 +33,21 @@ final class GalleryFeed {
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
         watchFilters()
+        watchConnectivity()
+    }
+
+    /// A page that failed (offline) is loaded again when the network comes back.
+    private func watchConnectivity() {
+        withObservationTracking {
+            _ = Connectivity.shared.restored
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.watchConnectivity()
+                guard self.error != nil, !self.isLoading else { return }
+                if self.items.isEmpty { await self.reload() } else { await self.loadMore() }
+            }
+        }
     }
 
     /// The rules, the account's blacklist or the tag names changed: what is

@@ -86,6 +86,19 @@ final class DownloadManager {
         }
     }
 
+    /// Downloads that failed (the network went away) carry on when it comes back.
+    func watchConnectivity() {
+        withObservationTracking {
+            _ = Connectivity.shared.restored
+        } onChange: {
+            Task { @MainActor in
+                let manager = DownloadManager.shared
+                manager.watchConnectivity()
+                for record in manager.records where record.state == .failed { manager.resume(uid: record.uid) }
+            }
+        }
+    }
+
     // MARK: Queries
 
     func record(_ id: Int) -> DownloadRecord? {

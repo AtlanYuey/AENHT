@@ -761,6 +761,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** A page that couldn't be loaded: loads it again (the page and the place stay). */
     @Composable
     private fun PageRetry(onRetry: () -> Unit) {
+        com.atlanyuey.aenht.core.RetryWhenOnline(onRetry)
         com.atlanyuey.aenht.ui.components.GlassCapsuleButton(onRetry, height = 36.dp) {
             Txt(tr("Retry"), style = Type.subheadline, color = Color.White)
         }

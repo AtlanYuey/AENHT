@@ -27,6 +27,7 @@ class App : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         L10n.context = this
+        com.atlanyuey.aenht.core.Connectivity.init(this)
         AppSettings.init(this)
         Auth.init(this)
         com.atlanyuey.aenht.core.AccountBook.init(this)

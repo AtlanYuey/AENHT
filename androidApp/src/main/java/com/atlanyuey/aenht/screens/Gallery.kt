@@ -333,6 +333,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                                 Icons.Offline, tr("Couldn't Load"), error,
                                 action = tr("Try Again") to { scope.launch { load() } },
                             )
+                            com.atlanyuey.aenht.core.RetryWhenOnline { scope.launch { load() } }
                         }
                     } else {
                         item("loading") {
@@ -849,6 +850,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                         val failed = error
                         if (failed != null) {
                             EmptyState(Icons.Offline, tr("Couldn't Load"), message = failed, action = tr("Try Again") to { scope.launch { load() } })
+                            com.atlanyuey.aenht.core.RetryWhenOnline { scope.launch { load() } }
                         } else {
                             EmptyState(Icons.Comment, tr("No Comments"))
                         }
@@ -859,6 +861,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                         Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
                             if (error != null && !loadingMore) {
                                 com.atlanyuey.aenht.ui.components.GlassCapsuleButton({ loadMore() }, height = 36.dp) { Txt(tr("Retry"), style = Type.subheadline) }
+                                com.atlanyuey.aenht.core.RetryWhenOnline { loadMore() }
                             } else {
                                 LaunchedEffect(page) { loadMore() }
                                 ActivityIndicator()

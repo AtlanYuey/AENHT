@@ -17,6 +17,8 @@ struct AENHTApp: App {
         // with UIKit's tint, so SwiftUI's tint doesn't reach them.
         UINavigationBar.appearance().tintColor = .label
         ImageSetup.configure()
+        Connectivity.shared.start()
+        DownloadManager.shared.watchConnectivity()
         SettingsSync.shared.start(isPad: UIDevice.current.userInterfaceIdiom == .pad)
     }
 

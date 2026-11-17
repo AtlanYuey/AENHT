@@ -327,6 +327,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     } else if (error != null) {
                         item("error") {
                             EmptyState(Icons.Offline, tr("Couldn't Load"), error, action = tr("Try Again") to { scope.launch { load() } })
+                            com.atlanyuey.aenht.core.RetryWhenOnline { scope.launch { load() } }
                         }
                     } else {
                         item("loading") {

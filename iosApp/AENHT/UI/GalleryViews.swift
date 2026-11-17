@@ -257,6 +257,9 @@ struct GalleryCard: View {
         } preview: {
             CoverView(item: item, cornerRadius: 0, targetWidth: 600)
                 .frame(width: 280)
+                // The preview is hosted on its own: what CoverView reads is given to it.
+                .environment(AppSettings.shared)
+                .environment(TagStore.shared)
         }
     }
 

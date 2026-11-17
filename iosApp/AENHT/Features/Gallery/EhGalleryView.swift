@@ -188,6 +188,7 @@ struct EhGalleryView: View {
                                 .buttonStyle(.borderedProminent)
                         }
                     }
+                    .retriesWhenOnline { await model.load(context: modelContext) }
                     .padding(.top, 40)
                 } else {
                     ProgressView().controlSize(.large).frame(maxWidth: .infinity).padding(.top, 60)

@@ -15,6 +15,8 @@ struct RemoteImage: View {
     /// Reader pages need an explicit recovery action without leaving their scroll position.
     var retryOnFailure = false
     @State private var attempt = 0
+    /// The picture couldn't be loaded: it is loaded again when the network comes back.
+    @State private var failed = false
     @Environment(\.privacyMode) private var privacy
 
     var body: some View {
@@ -30,13 +32,17 @@ struct RemoteImage: View {
             } else if state.error != nil {
                 Rectangle()
                     .fill(.quaternary)
+                    .onAppear { failed = true }
                     .overlay {
                         VStack(spacing: 12) {
                             Image(systemName: "photo")
                                 .font(.title3)
                                 .foregroundStyle(.tertiary)
                             if retryOnFailure {
-                                Button("Retry") { attempt += 1 }
+                                Button("Retry") {
+                                    failed = false
+                                    attempt += 1
+                                }
                                     .buttonStyle(.bordered)
                                     .frame(minHeight: 44)
                             }
@@ -47,6 +53,11 @@ struct RemoteImage: View {
             }
         }
         .id(attempt)
+        .onChange(of: Connectivity.shared.restored) {
+            guard failed else { return }
+            failed = false
+            attempt += 1
+        }
         .animation(.easeOut(duration: 0.2), value: url)
     }
 

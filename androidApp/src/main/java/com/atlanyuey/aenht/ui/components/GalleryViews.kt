@@ -35,6 +35,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -103,6 +105,16 @@ fun RemoteImage(
     val density = LocalDensity.current
     val placeholder = AppTheme.colors.quaternaryFill
     var failed by remember(url) { mutableStateOf(false) }
+    // Couldn't be loaded (offline): loaded again when the network comes back.
+    var errored by remember(url) { mutableStateOf(false) }
+    var attempt by remember(url) { mutableIntStateOf(0) }
+    val restored = com.atlanyuey.aenht.core.Connectivity.restored
+    LaunchedEffect(restored) {
+        if (errored) {
+            errored = false
+            attempt++
+        }
+    }
     val data = if (failed) fallback?.invoke() ?: url else url
     val request = ImageRequest.Builder(context)
         .data(data)
@@ -110,15 +122,20 @@ fun RemoteImage(
             targetWidth?.let { size(Size(Dimension(with(density) { it.roundToPx() }), Dimension.Undefined)) }
         }
         .build()
-    AsyncImage(
-        model = request,
-        contentDescription = null,
-        contentScale = contentScale,
-        onError = { if (!failed && fallback != null) failed = true },
-        modifier = modifier
-            .background(placeholder)
-            .then(if (blur || com.atlanyuey.aenht.core.Privacy.blursImages) Modifier.blur(if (blur) 18.dp else 30.dp) else Modifier),
-    )
+    // A new image node per attempt: the request is made again.
+    androidx.compose.runtime.key(attempt) {
+        AsyncImage(
+            model = request,
+            contentDescription = null,
+            contentScale = contentScale,
+            onError = {
+                if (!failed && fallback != null) failed = true else errored = true
+            },
+            modifier = modifier
+                .background(placeholder)
+                .then(if (blur || com.atlanyuey.aenht.core.Privacy.blursImages) Modifier.blur(if (blur) 18.dp else 30.dp) else Modifier),
+        )
+    }
 }
 
 @Composable

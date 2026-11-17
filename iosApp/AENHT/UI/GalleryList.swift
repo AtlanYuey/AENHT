@@ -315,7 +315,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         let environment = environment
         if let view = views[id] {
             cell.contentConfiguration = UIHostingConfiguration {
-                view.environment(\.self, environment)
+                view.modifier(ListCellEnvironment(values: environment))
             }
             .margins(.all, 0)
             return
@@ -329,7 +329,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
                     GalleryRow(item: item).padding(.horizontal)
                     Divider().padding(.leading, 114)
                 }
-                .environment(\.self, environment)
+                .modifier(ListCellEnvironment(values: environment))
             }
             .margins(.all, 0)
         case .grid, .waterfall, .compact:
@@ -338,7 +338,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
                 // The cell's size is the layout's: the card fills it.
                 GalleryCard(item: item, style: key.style, fixed: size.fixed)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .environment(\.self, environment)
+                    .modifier(ListCellEnvironment(values: environment))
             }
             .margins(.all, 0)
         }
@@ -692,5 +692,31 @@ final class CardMetrics {
     private static func measure<V: View>(_ view: V, _ environment: EnvironmentValues) -> CGFloat {
         let host = UIHostingController(rootView: view.environment(\.dynamicTypeSize, environment.dynamicTypeSize))
         return ceil(host.sizeThatFits(in: CGSize(width: 1000, height: CGFloat.greatestFiniteMagnitude)).height)
+    }
+}
+
+/// What a cell's SwiftUI takes from the list's environment: these values
+/// only. A cell is hosted on its own, and giving it the list's whole
+/// environment (`\.self`, another host's) broke the system's own use of it:
+/// a long press's menu crashed the app.
+private struct ListCellEnvironment: ViewModifier {
+    let values: EnvironmentValues
+
+    func body(content: Content) -> some View {
+        content
+            .environment(AppSettings.shared)
+            .environment(UserSession.shared)
+            .environment(DownloadManager.shared)
+            .environment(TagStore.shared)
+            .environment(EhSession.shared)
+            .environment(\.modelContext, values.modelContext)
+            .environment(\.privacyMode, values.privacyMode)
+            .environment(\.galleryNamespace, values.galleryNamespace)
+            .environment(\.galleryCoverBadge, values.galleryCoverBadge)
+            .environment(\.galleryMenuItems, values.galleryMenuItems)
+            .environment(\.showsSiteBadge, values.showsSiteBadge)
+            .environment(\.openRoute, values.openRoute)
+            .environment(\.openGallery, values.openGallery)
+            .tint(AppSettings.shared.accent.color)
     }
 }

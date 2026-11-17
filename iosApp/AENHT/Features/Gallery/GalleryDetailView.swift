@@ -145,6 +145,7 @@ struct GalleryDetailView: View {
                         Button("Try Again") { Task { await model.load() } }
                             .buttonStyle(.borderedProminent)
                     }
+                    .retriesWhenOnline { await model.load() }
                     .padding(.top, 40)
                 } else {
                     ProgressView()
