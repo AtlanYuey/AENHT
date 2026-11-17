@@ -157,6 +157,93 @@ struct ReaderView: View {
     private var isRTL: Bool { settings.readMode == .rightToLeft }
 
     var body: some View {
+        readingInteractions
+            .task(id: page) {
+                // Saved once the page settles, not on every turn (saving
+                // refreshes the history list and costs a frame).
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                recordPage()
+            }
+            .onChange(of: settings.readMode) {
+                autoRead = false
+                scrollRequest = ReaderScrollRequest(page: page)
+                prefetch(around: page)
+            }
+            .task(id: autoRead) { await runAutoRead() }
+            .onAppear { AppChrome.shared.readersOpen += 1 }
+            .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
+            .onAppear {
+                awake.touched()
+                ReaderProgress.shared.set(page, gallery: source.item.transitionKey)
+                prefetch(around: page)
+                recordPage()
+                scheduleHide()
+            }
+            .onDisappear {
+                autoRead = false
+                hider.cancel()
+                awake.stop()
+                prefetcher.stopPrefetching()
+                stripPrefetcher.stopPrefetching()
+                recordPage()
+            }
+            .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
+                turnFromPanel = true
+                autoRead = false
+                go(target)
+                sliderValue = Double(target)
+            })
+            .sheet(isPresented: $showSettings) {
+                ReaderSettingsSheet()
+                    .presentationDetents([.medium, .large])
+            }
+    }
+
+    // Keep SwiftUI type inference bounded without changing modifier order.
+    private var readingInteractions: some View {
+        readerCanvas
+            .background(TouchObserver { touch in
+                // No view state changes here: one while the Options menu is
+                // open rebuilds the toolbar and closes the menu under the
+                // finger, before its item acts.
+                awake.touched()
+                guard chromeVisible else { return }
+                if touch.onOverlay || touch.location.y < touch.safeArea.top + 64 {
+                    // A menu, a sheet, or the top bar (its menu may be
+                    // opening): the controls stay until a touch elsewhere.
+                    hider.cancel()
+                } else {
+                    scheduleHide()
+                }
+            })
+            .onChange(of: chromeVisible) { scheduleHide() }
+            .onChange(of: settings.screenOn) { awake.touched() }
+            .onChange(of: sliderEditing) {
+                if sliderEditing { autoRead = false }
+                scheduleHide()
+            }
+            .onChange(of: showSettings) {
+                if showSettings { autoRead = false }
+                scheduleHide()
+            }
+            .onChange(of: askPage) { if askPage { autoRead = false } }
+            .onChange(of: scenePhase) { if scenePhase != .active { autoRead = false } }
+            .onChange(of: autoRead) { if autoRead { chromeVisible = false } }
+            .onChange(of: page) { _, new in
+                ReaderProgress.shared.set(new, gallery: source.item.transitionKey)
+                sliderValue = Double(new)
+                prefetch(around: new)
+                // Continuous scrolling hides controls on a real drag or the idle timer, not on a page boundary.
+                if turnFromPanel {
+                    turnFromPanel = false
+                } else if !sliderEditing, settings.readMode.isPaged, !autoRead {
+                    chromeVisible = false
+                }
+            }
+    }
+
+    private var readerCanvas: some View {
         content
             // Back from the left edge only: a swipe in the middle is the reader's.
             .background(EdgeOnlyBackSwipe().frame(width: 0, height: 0))
@@ -229,84 +316,6 @@ struct ReaderView: View {
             .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
             .environment(\.colorScheme, .dark)
             .animation(.smooth(duration: 0.25), value: chromeVisible)
-            .background(TouchObserver { touch in
-                // No view state changes here: one while the Options menu is
-                // open rebuilds the toolbar and closes the menu under the
-                // finger, before its item acts.
-                awake.touched()
-                guard chromeVisible else { return }
-                if touch.onOverlay || touch.location.y < touch.safeArea.top + 64 {
-                    // A menu, a sheet, or the top bar (its menu may be
-                    // opening): the controls stay until a touch elsewhere.
-                    hider.cancel()
-                } else {
-                    scheduleHide()
-                }
-            })
-            .onChange(of: chromeVisible) { scheduleHide() }
-            .onChange(of: settings.screenOn) { awake.touched() }
-            .onChange(of: sliderEditing) {
-                if sliderEditing { autoRead = false }
-                scheduleHide()
-            }
-            .onChange(of: showSettings) {
-                if showSettings { autoRead = false }
-                scheduleHide()
-            }
-            .onChange(of: askPage) { if askPage { autoRead = false } }
-            .onChange(of: scenePhase) { if scenePhase != .active { autoRead = false } }
-            .onChange(of: autoRead) { if autoRead { chromeVisible = false } }
-            .onChange(of: page) { _, new in
-                ReaderProgress.shared.set(new, gallery: source.item.transitionKey)
-                sliderValue = Double(new)
-                prefetch(around: new)
-                // Continuous scrolling hides controls on a real drag or the idle timer, not on a page boundary.
-                if turnFromPanel {
-                    turnFromPanel = false
-                } else if !sliderEditing, settings.readMode.isPaged, !autoRead {
-                    chromeVisible = false
-                }
-            }
-            .task(id: page) {
-                // Saved once the page settles, not on every turn (saving
-                // refreshes the history list and costs a frame).
-                try? await Task.sleep(for: .milliseconds(700))
-                guard !Task.isCancelled else { return }
-                recordPage()
-            }
-            .onChange(of: settings.readMode) {
-                autoRead = false
-                scrollRequest = ReaderScrollRequest(page: page)
-                prefetch(around: page)
-            }
-            .task(id: autoRead) { await runAutoRead() }
-            .onAppear { AppChrome.shared.readersOpen += 1 }
-            .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
-            .onAppear {
-                awake.touched()
-                ReaderProgress.shared.set(page, gallery: source.item.transitionKey)
-                prefetch(around: page)
-                recordPage()
-                scheduleHide()
-            }
-            .onDisappear {
-                autoRead = false
-                hider.cancel()
-                awake.stop()
-                prefetcher.stopPrefetching()
-                stripPrefetcher.stopPrefetching()
-                recordPage()
-            }
-            .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
-                turnFromPanel = true
-                autoRead = false
-                go(target)
-                sliderValue = Double(target)
-            })
-            .sheet(isPresented: $showSettings) {
-                ReaderSettingsSheet()
-                    .presentationDetents([.medium, .large])
-            }
     }
 
     // MARK: Pages
