@@ -113,6 +113,9 @@ struct ReaderView: View {
     @State private var prefetcher = ImagePrefetcher(
         pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
     )
+    @State private var stripPrefetcher = ImagePrefetcher(
+        pipeline: .shared, destination: .diskCache, maxConcurrentRequestCount: 3
+    )
     /// What the prefetcher is loading now.
     @State private var prefetched: Set<URL> = []
 
@@ -274,6 +277,7 @@ struct ReaderView: View {
             .onChange(of: settings.readMode) {
                 autoRead = false
                 scrollRequest = ReaderScrollRequest(page: page)
+                prefetch(around: page)
             }
             .task(id: autoRead) { await runAutoRead() }
             .onAppear { AppChrome.shared.readersOpen += 1 }
@@ -290,6 +294,7 @@ struct ReaderView: View {
                 hider.cancel()
                 awake.stop()
                 prefetcher.stopPrefetching()
+                stripPrefetcher.stopPrefetching()
                 recordPage()
             }
             .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
@@ -454,10 +459,14 @@ struct ReaderView: View {
         let lower = max(0, index - 2)
         guard lower < upper else { return }
         let urls = source.pages[lower..<upper].compactMap(\.url).filter { !$0.isFileURL }
+        // Keep compressed strip data ahead on disk; decoding several full-height originals
+        // into the memory cache would defeat the visible page's thumbnail budget.
+        let loader = settings.readMode.isPaged ? prefetcher : stripPrefetcher
+        (settings.readMode.isPaged ? stripPrefetcher : prefetcher).stopPrefetching()
         let stale = prefetched.subtracting(urls)
-        if !stale.isEmpty { prefetcher.stopPrefetching(with: Array(stale)) }
+        if !stale.isEmpty { loader.stopPrefetching(with: Array(stale)) }
         prefetched = Set(urls)
-        prefetcher.startPrefetching(with: urls)
+        loader.startPrefetching(with: urls)
     }
 
     private func runAutoRead() async {
@@ -516,6 +525,8 @@ struct ReaderView: View {
                 } label: {
                     Label(autoReadTitle,
                           systemImage: autoRead ? "pause.fill" : "play.fill")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                         .panelTarget()
                 }
                 Spacer(minLength: 8)

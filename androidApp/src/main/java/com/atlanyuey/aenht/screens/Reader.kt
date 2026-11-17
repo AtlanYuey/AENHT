@@ -488,7 +488,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 snapshotFlow { list.firstVisibleItemIndex }.collect { page = it }
             }
         }
-        LaunchedEffect(page) { prefetch(context, page) }
+        LaunchedEffect(page, mode) { prefetch(context, page) }
         LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.thumbsKey, page) }
         // Dragging the pages hides the controls…
         LaunchedEffect(mode) {
@@ -511,6 +511,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
         LaunchedEffect(autoRead, mode) {
             if (!autoRead) return@LaunchedEffect
+            if (count == 0) { autoRead = false; return@LaunchedEffect }
             chromeVisible = false
             autoScrollFailedPage = null
             try {
@@ -918,6 +919,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     /** Pages being loaded ahead, by index. */
     private val prefetching = mutableMapOf<Int, coil3.request.Disposable>()
+    private var prefetchPaged: Boolean? = null
 
     /**
      * Loads the pages around [index] ahead. Pages left behind by fast turning
@@ -925,6 +927,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
      * few page requests a second).
      */
     private fun prefetch(context: android.content.Context, index: Int) {
+        val paged = AppSettings.readMode.isPaged
+        if (prefetchPaged != paged) {
+            prefetching.values.forEach { it.dispose() }
+            prefetching.clear()
+            prefetchPaged = paged
+        }
         val loader = SingletonImageLoader.get(context)
         val upper = minOf(count, index + 1 + AppSettings.preloadPages)
         val lower = maxOf(0, index - 2)
@@ -935,7 +943,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             if (prefetching[i]?.isDisposed == false) continue
             val data = source.pages[i].url ?: continue
             if (data !is String && data !is com.atlanyuey.aenht.core.EhPageRef) continue
-            prefetching[i] = loader.enqueue(ImageRequest.Builder(context).data(data).build())
+            val request = ImageRequest.Builder(context).data(data).apply {
+                if (!paged) size(1400, 8192).scale(coil3.size.Scale.FIT)
+            }.build()
+            prefetching[i] = loader.enqueue(request)
         }
     }
 
@@ -1109,9 +1120,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             autoRead = !autoRead
                         }
                     }
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        PanelButton(Icons.Sliders, null) { openSettings(overlays) }
-                    }
+                    PanelButton(Icons.Sliders, null) { openSettings(overlays) }
                     PanelButton(Icons.ChevronForward, null) { go(step(page, forward = !isRtl)) }
                 }
             }

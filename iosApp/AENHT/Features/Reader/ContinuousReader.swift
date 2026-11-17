@@ -60,7 +60,9 @@ struct ContinuousReader: View {
             )
         } action: { old, new in
             driver.geometry = new
-            if old.size != .zero, old.size != new.size {
+            // Hiding the toolbar can change height. Only a width change (rotation / split view)
+            // pauses playback here, so starting playback doesn't immediately stop itself.
+            if old.size != .zero, abs(old.size.width - new.size.width) > 1 {
                 running = false
                 driver.targetOffset = nil
             }
@@ -87,6 +89,7 @@ struct ContinuousReader: View {
         }
         .onChange(of: running) { _, active in
             guard active else { clock.stop(); driver.targetOffset = nil; return }
+            guard !pages.isEmpty else { running = false; return }
             failedPage = nil
             clock.start { elapsed in
                 guard running else { clock.stop(); return }
