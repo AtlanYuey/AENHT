@@ -38,12 +38,12 @@ final class ReaderScrollTests: XCTestCase {
     }
 
     private final class ManualScrollView: UIScrollView {
-        var tracking = false
-        var dragging = false
-        var decelerating = false
-        override var isTracking: Bool { tracking }
-        override var isDragging: Bool { dragging }
-        override var isDecelerating: Bool { decelerating }
+        var simulatedTracking = false
+        var simulatedDragging = false
+        var simulatedDecelerating = false
+        override var isTracking: Bool { simulatedTracking }
+        override var isDragging: Bool { simulatedDragging }
+        override var isDecelerating: Bool { simulatedDecelerating }
     }
 
     private func fixture() -> (ReaderScrollDriver, ManualScrollView, [UIView]) {
@@ -114,7 +114,7 @@ final class ReaderScrollTests: XCTestCase {
         defer { driver.stop() }
         XCTAssertFalse(driver.continueOnDrag)
         driver.start()
-        scroll.dragging = true
+        scroll.simulatedDragging = true
         driver.userInteractionStarted()
         XCTAssertFalse(driver.running)
     }
@@ -124,20 +124,20 @@ final class ReaderScrollTests: XCTestCase {
         defer { driver.stop() }
         driver.continueOnDrag = true
         driver.start()
-        scroll.tracking = true
-        scroll.dragging = true
+        scroll.simulatedTracking = true
+        scroll.simulatedDragging = true
         driver.userInteractionStarted()
         scroll.setContentOffset(CGPoint(x: 0, y: 700), animated: false)
         driver.advance(elapsed: 1.0 / 60, scale: 2)
         XCTAssertTrue(driver.running)
         XCTAssertEqual(scroll.contentOffset.y, 700)
-        scroll.dragging = false
-        scroll.tracking = false
-        scroll.decelerating = true
+        scroll.simulatedDragging = false
+        scroll.simulatedTracking = false
+        scroll.simulatedDecelerating = true
         scroll.setContentOffset(CGPoint(x: 0, y: 1100), animated: false)
         driver.advance(elapsed: 1.0 / 60, scale: 2)
         XCTAssertEqual(scroll.contentOffset.y, 1100)
-        scroll.decelerating = false
+        scroll.simulatedDecelerating = false
         driver.advance(elapsed: 1.0 / 60, scale: 2)
         XCTAssertGreaterThan(scroll.contentOffset.y, 1100)
         XCTAssertLessThan(scroll.contentOffset.y, 1115)
@@ -147,7 +147,7 @@ final class ReaderScrollTests: XCTestCase {
         let (driver, scroll, _) = fixture()
         defer { driver.stop() }
         driver.start()
-        scroll.tracking = true
+        scroll.simulatedTracking = true
         driver.advance(elapsed: 1.0 / 60, scale: 2)
         XCTAssertTrue(driver.running)
         XCTAssertEqual(scroll.contentOffset.y, 0)
