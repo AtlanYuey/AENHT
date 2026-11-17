@@ -136,11 +136,11 @@ final class ReaderScrollDriver: NSObject {
             lastReportedPage = first.index
             onPage?(first.index)
         }
-        if let last = rows.last(where: isVisible) {
+        if let onVisiblePages, let last = rows.last(where: isVisible) {
             let visible = first.index...last.index
             if visible != lastVisiblePages {
                 lastVisiblePages = visible
-                onVisiblePages?(visible)
+                onVisiblePages(visible)
             }
         }
     }

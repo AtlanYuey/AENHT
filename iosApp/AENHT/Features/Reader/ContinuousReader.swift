@@ -61,10 +61,10 @@ struct ContinuousReader: View {
             .onAppear {
                 configure()
                 proxy.scrollTo(request.page, anchor: .top)
+                driver.reportPage()
             }
             .onChange(of: request) { _, new in
                 driver.stop()
-                imagePreparation.stop()
                 running = false
                 if new.animated {
                     withAnimation(.smooth(duration: 0.3)) { proxy.scrollTo(new.page, anchor: .top) }

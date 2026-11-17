@@ -219,6 +219,7 @@ actor SuperResolver {
         let name: String
         let task: Task<UIImage?, Never>
         var ahead: Bool
+        var joinedVisible = false
     }
     private var inference: Inference?
 
@@ -300,10 +301,13 @@ actor SuperResolver {
             guard !Task.isCancelled else { return nil }
             if let cached = memory.object(forKey: plan.name as NSString) { return cached }
             if running.name == plan.name {
-                if !ahead { inference?.ahead = false }
+                if !ahead {
+                    inference?.ahead = false
+                    inference?.joinedVisible = true
+                }
                 let result = await running.task.value
                 if let result { return result }
-                if ahead || !running.ahead { return nil }
+                if ahead || Task.isCancelled { return nil }
                 continue
             }
             if !ahead, running.ahead { running.task.cancel() }
@@ -320,12 +324,12 @@ actor SuperResolver {
         return await withTaskCancellationHandler {
             await task.value
         } onCancel: {
-            if ahead { Task { await self.cancelAhead(id) } }
+            Task { await self.cancelInference(id) }
         }
     }
 
-    private func cancelAhead(_ id: UUID) {
-        if let inference, inference.id == id, inference.ahead { inference.task.cancel() }
+    private func cancelInference(_ id: UUID) {
+        if let inference, inference.id == id, !inference.joinedVisible { inference.task.cancel() }
     }
 
     private func resolve(_ image: CGImage, plan: Plan, kind: SuperResolutionModel,

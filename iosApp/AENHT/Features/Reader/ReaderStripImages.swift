@@ -2,9 +2,19 @@ import Nuke
 import UIKit
 
 enum ReaderStripImages {
+    private static let maxWidth = 1400
+    private static let maxHeight = 8192
     private static let thumbnail = ImageRequest.ThumbnailOptions(
-        size: CGSize(width: 1400, height: 8192), unit: .pixels, contentMode: .aspectFit
+        size: CGSize(width: CGFloat(maxWidth), height: CGFloat(maxHeight)), unit: .pixels, contentMode: .aspectFit
     )
+
+    static func mayBeDownsampled(_ image: UIImage) -> Bool {
+        guard let cg = image.cgImage else { return false }
+        let rotated = [UIImage.Orientation.left, .right, .leftMirrored, .rightMirrored].contains(image.imageOrientation)
+        let width = rotated ? cg.height : cg.width
+        let height = rotated ? cg.width : cg.height
+        return width >= maxWidth - 1 || height >= maxHeight - 1
+    }
 
     static func request(for url: URL, pipeline: ImagePipeline = .shared,
                         priority: ImageRequest.Priority = .normal) -> ImageRequest {

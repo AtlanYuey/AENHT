@@ -20,7 +20,8 @@ struct ReaderImageOptions: Equatable {
             target = viewport
         }
         let style = continuous ? "|strip" : (crop ? "|crop" : "")
-        return ReaderImageEnhancement(key: url.absoluteString + style, target: target, mode: mode, model: model)
+        return ReaderImageEnhancement(key: url.absoluteString + style, target: target,
+                                      mode: mode, model: model, stripThumbnail: continuous)
     }
 }
 
@@ -29,13 +30,22 @@ struct ReaderImageEnhancement: Equatable {
     let target: CGSize
     let mode: SuperResolutionMode
     let model: SuperResolutionModel
+    let stripThumbnail: Bool
+
+    private func eligible(_ image: UIImage) -> Bool {
+        // Automatic mode should not sharpen a large source just because its
+        // strip preview was reduced to the decoder's memory limit.
+        mode != .auto || !stripThumbnail || !ReaderStripImages.mayBeDownsampled(image)
+    }
 
     func cached(_ image: UIImage) -> UIImage? {
-        SuperResolver.shared.cached(image, key: key, target: target, mode: mode, kind: model)
+        guard eligible(image) else { return nil }
+        return SuperResolver.shared.cached(image, key: key, target: target, mode: mode, kind: model)
     }
 
     func enhance(_ image: UIImage, ahead: Bool = false) async -> UIImage? {
-        await SuperResolver.shared.enhance(image, key: key, target: target, mode: mode, kind: model, ahead: ahead)
+        guard eligible(image) else { return nil }
+        return await SuperResolver.shared.enhance(image, key: key, target: target, mode: mode, kind: model, ahead: ahead)
     }
 }
 

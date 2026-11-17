@@ -982,7 +982,7 @@ struct PagedReader: UIViewControllerRepresentable {
         let coordinator = context.coordinator
         coordinator.parent = self
         (controller.viewControllers?.first as? PageController)?.configure(imageOptions, active: isActive)
-        coordinator.prepare(after: page)
+        defer { coordinator.prepare(after: page) }
         let swipeFades = AppSettings.shared.swipeFades
         if (controller.dataSource == nil) != swipeFades { controller.dataSource = swipeFades ? nil : coordinator }
         let sweep = coordinator.pendingSweep
@@ -1413,7 +1413,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.stopAnimating()
         if animated {
             UIView.transition(with: imageView, duration: 0.2, options: [.transitionCrossDissolve, .allowUserInteraction]) {
-                imageView.image = image
+                self.imageView.image = image
             }
         } else {
             imageView.image = image
@@ -1478,9 +1478,13 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.startAnimating()
         loadTask = Task { [weak self] in
             do {
-                var images: [UIImage] = []
-                for request in requests {
-                    images.append(try await ImagePipeline.shared.image(for: request))
+                let images: [UIImage]
+                if requests.count == 2 {
+                    async let first = ImagePipeline.shared.image(for: requests[0])
+                    async let second = ImagePipeline.shared.image(for: requests[1])
+                    images = try await [first, second]
+                } else {
+                    images = [try await ImagePipeline.shared.image(for: requests[0])]
                 }
                 guard !Task.isCancelled, let self else { return }
                 self.originals = images
