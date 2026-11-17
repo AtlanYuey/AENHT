@@ -13,6 +13,7 @@ import coil3.asImage
 import coil3.decode.DataSource
 import coil3.intercept.Interceptor
 import coil3.request.SuccessResult
+import coil3.request.ErrorResult
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.atlanyuey.aenht.core.*
 import com.atlanyuey.aenht.screens.*
@@ -24,6 +25,8 @@ import com.atlanyuey.aenht.ui.theme.AppTheme
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +42,7 @@ import org.robolectric.annotation.GraphicsMode
 class SmoothAutoScrollTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun open(mode: ReadMode, gate: CompletableDeferred<Unit>? = null): ReaderScreen {
+    private fun open(mode: ReadMode, gate: CompletableDeferred<Unit>? = null, offline: AtomicBoolean? = null): ReaderScreen {
         ScreenshotTest().setUp()
         AppSettings.readMode = mode
         AppSettings.autoScrollSecondsPerScreen = 5.0
@@ -48,6 +51,7 @@ class SmoothAutoScrollTest {
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(context).components {
             add(Interceptor { chain ->
                 gate?.await()
+                if (offline?.get() == true) return@Interceptor ErrorResult(null, chain.request, IOException("synthetic offline image"))
                 SuccessResult(Bitmap.createBitmap(160, 3200, Bitmap.Config.ARGB_8888).asImage(), chain.request, DataSource.NETWORK)
             })
         }.build())
@@ -145,5 +149,37 @@ class SmoothAutoScrollTest {
             advance(1200)
             assertTrue("Loading must resume with the tall image instead of ending at the placeholder's bottom", list.firstVisibleItemScrollOffset > 100)
         } finally { gate.complete(Unit); reset() }
+    }
+
+    @Test fun failurePausesAndRetryKeepsThePositionUntilExplicitResume() {
+        val offline = AtomicBoolean(true)
+        try {
+            val reader = open(ReadMode.Vertical, offline = offline)
+            val list = list(reader)
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
+            compose.mainClock.autoAdvance = false
+            compose.onNodeWithText("Auto Scroll").performClick()
+            advance(300)
+            compose.onNodeWithText("Auto Scroll Paused").assertIsDisplayed()
+            assertEquals(0, list.firstVisibleItemScrollOffset)
+            offline.set(false)
+            compose.onAllNodesWithText("Retry").onLast().performClick()
+            compose.waitUntil(10_000) {
+                compose.mainClock.advanceTimeBy(32)
+                list.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let { it > list.layoutInfo.viewportSize.height * 5 } == true
+            }
+            advance(1200)
+            compose.onNodeWithText("Auto Scroll Paused").assertDoesNotExist()
+            assertEquals("Retry should not resume playback on the user's behalf", 0, list.firstVisibleItemScrollOffset)
+            compose.onRoot().performTouchInput { click(center) }
+            compose.waitUntil(3000) {
+                compose.mainClock.advanceTimeBy(32)
+                compose.onAllNodesWithText("Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+            }
+            advance(600)
+            compose.onNodeWithText("Auto Scroll").performClick()
+            advance(1200)
+            assertTrue(list.firstVisibleItemScrollOffset > 100)
+        } finally { reset() }
     }
 }
