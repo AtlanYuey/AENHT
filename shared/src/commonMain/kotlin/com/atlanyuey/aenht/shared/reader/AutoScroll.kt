@@ -2,9 +2,9 @@ package com.atlanyuey.aenht.shared.reader
 
 /** The same speed and stall limits for the native readers. Positions use each UI's own units. */
 object ReaderAutoScroll {
-    const val DEFAULT_SECONDS_PER_SCREEN = 15.0
-    const val MIN_SECONDS_PER_SCREEN = 5.0
-    const val MAX_SECONDS_PER_SCREEN = 60.0
+    const val DEFAULT_SECONDS_PER_SCREEN = 10.0
+    const val MIN_SECONDS_PER_SCREEN = 1.0
+    const val MAX_SECONDS_PER_SCREEN = 30.0
 
     fun secondsPerScreen(value: Double): Double =
         if (value.isFinite()) value.coerceIn(MIN_SECONDS_PER_SCREEN, MAX_SECONDS_PER_SCREEN)

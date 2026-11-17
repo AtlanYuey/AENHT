@@ -23,7 +23,7 @@ class AutoScrollSettingsTest {
             AppSettings.init(context)
             assertEquals(8.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
             assertEquals(2.5, AppSettings.autoReadInterval, 0.0)
-            AppSettings.autoScrollSecondsPerScreen = 60.0
+            AppSettings.autoScrollSecondsPerScreen = 30.0
             AppSettings.applyJson(exported)
             assertEquals(8.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
         } finally { AppSettings.applyJson(previous) }
@@ -37,11 +37,27 @@ class AutoScrollSettingsTest {
             AppSettings.applyJson("""{"autoReadInterval":4}""")
             assertEquals(20.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
             AppSettings.apply(mapOf("autoScrollSecondsPerScreen" to Double.NaN))
-            assertEquals(15.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
+            assertEquals(10.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
             AppSettings.applyJson("""{"autoScrollSecondsPerScreen":-999}""")
-            assertEquals(5.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
+            assertEquals(1.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
             AppSettings.applyJson("""{"autoScrollSecondsPerScreen":999}""")
-            assertEquals(60.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
+            assertEquals(30.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
+        } finally { AppSettings.applyJson(previous) }
+    }
+
+    @Test fun oldSlowSpeedIsClampedAndRetiredSpreadKeysDoNotOverrideContinuousGap() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        AppSettings.init(context)
+        val previous = AppSettings.toJson()
+        try {
+            context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
+                .putFloat("autoScrollSecondsPerScreen", 60f).commit()
+            AppSettings.init(context)
+            assertEquals(30.0, AppSettings.autoScrollSecondsPerScreen, 0.0)
+            AppSettings.applyJson("""{"spreadGapOn":false,"spreadGap":60,"pageGap":12}""")
+            assertEquals(12.0, AppSettings.pageGap, 0.0)
+            org.junit.Assert.assertFalse(AppSettings.snapshot().containsKey("spreadGap"))
+            org.junit.Assert.assertFalse(AppSettings.snapshot().containsKey("spreadGapOn"))
         } finally { AppSettings.applyJson(previous) }
     }
 }

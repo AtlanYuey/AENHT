@@ -78,7 +78,7 @@ class SmoothAutoScrollTest {
 
     private fun reset() {
         AppSettings.readMode = ReadMode.LeftToRight
-        AppSettings.autoScrollSecondsPerScreen = 15.0
+        AppSettings.autoScrollSecondsPerScreen = 10.0
     }
 
     @Test fun lastLongImageKeepsMovingAndManualDragPausesWithoutSnappingBack() {

@@ -7,16 +7,19 @@ import kotlin.test.assertTrue
 
 class AutoScrollTest {
     @Test fun oneScreenTakesTheSameTimeAt60And120Hz() {
-        for (hz in listOf(60, 120)) {
-            val distance = (1..hz * 15).sumOf { ReaderAutoScroll.distance(900.0, 15.0, 1.0 / hz) }
-            assertEquals(900.0, distance, 0.00001)
+        for (seconds in listOf(1, 10, 30)) {
+            for (hz in listOf(60, 120)) {
+                val distance = (1..hz * seconds).sumOf { ReaderAutoScroll.distance(900.0, seconds.toDouble(), 1.0 / hz) }
+                assertEquals(900.0, distance, 0.00001)
+            }
         }
     }
 
     @Test fun speedUsesViewportRatherThanPageHeightOrDisplayDensity() {
         assertEquals(2.0, ReaderAutoScroll.distance(600.0, 5.0, 1.0 / 60), 0.00001)
         assertEquals(4.0, ReaderAutoScroll.distance(1200.0, 5.0, 1.0 / 60), 0.00001)
-        assertEquals(0.5, ReaderAutoScroll.distance(900.0, 60.0, 1.0 / 30), 0.00001)
+        assertEquals(1.0, ReaderAutoScroll.distance(900.0, 30.0, 1.0 / 30), 0.00001)
+        assertEquals(10.0, ReaderAutoScroll.distance(600.0, 1.0, 1.0 / 60), 0.00001)
     }
 
     @Test fun aStallDoesNotSkipUnreadPanels() {
@@ -28,10 +31,12 @@ class AutoScrollTest {
     }
 
     @Test fun oldAndInvalidSettingsStayUsable() {
-        assertEquals(5.0, ReaderAutoScroll.secondsPerScreen(-5.0))
-        assertEquals(60.0, ReaderAutoScroll.secondsPerScreen(999.0))
+        assertEquals(1.0, ReaderAutoScroll.secondsPerScreen(-5.0))
+        assertEquals(30.0, ReaderAutoScroll.secondsPerScreen(999.0))
+        assertEquals(30.0, ReaderAutoScroll.secondsPerScreen(60.0))
+        assertEquals(15.0, ReaderAutoScroll.secondsPerScreen(15.0))
         for (bad in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
-            assertEquals(15.0, ReaderAutoScroll.secondsPerScreen(bad))
+            assertEquals(10.0, ReaderAutoScroll.secondsPerScreen(bad))
         }
     }
 

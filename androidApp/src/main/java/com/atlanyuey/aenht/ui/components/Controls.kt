@@ -54,6 +54,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
@@ -267,6 +272,7 @@ fun GlassSlider(
     range: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
     background: Color = AppTheme.colors.secondaryGroupedBackground,
+    label: String? = null,
 ) {
     val backdrop = rememberCanvasBackdrop { drawRect(background) }
     LiquidSlider(
@@ -275,7 +281,16 @@ fun GlassSlider(
         valueRange = range,
         visibilityThreshold = (range.endInclusive - range.start) / 1000f,
         backdrop = backdrop,
-        modifier = modifier,
+        modifier = modifier.semantics {
+            if (label != null) contentDescription = label
+            progressBarRangeInfo = ProgressBarRangeInfo(value, range)
+            setProgress { requested ->
+                if (!requested.isFinite()) false else {
+                    onChange(requested.coerceIn(range))
+                    true
+                }
+            }
+        },
     )
 }
 

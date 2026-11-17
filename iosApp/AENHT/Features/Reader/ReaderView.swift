@@ -329,7 +329,7 @@ struct ReaderView: View {
                 chromeVisible = false
                 go(step(forward: forward))
             })
-            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)-\(settings.spreadGapOn ? Int(settings.spreadGap) : 0)")
+            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)")
         } else {
             ContinuousReader(pages: source.pages, page: $page, request: scrollRequest, running: $autoRead) {
                 chromeVisible = false
@@ -690,19 +690,6 @@ struct ReadingSettingsSections: View {
                 if settings.doublePage != .off {
                     Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
                     Toggle("Turn One Page at a Time", isOn: $settings.doublePageSingleStep)
-                    Toggle("Gap Between Pages", isOn: $settings.spreadGapOn)
-                    if settings.spreadGapOn {
-                        // Like the gap of the continuous mode.
-                        VStack(alignment: .leading) {
-                            LabeledContent("Page Gap") {
-                                Text("\(Int(settings.spreadGap)) pt")
-                                    .monospacedDigit()
-                            }
-                            Slider(value: $settings.spreadGap, in: 2...60, step: 2) {
-                                Text("Page Gap")
-                            }
-                        }
-                    }
                 }
             }
             if settings.readMode.isPaged {
@@ -742,14 +729,14 @@ struct ReadingSettingsSections: View {
             } else {
                 VStack(alignment: .leading) {
                     LabeledContent("Auto Scroll Speed") {
-                        Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0)))
+                        Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
                             + Text(" s / screen")
                     }
                     // The right end is faster; elapsed time per screen is stored, not pixels per tick.
                     Slider(value: Binding(
-                        get: { 65 - settings.autoScrollSecondsPerScreen },
-                        set: { settings.autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: 65 - $0) }
-                    ), in: 5...60, step: 1) {
+                        get: { 31 - settings.autoScrollSecondsPerScreen },
+                        set: { settings.autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: 31 - $0) }
+                    ), in: 1...30, step: 0.5) {
                         Text("Auto Scroll Speed")
                     } minimumValueLabel: {
                         Text("Slow")
@@ -1434,9 +1421,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
                 self.showFailure { [weak self] in self?.loadSpread(urls, rightToLeft: rightToLeft) }
                 return
             }
-            let settings = AppSettings.shared
             let image = Self.join(rightToLeft ? second : first, rightToLeft ? first : second,
-                                  gap: settings.spreadGapOn ? settings.spreadGap : 0, screen: ReaderScreen.pixels,
+                                  gap: 6, screen: ReaderScreen.pixels,
                                   scale: self.window?.screen.scale ?? self.traitCollection.displayScale)
             self.spinner.stopAnimating()
             UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {

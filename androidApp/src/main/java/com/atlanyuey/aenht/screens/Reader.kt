@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -748,8 +750,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true)
                 .zoomable(zoomState),
         ) {
-            // The gap between the pages (Double Page › Gap Between Pages).
-            val gap = if (AppSettings.spreadGapOn) AppSettings.spreadGap.dp else 0.dp
+            // A fixed double-page seam. Page Gap adjusts only continuous reading with gaps.
+            val gap = 6.dp
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap)) {
                 ordered.forEachIndexed { i, p ->
                     val align = if (i == 0) Alignment.CenterEnd else Alignment.CenterStart
@@ -1207,22 +1209,6 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
             if (AppSettings.doublePage != DoublePage.Off) {
                 ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
                 ToggleRow(tr("Turn One Page at a Time"), AppSettings.doublePageSingleStep, { AppSettings.doublePageSingleStep = it })
-                ToggleRow(tr("Gap Between Pages"), AppSettings.spreadGapOn, { AppSettings.spreadGapOn = it })
-                if (AppSettings.spreadGapOn) {
-                    // Like the gap of the continuous mode.
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        Row {
-                            Txt(tr("Page Gap"), Modifier.weight(1f))
-                            Txt("${AppSettings.spreadGap.toInt()} pt", color = AppTheme.colors.secondaryLabel)
-                        }
-                        GlassSlider(
-                            AppSettings.spreadGap.toFloat(),
-                            { AppSettings.spreadGap = ((it / 2).toInt() * 2).toDouble().coerceIn(2.0, 60.0) },
-                            2f..60f,
-                        )
-                    }
-                    RowSeparator()
-                }
             }
         }
         if (AppSettings.readMode.isPaged) {
@@ -1255,14 +1241,19 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
                     1f..10f,
                 )
             } else {
+                val speedLabel = tr("Auto Scroll Speed")
+                val timeLabel = java.text.NumberFormat.getNumberInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+                    .apply { maximumFractionDigits = 1 }.format(AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen")
                 Row {
-                    Txt(tr("Auto Scroll Speed"), Modifier.weight(1f))
-                    Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.0f", AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen"), color = AppTheme.colors.secondaryLabel)
+                    Txt(speedLabel, Modifier.weight(1f))
+                    Txt(timeLabel, color = AppTheme.colors.secondaryLabel)
                 }
                 GlassSlider(
-                    (65 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
-                    { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round(65 - it).toDouble()) },
-                    5f..60f,
+                    (31 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
+                    { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round((31 - it) * 2) / 2.0) },
+                    1f..30f,
+                    modifier = Modifier.semantics { stateDescription = timeLabel },
+                    label = speedLabel,
                 )
                 Row {
                     Txt(tr("Slow"), Modifier.weight(1f), style = Type.caption1, color = AppTheme.colors.secondaryLabel)

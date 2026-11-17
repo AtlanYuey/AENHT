@@ -308,7 +308,7 @@ object AppSettings {
         searchSort = SearchSort.of(p.getString("searchSort", null), SearchSort.Popular)
         readMode = ReadMode.of(p.getString("readMode", null))
         autoReadInterval = p.getFloat("autoReadInterval", 3f).toDouble()
-        autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(p.getFloat("autoScrollSecondsPerScreen", 15f).toDouble())
+        autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(p.getFloat("autoScrollSecondsPerScreen", 10f).toDouble())
         preloadPages = p.getInt("preloadPages", 4)
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
@@ -346,8 +346,6 @@ object AppSettings {
         doublePageCover = p.getBoolean("doublePageCover", true)
         doublePageSingleStep = p.getBoolean("doublePageSingleStep", false)
         swipeFades = p.getBoolean("swipeFades", false)
-        spreadGapOn = p.getBoolean("spreadGapOn", true)
-        spreadGap = p.getFloat("spreadGap", 6f).toDouble()
         autoCrop = p.getBoolean("autoCrop", false)
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
@@ -435,7 +433,7 @@ object AppSettings {
 
     var readMode by Pref(ReadMode.LeftToRight) { save("readMode", it.raw) }
     var autoReadInterval by Pref(3.0) { save("autoReadInterval", it) }
-    var autoScrollSecondsPerScreen by Pref(15.0) { save("autoScrollSecondsPerScreen", it) }
+    var autoScrollSecondsPerScreen by Pref(10.0) { save("autoScrollSecondsPerScreen", it) }
     var preloadPages by Pref(4) { save("preloadPages", it) }
     var tapToTurnPages by Pref(true) { save("tapToTurnPages", it) }
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
@@ -500,9 +498,6 @@ object AppSettings {
     var doublePageSingleStep by Pref(false) { save("doublePageSingleStep", it) }
     /** A swipe turns the page with a fade sweeping the way it went; the pages don't move with the finger. */
     var swipeFades by Pref(false) { save("swipeFades", it) }
-    /** Double page: a gap between the two pages, in dp. */
-    var spreadGapOn by Pref(true) { save("spreadGapOn", it) }
-    var spreadGap by Pref(6.0) { save("spreadGap", it) }
     /** Reader: plain white / black margins are cut off the pages (paged modes). */
     var autoCrop by Pref(false) { save("autoCrop", it) }
 
@@ -667,8 +662,6 @@ object AppSettings {
         "doublePageCover" to doublePageCover,
         "doublePageSingleStep" to doublePageSingleStep,
         "swipeFades" to swipeFades,
-        "spreadGapOn" to spreadGapOn,
-        "spreadGap" to spreadGap,
         "autoCrop" to autoCrop,
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
@@ -778,8 +771,6 @@ object AppSettings {
                 "doublePageCover" -> bool?.let { doublePageCover = it }
                 "doublePageSingleStep" -> bool?.let { doublePageSingleStep = it }
                 "swipeFades" -> bool?.let { swipeFades = it }
-                "spreadGapOn" -> bool?.let { spreadGapOn = it }
-                "spreadGap" -> number?.let { spreadGap = it.toDouble().coerceIn(2.0, 60.0) }
                 "autoCrop" -> bool?.let { autoCrop = it }
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }
