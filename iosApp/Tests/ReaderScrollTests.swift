@@ -65,25 +65,58 @@ final class ReaderScrollTests: XCTestCase {
 
     func testFastMotionHasTheSameSpeedAt60And120Hz() {
         for hz in [60, 120] {
-            var motion = ReaderScrollMotion()
             var total: CGFloat = 0
-            for _ in 0..<hz { total += motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 1.0 / Double(hz), scale: 2) }
+            for _ in 0..<hz { total += ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 1.0 / Double(hz)) }
             XCTAssertEqual(total, 800, accuracy: 0.5)
         }
     }
 
-    func testSubpixelsAccumulateInsteadOfRoundingEveryFrameToZero() {
-        var motion = ReaderScrollMotion()
+    func testSlowMotionRetainsSubpixelsAt120Hz() {
         var total: CGFloat = 0
-        for _ in 0..<3600 { total += motion.distance(viewport: 800, secondsPerScreen: 30, elapsed: 1.0 / 120, scale: 3) }
+        for _ in 0..<3600 { total += ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 30, elapsed: 1.0 / 120) }
         XCTAssertEqual(total, 800, accuracy: 1.0 / 3)
     }
 
     func testAStalledFrameDoesNotSkipSecondsOfUnreadContent() {
-        var motion = ReaderScrollMotion()
-        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 5, scale: 2), 40)
-        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: 1, elapsed: -1, scale: 2), 0)
-        XCTAssertEqual(motion.distance(viewport: 800, secondsPerScreen: .nan, elapsed: 0.016, scale: 2), 0)
+        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: 5), 40)
+        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: 1, elapsed: -1), 0)
+        XCTAssertEqual(ReaderScrollMotion.distance(viewport: 800, secondsPerScreen: .nan, elapsed: 0.016), 0)
+    }
+
+    func testThreeSecondsUsesEvenNativeStepsInsteadOfAlternatingPixelSteps() {
+        let (driver, scroll, _) = fixture()
+        defer { driver.stop() }
+        driver.secondsPerScreen = 3
+        driver.start()
+        let expected = 800.0 / 3 / 60
+        for _ in 0..<60 {
+            let before = scroll.contentOffset.y
+            driver.advance(elapsed: 1.0 / 60, scale: 2)
+            XCTAssertEqual(scroll.contentOffset.y - before, expected, accuracy: 0.000001)
+        }
+    }
+
+    func testPageProgressFollowsAutomaticMotionManualDragAndStoppedScrolling() {
+        let (driver, scroll, _) = fixture()
+        defer { driver.stop() }
+        var reported: Int?
+        driver.onPage = { reported = $0 }
+        driver.continueOnDrag = true
+        driver.start()
+        scroll.setContentOffset(CGPoint(x: 0, y: 1999), animated: false)
+        driver.advance(elapsed: 1.0 / 60, scale: 2)
+        XCTAssertEqual(reported, 1)
+        scroll.simulatedDragging = true
+        scroll.setContentOffset(CGPoint(x: 0, y: 4200), animated: false)
+        driver.viewportChanged(CGSize(width: 400, height: 800))
+        driver.advance(elapsed: 1.0 / 60, scale: 2)
+        XCTAssertEqual(reported, 2)
+        XCTAssertTrue(driver.running)
+        driver.stop()
+        scroll.simulatedDragging = false
+        scroll.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        driver.viewportChanged(CGSize(width: 400, height: 800))
+        XCTAssertEqual(reported, 0)
     }
 
     func testActualUIKitPositionWinsOverThePreviousAutomaticPosition() {

@@ -25,7 +25,6 @@ final class ReaderScrollDriver: NSObject {
     private weak var scrollView: UIScrollView?
     private var anchors: [Int: Anchor] = [:]
     private var images: [Int: ImageStatus] = [:]
-    private var motion = ReaderScrollMotion()
     private var displayLink: CADisplayLink?
     private var previousTimestamp: CFTimeInterval?
     private var tickTarget: TickTarget?
@@ -34,7 +33,7 @@ final class ReaderScrollDriver: NSObject {
     private var viewportWidth: CGFloat = 0
 
     func register(index: Int, view: UIView) {
-        anchors[index] = Anchor(view)
+        if anchors[index]?.view !== view { anchors[index] = Anchor(view) }
         var ancestor = view.superview
         while let current = ancestor {
             if let scroll = current as? UIScrollView {
@@ -44,11 +43,11 @@ final class ReaderScrollDriver: NSObject {
             ancestor = current.superview
         }
         // Registration occurs during SwiftUI layout; publish the page on the next main-loop turn.
-        guard !reportScheduled else { return }
+        guard !running, !reportScheduled else { return }
         reportScheduled = true
         DispatchQueue.main.async { [weak self] in
             self?.reportScheduled = false
-            self?.reportPage()
+            if self?.running == false { self?.reportPage() }
         }
     }
 
@@ -87,7 +86,6 @@ final class ReaderScrollDriver: NSObject {
         displayLink = nil
         tickTarget = nil
         previousTimestamp = nil
-        motion.reset()
     }
 
     func disconnect() {
@@ -97,14 +95,15 @@ final class ReaderScrollDriver: NSObject {
     }
 
     func userInteractionStarted() {
-        motion.reset()
         if running, !continueOnDrag { finish(.interaction) }
     }
 
     func viewportChanged(_ size: CGSize) {
         if viewportWidth > 0, abs(viewportWidth - size.width) > 1, running { finish(.resized) }
         viewportWidth = size.width
-        reportPage()
+        // During playback the display link publishes progress once, after moving the actual view.
+        // Geometry callbacks for the same offset must not repeat the coordinate scans.
+        if !running { reportPage() }
     }
 
     private func frames(in scroll: UIScrollView) -> [(index: Int, rect: CGRect)] {
@@ -134,9 +133,8 @@ final class ReaderScrollDriver: NSObject {
     /// Exposed internally for deterministic UIKit tests. Positions come from UIKit on every frame.
     func advance(elapsed: Double, scale suppliedScale: CGFloat? = nil) {
         guard running, let scroll = scrollView else { return }
-        reportPage()
+        defer { reportPage() }
         if scroll.isTracking || scroll.isDragging || scroll.isDecelerating {
-            motion.reset()
             if !continueOnDrag, scroll.isDragging || scroll.isDecelerating { finish(.interaction) }
             return
         }
@@ -146,13 +144,12 @@ final class ReaderScrollDriver: NSObject {
         let bottom = scroll.contentOffset.y + scroll.bounds.height - inset.bottom
         let scale = suppliedScale ?? scroll.window?.screen.scale ?? scroll.traitCollection.displayScale
         let rows = frames(in: scroll)
-        guard height > 0, !rows.isEmpty else { motion.reset(); return }
-        var distance = motion.distance(viewport: height, secondsPerScreen: secondsPerScreen, elapsed: elapsed, scale: max(1, scale))
+        guard height > 0, !rows.isEmpty else { return }
+        var distance = ReaderScrollMotion.distance(viewport: height, secondsPerScreen: secondsPerScreen, elapsed: elapsed)
         for row in rows where row.rect.maxY > top && row.rect.minY <= bottom + distance {
             if case .failed = images[row.index] { finish(.failed(row.index)); return }
             if !ready(row.index, rect: row.rect) {
                 distance = min(distance, max(0, row.rect.minY - bottom))
-                motion.reset()
             }
         }
         if let last = rows.first(where: { $0.index == lastPage }), ready(last.index, rect: last.rect),
@@ -169,7 +166,6 @@ final class ReaderScrollDriver: NSObject {
         CATransaction.setDisableActions(true)
         scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: next), animated: false)
         CATransaction.commit()
-        reportPage()
     }
 
     private func displayFrame(_ link: CADisplayLink) {
