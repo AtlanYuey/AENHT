@@ -23,6 +23,17 @@ struct ReaderSource: Hashable {
     let item: GalleryItem
     let numPages: Int
 
+    #if DEBUG
+    init(testPages: [ReaderPage]) {
+        id = 1
+        title = "Reader gesture fixture"
+        pages = testPages
+        shareURL = URL(fileURLWithPath: "/reader-gesture-fixture")
+        item = GalleryItem(id: 1, mediaID: "", title: title, thumbnail: nil, numPages: testPages.count)
+        numPages = testPages.count
+    }
+    #endif
+
     @MainActor
     init(detail: GalleryDetail) {
         id = detail.id
@@ -87,6 +98,7 @@ struct ReaderRoute: Hashable {
 
 struct ReaderView: View {
     let source: ReaderSource
+    private let initialPage: Int
 
     @Binding private var page: Int
     @State private var scrollRequest: ReaderScrollRequest
@@ -104,6 +116,7 @@ struct ReaderView: View {
     @State private var viewportPixels: CGSize = .zero
     @State private var sizeStatus = ReaderSizeStatus()
     @State private var resetSizeRequest = 0
+    @State private var returnTarget: ReaderThumbnailID?
     @Environment(\.privacyMode) private var privacy
     @State private var askPage = false
     @State private var pageText = ""
@@ -124,6 +137,7 @@ struct ReaderView: View {
     init(route: ReaderRoute, page: Binding<Int>) {
         source = route.source
         let start = route.startPage
+        initialPage = start
         _page = page
         _scrollRequest = State(initialValue: ReaderScrollRequest(page: start))
         _sliderValue = State(initialValue: Double(start))
@@ -255,8 +269,13 @@ struct ReaderView: View {
 
     private var readerCanvas: some View {
         content
-            .background(ReaderBackGestures(allowsEdge: allowsEdgeBack, prepare: prepareBack, back: leaveReader)
-                .frame(width: 0, height: 0))
+            .background(ReaderBackGestures(
+                allowsEdge: allowsEdgeBack,
+                openingThumbnail: thumbnail(for: initialPage),
+                returnTarget: returnTarget,
+                back: leaveReader,
+                dismiss: { dismiss() }
+            ).frame(width: 0, height: 0))
             .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
@@ -271,7 +290,15 @@ struct ReaderView: View {
             }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .barToolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: leaveReader) {
+                        Image(systemName: "chevron.backward")
+                    }
+                    .accessibilityLabel("Exit Reader")
+                    .accessibilityIdentifier("reader-back")
+                }
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text(source.title)
@@ -299,6 +326,7 @@ struct ReaderView: View {
                                 pageText = "\(page + 1)"
                                 askPage = true
                             }
+                            .accessibilityIdentifier("reader-go-to-page")
                             .disabled(sizeStatus.blocksNavigation)
                             Button("Save Page", systemImage: "square.and.arrow.down") { Task { await savePage() } }
                             Button("Share Page", systemImage: "photo") { Task { await sharePage() } }
@@ -312,6 +340,7 @@ struct ReaderView: View {
                     } label: {
                         Label("Options", systemImage: "ellipsis")
                     }
+                    .accessibilityIdentifier("reader-options")
                 }
             }
             .toolbar(chromeVisible ? .visible : .hidden, for: .navigationBar)
@@ -334,17 +363,20 @@ struct ReaderView: View {
     private var allowsEdgeBack: Bool {
         // A deliberate left-edge swipe in a spread is an exit. A swipe
         // within the artwork stays available for moving the enlarged spread.
-        guard !sizeStatus.adjusting else { return false }
+        guard returnTarget == nil, !sizeStatus.adjusting else { return false }
         return spreads != nil || (!sizeStatus.enlarged && (settings.readMode.isPaged || !sizeStatus.adjusted))
     }
 
-    private func prepareBack() {
-        ReaderProgress.shared.track(page, gallery: source.item.transitionKey)
+    private func thumbnail(for index: Int) -> ReaderThumbnailID {
+        ReaderThumbnailID(gallery: source.item.transitionKey, page: index)
     }
 
     private func leaveReader() {
-        prepareBack()
-        dismiss()
+        guard returnTarget == nil else { return }
+        let current = thumbnail(for: page)
+        returnTarget = current
+        autoRead = false
+        ReaderProgress.shared.track(current.page, gallery: current.gallery)
     }
 
     private var pagedReaderID: String {
@@ -359,6 +391,7 @@ struct ReaderView: View {
                         isActive: scenePhase == .active, page: Binding(
                 get: { spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page },
                 set: { slot in
+                    guard returnTarget == nil else { return }
                     let first = spreads.map { Int($0.firstPage(slot: Int32(slot))) } ?? slot
                     if (spreads.map { Int($0.slotOf(page: Int32(page))) } ?? page) != slot { page = first }
                 }
@@ -373,7 +406,8 @@ struct ReaderView: View {
             })
             .id(pagedReaderID)
         } else {
-            ContinuousReader(pages: source.pages, imageOptions: imageOptions, page: $page,
+            ContinuousReader(pages: source.pages, imageOptions: imageOptions,
+                             page: Binding(get: { page }, set: { if returnTarget == nil { page = $0 } }),
                              request: scrollRequest, running: $autoRead,
                              initialScale: settings.keepContinuousPageSize ? CGFloat(settings.continuousPageScale) : 1,
                              resetSizeRequest: resetSizeRequest, onSizeChanged: sizeChanged) {
@@ -494,7 +528,7 @@ struct ReaderView: View {
     }
 
     private func go(_ target: Int, automatic: Bool = false) {
-        guard !sizeStatus.blocksNavigation, (0..<pageCount).contains(target) else { return }
+        guard returnTarget == nil, !sizeStatus.blocksNavigation, (0..<pageCount).contains(target) else { return }
         if !automatic { autoRead = false }
         if settings.readMode.isPaged {
             page = target
@@ -1033,7 +1067,7 @@ struct PagedReader: UIViewControllerRepresentable {
         visible?.configure(imageOptions, active: isActive)
         coordinator.resetSizeIfNeeded(for: visible)
         defer { coordinator.prepare(after: page) }
-        coordinator.updatePageTurning(locked: visible?.sizeStatus.blocksNavigation ?? false)
+        coordinator.updatePageTurning()
         let sweep = coordinator.pendingSweep
         coordinator.pendingSweep = nil
         guard let current = (controller.viewControllers?.first as? PageController)?.index,
@@ -1060,7 +1094,7 @@ struct PagedReader: UIViewControllerRepresentable {
         private var cache: [Int: PageController] = [:]
         private let imagePreparation = ReaderImagePreparation()
         private weak var pageViewController: UIPageViewController?
-        private weak var pagingScrollView: UIScrollView?
+        private weak var pagingPan: UIPanGestureRecognizer?
         private var lastResetSizeRequest: Int
         /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
         var pendingSweep: PageTurn?
@@ -1072,20 +1106,15 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func connect(_ controller: UIPageViewController) {
             pageViewController = controller
-            pagingScrollView = controller.view.subviews.compactMap { $0 as? UIScrollView }.first
-            pagingScrollView?.panGestureRecognizer.maximumNumberOfTouches = 1
+            pagingPan = controller.view.subviews.compactMap { $0 as? UIScrollView }.first?.panGestureRecognizer
+            pagingPan?.maximumNumberOfTouches = 1
         }
 
-        func updatePageTurning(locked: Bool) {
+        func updatePageTurning() {
             guard let pageViewController else { return }
-            let enabled = !locked && !AppSettings.shared.swipeFades
-            // Turn off the outer pager's scrolling as well as its data source.
-            // The fitted image's own scroll view keeps its native one-finger pan.
+            let enabled = !AppSettings.shared.swipeFades
             if (pageViewController.dataSource != nil) != enabled {
                 pageViewController.dataSource = enabled ? self : nil
-            }
-            if pagingScrollView?.isScrollEnabled != enabled {
-                pagingScrollView?.isScrollEnabled = enabled
             }
         }
 
@@ -1098,7 +1127,6 @@ struct PagedReader: UIViewControllerRepresentable {
 
         private func sizeChanged(_ status: ReaderSizeStatus, at index: Int) {
             guard (pageViewController?.viewControllers?.first as? PageController)?.index == index else { return }
-            updatePageTurning(locked: status.blocksNavigation)
             parent.onSizeChanged(status)
         }
 
@@ -1147,6 +1175,9 @@ struct PagedReader: UIViewControllerRepresentable {
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
             controller.onSizeChanged = { [weak self] status in self?.sizeChanged(status, at: index) }
+            // The inner scroll view accepts panning at a close-up size and
+            // fails immediately at the fitted size, handing the turn to UIKit.
+            pagingPan?.require(toFail: controller.imagePan)
             cache[index] = controller
             let current = parent.page
             cache = cache.filter { (current - 1...current + ReaderImagePreparation.turns).contains($0.key) || $0.key == index }
@@ -1305,6 +1336,7 @@ final class PageController: UIViewController {
     private var active: Bool
     private var visible = false
     var sizeStatus: ReaderSizeStatus { zoomView.sizeStatus }
+    var imagePan: UIPanGestureRecognizer { zoomView.panGestureRecognizer }
 
     func resetZoom() { zoomView.resetZoom() }
 
@@ -1707,11 +1739,6 @@ private struct PageAlerts: ViewModifier {
 
 // MARK: - Return to the current page's thumbnail
 
-private struct ReaderThumbnailID: Hashable {
-    let gallery: String
-    let page: Int
-}
-
 /// The gallery scrolls behind the reader as the current page changes.
 @MainActor
 @Observable
@@ -1755,15 +1782,17 @@ struct ReaderDestination: View {
                 page = value
             }
         ))
-        .navigationTransition(.zoom(sourceID: ReaderThumbnailID(gallery: gallery, page: page), in: namespace))
+        .navigationTransition(.zoom(sourceID: ReaderThumbnailID(gallery: gallery, page: route.startPage), in: namespace))
     }
 }
 
 extension View {
     @ViewBuilder
     func readerThumbnailSource(gallery: String, page: Int, in namespace: Namespace.ID?) -> some View {
+        let id = ReaderThumbnailID(gallery: gallery, page: page)
         if let namespace {
-            matchedTransitionSource(id: ReaderThumbnailID(gallery: gallery, page: page), in: namespace)
+            background(ReaderThumbnailAnchor(id: id))
+                .matchedTransitionSource(id: id, in: namespace)
         } else {
             self
         }
@@ -1784,15 +1813,19 @@ private struct FollowsReader: ViewModifier {
         ScrollViewReader { proxy in
             content
                 .scrollPosition(id: $position, anchor: .center)
+                .background(ReaderThumbnailList(gallery: gallery) { reveal($0, using: proxy) }.frame(width: 0, height: 0))
                 .onChange(of: progress.point(gallery: gallery), initial: true) { _, point in
-                    guard let point else { return }
-                    var transaction = Transaction(animation: nil)
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        position = point.page
-                        proxy.scrollTo(point.page, anchor: .center)
-                    }
+                    if let point { reveal(point.page, using: proxy) }
                 }
+        }
+    }
+
+    private func reveal(_ page: Int, using proxy: ScrollViewProxy) {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            position = page
+            proxy.scrollTo(page, anchor: .center)
         }
     }
 }

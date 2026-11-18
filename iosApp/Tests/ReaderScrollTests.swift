@@ -116,7 +116,7 @@ final class ReaderScrollTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertEqual(view.contentSize.width, 2000, accuracy: 0.5)
         XCTAssertEqual(view.contentSize.height, 1250, accuracy: 0.5)
-        XCTAssertEqual(view.panGestureRecognizer.maximumNumberOfTouches, 1)
+        XCTAssertFalse(view.bouncesHorizontally)
         XCTAssertTrue(view.isScrollEnabled && view.panGestureRecognizer.isEnabled)
         view.setContentOffset(CGPoint(x: 300, y: 200), animated: false)
         XCTAssertEqual(view.contentOffset, CGPoint(x: 300, y: 200))

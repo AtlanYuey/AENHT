@@ -28,7 +28,8 @@ struct ContinuousReader: View {
     @State private var failedPage: Int?
     @State private var scale: CGFloat
     @State private var settledScale: CGFloat
-    @State private var horizontalOffset: CGFloat?
+    @State private var zoomAspectRatio: CGFloat?
+    @State private var settledAspectRatio: CGFloat?
     @State private var pinchStart: PinchStart?
 
     private struct PinchStart {
@@ -50,6 +51,10 @@ struct ContinuousReader: View {
         self.onInteraction = onInteraction
         _scale = State(initialValue: initialScale)
         _settledScale = State(initialValue: initialScale)
+        let ratio: CGFloat? = initialScale > ReaderPageSizing.normalScale
+            ? (pages.indices.contains(request.page) ? pages[request.page].aspectRatio : 0.7) : nil
+        _zoomAspectRatio = State(initialValue: ratio)
+        _settledAspectRatio = State(initialValue: ratio)
     }
 
     var body: some View {
@@ -59,14 +64,13 @@ struct ContinuousReader: View {
     }
 
     private func pageList(in viewport: CGSize) -> some View {
-        let canvasWidth = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport.width, scale: scale)
-        let scrollX = horizontalOffset ?? (canvasWidth - viewport.width) / 2
-        return LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
+        LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
             ForEach(pages) { item in
                 ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
                                      knownRatio: driver.knownRatios[item.index],
                                      viewport: viewport, scale: scale, settledScale: settledScale,
-                                     canvasWidth: canvasWidth, scrollX: scrollX, imageOptions: imageOptions,
+                                     zoomAspectRatio: zoomAspectRatio, settledAspectRatio: settledAspectRatio,
+                                     imageOptions: imageOptions,
                                      enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
                                      driver: driver, onLoad: { updatePage(item.index, state: $0) })
                     .id(item.index)
@@ -95,7 +99,6 @@ struct ContinuousReader: View {
                 CGRect(x: $0.contentOffset.x + $0.contentInsets.leading, y: $0.contentOffset.y,
                        width: $0.containerSize.width, height: $0.containerSize.height)
             } action: { _, new in
-                if horizontalOffset != new.minX { horizontalOffset = new.minX }
                 driver.viewportChanged(new.size)
             }
             .onScrollPhaseChange { _, phase in
@@ -108,11 +111,12 @@ struct ContinuousReader: View {
             .onAppear {
                 configure(viewport: viewport, proxy: proxy)
                 onSizeChanged(ReaderSizeStatus(scale: scale))
+                driver.willJump(to: request.page)
                 proxy.scrollTo(request.page, anchor: .top)
                 driver.reportPage()
             }
             .onChange(of: request) { _, new in
-                driver.cancelResize()
+                driver.willJump(to: new.page)
                 driver.stop()
                 running = false
                 if new.animated {
@@ -213,9 +217,17 @@ struct ContinuousReader: View {
                         viewportY: CGFloat? = nil, recenter: Bool = false) {
         let next = ReaderPageSizing.clamp(proposed)
         guard next != scale else { return }
+        if next > ReaderPageSizing.normalScale {
+            // One artwork width at a close-up size keeps horizontal travel
+            // stable when reading moves from one page to the next.
+            if zoomAspectRatio == nil { zoomAspectRatio = anchor?.aspectRatio ?? 0.7 }
+        } else {
+            zoomAspectRatio = nil
+        }
         if let anchor {
-            let width = ReaderPageSizing.width(in: viewport, aspectRatio: anchor.aspectRatio, scale: next)
-            let canvasWidth = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport.width, scale: next)
+            let width = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: anchor.aspectRatio, scale: next,
+                                                   zoomAspectRatio: zoomAspectRatio)
+            let canvasWidth = max(viewport.width, width)
             driver.preserve(anchor, width: width, viewportY: viewportY, canvasWidth: canvasWidth,
                             centerHorizontally: recenter)
         }
@@ -226,6 +238,7 @@ struct ContinuousReader: View {
     private func finishSizing(in viewport: CGSize) {
         pinchStart = nil
         settledScale = scale
+        settledAspectRatio = zoomAspectRatio
         if settings.keepContinuousPageSize { settings.continuousPageScale = Double(scale) }
         onSizeChanged(ReaderSizeStatus(scale: scale))
         prepare(visiblePages, in: viewport)
@@ -239,7 +252,7 @@ struct ContinuousReader: View {
             guard let url = item.url else { return nil }
             let request = ReaderStripImages.request(for: url, priority: .low)
             return .init(request: request, enhancement: imageOptions.enhancement(
-                for: url, continuousViewport: viewport, continuousScale: settledScale
+                for: url, continuousViewport: viewport, continuousScale: settledScale, zoomAspectRatio: settledAspectRatio
             ))
         })
     }
@@ -252,8 +265,8 @@ private struct ContinuousReaderPage: View {
     let viewport: CGSize
     let scale: CGFloat
     let settledScale: CGFloat
-    let canvasWidth: CGFloat
-    let scrollX: CGFloat
+    let zoomAspectRatio: CGFloat?
+    let settledAspectRatio: CGFloat?
     let imageOptions: ReaderImageOptions
     let enhanceNow: Bool
     let driver: ReaderScrollDriver
@@ -269,16 +282,16 @@ private struct ContinuousReaderPage: View {
 
     var body: some View {
         let aspect = ratio
-        let width = ReaderPageSizing.width(in: viewport, aspectRatio: aspect, scale: scale)
-        let offset = ReaderPageSizing.stripImageOffset(scrollX: scrollX, viewportWidth: viewport.width,
-                                                       canvasWidth: canvasWidth, imageWidth: width)
+        let width = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: aspect, scale: scale,
+                                               zoomAspectRatio: zoomAspectRatio)
         Color.clear
             .frame(width: width, height: width / aspect)
             .overlay {
                 RemoteImage(url: item.url, contentMode: .fit, targetWidth: nil, retryOnFailure: true,
                             makeRequest: { ReaderStripImages.request(for: $0) },
                             enhancement: item.url.flatMap { imageOptions.enhancement(
-                                for: $0, continuousViewport: viewport, continuousScale: settledScale
+                                for: $0, continuousViewport: viewport, continuousScale: settledScale,
+                                zoomAspectRatio: settledAspectRatio
                             ) },
                             enhanceNow: enhanceNow) { state in
                     if case .ready(let size) = state, size.width > 0, size.height > 0 { loadedRatio = size.width / size.height }
@@ -289,8 +302,7 @@ private struct ContinuousReaderPage: View {
             // The driver's ready check measures the image's width. The outer
             // frame covers the black margins as part of the same scroll view.
             .background(ReaderPageAnchor(index: item.index, driver: driver).allowsHitTesting(false))
-            .offset(x: offset)
-            .frame(width: canvasWidth)
+            .frame(width: max(viewport.width, width))
             .clipped()
             .contentShape(Rectangle())
             .onAppear { if item.url == nil { onLoad(.failed) } }

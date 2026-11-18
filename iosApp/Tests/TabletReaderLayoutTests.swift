@@ -39,18 +39,13 @@ final class TabletReaderLayoutTests: XCTestCase {
         XCTAssertFalse(WideGalleryPage.fits(CGSize(width: 780, height: 600)))
     }
 
-    func testStripUsesNativeOffsetWithinEachImagesHorizontalRange() {
-        let viewport: CGFloat = 1000
-        let canvas = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport, scale: 1)
-        let image: CGFloat = 600
-        let last = canvas - viewport
-        func leftEdge(at scroll: CGFloat) -> CGFloat {
-            let offset = ReaderPageSizing.stripImageOffset(scrollX: scroll, viewportWidth: viewport,
-                                                           canvasWidth: canvas, imageWidth: image)
-            return (canvas - image) / 2 + offset - scroll
-        }
-        XCTAssertEqual(leftEdge(at: 0), 400, accuracy: 0.5)
-        XCTAssertEqual(leftEdge(at: last / 2), 200, accuracy: 0.5)
-        XCTAssertEqual(leftEdge(at: last), 0, accuracy: 0.5)
+    func testStripWidthUsesActualArtworkAtDefaultAndStableArtworkWidthWhenZoomed() {
+        let viewport = CGSize(width: 1000, height: 800)
+        let fitted = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: 0.7, scale: 1, zoomAspectRatio: nil)
+        XCTAssertEqual(fitted, 560, accuracy: 0.5)
+        let landscape = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: 1.6, scale: 3, zoomAspectRatio: 0.7)
+        let portrait = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: 0.7, scale: 3, zoomAspectRatio: 0.7)
+        XCTAssertEqual(landscape, 1680, accuracy: 0.5)
+        XCTAssertEqual(portrait, landscape, accuracy: 0.5)
     }
 }

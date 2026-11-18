@@ -9,11 +9,12 @@ struct ReaderImageOptions: Equatable {
     let model: SuperResolutionModel
 
     func enhancement(for url: URL, pagesPerTurn: Int = 1, continuousViewport: CGSize? = nil,
-                     continuousScale: CGFloat = 1) -> ReaderImageEnhancement? {
+                     continuousScale: CGFloat = 1, zoomAspectRatio: CGFloat? = nil) -> ReaderImageEnhancement? {
         guard mode != .off, viewport.width > 1, viewport.height > 1 else { return nil }
         let target: ReaderImageEnhancement.Target
         if let continuousViewport {
-            target = .strip(viewport: continuousViewport, displayScale: displayScale, scale: continuousScale)
+            target = .strip(viewport: continuousViewport, displayScale: displayScale, scale: continuousScale,
+                            zoomAspectRatio: zoomAspectRatio)
         } else if pagesPerTurn == 2 {
             target = .fixed(CGSize(width: max(1, (viewport.width - 6 * displayScale) / 2), height: viewport.height))
         } else {
@@ -28,7 +29,7 @@ struct ReaderImageOptions: Equatable {
 struct ReaderImageEnhancement: Equatable {
     enum Target: Equatable {
         case fixed(CGSize)
-        case strip(viewport: CGSize, displayScale: CGFloat, scale: CGFloat)
+        case strip(viewport: CGSize, displayScale: CGFloat, scale: CGFloat, zoomAspectRatio: CGFloat?)
     }
 
     let key: String
@@ -38,11 +39,12 @@ struct ReaderImageEnhancement: Equatable {
     private func target(for image: UIImage) -> CGSize? {
         switch target {
         case .fixed(let size): return size
-        case let .strip(viewport, displayScale, scale):
+        case let .strip(viewport, displayScale, scale, zoomAspectRatio):
             // Decode first, so the displayed and prepared strip use the same aspect ratio.
             guard mode != .auto || !ReaderStripImages.mayBeDownsampled(image) else { return nil }
             let ratio = image.size.width / max(1, image.size.height)
-            let width = ReaderPageSizing.width(in: viewport, aspectRatio: ratio, scale: scale)
+            let width = ReaderPageSizing.stripWidth(in: viewport, aspectRatio: ratio, scale: scale,
+                                                   zoomAspectRatio: zoomAspectRatio)
             return CGSize(width: width * displayScale, height: .greatestFiniteMagnitude)
         }
     }

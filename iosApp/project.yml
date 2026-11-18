@@ -20,7 +20,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.2.1"
-    CURRENT_PROJECT_VERSION: "9"
+    CURRENT_PROJECT_VERSION: "10"
     AENHT_PRERELEASE: ""
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
@@ -34,6 +34,7 @@ targets:
       - path: AENHT/Features/Reader/ReaderScrollDriver.swift
       - path: AENHT/Features/Reader/ReaderPageSizing.swift
       - path: AENHT/Features/Reader/ReaderPageZoomView.swift
+      - path: AENHT/Features/Reader/ReaderGestureTestSupport.swift
       - path: AENHT/Features/Gallery/WideGalleryPage.swift
       - path: Tests/ReaderScrollTests.swift
       - path: Tests/TabletReaderLayoutTests.swift
@@ -62,6 +63,19 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
+  AENHTReaderUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: AENHT
+    settings:
+      base:
+        DEVELOPMENT_LANGUAGE: en
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlanyuey.AENHT.ReaderUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: AENHT
   AENHT:
     type: application
     platform: iOS
@@ -138,6 +152,14 @@ schemes:
     build:
       targets:
         AENHT: all
+  AENHTReaderUITests:
+    build:
+      targets:
+        AENHT: all
+        AENHTReaderUITests: [test]
+    test:
+      targets:
+        - AENHTReaderUITests
   AENHTCredentialTests:
     build:
       targets:

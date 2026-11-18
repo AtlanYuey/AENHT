@@ -54,7 +54,8 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     private var viewport: CGSize = .zero
     private var pendingResize: PendingResize?
     var restoringRow: Int? { pendingResize?.anchor.index }
-    private var originalPanTouches: Int?
+    private var originalHorizontalBounce: Bool?
+    private var jumpTarget: Int?
     private lazy var pinch = UIPinchGestureRecognizer(target: self, action: #selector(didPinch(_:)))
 
     func register(index: Int, view: UIView) {
@@ -129,6 +130,7 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
         onPinch = nil
         onMissingResizeRow = nil
         pendingResize = nil
+        jumpTarget = nil
         detachGestures()
     }
 
@@ -136,19 +138,19 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
         guard scrollView !== scroll else { return }
         detachGestures()
         scrollView = scroll
-        originalPanTouches = scroll.panGestureRecognizer.maximumNumberOfTouches
-        scroll.panGestureRecognizer.maximumNumberOfTouches = 1
+        originalHorizontalBounce = scroll.bouncesHorizontally
+        scroll.bouncesHorizontally = false
         pinch.delegate = self
         scroll.addGestureRecognizer(pinch)
     }
 
     private func detachGestures() {
         if let scroll = scrollView {
-            if let originalPanTouches { scroll.panGestureRecognizer.maximumNumberOfTouches = originalPanTouches }
+            if let originalHorizontalBounce { scroll.bouncesHorizontally = originalHorizontalBounce }
             scroll.removeGestureRecognizer(pinch)
         }
         scrollView = nil
-        originalPanTouches = nil
+        originalHorizontalBounce = nil
     }
 
     @objc private func didPinch(_ gesture: UIPinchGestureRecognizer) {
@@ -193,6 +195,11 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
 
     func cancelResize() { pendingResize = nil }
 
+    func willJump(to index: Int) {
+        jumpTarget = index
+        cancelResize()
+    }
+
     private func horizontalRange(in scroll: UIScrollView) -> CGFloat {
         let insets = scroll.adjustedContentInset
         return max(0, scroll.contentSize.width - scroll.bounds.width + insets.left + insets.right)
@@ -229,6 +236,7 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     }
 
     func userInteractionStarted() {
+        jumpTarget = nil
         motion.reset()
         if running, !continueOnDrag { finish(.interaction) }
     }
@@ -255,7 +263,7 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     }
 
     func reportPage() {
-        guard let scroll = scrollView else { return }
+        guard let scroll = scrollView, scroll.bounds.width > 1, scroll.bounds.height > 1 else { return }
         let rows = frames(in: scroll)
         guard restorePosition(in: scroll, rows: rows) else { return }
         let top = scroll.contentOffset.y + scroll.adjustedContentInset.top
@@ -264,6 +272,10 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
             row.rect.maxY > top + 0.5 && row.rect.minY < bottom
         }
         guard let first = rows.first(where: isVisible) else { return }
+        if let jumpTarget {
+            guard rows.contains(where: { $0.index == jumpTarget && isVisible($0) }) else { return }
+            self.jumpTarget = nil
+        }
         if first.index != lastReportedPage {
             lastReportedPage = first.index
             onPage?(first.index)
@@ -275,6 +287,9 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
                 onVisiblePages(visible)
             }
         }
+        #if DEBUG
+        ReaderGestureTestSupport.measure(scroll, page: lastReportedPage)
+        #endif
     }
 
     private func ready(_ index: Int, rect: CGRect) -> Bool {

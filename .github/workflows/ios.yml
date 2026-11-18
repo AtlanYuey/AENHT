@@ -84,6 +84,29 @@ jobs:
             iosApp/build/ReaderTests.xcresult
           if-no-files-found: ignore
 
+      - name: iPad reader gestures
+        if: github.ref == 'refs/heads/experiment/ios-tablet-reader'
+        working-directory: iosApp
+        run: |
+          set -o pipefail
+          SIMULATOR=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(v["udid"] for k,vs in sorted(d["devices"].items(), reverse=True) if "iOS" in k for v in vs if "iPad" in v["name"]))')
+          xcodebuild -project AENHT.xcodeproj -scheme AENHTReaderUITests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR" \
+            -parallel-testing-enabled NO \
+            -clonedSourcePackagesDirPath build/SourcePackages -derivedDataPath build/ReaderGestureTests \
+            -resultBundlePath build/ReaderGestureTests.xcresult CODE_SIGNING_ALLOWED=NO \
+            test 2>&1 | tee reader-gestures.log | tail -100
+
+      - name: Upload iPad gesture results
+        if: ${{ always() && github.ref == 'refs/heads/experiment/ios-tablet-reader' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: aenht-ipad-gesture-tests
+          path: |
+            iosApp/reader-gestures.log
+            iosApp/build/ReaderGestureTests.xcresult
+          if-no-files-found: ignore
+
       - name: Build
         working-directory: iosApp
         run: |
@@ -104,7 +127,7 @@ jobs:
         if: failure()
         working-directory: iosApp
         run: |
-          for LOG in build.log reader-tests.log; do
+          for LOG in build.log reader-tests.log reader-gestures.log; do
             [ -f "$LOG" ] || continue
             grep -E "error:|e: " -A3 "$LOG" | head -200 || true
             tail -80 "$LOG"

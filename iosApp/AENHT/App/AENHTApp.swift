@@ -17,6 +17,12 @@ struct AENHTApp: App {
         // with UIKit's tint, so SwiftUI's tint doesn't reach them.
         UINavigationBar.appearance().tintColor = .label
         ImageSetup.configure()
+        #if DEBUG
+        if ReaderGestureTestSupport.enabled {
+            ReaderGestureTestScene.configure(AppSettings.shared)
+            return
+        }
+        #endif
         Connectivity.shared.start()
         DownloadManager.shared.watchConnectivity()
         SettingsSync.shared.start(isPad: UIDevice.current.userInterfaceIdiom == .pad)
@@ -24,19 +30,33 @@ struct AENHTApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(settings)
-                .environment(session)
-                .environment(downloads)
-                .environment(tagStore)
-                .environment(ehSession)
-                .tint(settings.accent.color)
-                .preferredColorScheme(settings.theme.colorScheme)
-                .modifier(SoftScrollEdges())
-                .task { await session.reload() }
-                .task { await tagStore.prepare() }
+            #if DEBUG
+            if ReaderGestureTestSupport.enabled {
+                ReaderGestureTestScene()
+                    .environment(settings)
+                    .modelContainer(for: HistoryEntry.self, inMemory: true)
+            } else {
+                application
+            }
+            #else
+            application
+            #endif
         }
         .modelContainer(AppModel.container)
+    }
+
+    private var application: some View {
+        RootView()
+            .environment(settings)
+            .environment(session)
+            .environment(downloads)
+            .environment(tagStore)
+            .environment(ehSession)
+            .tint(settings.accent.color)
+            .preferredColorScheme(settings.theme.colorScheme)
+            .modifier(SoftScrollEdges())
+            .task { await session.reload() }
+            .task { await tagStore.prepare() }
     }
 }
 

@@ -20,7 +20,7 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         contentInsetAdjustmentBehavior = .never
         decelerationRate = .normal
         bouncesZoom = true
-        panGestureRecognizer.maximumNumberOfTouches = 1
+        bouncesHorizontally = false
         backgroundColor = .black
 
         imageView.contentMode = .scaleAspectFit
@@ -58,6 +58,9 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         if contentSize != size { contentSize = size }
         imageView.center = CGPoint(x: max(bounds.width, size.width) / 2,
                                    y: max(bounds.height, size.height) / 2)
+        #if DEBUG
+        if imageView.image != nil { ReaderGestureTestSupport.measure(self) }
+        #endif
     }
 
     func resetZoom() {
@@ -72,6 +75,17 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         imageView.image == nil ? nil : imageView
     }
+
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer === panGestureRecognizer, !sizeStatus.enlarged { return false }
+        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+    }
+
+    #if DEBUG
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if imageView.image != nil { ReaderGestureTestSupport.measure(self) }
+    }
+    #endif
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         updateCanvas()
