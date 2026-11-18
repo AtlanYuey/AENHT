@@ -16,6 +16,7 @@ final class ReaderGestureUITests: XCTestCase {
         let app = openReader()
         let canvas = canvas(in: app)
         canvas.pinch(withScale: 2.8, velocity: 1.7)
+        print("After double-page pinch", canvas.value ?? "no viewport measurement")
         eventually { (self.metrics(canvas)?.scale ?? 0) > 1.4 }
         let before = try XCTUnwrap(metrics(canvas))
         XCTAssertGreaterThan(before.maxX, 100)
@@ -65,6 +66,7 @@ final class ReaderGestureUITests: XCTestCase {
         let app = openReader()
         let canvas = canvas(in: app)
         canvas.pinch(withScale: 2.1, velocity: 1.4)
+        print("Before testing the edge", canvas.value ?? "no viewport measurement")
         eventually { (self.metrics(canvas)?.scale ?? 0) > 1.4 }
         drag(app, from: (0.003, 0.50), to: (0.043, 0.50), hold: 0.4)
         XCTAssertTrue(canvas.exists)
@@ -124,6 +126,8 @@ final class ReaderGestureUITests: XCTestCase {
         app.launchArguments = ["--reader-gesture-test", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         if let mode { app.launchArguments.append(mode) }
         app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        eventually(file: file, line: line) { app.frame.width > app.frame.height }
         let first = app.descendants(matching: .any)["reader-thumbnail-1"].firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 15), file: file, line: line)
         first.tap()

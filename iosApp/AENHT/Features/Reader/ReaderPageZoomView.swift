@@ -7,8 +7,12 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     var onSizeChanged: ((ReaderSizeStatus) -> Void)?
     private var adjustingSize = false
     private var reportedSize = ReaderSizeStatus()
+    private var pinchStart: (scale: CGFloat, focus: CGPoint)?
+    private let pinchDelegate = PinchDelegate()
 
-    var sizeStatus: ReaderSizeStatus { ReaderSizeStatus(scale: zoomScale, adjusting: adjustingSize) }
+    var sizeStatus: ReaderSizeStatus {
+        ReaderSizeStatus(scale: zoomScale, adjusting: adjustingSize || pinchStart != nil)
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -26,6 +30,14 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         addSubview(imageView)
+
+        // Own the pinch at the artwork. The enclosing pager cannot turn on
+        // two fingers, and the scroll view still handles single-finger pan.
+        pinchGestureRecognizer?.isEnabled = false
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        pinchDelegate.scroll = self
+        pinch.delegate = pinchDelegate
+        addGestureRecognizer(pinch)
     }
 
     required init?(coder: NSCoder) {
@@ -65,6 +77,7 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
 
     func resetZoom() {
         adjustingSize = false
+        pinchStart = nil
         if zoomScale != ReaderPageSizing.normalScale {
             setZoomScale(ReaderPageSizing.normalScale, animated: false)
         }
@@ -99,12 +112,51 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
 
     func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
         adjustingSize = false
+        guard pinchStart == nil else { return }
         let clamped = ReaderPageSizing.clamp(scale)
         if clamped != zoomScale { setZoomScale(clamped, animated: false) }
         reportSize()
     }
 
     func sizeDidChange(_ status: ReaderSizeStatus) {}
+
+    @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            guard imageView.image != nil else { return }
+            pinchStart = (zoomScale, gesture.location(in: imageView))
+            reportSize()
+        case .changed:
+            guard let start = pinchStart else { return }
+            let touch = gesture.location(in: self)
+            let visiblePoint = CGPoint(x: touch.x - bounds.minX, y: touch.y - bounds.minY)
+            setZoomScale(ReaderPageSizing.clamp(start.scale * gesture.scale), animated: false)
+            updateCanvas()
+            let focus = imageView.convert(start.focus, to: self)
+            let x = min(max(0, focus.x - visiblePoint.x), max(0, contentSize.width - bounds.width))
+            let y = min(max(0, focus.y - visiblePoint.y), max(0, contentSize.height - bounds.height))
+            setContentOffset(CGPoint(x: x, y: y), animated: false)
+        case .ended, .cancelled, .failed:
+            pinchStart = nil
+            adjustingSize = false
+            reportSize()
+        default:
+            break
+        }
+    }
+
+    private final class PinchDelegate: NSObject, UIGestureRecognizerDelegate {
+        weak var scroll: ReaderPageZoomView?
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            scroll?.imageView.image != nil
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            other === scroll?.panGestureRecognizer
+        }
+    }
 
     private func reportSize() {
         let status = sizeStatus
