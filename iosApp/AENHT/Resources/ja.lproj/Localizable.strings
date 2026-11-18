@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "自動スクロールを一時停止しました";
 "Continue Auto Scroll While Dragging" = "手動スクロール後も自動で続ける";
 "Speed may be too fast for comfortable reading" = "速度が速すぎて読みづらい場合があります";
+
+"Tablet Layout" = "タブレットレイアウト";
+"Tablet Layout on Home" = "ホームでタブレットレイアウトを使う";
+"Shows the two pinned rows side by side when the home screen has room." = "十分な幅があるとき、固定した2つの列を横に並べます。";
+"Tablet Layout for Gallery Details" = "作品詳細でタブレットレイアウトを使う";
+"Right Pane" = "右側のペイン";
+"Related Works and Comments" = "関連作品とコメント";
+"Pane Width" = "ペインの幅";
+"Equal Panes" = "左右均等";
+"Three Columns of Pages" = "ページを3列で表示";
+"The three-column pane keeps the original thumbnail size." = "3列表示でもサムネイルの大きさを保ちます。";
+"Reset Page Size" = "ページの大きさを戻す";
+"Keep Page Size" = "ページの大きさを保持";
+"Remember the size you set with two fingers for continuous reading on this device." = "連続読みで2本指を使って調整した大きさを、この端末に記憶します。";

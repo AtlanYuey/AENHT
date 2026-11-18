@@ -8,43 +8,52 @@ struct ReaderImageOptions: Equatable {
     let mode: SuperResolutionMode
     let model: SuperResolutionModel
 
-    func enhancement(for url: URL, continuous: Bool = false, pagesPerTurn: Int = 1) -> ReaderImageEnhancement? {
+    func enhancement(for url: URL, pagesPerTurn: Int = 1, continuousViewport: CGSize? = nil,
+                     continuousScale: CGFloat = 1) -> ReaderImageEnhancement? {
         guard mode != .off, viewport.width > 1, viewport.height > 1 else { return nil }
-        let target: CGSize
-        if continuous {
-            // A strip fits the viewport width and continues below the screen.
-            target = CGSize(width: viewport.width, height: .greatestFiniteMagnitude)
+        let target: ReaderImageEnhancement.Target
+        if let continuousViewport {
+            target = .strip(viewport: continuousViewport, displayScale: displayScale, scale: continuousScale)
         } else if pagesPerTurn == 2 {
-            target = CGSize(width: max(1, (viewport.width - 6 * displayScale) / 2), height: viewport.height)
+            target = .fixed(CGSize(width: max(1, (viewport.width - 6 * displayScale) / 2), height: viewport.height))
         } else {
-            target = viewport
+            target = .fixed(viewport)
         }
-        let style = continuous ? "|strip" : (crop ? "|crop" : "")
+        let style = continuousViewport != nil ? "|strip" : (crop ? "|crop" : "")
         return ReaderImageEnhancement(key: url.absoluteString + style, target: target,
-                                      mode: mode, model: model, stripThumbnail: continuous)
+                                      mode: mode, model: model)
     }
 }
 
 struct ReaderImageEnhancement: Equatable {
+    enum Target: Equatable {
+        case fixed(CGSize)
+        case strip(viewport: CGSize, displayScale: CGFloat, scale: CGFloat)
+    }
+
     let key: String
-    let target: CGSize
+    let target: Target
     let mode: SuperResolutionMode
     let model: SuperResolutionModel
-    let stripThumbnail: Bool
-
-    private func eligible(_ image: UIImage) -> Bool {
-        // Automatic mode should not sharpen a large source just because its
-        // strip preview was reduced to the decoder's memory limit.
-        mode != .auto || !stripThumbnail || !ReaderStripImages.mayBeDownsampled(image)
+    private func target(for image: UIImage) -> CGSize? {
+        switch target {
+        case .fixed(let size): return size
+        case let .strip(viewport, displayScale, scale):
+            // Decode first, so the displayed and prepared strip use the same aspect ratio.
+            guard mode != .auto || !ReaderStripImages.mayBeDownsampled(image) else { return nil }
+            let ratio = image.size.width / max(1, image.size.height)
+            let width = ReaderPageSizing.width(in: viewport, aspectRatio: ratio, scale: scale)
+            return CGSize(width: width * displayScale, height: .greatestFiniteMagnitude)
+        }
     }
 
     func cached(_ image: UIImage) -> UIImage? {
-        guard eligible(image) else { return nil }
+        guard let target = target(for: image) else { return nil }
         return SuperResolver.shared.cached(image, key: key, target: target, mode: mode, kind: model)
     }
 
     func enhance(_ image: UIImage, ahead: Bool = false) async -> UIImage? {
-        guard eligible(image) else { return nil }
+        guard let target = target(for: image) else { return nil }
         return await SuperResolver.shared.enhance(image, key: key, target: target, mode: mode, kind: model, ahead: ahead)
     }
 }

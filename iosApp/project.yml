@@ -20,7 +20,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.2.1"
-    CURRENT_PROJECT_VERSION: "7"
+    CURRENT_PROJECT_VERSION: "8"
     AENHT_PRERELEASE: ""
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
@@ -32,7 +32,10 @@ targets:
     sources:
       - path: AENHT/Features/Reader/ReaderScrollMotion.swift
       - path: AENHT/Features/Reader/ReaderScrollDriver.swift
+      - path: AENHT/Features/Reader/ReaderPageSizing.swift
+      - path: AENHT/Features/Gallery/WideGalleryPage.swift
       - path: Tests/ReaderScrollTests.swift
+      - path: Tests/TabletReaderLayoutTests.swift
       - path: AENHT/Features/Reader/ReaderStripImages.swift
       - path: Tests/ReaderImagePreparationTests.swift
       - path: AENHT/Core/AppVersion.swift

@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "自動捲動已暫停";
 "Continue Auto Scroll While Dragging" = "滑動時繼續自動捲動";
 "Speed may be too fast for comfortable reading" = "速度可能過快，無法正常閱讀";
+
+"Tablet Layout" = "平板模式調整";
+"Tablet Layout on Home" = "首頁使用平板模式";
+"Shows the two pinned rows side by side when the home screen has room." = "橫向首頁有足夠空間時，兩列推薦並排顯示。";
+"Tablet Layout for Gallery Details" = "作品詳細頁使用平板模式";
+"Right Pane" = "右側顯示";
+"Related Works and Comments" = "其他版本、相似作品和留言";
+"Pane Width" = "頁面欄寬度";
+"Equal Panes" = "平均分欄";
+"Three Columns of Pages" = "縮窄頁面欄（3 欄）";
+"The three-column pane keeps the original thumbnail size." = "三欄版面會保留原有的縮圖大小。";
+"Reset Page Size" = "重設大小";
+"Keep Page Size" = "保留頁面大小";
+"Remember the size you set with two fingers for continuous reading on this device." = "在這部裝置記住連續閱讀時用雙指調整的大小。";

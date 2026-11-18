@@ -130,14 +130,13 @@ struct EhGalleryView: View {
     @State private var editingNote = false
     @State private var note = ""
     /// A wide page (a tablet held sideways): the details on the left, the pages on the right.
-    @State private var wide = false
+    @State private var viewport: CGSize = .zero
     @Environment(\.openURL) private var openURL
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
     @Environment(TagStore.self) private var tagStore
-    @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row of pages (the one being read).
     @State private var centeredPage: Int?
     /// Where the row was when its title took it to the first page.
@@ -147,7 +146,14 @@ struct EhGalleryView: View {
         _model = State(initialValue: EhGalleryModel(route: route))
     }
 
+    private var pagesOnRight: Bool { settings.tabletDetailContent == .pages }
+    private var split: WideGalleryPage? {
+        guard settings.tabletDetailLayout, WideGalleryPage.fits(viewport) else { return nil }
+        return WideGalleryPage(viewport: viewport, compactPages: pagesOnRight && settings.compactTabletPages)
+    }
+
     var body: some View {
+        let split = split
         HStack(alignment: .top, spacing: 0) {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -156,18 +162,10 @@ struct EhGalleryView: View {
                     actions(detail)
                     info(detail)
                     tags(detail)
-                    // Wide: the pages have the right half to themselves.
-                    if !wide { previews(detail) }
-                    // Its translations and other versions, then galleries like it.
-                    if !model.versions.isEmpty {
-                        SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
-                        PopularRow(items: model.versions, cutEdges: wide ? .trailing : [])
+                    if split == nil || !pagesOnRight { previews(detail) }
+                    if split == nil || pagesOnRight {
+                        relatedContent(detail, cutEdges: split == nil ? [] : .trailing)
                     }
-                    if !model.similar.isEmpty {
-                        SectionTitle(title: "More Like This")
-                        PopularRow(items: model.similar, cutEdges: wide ? .trailing : [])
-                    }
-                    comments(detail)
                 } else if let error = model.error {
                     ContentUnavailableView {
                         Label("Couldn't Load", systemImage: "wifi.exclamationmark")
@@ -201,15 +199,25 @@ struct EhGalleryView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        if wide, let detail = model.detail, let card = model.card {
-            // The pages run the full height, blurring out under the bars.
-            EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
-                        loaded: detail, embedded: true)
-                .paneScrollEdges()
-                .frame(maxWidth: .infinity)
+        if let split, let detail = model.detail, let card = model.card {
+            Group {
+                if pagesOnRight {
+                    EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
+                                loaded: detail, embedded: true, compactThumbnailWidth: split.compactThumbnailWidth)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            relatedContent(detail, cutEdges: .leading)
+                        }
+                        .padding(.bottom, 24)
+                    }
+                }
+            }
+            .paneScrollEdges()
+            .frame(width: split.rightWidth)
         }
         }
-        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .background(LeavingPageIgnoresTouches().frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
         .barToolbar {
@@ -286,6 +294,19 @@ struct EhGalleryView: View {
         } message: {
             Text(alertMessage ?? "")
         }
+    }
+
+    @ViewBuilder
+    private func relatedContent(_ detail: EhGalleryDetail, cutEdges: Edge.Set) -> some View {
+        if !model.versions.isEmpty {
+            SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
+            PopularRow(items: model.versions, cutEdges: cutEdges)
+        }
+        if !model.similar.isEmpty {
+            SectionTitle(title: "More Like This")
+            PopularRow(items: model.similar, cutEdges: cutEdges)
+        }
+        comments(detail)
     }
 
     // MARK: Header
@@ -513,7 +534,6 @@ struct EhGalleryView: View {
                                 EhThumbnailView(thumb: thumb)
                                     .frame(width: height * min(max(ratio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .readerThumbSource(gallery: "eh:\(detail.gid)", page: item.id, namespace)
                                 Text("\(thumb.page)").font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -629,11 +649,17 @@ struct EhPagesView: View {
     var loaded: EhGalleryDetail? = nil
     /// Part of the gallery page (with a heading), not a page of its own.
     var embedded = false
-    @Environment(\.galleryNamespace) private var namespace
-    @State private var thumbs: [EhThumbnail] = []
-    @State private var nextPage = 0
-    @State private var loading = false
+    var compactThumbnailWidth: CGFloat? = nil
+    @State private var progress = ReaderProgress.shared
+    @State private var position: Int?
+    @State private var thumbnails: [Int: EhThumbnail] = [:]
+    @State private var loadingBatches: Set<Int> = []
+    @State private var failedBatches: Set<Int> = []
     @State private var detail: EhGalleryDetail?
+    @State private var loadFailed = false
+
+    private var gallery: EhGalleryDetail? { detail ?? loaded }
+    private var returnPoint: ReaderProgress.ReturnPoint? { progress.point(gallery: "eh:\(route.gid)") }
 
     var body: some View {
         if embedded {
@@ -648,52 +674,115 @@ struct EhPagesView: View {
     private var grid: some View {
         ScrollView {
             if embedded { SectionHeader(title: "Pages") { EmptyView() } }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 14) {
-                ForEach(Array(thumbs.enumerated()), id: \.element.page) { index, thumb in
-                    Group {
-                        if let detail {
-                            NavigationLink(value: ReaderRoute(source: ReaderSource(eh: detail, card: route.card), page: Int(thumb.page) - 1)) {
-                                cell(thumb)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            cell(thumb)
-                        }
+            if let gallery {
+                let source = ReaderSource(eh: gallery, card: route.card)
+                LazyVGrid(columns: WideGalleryPage.pageColumns(compactWidth: compactThumbnailWidth), spacing: 14) {
+                    // Stable page IDs let the scroll view reveal a late page
+                    // with just its thumbnail batch loaded.
+                    ForEach(0..<max(0, route.pages), id: \.self) { index in
+                        page(index, in: gallery, source: source)
+                            .id(index)
+                            .onAppear { loadBatch(for: index, in: gallery) }
                     }
-                    .onAppear { if index >= thumbs.count - 6 { Task { await loadMore() } } }
                 }
+                .scrollTargetLayout()
+                .padding(embedded ? [.horizontal, .bottom] : .all, WideGalleryPage.thumbnailInset)
+                .padding(.bottom, embedded ? 16 : 0)
+            } else if loadFailed {
+                Button("Retry", systemImage: "arrow.clockwise") { Task { await loadGallery() } }
+                    .padding()
+            } else {
+                ProgressView().padding()
             }
-            .padding(embedded ? [.horizontal, .bottom] : .all)
-            .padding(.bottom, embedded ? 16 : 0)
+        }
+        .scrollPosition(id: $position, anchor: .center)
+        .onChange(of: returnPoint, initial: true) { _, point in
+            if let point, let gallery { reveal(point.page, in: gallery) }
         }
         .task {
-            if detail == nil {
-                if let loaded { detail = loaded } else { detail = try? await EhService.shared.gallery(gid: route.gid, token: route.token) }
-                thumbs = detail?.thumbnails ?? []
-                nextPage = 1
-            }
+            if gallery == nil { await loadGallery() }
         }
     }
 
-    private func cell(_ thumb: EhThumbnail) -> some View {
+    @ViewBuilder
+    private func page(_ index: Int, in gallery: EhGalleryDetail, source: ReaderSource) -> some View {
+        let batch = batchIndex(for: index, in: gallery)
+        let thumb = thumbnails[index] ?? gallery.thumbnails.first { Int($0.page) - 1 == index }
         VStack(spacing: 4) {
-            EhThumbnailView(thumb: thumb)
+            if thumb == nil, failedBatches.contains(batch) {
+                Button("Retry", systemImage: "arrow.clockwise") {
+                    failedBatches.remove(batch)
+                    loadBatch(for: index, in: gallery)
+                }
+                .labelStyle(.iconOnly)
+                .frame(maxWidth: .infinity)
                 .frame(height: 130)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .readerThumbSource(gallery: "eh:\(route.gid)", page: Int(thumb.page) - 1, namespace)
-            Text("\(thumb.page)").font(.caption2).foregroundStyle(.secondary)
+                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .outlineReadPage(returnPoint?.page == index)
+            } else {
+                NavigationLink(value: ReaderRoute(source: source, page: index)) {
+                    Group {
+                        if let thumb {
+                            EhThumbnailView(thumb: thumb)
+                        } else {
+                            Color.clear
+                                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                    }
+                    .frame(height: 130)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .outlineReadPage(returnPoint?.page == index)
+                }
+                .buttonStyle(.plain)
+            }
+            Text("\(index + 1)").font(.caption2).foregroundStyle(.secondary)
         }
     }
 
-    private func loadMore() async {
-        guard let detail, !loading, thumbs.count < route.pages, nextPage < Int(detail.thumbnailPageCount) else { return }
-        loading = true
-        defer { loading = false }
-        if let more = try? await EhService.shared.thumbnails(gid: route.gid, token: route.token, page: nextPage) {
-            let known = Set(thumbs.map(\.page))
-            thumbs += more.filter { !known.contains($0.page) }
-            await EhPageDirectory.shared.remember(gid: route.gid, thumbnails: more)
-            nextPage += 1
+    private func loadGallery() async {
+        loadFailed = false
+        do {
+            let value = try await EhService.shared.gallery(gid: route.gid, token: route.token)
+            try Task.checkCancellation()
+            detail = value
+            if let point = returnPoint { reveal(point.page, in: value) }
+        } catch is CancellationError {
+            return
+        } catch {
+            loadFailed = true
+        }
+    }
+
+    private func reveal(_ index: Int, in gallery: EhGalleryDetail) {
+        guard (0..<route.pages).contains(index) else { return }
+        position = index
+        loadBatch(for: index, in: gallery)
+    }
+
+    private func batchIndex(for index: Int, in gallery: EhGalleryDetail) -> Int {
+        index / (gallery.thumbnails.isEmpty ? 20 : gallery.thumbnails.count)
+    }
+
+    private func loadBatch(for index: Int, in gallery: EhGalleryDetail) {
+        let batch = batchIndex(for: index, in: gallery)
+        guard (batch != 0 || gallery.thumbnails.isEmpty), batch < Int(gallery.thumbnailPageCount),
+              thumbnails[index] == nil, !failedBatches.contains(batch), loadingBatches.insert(batch).inserted
+        else { return }
+        Task {
+            defer { loadingBatches.remove(batch) }
+            do {
+                let values = try await EhService.shared.thumbnails(gid: route.gid, token: route.token, page: batch)
+                guard !values.isEmpty else {
+                    failedBatches.insert(batch)
+                    return
+                }
+                for thumb in values { thumbnails[Int(thumb.page) - 1] = thumb }
+                await EhPageDirectory.shared.remember(gid: route.gid, thumbnails: values)
+                if thumbnails[index] == nil { failedBatches.insert(batch) }
+            } catch {
+                failedBatches.insert(batch)
+            }
         }
     }
 }

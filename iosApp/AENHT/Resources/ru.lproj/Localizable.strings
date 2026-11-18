@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "Автопрокрутка приостановлена";
 "Continue Auto Scroll While Dragging" = "Продолжать после ручной прокрутки";
 "Speed may be too fast for comfortable reading" = "Скорость может мешать чтению";
+
+"Tablet Layout" = "Макет для планшета";
+"Tablet Layout on Home" = "Макет для планшета на главной";
+"Shows the two pinned rows side by side when the home screen has room." = "При достаточной ширине два закреплённых ряда отображаются рядом.";
+"Tablet Layout for Gallery Details" = "Макет для планшета в сведениях о работе";
+"Right Pane" = "Правая панель";
+"Related Works and Comments" = "Похожие работы и комментарии";
+"Pane Width" = "Ширина панели";
+"Equal Panes" = "Панели одинаковой ширины";
+"Three Columns of Pages" = "Три столбца страниц";
+"The three-column pane keeps the original thumbnail size." = "При трёх столбцах размер миниатюр сохраняется.";
+"Reset Page Size" = "Сбросить размер страницы";
+"Keep Page Size" = "Сохранять размер страницы";
+"Remember the size you set with two fingers for continuous reading on this device." = "Запоминает настроенный двумя пальцами размер для непрерывного чтения на этом устройстве.";

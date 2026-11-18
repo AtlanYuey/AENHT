@@ -5,7 +5,7 @@ import UIKit
 /// The Me page's entries: on a wide screen (an iPad held sideways) they are
 /// the left column and open in the right one (MoreTab).
 enum MorePage: Hashable {
-    case overview, accounts, downloads, sites, filters, translation, appearance, reading, general, iCloud, webDav, language, about
+    case overview, accounts, downloads, tabletLayout, sites, filters, translation, appearance, reading, general, iCloud, webDav, language, about
 
     /// The page an entry opens; [selection] lets the overview open the others.
     @MainActor @ViewBuilder
@@ -14,6 +14,7 @@ enum MorePage: Hashable {
         case .overview: MoreOverview(selection: selection)
         case .accounts: AccountsView()
         case .downloads: DownloadsView()
+        case .tabletLayout: TabletLayoutSettingsView()
         case .sites: SitesSettingsView()
         case .filters: FiltersSettingsView()
         case .translation: TranslationSettingsView()
@@ -32,6 +33,7 @@ struct MoreView: View {
     /// In the left column of a wide screen: the entry open in the right one
     /// (nil: a page of its own, whose entries push their pages).
     var selection: Binding<MorePage?>? = nil
+    var showTabletSettings = false
 
     @Environment(UserSession.self) private var session
     @Environment(EhSession.self) private var ehSession
@@ -96,6 +98,11 @@ struct MoreView: View {
             row(.downloads) {
                 SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
                     .badge(downloads.records.filter { $0.state == .downloading }.count)
+            }
+            if showTabletSettings {
+                row(.tabletLayout) {
+                    SettingsLabel("Tablet Layout", systemImage: "ipad.landscape", color: .blue)
+                }
             }
         }
 

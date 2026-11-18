@@ -285,6 +285,19 @@ enum ReadMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum TabletDetailContent: String, CaseIterable, Identifiable {
+    case pages, activity
+
+    var id: Self { self }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .pages: "Pages"
+        case .activity: "Related Works and Comments"
+        }
+    }
+}
+
 /// App settings, persisted in UserDefaults.
 @Observable
 final class AppSettings {
@@ -314,6 +327,13 @@ final class AppSettings {
     var blurCovers: Bool { didSet { save(blurCovers, "blurCovers") } }
     var showTags: Bool { didSet { save(showTags, "showTags") } }
     var translateTags: Bool { didSet { save(translateTags, "translateTags") } }
+    // Window layout and the reader's hand-adjusted size are preferences for this device.
+    var tabletHomeLayout: Bool { didSet { defaults.set(tabletHomeLayout, forKey: "tabletHomeLayout") } }
+    var tabletDetailLayout: Bool { didSet { defaults.set(tabletDetailLayout, forKey: "tabletDetailLayout") } }
+    var tabletDetailContent: TabletDetailContent {
+        didSet { defaults.set(tabletDetailContent.rawValue, forKey: "tabletDetailContent") }
+    }
+    var compactTabletPages: Bool { didSet { defaults.set(compactTabletPages, forKey: "compactTabletPages") } }
 
     var homeLanguage: LanguageFilter { didSet { save(homeLanguage.rawValue, "homeLanguage") } }
     var homeSort: SearchSort { didSet { save(homeSort.rawValue, "homeSort") } }
@@ -324,6 +344,13 @@ final class AppSettings {
     var autoReadInterval: Double { didSet { save(autoReadInterval, "autoReadInterval") } }
     var autoScrollSecondsPerScreen: Double { didSet { save(autoScrollSecondsPerScreen, "autoScrollSecondsPerScreen") } }
     var continueAutoScrollOnDrag: Bool { didSet { save(continueAutoScrollOnDrag, "continueAutoScrollOnDrag") } }
+    var keepContinuousPageSize: Bool {
+        didSet {
+            defaults.set(keepContinuousPageSize, forKey: "keepContinuousPageSize")
+            if !keepContinuousPageSize { continuousPageScale = 1 }
+        }
+    }
+    var continuousPageScale: Double { didSet { defaults.set(continuousPageScale, forKey: "continuousPageScale") } }
     var preloadPages: Int { didSet { save(preloadPages, "preloadPages") } }
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
@@ -459,6 +486,12 @@ final class AppSettings {
 
     private init() {
         let d = UserDefaults.standard
+        tabletHomeLayout = d.object(forKey: "tabletHomeLayout") as? Bool ?? true
+        tabletDetailLayout = d.object(forKey: "tabletDetailLayout") as? Bool ?? true
+        tabletDetailContent = TabletDetailContent(rawValue: d.string(forKey: "tabletDetailContent") ?? "") ?? .pages
+        compactTabletPages = d.bool(forKey: "compactTabletPages")
+        keepContinuousPageSize = d.object(forKey: "keepContinuousPageSize") as? Bool ?? true
+        continuousPageScale = Double(ReaderPageSizing.clamp(CGFloat(d.object(forKey: "continuousPageScale") as? Double ?? 1)))
         theme = ThemeMode(rawValue: d.string(forKey: "theme") ?? "") ?? .system
         accent = AccentChoice(rawValue: d.string(forKey: "accent") ?? "") ?? .blue
         listStyle = GalleryListStyle(rawValue: d.string(forKey: "listStyle") ?? "") ?? .waterfall

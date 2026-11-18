@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "Đã tạm dừng cuộn tự động";
 "Continue Auto Scroll While Dragging" = "Tiếp tục sau khi cuộn thủ công";
 "Speed may be too fast for comfortable reading" = "Tốc độ có thể quá nhanh để đọc";
+
+"Tablet Layout" = "Bố cục máy tính bảng";
+"Tablet Layout on Home" = "Dùng bố cục máy tính bảng ở Trang chủ";
+"Shows the two pinned rows side by side when the home screen has room." = "Hiển thị hai hàng đã ghim cạnh nhau khi có đủ chỗ.";
+"Tablet Layout for Gallery Details" = "Dùng bố cục máy tính bảng ở trang chi tiết";
+"Right Pane" = "Khung bên phải";
+"Related Works and Comments" = "Tác phẩm liên quan và bình luận";
+"Pane Width" = "Độ rộng khung";
+"Equal Panes" = "Hai khung bằng nhau";
+"Three Columns of Pages" = "Ba cột trang";
+"The three-column pane keeps the original thumbnail size." = "Khung ba cột giữ nguyên kích thước ảnh thu nhỏ.";
+"Reset Page Size" = "Đặt lại kích thước trang";
+"Keep Page Size" = "Giữ kích thước trang";
+"Remember the size you set with two fingers for continuous reading on this device." = "Ghi nhớ kích thước đã chỉnh bằng hai ngón tay cho chế độ đọc liên tục trên thiết bị này.";

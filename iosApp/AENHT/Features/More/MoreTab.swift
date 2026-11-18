@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// The Me tab. On a wide screen (an iPad held sideways) it is two columns:
 /// the Me page on the left, and on the right the page of the entry chosen
@@ -9,14 +10,17 @@ import SwiftUI
 struct MoreTab: View {
     static let columnWidth: CGFloat = 400
 
-    @State private var wide = false
+    @State private var viewport: CGSize = .zero
     @State private var page: MorePage? = .overview
+    private var showTabletSettings: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && viewport.width > viewport.height
+    }
 
     var body: some View {
         Group {
-            if wide {
+            if WideGalleryPage.fits(viewport) {
                 NavigationSplitView(columnVisibility: .constant(.all)) {
-                    MoreView(selection: $page)
+                    MoreView(selection: $page, showTabletSettings: showTabletSettings)
                         .navigationSplitViewColumnWidth(Self.columnWidth)
                         .toolbar(removing: .sidebarToggle)
                         // The tab bar is at the bottom of this column.
@@ -34,11 +38,14 @@ struct MoreTab: View {
                 .navigationSplitViewStyle(.balanced)
             } else {
                 RoutedNavigationStack {
-                    MoreView().galleryDestinations()
+                    MoreView(showTabletSettings: showTabletSettings).galleryDestinations()
                 }
             }
         }
-        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
+        .onChange(of: showTabletSettings) { _, show in
+            if !show, page == .tabletLayout { page = .overview }
+        }
     }
 }
 

@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "Gulir otomatis dijeda";
 "Continue Auto Scroll While Dragging" = "Lanjutkan setelah menggulir manual";
 "Speed may be too fast for comfortable reading" = "Kecepatan mungkin terlalu tinggi untuk membaca";
+
+"Tablet Layout" = "Tata Letak Tablet";
+"Tablet Layout on Home" = "Tata Letak Tablet di Beranda";
+"Shows the two pinned rows side by side when the home screen has room." = "Menampilkan dua baris yang disematkan secara berdampingan jika ruangnya cukup.";
+"Tablet Layout for Gallery Details" = "Tata Letak Tablet untuk Detail Karya";
+"Right Pane" = "Panel Kanan";
+"Related Works and Comments" = "Karya Terkait dan Komentar";
+"Pane Width" = "Lebar Panel";
+"Equal Panes" = "Panel Sama Lebar";
+"Three Columns of Pages" = "Tiga Kolom Halaman";
+"The three-column pane keeps the original thumbnail size." = "Panel tiga kolom mempertahankan ukuran gambar mini.";
+"Reset Page Size" = "Setel Ulang Ukuran Halaman";
+"Keep Page Size" = "Pertahankan Ukuran Halaman";
+"Remember the size you set with two fingers for continuous reading on this device." = "Mengingat ukuran yang diatur dengan dua jari untuk membaca berkelanjutan di perangkat ini.";

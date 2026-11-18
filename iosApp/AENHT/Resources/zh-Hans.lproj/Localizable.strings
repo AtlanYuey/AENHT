@@ -613,3 +613,17 @@
 "Auto Scroll Paused" = "自动滚动已暂停";
 "Continue Auto Scroll While Dragging" = "滑动时继续自动滚动";
 "Speed may be too fast for comfortable reading" = "可能速度过快，无法正常阅读";
+
+"Tablet Layout" = "平板模式适配";
+"Tablet Layout on Home" = "主页使用平板模式";
+"Shows the two pinned rows side by side when the home screen has room." = "横屏主页有足够空间时，两行推荐并排显示。";
+"Tablet Layout for Gallery Details" = "作品详情页使用平板模式";
+"Right Pane" = "右侧显示";
+"Related Works and Comments" = "其他版本、相似作品和评论";
+"Pane Width" = "页面栏宽度";
+"Equal Panes" = "正常二分";
+"Three Columns of Pages" = "缩窄页面栏（3 列）";
+"The three-column pane keeps the original thumbnail size." = "三列布局保留原来的缩略图大小。";
+"Reset Page Size" = "重置大小";
+"Keep Page Size" = "保持页面大小";
+"Remember the size you set with two fingers for continuous reading on this device." = "在本机记住两种连续阅读模式下用双指调节的大小。";

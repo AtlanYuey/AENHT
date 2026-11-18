@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "Scorrimento in pausa";
 "Continue Auto Scroll While Dragging" = "Continua dopo lo scorrimento manuale";
 "Speed may be too fast for comfortable reading" = "La velocità potrebbe rendere difficile la lettura";
+
+"Tablet Layout" = "Layout per tablet";
+"Tablet Layout on Home" = "Layout per tablet nella home";
+"Shows the two pinned rows side by side when the home screen has room." = "Mostra affiancate le due righe fissate quando c’è spazio.";
+"Tablet Layout for Gallery Details" = "Layout per tablet nei dettagli";
+"Right Pane" = "Riquadro destro";
+"Related Works and Comments" = "Opere correlate e commenti";
+"Pane Width" = "Larghezza del riquadro";
+"Equal Panes" = "Riquadri di uguale larghezza";
+"Three Columns of Pages" = "Tre colonne di pagine";
+"The three-column pane keeps the original thumbnail size." = "Il riquadro a tre colonne mantiene le dimensioni delle miniature.";
+"Reset Page Size" = "Ripristina dimensione pagina";
+"Keep Page Size" = "Mantieni dimensione pagina";
+"Remember the size you set with two fingers for continuous reading on this device." = "Ricorda su questo dispositivo la dimensione impostata con due dita per la lettura continua.";

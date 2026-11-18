@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A command, separate from observed reading progress. Only an explicit jump scrolls to an ID.
 struct ReaderScrollRequest: Equatable {
@@ -14,6 +15,8 @@ struct ContinuousReader: View {
     @Binding var page: Int
     let request: ReaderScrollRequest
     @Binding var running: Bool
+    let resetSizeRequest: Int
+    let onSizeChanged: (ReaderSizeStatus) -> Void
     let onInteraction: () -> Void
 
     @Environment(AppSettings.self) private var settings
@@ -23,16 +26,49 @@ struct ContinuousReader: View {
     @State private var visiblePages: ClosedRange<Int>?
     @State private var retries: [Int: Int] = [:]
     @State private var failedPage: Int?
+    @State private var scale: CGFloat
+    @State private var settledScale: CGFloat
+    @State private var horizontalPosition: CGFloat = 0
+    @State private var pinchStart: PinchStart?
+
+    private struct PinchStart {
+        let scale: CGFloat
+        let anchor: ReaderScrollDriver.ResizeAnchor?
+    }
+
+    init(pages: [ReaderPage], imageOptions: ReaderImageOptions, page: Binding<Int>,
+         request: ReaderScrollRequest, running: Binding<Bool>, initialScale: CGFloat,
+         resetSizeRequest: Int, onSizeChanged: @escaping (ReaderSizeStatus) -> Void,
+         onInteraction: @escaping () -> Void) {
+        self.pages = pages
+        self.imageOptions = imageOptions
+        self._page = page
+        self.request = request
+        self._running = running
+        self.resetSizeRequest = resetSizeRequest
+        self.onSizeChanged = onSizeChanged
+        self.onInteraction = onInteraction
+        _scale = State(initialValue: initialScale)
+        _settledScale = State(initialValue: initialScale)
+    }
 
     var body: some View {
+        GeometryReader { geometry in
+            strip(in: geometry.size)
+        }
+    }
+
+    private func strip(in viewport: CGSize) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
                     ForEach(pages) { item in
                         ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
                                              knownRatio: driver.knownRatios[item.index],
-                                             enhancement: item.url.flatMap { imageOptions.enhancement(for: $0, continuous: true) },
-                                             enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index) { state in
+                                             viewport: viewport, scale: scale, settledScale: settledScale,
+                                             horizontalPosition: horizontalPosition, imageOptions: imageOptions,
+                                             enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
+                                             driver: driver, onLoad: { state in
                             switch state {
                             case .loading: driver.image(index: item.index)
                             case .failed: driver.image(index: item.index, failed: true)
@@ -40,8 +76,7 @@ struct ContinuousReader: View {
                                 driver.image(index: item.index, size: size)
                                 if failedPage == item.index { failedPage = nil }
                             }
-                        }
-                        .background(ReaderPageAnchor(index: item.index, driver: driver).allowsHitTesting(false))
+                        })
                         .id(item.index)
                     }
                 }
@@ -53,17 +88,20 @@ struct ContinuousReader: View {
                 driver.viewportChanged(new.size)
             }
             .onScrollPhaseChange { _, phase in
-                if phase == .interacting {
+                if phase == .interacting, pinchStart == nil {
+                    driver.cancelResize()
                     driver.userInteractionStarted()
                     onInteraction()
                 }
             }
             .onAppear {
-                configure()
+                configure(viewport: viewport, proxy: proxy)
+                onSizeChanged(ReaderSizeStatus(scale: scale))
                 proxy.scrollTo(request.page, anchor: .top)
                 driver.reportPage()
             }
             .onChange(of: request) { _, new in
+                driver.cancelResize()
                 driver.stop()
                 running = false
                 if new.animated {
@@ -74,13 +112,28 @@ struct ContinuousReader: View {
             }
             .onChange(of: settings.autoScrollSecondsPerScreen) { driver.secondsPerScreen = settings.autoScrollSecondsPerScreen }
             .onChange(of: settings.continueAutoScrollOnDrag) { driver.continueOnDrag = settings.continueAutoScrollOnDrag }
-            .onChange(of: imageOptions) { configure(); prepare(visiblePages) }
-            .onChange(of: scenePhase) { configure(); prepare(visiblePages) }
+            .onChange(of: settings.keepContinuousPageSize) {
+                if settings.keepContinuousPageSize { settings.continuousPageScale = Double(settledScale) }
+            }
+            .onChange(of: resetSizeRequest) {
+                resize(to: ReaderPageSizing.normalScale, in: viewport, anchor: driver.resizeAnchor())
+                horizontalPosition = 0
+                finishSizing(in: viewport)
+            }
+            .onChange(of: viewport) { configure(viewport: viewport, proxy: proxy); prepare(visiblePages, in: viewport) }
+            .onChange(of: imageOptions) { configure(viewport: viewport, proxy: proxy); prepare(visiblePages, in: viewport) }
+            .onChange(of: scenePhase) {
+                if scenePhase != .active, pinchStart != nil { finishSizing(in: viewport) }
+                prepare(visiblePages, in: viewport)
+            }
             .onChange(of: running) { _, active in
                 guard active else { driver.stop(); return }
-                guard !pages.isEmpty else { running = false; return }
+                guard !pages.isEmpty, !ReaderSizeStatus(scale: scale, adjusting: pinchStart != nil).blocksNavigation else {
+                    running = false
+                    return
+                }
                 failedPage = nil
-                configure()
+                configure(viewport: viewport, proxy: proxy)
                 driver.start()
             }
             .overlay {
@@ -93,37 +146,95 @@ struct ContinuousReader: View {
                             self.failedPage = nil
                         }
                         .buttonStyle(.borderedProminent)
-                        .frame(minHeight: 44)
                     }
-                    .padding(20)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+                    .padding(14)
+                    .modifier(GlassPanel(cornerRadius: 18))
                 }
             }
-            .onDisappear { driver.disconnect(); imagePreparation.stop(); running = false }
+            .onDisappear {
+                if pinchStart != nil { finishSizing(in: viewport) }
+                driver.disconnect()
+                imagePreparation.stop()
+            }
         }
     }
 
-    private func configure() {
+    private func configure(viewport: CGSize, proxy: ScrollViewProxy) {
         driver.lastPage = pages.last?.index
         driver.secondsPerScreen = settings.autoScrollSecondsPerScreen
         driver.continueOnDrag = settings.continueAutoScrollOnDrag
         driver.onPage = { index in if page != index { page = index } }
         driver.onVisiblePages = { range in
             visiblePages = range
-            prepare(range)
+            prepare(range, in: viewport)
         }
         driver.onStop = { reason in
             if case .failed(let index) = reason { failedPage = index }
             running = false
         }
+        driver.onPinch = { gesture, y in
+            switch gesture.state {
+            case .began:
+                driver.stop()
+                running = false
+                pinchStart = PinchStart(scale: scale, anchor: driver.resizeAnchor(at: y))
+                onSizeChanged(ReaderSizeStatus(scale: scale, adjusting: true))
+            case .changed:
+                guard let start = pinchStart else { return }
+                resize(to: start.scale * gesture.scale, in: viewport, anchor: start.anchor, viewportY: y)
+            case .ended:
+                if let start = pinchStart {
+                    resize(to: start.scale * gesture.scale, in: viewport, anchor: start.anchor)
+                    finishSizing(in: viewport)
+                }
+            case .cancelled, .failed:
+                if pinchStart != nil { finishSizing(in: viewport) }
+            default:
+                break
+            }
+        }
+        driver.onHorizontalPan = { delta in
+            guard pinchStart == nil else { return }
+            horizontalPosition = min(max(horizontalPosition + delta, -1), 1)
+            driver.userInteractionStarted()
+            onInteraction()
+        }
+        driver.onMissingResizeRow = { index in
+            // SwiftUI may have recycled the anchor while shrinking the stack.
+            DispatchQueue.main.async { proxy.scrollTo(index, anchor: .top) }
+        }
     }
 
-    private func prepare(_ range: ClosedRange<Int>?) {
+    private func resize(to proposed: CGFloat, in viewport: CGSize, anchor: ReaderScrollDriver.ResizeAnchor?,
+                        viewportY: CGFloat? = nil) {
+        let next = ReaderPageSizing.clamp(proposed)
+        guard next != scale else { return }
+        if let anchor {
+            let width = ReaderPageSizing.width(in: viewport, aspectRatio: anchor.aspectRatio, scale: next)
+            driver.preserve(anchor, width: width, viewportY: viewportY)
+        }
+        scale = next
+        onSizeChanged(ReaderSizeStatus(scale: next, adjusting: pinchStart != nil))
+    }
+
+    private func finishSizing(in viewport: CGSize) {
+        pinchStart = nil
+        settledScale = scale
+        if settings.keepContinuousPageSize { settings.continuousPageScale = Double(scale) }
+        onSizeChanged(ReaderSizeStatus(scale: scale))
+        prepare(visiblePages, in: viewport)
+    }
+
+    private func prepare(_ range: ClosedRange<Int>?, in viewport: CGSize) {
         guard scenePhase == .active, let range else { imagePreparation.stop(); return }
-        let urls = pages.dropFirst(range.upperBound + 1).prefix(ReaderImagePreparation.turns).compactMap(\.url)
-        imagePreparation.prepare(urls.map { url in
-            .init(request: ReaderStripImages.request(for: url, priority: .low),
-                  enhancement: imageOptions.enhancement(for: url, continuous: true))
+        guard pinchStart == nil else { return }
+        let next = pages.dropFirst(range.upperBound + 1).prefix(ReaderImagePreparation.turns)
+        imagePreparation.prepare(next.compactMap { item in
+            guard let url = item.url else { return nil }
+            let request = ReaderStripImages.request(for: url, priority: .low)
+            return .init(request: request, enhancement: imageOptions.enhancement(
+                for: url, continuousViewport: viewport, continuousScale: settledScale
+            ))
         })
     }
 }
@@ -132,8 +243,13 @@ private struct ContinuousReaderPage: View {
     let item: ReaderPage
     let retry: Int
     let knownRatio: CGFloat?
-    let enhancement: ReaderImageEnhancement?
+    let viewport: CGSize
+    let scale: CGFloat
+    let settledScale: CGFloat
+    let horizontalPosition: CGFloat
+    let imageOptions: ReaderImageOptions
     let enhanceNow: Bool
+    let driver: ReaderScrollDriver
     let onLoad: (RemoteImageLoadState) -> Void
     @State private var loadedRatio: CGFloat?
 
@@ -141,21 +257,34 @@ private struct ContinuousReaderPage: View {
         let value = loadedRatio ?? knownRatio ?? item.url.flatMap {
             ReaderStripImages.cachedAspectRatio(for: ReaderStripImages.request(for: $0))
         } ?? item.aspectRatio
-        return value.isFinite && value > 0 ? value : 0.7
+        return ReaderPageSizing.aspectRatio(value)
     }
 
     var body: some View {
+        let aspect = ratio
+        let width = ReaderPageSizing.width(in: viewport, aspectRatio: aspect, scale: scale)
+        let travel = ReaderPageSizing.travel(viewportWidth: viewport.width, imageWidth: width)
         Color.clear
-            .aspectRatio(ratio, contentMode: .fit)
+            .frame(width: width, height: width / aspect)
             .overlay {
                 RemoteImage(url: item.url, contentMode: .fit, targetWidth: nil, retryOnFailure: true,
                             makeRequest: { ReaderStripImages.request(for: $0) },
-                            enhancement: enhancement, enhanceNow: enhanceNow) { state in
+                            enhancement: item.url.flatMap { imageOptions.enhancement(
+                                for: $0, continuousViewport: viewport, continuousScale: settledScale
+                            ) },
+                            enhanceNow: enhanceNow) { state in
                     if case .ready(let size) = state, size.width > 0, size.height > 0 { loadedRatio = size.width / size.height }
                     onLoad(state)
                 }
                 .id(retry)
             }
+            // The driver's ready check measures the image's width. The outer
+            // frame covers the black margins as part of the same scroll view.
+            .background(ReaderPageAnchor(index: item.index, driver: driver).allowsHitTesting(false))
+            .offset(x: horizontalPosition * travel)
+            .frame(width: max(1, viewport.width))
+            .clipped()
+            .contentShape(Rectangle())
             .onAppear { if item.url == nil { onLoad(.failed) } }
     }
 }

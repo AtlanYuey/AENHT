@@ -102,7 +102,9 @@ struct GalleryDetailView: View {
     @State private var titleTranslation: Translation?
     @State private var showsOriginalTitle = false
     /// A wide page (a tablet held sideways): the details on the left, the pages on the right.
-    @State private var wide = false
+    @State private var viewport: CGSize = .zero
+    @State private var pageGridPosition: Int?
+    @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(UserSession.self) private var session
@@ -113,8 +115,14 @@ struct GalleryDetailView: View {
     }
 
     private var item: GalleryItem? { model.preview ?? model.detail?.asItem }
+    private var split: WideGalleryPage? {
+        guard settings.tabletDetailLayout, WideGalleryPage.fits(viewport) else { return nil }
+        return WideGalleryPage(viewport: viewport, compactPages: pagesOnRight && settings.compactTabletPages)
+    }
+    private var pagesOnRight: Bool { settings.tabletDetailContent == .pages }
 
     var body: some View {
+        let split = split
         HStack(alignment: .top, spacing: 0) {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -123,19 +131,10 @@ struct GalleryDetailView: View {
                     actions(detail)
                     InfoStrip(detail: detail, favorites: model.numFavorites)
                     TagsSection(detail: detail)
-                    // Wide: the pages have the right half to themselves.
-                    if !wide { PreviewSection(detail: detail) }
-                    // Its translations and other versions, then galleries like it.
-                    if !model.versions.isEmpty {
-                        SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
-                        PopularRow(items: model.versions, cutEdges: wide ? .trailing : [])
+                    if split == nil || !pagesOnRight { PreviewSection(detail: detail) }
+                    if split == nil || pagesOnRight {
+                        relatedContent(detail, cutEdges: split == nil ? [] : .trailing)
                     }
-                    if !detail.related.isEmpty {
-                        SectionTitle(title: "More Like This")
-                        PopularRow(items: detail.related.filter { item in !model.versions.contains { $0.id == item.id } },
-                                   cutEdges: wide ? .trailing : [])
-                    }
-                    CommentsPreview(detail: detail, comments: model.comments)
                 } else if let error = model.error {
                     ContentUnavailableView {
                         Label("Couldn't Load", systemImage: "wifi.exclamationmark")
@@ -161,20 +160,13 @@ struct GalleryDetailView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        if wide, let detail = model.detail {
-            // The pages run the full height, blurring out under the bars.
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    SectionHeader(title: "Pages") { EmptyView() }
-                    PageGrid(detail: detail).padding(.horizontal)
-                }
-                .padding(.bottom, 24)
-            }
-            .paneScrollEdges()
-            .frame(maxWidth: .infinity)
+        if let split, let detail = model.detail {
+            rightPane(detail, layout: split)
+                .paneScrollEdges()
+                .frame(width: split.rightWidth)
         }
         }
-        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
         .background(LeavingPageIgnoresTouches().frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
         .barToolbar {
@@ -204,6 +196,40 @@ struct GalleryDetailView: View {
         } message: {
             Text(model.actionError ?? "")
         }
+    }
+
+    @ViewBuilder
+    private func rightPane(_ detail: GalleryDetail, layout: WideGalleryPage) -> some View {
+        if pagesOnRight {
+            ScrollView {
+                SectionHeader(title: "Pages") { EmptyView() }
+                PageGrid(detail: detail, compactThumbnailWidth: layout.compactThumbnailWidth)
+                    .padding(.horizontal, WideGalleryPage.thumbnailInset)
+                    .padding(.bottom, 24)
+            }
+            .followsReader(gallery: "nh:\(detail.id)", position: $pageGridPosition)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    relatedContent(detail, cutEdges: .leading)
+                }
+                .padding(.bottom, 24)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func relatedContent(_ detail: GalleryDetail, cutEdges: Edge.Set) -> some View {
+        if !model.versions.isEmpty {
+            SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
+            PopularRow(items: model.versions, cutEdges: cutEdges)
+        }
+        let similar = detail.related.filter { item in !model.versions.contains { $0.id == item.id } }
+        if !similar.isEmpty {
+            SectionTitle(title: "More Like This")
+            PopularRow(items: similar, cutEdges: cutEdges)
+        }
+        CommentsPreview(detail: detail, comments: model.comments)
     }
 
     // MARK: Header
@@ -663,7 +689,6 @@ private struct PreviewSection: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
-    @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row (the one being read, see followsReader).
     @State private var centered: Int?
     /// Where the row was when its title took it to the first page.
@@ -683,14 +708,13 @@ private struct PreviewSection: View {
             // A row of every page, swiped sideways (like the previous version).
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 10) {
-                    ForEach(Array(detail.pages.enumerated()), id: \.offset) { index, page in
+                    ForEach(Array(detail.pages.enumerated()), id: \.offset) { _, page in
                         NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
                             VStack(spacing: 6) {
                                 RemoteImage(url: downloads.localURL(gallery: detail.id, page: page.number - 1) ?? page.thumbURL,
                                             contentMode: .fill, targetWidth: 240)
                                     .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                                    .readerThumbSource(gallery: "nh:\(detail.id)", page: index, namespace)
                                 Text("\(page.number)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -730,15 +754,16 @@ private struct PreviewSection: View {
 struct PageGrid: View {
     let detail: GalleryDetail
     var limit: Int? = nil
+    var compactThumbnailWidth: CGFloat? = nil
 
     @Environment(DownloadManager.self) private var downloads
-    @Environment(\.galleryNamespace) private var namespace
+    @State private var progress = ReaderProgress.shared
 
     var body: some View {
         let source = ReaderSource(detail: detail)
         let pages = limit.map { Array(detail.pages.prefix($0)) } ?? detail.pages
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96, maximum: 160), spacing: 10, alignment: .top)],
-                  spacing: 14) {
+        let current = progress.point(gallery: "nh:\(detail.id)")?.page
+        LazyVGrid(columns: WideGalleryPage.pageColumns(compactWidth: compactThumbnailWidth, maximum: 160), spacing: 14) {
             ForEach(pages) { page in
                 NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
                     VStack(spacing: 4) {
@@ -749,26 +774,30 @@ struct PageGrid: View {
                                             contentMode: .fit, targetWidth: 240)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .readerThumbSource(gallery: "nh:\(detail.id)", page: page.number - 1, namespace)
+                            .outlineReadPage(current == page.number - 1)
                         Text("\(page.number)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }
                 .buttonStyle(.plain)
+                .id(page.number - 1)
             }
         }
+        .scrollTargetLayout()
     }
 }
 
 struct PagesView: View {
     let detail: GalleryDetail
+    @State private var position: Int?
 
     var body: some View {
         ScrollView {
             PageGrid(detail: detail)
                 .padding()
         }
+        .followsReader(gallery: "nh:\(detail.id)", position: $position)
         .navigationTitle("Pages")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -815,10 +844,25 @@ private struct CommentsPreview: View {
     }
 }
 
-/// When a gallery page is wide enough for two halves side by side (a tablet
-/// held sideways, not half of Split View): the details and the pages.
-enum WideGalleryPage {
-    static func fits(_ size: CGSize) -> Bool {
-        size.width >= 960 && size.width > size.height
+extension WideGalleryPage {
+    static func pageColumns(compactWidth: CGFloat?, maximum: CGFloat = .infinity) -> [GridItem] {
+        if let compactWidth {
+            let item = GridItem(.fixed(compactWidth), spacing: thumbnailSpacing, alignment: .top)
+            return Array(repeating: item, count: 3)
+        }
+        return [GridItem(.adaptive(minimum: thumbnailMinimum, maximum: maximum), spacing: thumbnailSpacing, alignment: .top)]
+    }
+}
+
+extension View {
+    func outlineReadPage(_ current: Bool) -> some View {
+        overlay {
+            if current {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.accentColor, lineWidth: 3)
+                    .allowsHitTesting(false)
+            }
+        }
+        .accessibilityAddTraits(current ? .isSelected : [])
     }
 }

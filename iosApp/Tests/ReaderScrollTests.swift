@@ -63,6 +63,22 @@ final class ReaderScrollTests: XCTestCase {
         return (driver, scroll, rows)
     }
 
+    func testPinchingKeepsTheReadingPointInTheSamePage() throws {
+        let (driver, scroll, rows) = fixture()
+        defer { driver.disconnect() }
+        scroll.setContentOffset(CGPoint(x: 0, y: 2500), animated: false)
+        let anchor = try XCTUnwrap(driver.resizeAnchor(at: 300))
+        XCTAssertEqual(anchor.index, 1)
+        XCTAssertEqual(anchor.fraction, 0.4, accuracy: 0.001)
+        driver.preserve(anchor, width: 200)
+        driver.reportPage()
+        XCTAssertEqual(scroll.contentOffset.y, 2500, accuracy: 0.5)
+        rows[1].frame = CGRect(x: 100, y: 1000, width: 200, height: 1000)
+        driver.register(index: 1, view: rows[1])
+        driver.reportPage()
+        XCTAssertEqual(scroll.contentOffset.y, 1100, accuracy: 0.5)
+    }
+
     func testFastMotionHasTheSameSpeedAt60And120Hz() {
         for hz in [60, 120] {
             var motion = ReaderScrollMotion()

@@ -1,10 +1,23 @@
 import SwiftUI
 import UIKit
 
-/// Owns only automatic pixel motion. Explicit page jumps continue to use ScrollViewReader.
+/// Drives pixel scrolling and preserves the reading point across image size changes.
 @MainActor
-final class ReaderScrollDriver: NSObject {
+final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     enum StopReason { case finished, failed(Int), interaction, resized }
+    struct ResizeAnchor {
+        let index: Int
+        let fraction: CGFloat
+        let aspectRatio: CGFloat
+        let viewportY: CGFloat
+    }
+
+    private struct PendingResize {
+        let anchor: ResizeAnchor
+        let width: CGFloat
+        let viewportY: CGFloat
+        var requestedRow = false
+    }
     private enum ImageStatus { case loading, ready(CGSize), failed }
     private final class Anchor {
         weak var view: UIView?
@@ -21,6 +34,9 @@ final class ReaderScrollDriver: NSObject {
     var onPage: ((Int) -> Void)?
     var onVisiblePages: ((ClosedRange<Int>) -> Void)?
     var onStop: ((StopReason) -> Void)?
+    var onPinch: ((UIPinchGestureRecognizer, CGFloat) -> Void)?
+    var onHorizontalPan: ((CGFloat) -> Void)?
+    var onMissingResizeRow: ((Int) -> Void)?
     private(set) var running = false
     private(set) var knownRatios: [Int: CGFloat] = [:]
     private weak var scrollView: UIScrollView?
@@ -34,18 +50,27 @@ final class ReaderScrollDriver: NSObject {
     private var lastVisiblePages: ClosedRange<Int>?
     private var reportScheduled = false
     private var viewportWidth: CGFloat = 0
+    private var pendingResize: PendingResize?
+    private var originalPanTouches: Int?
+    private var horizontalTravel: CGFloat = 0
+    private lazy var pinch = UIPinchGestureRecognizer(target: self, action: #selector(didPinch(_:)))
+    private lazy var horizontalPan = UIPanGestureRecognizer(target: self, action: #selector(didPan(_:)))
 
     func register(index: Int, view: UIView) {
         if anchors[index]?.view !== view { anchors[index] = Anchor(view) }
         var ancestor = view.superview
         while let current = ancestor {
             if let scroll = current as? UIScrollView {
-                scrollView = scroll
+                connect(to: scroll)
                 break
             }
             ancestor = current.superview
         }
-        // Registration occurs during SwiftUI layout; publish the page on the next main-loop turn.
+        scheduleReport()
+    }
+
+    private func scheduleReport() {
+        // Registration occurs during SwiftUI layout; publish after that layout.
         guard !running, !reportScheduled else { return }
         reportScheduled = true
         DispatchQueue.main.async { [weak self] in
@@ -100,6 +125,116 @@ final class ReaderScrollDriver: NSObject {
         lastVisiblePages = nil
         lastReportedPage = nil
         onStop = nil
+        onPinch = nil
+        onHorizontalPan = nil
+        onMissingResizeRow = nil
+        pendingResize = nil
+        detachGestures()
+    }
+
+    private func connect(to scroll: UIScrollView) {
+        guard scrollView !== scroll else { return }
+        detachGestures()
+        scrollView = scroll
+        originalPanTouches = scroll.panGestureRecognizer.maximumNumberOfTouches
+        scroll.panGestureRecognizer.maximumNumberOfTouches = 1
+        pinch.delegate = self
+        horizontalPan.delegate = self
+        horizontalPan.maximumNumberOfTouches = 1
+        scroll.addGestureRecognizer(pinch)
+        scroll.addGestureRecognizer(horizontalPan)
+    }
+
+    private func detachGestures() {
+        if let scroll = scrollView {
+            if let originalPanTouches { scroll.panGestureRecognizer.maximumNumberOfTouches = originalPanTouches }
+            scroll.removeGestureRecognizer(pinch)
+            scroll.removeGestureRecognizer(horizontalPan)
+        }
+        scrollView = nil
+        originalPanTouches = nil
+    }
+
+    @objc private func didPinch(_ gesture: UIPinchGestureRecognizer) {
+        guard let scroll = scrollView else { return }
+        onPinch?(gesture, gesture.location(in: scroll).y - scroll.bounds.minY)
+    }
+
+    @objc private func didPan(_ gesture: UIPanGestureRecognizer) {
+        guard let scroll = scrollView else { return }
+        if gesture.state == .began {
+            let y = gesture.location(in: scroll).y
+            let rows = frames(in: scroll)
+            let row = rows.first { $0.rect.minY <= y && y < $0.rect.maxY }
+                ?? rows.first { $0.index == lastReportedPage }
+            horizontalTravel = row.map { ReaderPageSizing.travel(viewportWidth: scroll.bounds.width, imageWidth: $0.rect.width) } ?? 0
+        }
+        guard gesture.state == .began || gesture.state == .changed else { return }
+        let dx = gesture.translation(in: scroll).x
+        gesture.setTranslation(.zero, in: scroll)
+        if horizontalTravel > 1 { onHorizontalPan?(dx / horizontalTravel) }
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === horizontalPan else { return true }
+        let velocity = horizontalPan.velocity(in: scrollView)
+        return abs(velocity.x) > abs(velocity.y) * 1.4
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        other === scrollView?.panGestureRecognizer
+    }
+
+    func resizeAnchor(at viewportY: CGFloat? = nil) -> ResizeAnchor? {
+        guard let scroll = scrollView else { return nil }
+        let y = min(max(0, viewportY ?? scroll.bounds.height / 2), scroll.bounds.height)
+        let contentY = scroll.bounds.minY + y
+        guard let row = frames(in: scroll).min(by: {
+            distance(from: contentY, to: $0.rect) < distance(from: contentY, to: $1.rect)
+        }) else { return nil }
+        return ResizeAnchor(index: row.index,
+                            fraction: min(max((contentY - row.rect.minY) / row.rect.height, 0), 1),
+                            aspectRatio: row.rect.width / row.rect.height, viewportY: y)
+    }
+
+    private func distance(from y: CGFloat, to rect: CGRect) -> CGFloat {
+        max(0, max(rect.minY - y, y - rect.maxY))
+    }
+
+    func preserve(_ anchor: ResizeAnchor, width: CGFloat, viewportY: CGFloat? = nil) {
+        let requested = pendingResize?.anchor.index == anchor.index && pendingResize?.requestedRow == true
+        pendingResize = PendingResize(anchor: anchor, width: width, viewportY: viewportY ?? anchor.viewportY,
+                                      requestedRow: requested)
+        scheduleReport()
+    }
+
+    func cancelResize() { pendingResize = nil }
+
+    private func restorePosition(in scroll: UIScrollView, rows: [(index: Int, rect: CGRect)]) -> Bool {
+        guard var pending = pendingResize else { return true }
+        guard let row = rows.first(where: { $0.index == pending.anchor.index }) else {
+            if !pending.requestedRow {
+                pending.requestedRow = true
+                pendingResize = pending
+                onMissingResizeRow?(pending.anchor.index)
+            }
+            return false
+        }
+        // A newly decoded image can replace the aspect ratio during a pinch.
+        let observedAspect = row.rect.width / row.rect.height
+        guard abs(row.rect.width - pending.width) < 1 || abs(observedAspect - pending.anchor.aspectRatio) > 0.01 else {
+            return false
+        }
+        pendingResize = nil
+        let minimum = -scroll.adjustedContentInset.top
+        let maximum = max(minimum, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)
+        let y = row.rect.minY + row.rect.height * pending.anchor.fraction - pending.viewportY
+        let target = min(max(y, minimum), maximum)
+        if abs(target - scroll.contentOffset.y) > 0.5 {
+            scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: target), animated: false)
+        }
+        return true
     }
 
     func userInteractionStarted() {
@@ -125,9 +260,10 @@ final class ReaderScrollDriver: NSObject {
 
     func reportPage() {
         guard let scroll = scrollView else { return }
+        let rows = frames(in: scroll)
+        guard restorePosition(in: scroll, rows: rows) else { return }
         let top = scroll.contentOffset.y + scroll.adjustedContentInset.top
         let bottom = scroll.contentOffset.y + scroll.bounds.height - scroll.adjustedContentInset.bottom
-        let rows = frames(in: scroll)
         func isVisible(_ row: (index: Int, rect: CGRect)) -> Bool {
             row.rect.maxY > top + 0.5 && row.rect.minY < bottom
         }

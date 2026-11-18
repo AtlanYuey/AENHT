@@ -3,3 +3,17 @@
 
 "This Android version can't decode AVIF images. These pages were not marked as downloaded." = "This Android version can't decode AVIF images. These pages were not marked as downloaded.";
 "The logout couldn't be saved. Your account is still signed in." = "The logout couldn't be saved. Your account is still signed in.";
+
+"Tablet Layout" = "Tablet Layout";
+"Tablet Layout on Home" = "Tablet Layout on Home";
+"Shows the two pinned rows side by side when the home screen has room." = "Shows the two pinned rows side by side when the home screen has room.";
+"Tablet Layout for Gallery Details" = "Tablet Layout for Gallery Details";
+"Right Pane" = "Right Pane";
+"Related Works and Comments" = "Related Works and Comments";
+"Pane Width" = "Pane Width";
+"Equal Panes" = "Equal Panes";
+"Three Columns of Pages" = "Three Columns of Pages";
+"The three-column pane keeps the original thumbnail size." = "The three-column pane keeps the original thumbnail size.";
+"Reset Page Size" = "Reset Page Size";
+"Keep Page Size" = "Keep Page Size";
+"Remember the size you set with two fingers for continuous reading on this device." = "Remember the size you set with two fingers for continuous reading on this device.";

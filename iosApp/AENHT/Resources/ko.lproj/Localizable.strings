@@ -570,3 +570,17 @@
 "Auto Scroll Paused" = "자동 스크롤이 일시 정지됨";
 "Continue Auto Scroll While Dragging" = "수동 스크롤 후에도 자동 스크롤 유지";
 "Speed may be too fast for comfortable reading" = "너무 빨라 정상적으로 읽기 어려울 수 있습니다";
+
+"Tablet Layout" = "태블릿 레이아웃";
+"Tablet Layout on Home" = "홈에 태블릿 레이아웃 사용";
+"Shows the two pinned rows side by side when the home screen has room." = "공간이 충분할 때 고정된 두 줄을 나란히 표시합니다.";
+"Tablet Layout for Gallery Details" = "작품 상세에 태블릿 레이아웃 사용";
+"Right Pane" = "오른쪽 패널";
+"Related Works and Comments" = "관련 작품 및 댓글";
+"Pane Width" = "패널 너비";
+"Equal Panes" = "같은 너비의 패널";
+"Three Columns of Pages" = "페이지를 3열로 표시";
+"The three-column pane keeps the original thumbnail size." = "3열 패널에서도 썸네일 크기를 유지합니다.";
+"Reset Page Size" = "페이지 크기 재설정";
+"Keep Page Size" = "페이지 크기 유지";
+"Remember the size you set with two fingers for continuous reading on this device." = "연속 읽기에서 두 손가락으로 조정한 크기를 이 기기에 저장합니다.";
