@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// The Me tab. On a wide screen (an iPad held sideways) it is two columns:
 /// the Me page on the left, and on the right the page of the entry chosen
@@ -9,14 +10,22 @@ import SwiftUI
 struct MoreTab: View {
     static let columnWidth: CGFloat = 400
 
-    @State private var wide = false
+    @State private var size: CGSize = .zero
     @State private var page: MorePage? = .overview
+    @Environment(AppSettings.self) private var settings
+
+    /// An iPad held sideways: Tablet Layout is offered.
+    private var tabletLandscape: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && size.width > size.height
+    }
+
+    private var wide: Bool { settings.tabletMe && WideGalleryPage.fits(size) }
 
     var body: some View {
         Group {
             if wide {
                 NavigationSplitView(columnVisibility: .constant(.all)) {
-                    MoreView(selection: $page)
+                    MoreView(selection: $page, showsTabletLayout: tabletLandscape)
                         .navigationSplitViewColumnWidth(Self.columnWidth)
                         .toolbar(removing: .sidebarToggle)
                         // The tab bar is at the bottom of this column.
@@ -34,11 +43,15 @@ struct MoreTab: View {
                 .navigationSplitViewStyle(.balanced)
             } else {
                 RoutedNavigationStack {
-                    MoreView().galleryDestinations()
+                    MoreView(showsTabletLayout: tabletLandscape).galleryDestinations()
                 }
             }
         }
-        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+        // Turned upright on the Tablet Layout page: back to the overview (its entry is gone).
+        .onChange(of: tabletLandscape) { _, shown in
+            if !shown, page == .tabletLayout { page = .overview }
+        }
     }
 }
 

@@ -285,6 +285,23 @@ enum ReadMode: String, CaseIterable, Identifiable {
     }
 }
 
+/// What the right half of a gallery page shows on a tablet held sideways.
+enum TabletDetailContent: String, CaseIterable, Identifiable {
+    /// Every page's thumbnail.
+    case pages
+    /// Other versions, galleries like it and the comments (the pages stay on the left).
+    case related
+
+    var id: Self { self }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .pages: "Pages"
+        case .related: "Other Versions, Similar and Comments"
+        }
+    }
+}
+
 /// App settings, persisted in UserDefaults.
 @Observable
 final class AppSettings {
@@ -324,6 +341,28 @@ final class AppSettings {
     var autoReadInterval: Double { didSet { save(autoReadInterval, "autoReadInterval") } }
     var autoScrollSecondsPerScreen: Double { didSet { save(autoScrollSecondsPerScreen, "autoScrollSecondsPerScreen") } }
     var continueAutoScrollOnDrag: Bool { didSet { save(continueAutoScrollOnDrag, "continueAutoScrollOnDrag") } }
+    /// Continuous modes: the page size set with two fingers stays (across pages and readers).
+    var keepContinuousPageSize: Bool {
+        didSet {
+            defaults.set(keepContinuousPageSize, forKey: "keepContinuousPageSize")
+            if !keepContinuousPageSize { continuousPageScale = 1 }
+        }
+    }
+    /// That size, against the default one (a whole page on screen).
+    var continuousPageScale: Double { didSet { defaults.set(continuousPageScale, forKey: "continuousPageScale") } }
+
+    // Tablet Layout (an iPad held sideways). The screen is this device's: not synced.
+    /// Home: the two pinned rows side by side.
+    var tabletHome: Bool { didSet { defaults.set(tabletHome, forKey: "tabletHome") } }
+    /// Gallery pages: details on the left, [tabletDetailContent] on the right.
+    var tabletDetail: Bool { didSet { defaults.set(tabletDetail, forKey: "tabletDetail") } }
+    var tabletDetailContent: TabletDetailContent {
+        didSet { defaults.set(tabletDetailContent.rawValue, forKey: "tabletDetailContent") }
+    }
+    /// The pages on the right: three columns of the usual thumbnails, not half the page.
+    var tabletNarrowPages: Bool { didSet { defaults.set(tabletNarrowPages, forKey: "tabletNarrowPages") } }
+    /// Me: the list on the left, the chosen page on the right.
+    var tabletMe: Bool { didSet { defaults.set(tabletMe, forKey: "tabletMe") } }
     var preloadPages: Int { didSet { save(preloadPages, "preloadPages") } }
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
@@ -479,6 +518,13 @@ final class AppSettings {
         autoReadInterval = d.object(forKey: "autoReadInterval") as? Double ?? 3
         autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: d.object(forKey: "autoScrollSecondsPerScreen") as? Double ?? 10)
         continueAutoScrollOnDrag = d.bool(forKey: "continueAutoScrollOnDrag")
+        keepContinuousPageSize = d.object(forKey: "keepContinuousPageSize") as? Bool ?? true
+        continuousPageScale = d.object(forKey: "continuousPageScale") as? Double ?? 1
+        tabletHome = d.object(forKey: "tabletHome") as? Bool ?? true
+        tabletDetail = d.object(forKey: "tabletDetail") as? Bool ?? true
+        tabletDetailContent = TabletDetailContent(rawValue: d.string(forKey: "tabletDetailContent") ?? "") ?? .pages
+        tabletNarrowPages = d.bool(forKey: "tabletNarrowPages")
+        tabletMe = d.object(forKey: "tabletMe") as? Bool ?? true
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true

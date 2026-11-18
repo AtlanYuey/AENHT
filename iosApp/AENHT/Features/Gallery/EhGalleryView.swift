@@ -129,8 +129,14 @@ struct EhGalleryView: View {
     }
     @State private var editingNote = false
     @State private var note = ""
-    /// A wide page (a tablet held sideways): the details on the left, the pages on the right.
-    @State private var wide = false
+    /// The page's size: wide (a tablet held sideways), it is two halves (Me › Tablet Layout).
+    @State private var size: CGSize = .zero
+    /// What the right half shows, or nil: one column, as on a phone.
+    private var tablet: TabletDetailContent? {
+        settings.tabletDetail && WideGalleryPage.fits(size) ? settings.tabletDetailContent : nil
+    }
+    /// The left half's rows end at the right half (cut there).
+    private var wide: Bool { tablet != nil }
     @Environment(\.openURL) private var openURL
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -156,18 +162,10 @@ struct EhGalleryView: View {
                     actions(detail)
                     info(detail)
                     tags(detail)
-                    // Wide: the pages have the right half to themselves.
-                    if !wide { previews(detail) }
-                    // Its translations and other versions, then galleries like it.
-                    if !model.versions.isEmpty {
-                        SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
-                        PopularRow(items: model.versions, cutEdges: wide ? .trailing : [])
-                    }
-                    if !model.similar.isEmpty {
-                        SectionTitle(title: "More Like This")
-                        PopularRow(items: model.similar, cutEdges: wide ? .trailing : [])
-                    }
-                    comments(detail)
+                    // The pages, unless they have the right half to themselves.
+                    if tablet != .pages { previews(detail) }
+                    // The rest, unless it is the right half.
+                    if tablet != .related { related(detail, cut: wide ? .trailing : []) }
                 } else if let error = model.error {
                     ContentUnavailableView {
                         Label("Couldn't Load", systemImage: "wifi.exclamationmark")
@@ -201,15 +199,28 @@ struct EhGalleryView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        if wide, let detail = model.detail, let card = model.card {
-            // The pages run the full height, blurring out under the bars.
-            EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
-                        loaded: detail, embedded: true)
+        if let tablet, let detail = model.detail, let card = model.card {
+            switch tablet {
+            case .pages:
+                // The pages run the full height, blurring out under the bars.
+                let narrow = settings.tabletNarrowPages
+                EhPagesView(route: EhPagesRoute(gid: model.gid, token: model.token, pages: Int(detail.pages), card: card),
+                            loaded: detail, embedded: true, columns: narrow ? 3 : nil)
+                    .paneScrollEdges()
+                    .frame(width: narrow ? WideGalleryPage.threeColumnsWidth(page: size.width) : nil)
+                    .frame(maxWidth: narrow ? nil : .infinity)
+            case .related:
+                ScrollView {
+                    related(detail, cut: .leading)
+                        .padding(.top, 8)
+                        .padding(.bottom, 120)
+                }
                 .paneScrollEdges()
                 .frame(maxWidth: .infinity)
+            }
         }
         }
-        .onGeometryChange(for: Bool.self) { WideGalleryPage.fits($0.size) } action: { wide = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .background(LeavingPageIgnoresTouches().frame(width: 0, height: 0))
         .navigationBarTitleDisplayMode(.inline)
         .barToolbar {
@@ -532,6 +543,21 @@ struct EhGalleryView: View {
         }
     }
 
+    /// Its translations and other versions, galleries like it, the comments.
+    private func related(_ detail: EhGalleryDetail, cut: Edge.Set) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if !model.versions.isEmpty {
+                SectionTitle(title: "Other Versions", subtitle: String(localized: "Translations and other editions of this gallery"))
+                PopularRow(items: model.versions, cutEdges: cut)
+            }
+            if !model.similar.isEmpty {
+                SectionTitle(title: "More Like This")
+                PopularRow(items: model.similar, cutEdges: cut)
+            }
+            comments(detail)
+        }
+    }
+
     // MARK: Comments
 
     private func comments(_ detail: EhGalleryDetail) -> some View {
@@ -629,7 +655,12 @@ struct EhPagesView: View {
     var loaded: EhGalleryDetail? = nil
     /// Part of the gallery page (with a heading), not a page of its own.
     var embedded = false
+    /// Fixed columns (three: the narrow pane), or as many as fit.
+    var columns: Int? = nil
     @Environment(\.galleryNamespace) private var namespace
+    /// The thumbnail kept in view: the page the reader is on (the reader closes into it).
+    @State private var position: Int?
+    @State private var progress = ReaderProgress.shared
     @State private var thumbs: [EhThumbnail] = []
     @State private var nextPage = 0
     @State private var loading = false
@@ -648,8 +679,11 @@ struct EhPagesView: View {
     private var grid: some View {
         ScrollView {
             if embedded { SectionHeader(title: "Pages") { EmptyView() } }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 14) {
-                ForEach(Array(thumbs.enumerated()), id: \.element.page) { index, thumb in
+            LazyVGrid(columns: columns.map { Array(repeating: GridItem(.flexible(), spacing: 10), count: $0) }
+                        ?? [GridItem(.adaptive(minimum: WideGalleryPage.thumbnail), spacing: 10)], spacing: 14) {
+                // Ids are page indexes (0-based): the grid follows the reader by them.
+                ForEach(Array(thumbs.map(IndexedThumb.init).enumerated()), id: \.element.id) { index, item in
+                    let thumb = item.thumb
                     Group {
                         if let detail {
                             NavigationLink(value: ReaderRoute(source: ReaderSource(eh: detail, card: route.card), page: Int(thumb.page) - 1)) {
@@ -663,8 +697,21 @@ struct EhPagesView: View {
                     .onAppear { if index >= thumbs.count - 6 { Task { await loadMore() } } }
                 }
             }
+            .scrollTargetLayout()
             .padding(embedded ? [.horizontal, .bottom] : .all)
             .padding(.bottom, embedded ? 16 : 0)
+        }
+        // While the reader is open, its page stays in view (loading the
+        // thumbnails up to it), so the reader closes into its thumbnail.
+        .scrollPosition(id: $position, anchor: .center)
+        .task(id: progress.page(gallery: "eh:\(route.gid)")) {
+            guard let page = progress.page(gallery: "eh:\(route.gid)") else { return }
+            while thumbs.count <= page, !Task.isCancelled {
+                let before = thumbs.count
+                await loadMore()
+                if thumbs.count == before { break }
+            }
+            position = page
         }
         .task {
             if detail == nil {

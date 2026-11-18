@@ -24,6 +24,8 @@ final class ReaderScrollDriver: NSObject {
     private(set) var running = false
     private(set) var knownRatios: [Int: CGFloat] = [:]
     private weak var scrollView: UIScrollView?
+    /// The strip's scroll view, once its pages are laid out (the reader's pinch is added to it).
+    var scroll: UIScrollView? { scrollView }
     private var anchors: [Int: Anchor] = [:]
     private var images: [Int: ImageStatus] = [:]
     private var motion = ReaderScrollMotion()

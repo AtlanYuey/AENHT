@@ -148,7 +148,7 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
             let pinned = pinnedRows
-            if wide, pinned.count == 2 {
+            if wide, settings.tabletHome, pinned.count == 2 {
                 // Wide (a tablet held sideways): the two rows side by side.
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(Array(pinned.enumerated()), id: \.element.id) { index, entry in

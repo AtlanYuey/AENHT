@@ -104,6 +104,14 @@ struct ReaderView: View {
     @State private var askPage = false
     @State private var pageText = ""
     @State private var notice: String?
+    /// The shown page's size (paged modes) against its fitted one.
+    @State private var pageZoom: ReaderZoom = .fitted
+    /// The continuous modes' page width against the default (a whole page on screen).
+    @State private var stripScale: CGFloat
+    /// The strip is narrower or wider than the screen: a sideways drag moves it (not a swipe action).
+    @State private var stripMovable = false
+    /// Counts Reset Size taps (paged modes).
+    @State private var sizeReset = 0
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -123,6 +131,9 @@ struct ReaderView: View {
         _page = State(initialValue: start)
         _scrollRequest = State(initialValue: ReaderScrollRequest(page: start))
         _sliderValue = State(initialValue: Double(start))
+        // Keep Page Size: the width set last time.
+        let settings = AppSettings.shared
+        _stripScale = State(initialValue: settings.keepContinuousPageSize ? CGFloat(settings.continuousPageScale) : 1)
     }
 
     private var pageCount: Int { source.pages.count }
@@ -161,6 +172,18 @@ struct ReaderView: View {
     }
     private var isRTL: Bool { settings.readMode == .rightToLeft }
 
+    /// The pages are bigger than usual: page turns and the back swipe wait.
+    private var isEnlarged: Bool {
+        settings.readMode.isPaged ? pageZoom == .enlarged : stripScale > 1.01
+    }
+
+    /// The pages aren't at their usual size: Reset Size shows.
+    private var isResized: Bool {
+        settings.readMode.isPaged ? pageZoom != .fitted : abs(stripScale - 1) > 0.01
+    }
+
+    private func resetSize() { sizeReset += 1 }
+
     var body: some View {
         readingInteractions
             .task(id: page) {
@@ -172,9 +195,16 @@ struct ReaderView: View {
             }
             .onChange(of: settings.readMode) {
                 autoRead = false
+                pageZoom = .fitted
                 scrollRequest = ReaderScrollRequest(page: page)
                 prefetch(around: page)
             }
+            // Enlarged, the back swipe from the edge waits (the finger moves the page).
+            .onChange(of: isEnlarged) { ReaderGestureLock.enlarged = isEnlarged }
+            .onChange(of: stripScale) {
+                if settings.keepContinuousPageSize { settings.continuousPageScale = Double(stripScale) }
+            }
+            .onDisappear { ReaderGestureLock.enlarged = false }
             .task(id: autoRead) { await runAutoRead() }
             .onAppear { AppChrome.shared.readersOpen += 1 }
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
@@ -342,11 +372,14 @@ struct ReaderView: View {
             }, onSwipeTurn: { forward in
                 chromeVisible = false
                 go(step(forward: forward))
+            }, sizeReset: sizeReset, onZoom: { zoom in
+                if pageZoom != zoom { pageZoom = zoom }
             })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)")
         } else {
             ContinuousReader(pages: source.pages, imageOptions: imageOptions, page: $page,
-                             request: scrollRequest, running: $autoRead) {
+                             request: scrollRequest, running: $autoRead, scale: $stripScale,
+                             movable: $stripMovable, resetRequest: sizeReset) {
                 chromeVisible = false
             }
             .contentShape(Rectangle())
@@ -381,6 +414,8 @@ struct ReaderView: View {
     /// and right tap zones, left and right with the top and bottom ones. A
     /// swipe along the way the pages move turns or scrolls them instead.
     private func handleSwipe(_ direction: UISwipeGestureRecognizer.Direction) {
+        // A strip that moves sideways: the drag moved it.
+        if !settings.readMode.isPaged, stripMovable { return }
         let vertical = settings.tapZones == .leftRight
         let pagesMoveVertically = settings.readMode != .leftToRight && settings.readMode != .rightToLeft
         guard vertical != pagesMoveVertically else { return }
@@ -541,6 +576,19 @@ struct ReaderView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                         .panelTarget()
+                }
+                if isResized {
+                    Spacer(minLength: 8)
+                    // Pinched smaller or bigger: back to the usual size.
+                    Button {
+                        resetSize()
+                    } label: {
+                        Label("Reset Size", systemImage: "arrow.up.left.and.down.right.magnifyingglass")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .panelTarget()
+                    }
+                    .transition(.opacity)
                 }
                 Spacer(minLength: 8)
                 Button {
@@ -822,6 +870,19 @@ struct ReadingSettingsSections: View {
     }
 
     @ViewBuilder private var controls: some View {
+        if settings.readMode.isPaged {
+            pagedControls
+        } else {
+            // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
+            Section {
+                Toggle("Keep Page Size", isOn: $settings.keepContinuousPageSize)
+            } footer: {
+                Text("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")
+            }
+        }
+    }
+
+    @ViewBuilder private var pagedControls: some View {
         Section {
             Toggle("Tap to Turn Pages", isOn: $settings.tapToTurnPages)
             Picker("Tap Zones", selection: $settings.tapZones) {
@@ -956,6 +1017,10 @@ struct PagedReader: UIViewControllerRepresentable {
     let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
     /// Fade on Swipe: a swipe the way the pages go turns them (forward or not).
     var onSwipeTurn: (Bool) -> Void = { _ in }
+    /// Counts the reader's Reset Size taps: the page goes back to its size.
+    var sizeReset = 0
+    /// The shown page became fitted, smaller or enlarged.
+    var onZoom: (ReaderZoom) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -968,6 +1033,8 @@ struct PagedReader: UIViewControllerRepresentable {
             options: [.interPageSpacing: 16]
         )
         controller.view.backgroundColor = .black
+        context.coordinator.pageViewController = controller
+        context.coordinator.lastSizeReset = sizeReset
         // Fade on Swipe: without a data source the pages can't be dragged (the swipe is the reader's).
         controller.dataSource = AppSettings.shared.swipeFades ? nil : context.coordinator
         controller.delegate = context.coordinator
@@ -982,6 +1049,12 @@ struct PagedReader: UIViewControllerRepresentable {
         let coordinator = context.coordinator
         coordinator.parent = self
         (controller.viewControllers?.first as? PageController)?.configure(imageOptions, active: isActive)
+        if coordinator.lastSizeReset != sizeReset {
+            // Reset Size: this page, and the ones after it, at their size.
+            coordinator.lastSizeReset = sizeReset
+            coordinator.smaller = 1
+            (controller.viewControllers?.first as? PageController)?.setSize(1, animated: true)
+        }
         defer { coordinator.prepare(after: page) }
         let swipeFades = AppSettings.shared.swipeFades
         if (controller.dataSource == nil) != swipeFades { controller.dataSource = swipeFades ? nil : coordinator }
@@ -1012,6 +1085,10 @@ struct PagedReader: UIViewControllerRepresentable {
         private let imagePreparation = ReaderImagePreparation()
         /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
         var pendingSweep: PageTurn?
+        weak var pageViewController: UIPageViewController?
+        var lastSizeReset = 0
+        /// A page made smaller makes the next ones as small (until Reset Size).
+        var smaller: CGFloat = 1
 
         init(_ parent: PagedReader) {
             self.parent = parent
@@ -1032,6 +1109,20 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         func stopPreparation() { imagePreparation.stop() }
+
+        /// The shown page's size: enlarged, it can't be turned by dragging
+        /// (the finger moves it); smaller, the next pages come as small.
+        private func zoomChanged(_ zoom: ReaderZoom, scale: CGFloat) {
+            switch zoom {
+            case .smaller: smaller = scale
+            case .fitted: smaller = 1
+            case .enlarged: break
+            }
+            if let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first {
+                pages.isScrollEnabled = zoom != .enlarged
+            }
+            parent.onZoom(zoom)
+        }
 
         /// A swipe of [t] ended: with Fade on Swipe, one the way the pages go
         /// turns them (left or up is forward, except right to left). Answers
@@ -1059,6 +1150,8 @@ struct PagedReader: UIViewControllerRepresentable {
             controller.onTap = { [weak self] point in self?.parent.onTap(point) }
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
+            controller.startingSize = { [weak self] in self?.smaller ?? 1 }
+            controller.onZoom = { [weak self] zoom, scale in self?.zoomChanged(zoom, scale: scale) }
             cache[index] = controller
             let current = parent.page
             cache = cache.filter { (current - 1...current + ReaderImagePreparation.turns).contains($0.key) || $0.key == index }
@@ -1211,6 +1304,10 @@ final class PageController: UIViewController {
     var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
     /// Fade on Swipe: a swipe's translation when it ended; answers whether it turned the page.
     var onSwipeTurn: ((CGPoint) -> Bool)?
+    /// The shown page's size changed (fitted, smaller, enlarged), and its zoom.
+    var onZoom: ((ReaderZoom, CGFloat) -> Void)?
+    /// The size a page shows at when it comes (the last page's, when made smaller).
+    var startingSize: () -> CGFloat = { 1 }
     private let zoomView = ZoomableImageView()
     private var options: ReaderImageOptions
     private var active: Bool
@@ -1238,7 +1335,17 @@ final class PageController: UIViewController {
         zoomView.onTap = { [weak self] point in self?.onTap?(point) }
         zoomView.onSwipe = { [weak self] direction in self?.onSwipe?(direction) }
         zoomView.onSwipeTurn = { [weak self] t in self?.onSwipeTurn?(t) ?? false }
+        zoomView.onZoom = { [weak self] zoom in
+            guard let self, visible else { return }
+            onZoom?(zoom, zoomView.zoomScale)
+        }
         zoomView.load(urls, rightToLeft: rightToLeft, options: options)
+    }
+
+    /// Back to the fitted size (the reader's Reset Size), or [scale].
+    func setSize(_ scale: CGFloat, animated: Bool) {
+        guard isViewLoaded else { return }
+        zoomView.setSize(scale, animated: animated)
     }
 
     func configure(_ options: ReaderImageOptions, active: Bool) {
@@ -1254,6 +1361,9 @@ final class PageController: UIViewController {
         super.viewWillAppear(animated)
         visible = true
         zoomView.updatePresentation(options, enhanceNow: active, refresh: true)
+        // As small as the page before it, when that one was made smaller.
+        zoomView.setSize(startingSize(), animated: false)
+        zoomView.reportCurrent()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -1307,13 +1417,21 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
     /// A swipe's translation when it ended; answers whether it turned the page (Fade on Swipe).
     var onSwipeTurn: ((CGPoint) -> Bool)?
+    /// The page's size changed between fitted, smaller and enlarged.
+    var onZoom: ((ReaderZoom) -> Void)?
+    private var reportedZoom: ReaderZoom = .fitted
+    /// The size the page was fitted to (its zoom is 1 there).
+    private var fittedSize: CGSize = .zero
 
     private static let doubleTapInterval: CFTimeInterval = 0.28
+    /// Enlarged: page turns and the back swipe wait until it is back to its size.
+    var isEnlarged: Bool { zoomScale > 1.01 }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
-        minimumZoomScale = 1
+        // Pinched smaller down to a size that still reads (readableMinimum), not out of the reader.
+        minimumZoomScale = ReaderZoom.smallestPaged
         maximumZoomScale = 4
         bouncesZoom = true
         showsVerticalScrollIndicator = false
@@ -1341,7 +1459,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap(_:))))
         swipeDelegate.isBlocked = { [weak self] in
             guard let self else { return true }
-            return zoomScale > minimumZoomScale + 0.01
+            return isEnlarged
         }
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         pan.delegate = swipeDelegate
@@ -1418,13 +1536,22 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         } else {
             imageView.image = image
         }
+        updateMinimum()
+        if zoomScale < minimumZoomScale { setZoomScale(minimumZoomScale, animated: false) }
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        if zoomScale == minimumZoomScale {
+        if bounds.size != fittedSize, bounds.width > 0 {
+            // A new size (turned, the first layout): fitted again, a smaller size kept.
+            fittedSize = bounds.size
+            let kept = min(zoomScale, 1)
+            if zoomScale != 1 { zoomScale = 1 }
             imageView.frame = CGRect(origin: .zero, size: bounds.size)
             contentSize = bounds.size
+            updateMinimum()
+            if kept < 1 { zoomScale = max(kept, minimumZoomScale) }
+            centerImage()
         }
         spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
         retryButton.sizeToFit()
@@ -1446,9 +1573,49 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     func resetZoom() {
         pendingTap?.cancel()
         pendingTap = nil
-        if zoomScale != minimumZoomScale {
-            setZoomScale(minimumZoomScale, animated: false)
+        if zoomScale != 1 {
+            setZoomScale(1, animated: false)
         }
+    }
+
+    /// Shows the page at [scale] (1: fitted; less: smaller, as the last page was).
+    func setSize(_ scale: CGFloat, animated: Bool) {
+        let target = min(max(scale, minimumZoomScale), maximumZoomScale)
+        if abs(zoomScale - target) > 0.001 { setZoomScale(target, animated: animated) }
+        report()
+    }
+
+    /// The smallest size: the pages as shown stay readable (see ReaderZoom).
+    private func updateMinimum() {
+        let fitted = fittedImageSize()
+        minimumZoomScale = ReaderZoom.minimumPaged(fitted: fitted)
+    }
+
+    /// The image as fitted in the page's bounds (zoom 1).
+    private func fittedImageSize() -> CGSize {
+        guard let image = imageView.image, image.size.width > 0, image.size.height > 0,
+              bounds.width > 0, bounds.height > 0 else { return bounds.size }
+        let fit = min(bounds.width / image.size.width, bounds.height / image.size.height)
+        return CGSize(width: image.size.width * fit, height: image.size.height * fit)
+    }
+
+    private func centerImage() {
+        let offsetX = max((bounds.width - contentSize.width) / 2, 0)
+        let offsetY = max((bounds.height - contentSize.height) / 2, 0)
+        imageView.center = CGPoint(x: contentSize.width / 2 + offsetX, y: contentSize.height / 2 + offsetY)
+    }
+
+    private func report() {
+        let zoom = ReaderZoom(scale: zoomScale)
+        guard zoom != reportedZoom else { return }
+        reportedZoom = zoom
+        onZoom?(zoom)
+    }
+
+    /// Asks again for the page's state (it became the shown page).
+    func reportCurrent() {
+        reportedZoom = ReaderZoom(scale: zoomScale)
+        onZoom?(reportedZoom)
     }
 
     func load(_ requested: [URL?], rightToLeft: Bool, options: ReaderImageOptions) {
@@ -1536,9 +1703,15 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        let offsetX = max((bounds.width - contentSize.width) / 2, 0)
-        let offsetY = max((bounds.height - contentSize.height) / 2, 0)
-        imageView.center = CGPoint(x: contentSize.width / 2 + offsetX, y: contentSize.height / 2 + offsetY)
+        centerImage()
+        report()
+    }
+
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+        // Almost its size: its size.
+        if abs(scale - 1) < 0.04, scale != 1 { setZoomScale(1, animated: true) }
+        // The size it was left at (the next pages come as small).
+        reportCurrent()
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
@@ -1547,7 +1720,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         // Position on screen (the scroll view's bounds move when zoomed).
         let point = CGPoint(x: location.x - bounds.minX, y: location.y - bounds.minY)
         let fraction = CGPoint(x: point.x / bounds.width, y: point.y / max(bounds.height, 1))
-        let zoomed = zoomScale > minimumZoomScale + 0.01
+        let zoomed = isEnlarged
 
         if !zoomed, ReaderTapZones.forward(at: fraction, rightToLeft: false) != nil {
             pendingTap?.cancel()
@@ -1578,8 +1751,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     private func toggleZoom(at point: CGPoint) {
-        if zoomScale > minimumZoomScale {
-            setZoomScale(minimumZoomScale, animated: true)
+        if abs(zoomScale - 1) > 0.01 {
+            setZoomScale(1, animated: true)
         } else {
             let scale: CGFloat = 2.5
             let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
@@ -1649,7 +1822,8 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     }
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        viewControllers.count > 1
+        // Not while a reader's page is enlarged: the finger moves the page.
+        viewControllers.count > 1 && !ReaderGestureLock.enlarged
     }
 }
 

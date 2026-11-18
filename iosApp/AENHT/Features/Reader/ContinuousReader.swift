@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A command, separate from observed reading progress. Only an explicit jump scrolls to an ID.
 struct ReaderScrollRequest: Equatable {
@@ -14,6 +15,12 @@ struct ContinuousReader: View {
     @Binding var page: Int
     let request: ReaderScrollRequest
     @Binding var running: Bool
+    /// The pages' width against the default one (a whole page on screen), pinched with two fingers.
+    @Binding var scale: CGFloat
+    /// The strip is narrower or wider than the screen: a sideways drag moves it.
+    @Binding var movable: Bool
+    /// Counts the reader's Reset Size taps: back to the default width.
+    let resetRequest: Int
     let onInteraction: () -> Void
 
     @Environment(AppSettings.self) private var settings
@@ -23,10 +30,31 @@ struct ContinuousReader: View {
     @State private var visiblePages: ClosedRange<Int>?
     @State private var retries: [Int: Int] = [:]
     @State private var failedPage: Int?
+    @State private var viewport: CGSize = .zero
+    @State private var pinch = StripPinch()
+
+    /// Most pages' shape (width / height), from what the gallery says.
+    private var typicalRatio: CGFloat {
+        let ratios = pages.prefix(12).map(\.aspectRatio).filter { $0.isFinite && $0 > 0 }.sorted()
+        return ratios.isEmpty ? 0.7 : ratios[ratios.count / 2]
+    }
+
+    /// The default width: a whole page on screen (the screen's width at most).
+    private var baseWidth: CGFloat { ContinuousSizing.baseWidth(viewport: viewport, ratio: typicalRatio) }
+
+    private func stripWidth(_ scale: CGFloat) -> CGFloat {
+        let base = baseWidth
+        return base * ContinuousSizing.clamp(scale, base: base)
+    }
+
+    /// Room at the sides of a strip narrower than the screen: the strip can
+    /// be moved across it (from the left edge to the right one).
+    private func sides(_ scale: CGFloat) -> CGFloat { max(0, viewport.width - stripWidth(scale)) }
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView(.vertical) {
+            // Both ways: a strip narrower or wider than the screen moves sideways too, with the system's inertia.
+            ScrollView([.vertical, .horizontal]) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
                     ForEach(pages) { item in
                         ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
@@ -45,13 +73,25 @@ struct ContinuousReader: View {
                         .id(item.index)
                     }
                 }
+                // Not laid out before the screen's size is known (scrolled both ways, nothing bounds the width).
+                .frame(width: viewport.width > 0 ? stripWidth(scale) : 1)
+                .padding(.horizontal, sides(scale))
             }
             .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .onScrollGeometryChange(for: CGRect.self) {
                 CGRect(origin: $0.contentOffset, size: $0.containerSize)
             } action: { _, new in
                 driver.viewportChanged(new.size)
             }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                let widthChanged = abs(viewport.width - size.width) > 1
+                viewport = size
+                // First laid out, or turned: the page being read at the top, the strip in the middle.
+                if widthChanged { DispatchQueue.main.async { proxy.scrollTo(page, anchor: .top) } }
+            }
+            .onChange(of: stripWidth(scale)) { updateMovable() }
+            .onChange(of: viewport) { updateMovable() }
             .onScrollPhaseChange { _, phase in
                 if phase == .interacting {
                     driver.userInteractionStarted()
@@ -63,6 +103,19 @@ struct ContinuousReader: View {
                 proxy.scrollTo(request.page, anchor: .top)
                 driver.reportPage()
             }
+            // The two-finger pinch goes on the strip's own scroll view (once
+            // its pages are laid out), like a page's: it isn't the reader's close.
+            .task {
+                for _ in 0..<40 where !pinch.isAttached {
+                    if let scroll = driver.scroll {
+                        scroll.isDirectionalLockEnabled = true
+                        pinch.attach(to: scroll)
+                    } else {
+                        try? await Task.sleep(for: .milliseconds(50))
+                    }
+                }
+            }
+            .onChange(of: resetRequest) { resize(to: 1, anchor: nil) }
             .onChange(of: request) { _, new in
                 driver.stop()
                 running = false
@@ -103,8 +156,66 @@ struct ContinuousReader: View {
         }
     }
 
+    private func updateMovable() {
+        let value = viewport.width > 0 && abs(stripWidth(scale) - viewport.width) > 1
+        if movable != value { movable = value }
+    }
+
+    /// A new width (pinched, or Reset Size): the point under the fingers
+    /// (or the middle of the screen) stays where it was. A picture of the
+    /// screen covers the moment the pages are laid out again.
+    private func resize(to new: CGFloat, anchor fingers: CGPoint?) {
+        let old = scale
+        guard let scroll = driver.scroll, viewport.width > 0, abs(new - old) > 0.001 else {
+            UIView.animate(withDuration: 0.25) { driver.scroll?.transform = .identity }
+            return
+        }
+        let anchor = fingers ?? CGPoint(x: viewport.width / 2, y: viewport.height / 2)
+        let cover = scroll.window.flatMap { window -> UIView? in
+            guard let picture = window.snapshotView(afterScreenUpdates: false) else { return nil }
+            picture.frame = window.bounds
+            picture.isUserInteractionEnabled = false
+            window.addSubview(picture)
+            return picture
+        }
+        scroll.transform = .identity
+        let oldWidth = stripWidth(old), newWidth = stripWidth(new)
+        let oldSides = sides(old), newSides = sides(new)
+        let factor = newWidth / max(oldWidth, 1)
+        let gap = settings.readMode == .verticalGap ? CGFloat(settings.pageGap) : 0
+        let gapsAbove = CGFloat(page) * gap
+        let offset = scroll.contentOffset
+        let inset = scroll.adjustedContentInset
+        // The point under the anchor, in the strip (from its left side and its top), before and after.
+        let x = offset.x + anchor.x - oldSides
+        let y = offset.y + anchor.y
+        let newX = x * factor + newSides
+        let newY = (y - gapsAbove) * factor + gapsAbove
+        scale = new
+        DispatchQueue.main.async {
+            scroll.layoutIfNeeded()
+            let maxX = max(-inset.left, scroll.contentSize.width - scroll.bounds.width + inset.right)
+            let maxY = max(-inset.top, scroll.contentSize.height - scroll.bounds.height + inset.bottom)
+            let target = CGPoint(x: min(max(-inset.left, newX - anchor.x), maxX),
+                                 y: min(max(-inset.top, newY - anchor.y), maxY))
+            scroll.setContentOffset(target, animated: false)
+            driver.reportPage()
+            guard let cover else { return }
+            DispatchQueue.main.async {
+                UIView.animate(withDuration: 0.12, animations: { cover.alpha = 0 }) { _ in cover.removeFromSuperview() }
+            }
+        }
+    }
+
     private func configure() {
         driver.lastPage = pages.last?.index
+        // Live values (a binding and state read when the pinch asks).
+        pinch.currentScale = { scale }
+        pinch.range = {
+            let base = baseWidth
+            return (ContinuousSizing.minimumScale(base: base), ContinuousSizing.maximumScale)
+        }
+        pinch.onEnd = { next in resize(to: next, anchor: pinch.takeAnchor()) }
         driver.secondsPerScreen = settings.autoScrollSecondsPerScreen
         driver.continueOnDrag = settings.continueAutoScrollOnDrag
         driver.onPage = { index in if page != index { page = index } }
@@ -157,5 +268,82 @@ private struct ContinuousReaderPage: View {
                 .id(retry)
             }
             .onAppear { if item.url == nil { onLoad(.failed) } }
+    }
+}
+
+/// The strip's two-finger pinch, on its scroll view: while the fingers move
+/// the strip is scaled as a picture around them (smooth); when they lift,
+/// [onEnd] gets the new width and the pages are laid out at it.
+@MainActor
+final class StripPinch: NSObject, UIGestureRecognizerDelegate {
+    var currentScale: () -> CGFloat = { 1 }
+    /// The smallest and largest scale.
+    var range: () -> (CGFloat, CGFloat) = { (1, 1) }
+    var onEnd: (CGFloat) -> Void = { _ in }
+    private weak var scroll: UIScrollView?
+    private var start: CGFloat = 1
+    private var anchor: CGPoint?
+    private var pinching: CGPoint?
+
+    var isAttached: Bool { scroll != nil }
+
+    func attach(to scroll: UIScrollView) {
+        guard self.scroll !== scroll else { return }
+        self.scroll = scroll
+        let recognizer = UIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
+        recognizer.delegate = self
+        scroll.addGestureRecognizer(recognizer)
+    }
+
+    /// Where the fingers were (on screen, in the strip's view), for the resize that follows; once.
+    func takeAnchor() -> CGPoint? {
+        defer { anchor = nil }
+        return anchor
+    }
+
+    @objc private func pinched(_ recognizer: UIPinchGestureRecognizer) {
+        guard let scroll else { return }
+        switch recognizer.state {
+        case .began:
+            start = currentScale()
+            let point = recognizer.location(in: scroll)
+            pinching = CGPoint(x: point.x - scroll.bounds.minX, y: point.y - scroll.bounds.minY)
+        case .changed:
+            guard let pinching else { return }
+            let (low, high) = range()
+            // Past the limits it gives way less and less (it settles back on lifting).
+            let wanted = start * recognizer.scale
+            let shown: CGFloat
+            if wanted < low {
+                shown = low * pow(wanted / low, 0.3)
+            } else if wanted > high {
+                shown = high * pow(wanted / high, 0.3)
+            } else {
+                shown = wanted
+            }
+            let factor = shown / max(start, 0.001)
+            let dx = pinching.x - scroll.bounds.width / 2
+            let dy = pinching.y - scroll.bounds.height / 2
+            scroll.transform = CGAffineTransform(translationX: dx, y: dy).scaledBy(x: factor, y: factor).translatedBy(x: -dx, y: -dy)
+        case .ended, .cancelled, .failed:
+            let (low, high) = range()
+            var next = min(max(start * recognizer.scale, low), high)
+            // Almost the usual size: the usual size.
+            if abs(next - 1) < 0.04 { next = 1 }
+            if abs(next - start) < 0.001 {
+                UIView.animate(withDuration: 0.25) { scroll.transform = .identity }
+            } else {
+                anchor = pinching
+                onEnd(next)
+            }
+            pinching = nil
+        default:
+            break
+        }
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 }

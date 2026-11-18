@@ -569,5 +569,22 @@
  " s / screen",
  "Auto Scroll Paused",
  "Continue Auto Scroll While Dragging",
- "Speed may be too fast for comfortable reading"
+ "Speed may be too fast for comfortable reading",
+ "Tablet Layout",
+ "Tablet Layout on Home",
+ "The two pinned rows side by side.",
+ "Tablet Layout for Gallery Pages",
+ "Right Half",
+ "Other Versions, Similar and Comments",
+ "Pages Width",
+ "Half the Page",
+ "Three Columns",
+ "The details on the left, every page on the right. Three Columns keeps the thumbnails' size and leaves more room to the details.",
+ "The details and the pages on the left; the other versions, similar galleries and comments on the right.",
+ "Gallery pages show as on a phone: one column.",
+ "Tablet Layout for Me",
+ "The list on the left, the chosen page on the right.",
+ "Reset Size",
+ "Keep Page Size",
+ "Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size."
 ]
