@@ -90,7 +90,12 @@ final class ReaderImagePreparation {
         prefetcher.stopPrefetching(with: stale)
         upcoming = next
         keys = nextKeys
-        prefetcher.startPrefetching(with: next.map(\.request))
+        let missing = next.filter { pipeline.cache[$0.request]?.isPreview != false }
+        if missing.isEmpty {
+            prepareEnhancements()
+        } else {
+            prefetcher.startPrefetching(with: missing.map(\.request))
+        }
     }
 
     func stop() {

@@ -58,28 +58,34 @@ struct ContinuousReader: View {
         }
     }
 
+    private func pageList(in viewport: CGSize) -> some View {
+        LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
+            ForEach(pages) { item in
+                ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
+                                     knownRatio: driver.knownRatios[item.index],
+                                     viewport: viewport, scale: scale, settledScale: settledScale,
+                                     horizontalPosition: horizontalPosition, imageOptions: imageOptions,
+                                     enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
+                                     driver: driver, onLoad: { updatePage(item.index, state: $0) })
+                    .id(item.index)
+            }
+        }
+    }
+
+    private func updatePage(_ index: Int, state: RemoteImageLoadState) {
+        switch state {
+        case .loading: driver.image(index: index)
+        case .failed: driver.image(index: index, failed: true)
+        case .ready(let size):
+            driver.image(index: index, size: size)
+            if failedPage == index { failedPage = nil }
+        }
+    }
+
     private func strip(in viewport: CGSize) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
-                    ForEach(pages) { item in
-                        ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
-                                             knownRatio: driver.knownRatios[item.index],
-                                             viewport: viewport, scale: scale, settledScale: settledScale,
-                                             horizontalPosition: horizontalPosition, imageOptions: imageOptions,
-                                             enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
-                                             driver: driver, onLoad: { state in
-                            switch state {
-                            case .loading: driver.image(index: item.index)
-                            case .failed: driver.image(index: item.index, failed: true)
-                            case .ready(let size):
-                                driver.image(index: item.index, size: size)
-                                if failedPage == item.index { failedPage = nil }
-                            }
-                        })
-                        .id(item.index)
-                    }
-                }
+                pageList(in: viewport)
             }
             .scrollIndicators(.hidden)
             .onScrollGeometryChange(for: CGRect.self) {
@@ -201,7 +207,7 @@ struct ContinuousReader: View {
         }
         driver.onMissingResizeRow = { index in
             // SwiftUI may have recycled the anchor while shrinking the stack.
-            DispatchQueue.main.async { proxy.scrollTo(index, anchor: .top) }
+            if driver.restoringRow == index { proxy.scrollTo(index, anchor: .top) }
         }
     }
 

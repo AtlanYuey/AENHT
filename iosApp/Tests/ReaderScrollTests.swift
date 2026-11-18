@@ -79,6 +79,16 @@ final class ReaderScrollTests: XCTestCase {
         XCTAssertEqual(scroll.contentOffset.y, 1100, accuracy: 0.5)
     }
 
+    func testNarrowedPageWithMarginsCanStillAutoScroll() {
+        let (driver, scroll, rows) = fixture()
+        defer { driver.disconnect() }
+        rows[0].frame = CGRect(x: 100, y: 0, width: 200, height: 1000)
+        driver.register(index: 0, view: rows[0])
+        driver.start()
+        driver.advance(elapsed: 1.0 / 60, scale: 2)
+        XCTAssertGreaterThan(scroll.contentOffset.y, 0)
+    }
+
     func testFastMotionHasTheSameSpeedAt60And120Hz() {
         for hz in [60, 120] {
             var motion = ReaderScrollMotion()

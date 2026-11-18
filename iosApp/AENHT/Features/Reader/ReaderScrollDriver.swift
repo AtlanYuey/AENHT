@@ -49,8 +49,9 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     private var lastReportedPage: Int?
     private var lastVisiblePages: ClosedRange<Int>?
     private var reportScheduled = false
-    private var viewportWidth: CGFloat = 0
+    private var viewport: CGSize = .zero
     private var pendingResize: PendingResize?
+    var restoringRow: Int? { pendingResize?.anchor.index }
     private var originalPanTouches: Int?
     private var horizontalTravel: CGFloat = 0
     private lazy var pinch = UIPinchGestureRecognizer(target: self, action: #selector(didPinch(_:)))
@@ -217,7 +218,8 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
             if !pending.requestedRow {
                 pending.requestedRow = true
                 pendingResize = pending
-                onMissingResizeRow?(pending.anchor.index)
+                let index = pending.anchor.index
+                DispatchQueue.main.async { [weak self] in self?.onMissingResizeRow?(index) }
             }
             return false
         }
@@ -243,8 +245,11 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     }
 
     func viewportChanged(_ size: CGSize) {
-        if viewportWidth > 0, abs(viewportWidth - size.width) > 1, running { finish(.resized) }
-        viewportWidth = size.width
+        if viewport.width > 0, abs(viewport.width - size.width) > 1 || abs(viewport.height - size.height) > 1 {
+            cancelResize()
+            if running { finish(.resized) }
+        }
+        viewport = size
         // During playback the display link publishes progress once, after moving the actual view.
         // Geometry callbacks for the same offset must not repeat the coordinate scans.
         if !running { reportPage() }
