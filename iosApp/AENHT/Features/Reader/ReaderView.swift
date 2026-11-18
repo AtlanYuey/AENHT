@@ -990,8 +990,7 @@ enum ReaderSwipe {
     }
 }
 
-/// Lets the reader's swipes work alongside the page's own gestures, and
-/// not on a zoomed-in page.
+/// Lets the single-finger pan work alongside taps when the page is stable.
 @MainActor
 final class SwipeDelegate: NSObject, UIGestureRecognizerDelegate {
     var isBlocked: @MainActor () -> Bool = { false }
@@ -1022,7 +1021,7 @@ enum PageTurn: Equatable {
 }
 
 /// One page or spread at a time, left-to-right, right-to-left or top-to-bottom.
-/// The active artwork owns its gestures. There is no scroll view around it.
+/// The active artwork receives gestures directly in a plain view controller.
 struct PagedReader: UIViewControllerRepresentable {
     /// One or two pages (double page) per turn.
     let units: [[ReaderPage]]
@@ -1419,7 +1418,7 @@ final class ZoomableImageView: ReaderPageZoomView {
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap(_:))))
         swipeDelegate.isBlocked = { [weak self] in
             guard let self else { return true }
-            return sizeStatus.blocksNavigation
+            return sizeStatus.adjusting
         }
         pageSwipe.delegate = swipeDelegate
         pageSwipe.maximumNumberOfTouches = 1
@@ -1427,6 +1426,10 @@ final class ZoomableImageView: ReaderPageZoomView {
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        if sizeStatus.enlarged {
+            panArtwork(with: gesture)
+            return
+        }
         guard gesture.state == .ended, !sizeStatus.blocksNavigation else { return }
         let translation = gesture.translation(in: self)
         if onSwipeTurn?(translation) == true { return }
@@ -1603,7 +1606,7 @@ final class ZoomableImageView: ReaderPageZoomView {
     }
 
     override func sizeDidChange(_ status: ReaderSizeStatus) {
-        pageSwipe.isEnabled = !status.blocksNavigation
+        if pageSwipe.isEnabled == status.adjusting { pageSwipe.isEnabled = !status.adjusting }
         if status.adjusting {
             pendingTap?.cancel()
             pendingTap = nil

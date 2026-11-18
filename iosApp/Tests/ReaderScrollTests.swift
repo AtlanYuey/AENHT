@@ -105,7 +105,7 @@ final class ReaderScrollTests: XCTestCase {
         XCTAssertEqual(scroll.contentOffset.y, 2900, accuracy: 0.5)
     }
 
-    func testEnlargedSpreadHasNativePanningOnBothAxes() {
+    func testEnlargedSpreadHasArtworkTravelOnBothAxes() {
         let view = ReaderPageZoomView(frame: CGRect(x: 0, y: 0, width: 1000, height: 700))
         let spread = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 500)).image { _ in }
         view.display(spread)
@@ -117,7 +117,6 @@ final class ReaderScrollTests: XCTestCase {
         XCTAssertEqual(view.contentSize.width, 2000, accuracy: 0.5)
         XCTAssertEqual(view.contentSize.height, 1250, accuracy: 0.5)
         XCTAssertFalse(view.bouncesHorizontally)
-        XCTAssertTrue(view.isScrollEnabled && view.panGestureRecognizer.isEnabled)
         view.setContentOffset(CGPoint(x: 300, y: 200), animated: false)
         XCTAssertEqual(view.contentOffset, CGPoint(x: 300, y: 200))
         view.resetZoom()

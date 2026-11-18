@@ -9,19 +9,11 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     private var reportedSize = ReaderSizeStatus()
     private var pinchStart: (scale: CGFloat, focus: CGPoint)?
     private let pinchDelegate = PinchDelegate()
+    private var panStart: CGPoint?
+    private let momentum = UIDynamicAnimator()
+    private let scrollPosition = ScrollPosition()
     #if DEBUG
     var testPage: Int?
-
-    override var accessibilityValue: String? {
-        get {
-            guard ReaderGestureTestSupport.enabled, let value = super.accessibilityValue else {
-                return super.accessibilityValue
-            }
-            let touch = ReaderGestureTestSupport.shared.touchPath
-            return "\(value)|\(touch), scroll \(isScrollEnabled), pan \(panGestureRecognizer.isEnabled)"
-        }
-        set { super.accessibilityValue = newValue }
-    }
     #endif
 
     var sizeStatus: ReaderSizeStatus {
@@ -34,17 +26,15 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         showsVerticalScrollIndicator = false
         showsHorizontalScrollIndicator = false
         contentInsetAdjustmentBehavior = .never
-        decelerationRate = .normal
         bouncesHorizontally = false
-        panGestureRecognizer.maximumNumberOfTouches = 1
+        panGestureRecognizer.isEnabled = false
         backgroundColor = .black
 
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         addSubview(imageView)
 
-        // Pinch around the artwork under the fingers. The scroll view owns
-        // the single-finger drag and deceleration at the resulting size.
+        // Pinch around the artwork under the fingers.
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         pinchDelegate.scroll = self
         pinch.delegate = pinchDelegate
@@ -81,11 +71,15 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
 
     private func recordViewport() {
         #if DEBUG
-        if imageView.image != nil { ReaderGestureTestSupport.measure(self, page: testPage, scale: artworkScale) }
+        if imageView.image != nil {
+            ReaderGestureTestSupport.measure(self, page: testPage, scale: artworkScale,
+                                             tracking: panStart != nil || !momentum.behaviors.isEmpty)
+        }
         #endif
     }
 
     func resetZoom() {
+        stopArtworkMotion()
         pinchStart = nil
         artworkScale = ReaderPageSizing.normalScale
         updateCanvas()
@@ -94,6 +88,7 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     }
 
     func setArtworkScale(_ scale: CGFloat, centeredAt point: CGPoint? = nil, animated: Bool = false) {
+        stopArtworkMotion()
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         let focus = imageFraction(at: point ?? convert(center, to: imageView))
         let destination = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
@@ -115,18 +110,80 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         let frame = imageView.frame
         let x = frame.minX + frame.width * focus.x - viewportPoint.x
         let y = frame.minY + frame.height * focus.y - viewportPoint.y
-        setContentOffset(CGPoint(x: min(max(0, x), max(0, contentSize.width - bounds.width)),
-                                 y: min(max(0, y), max(0, contentSize.height - bounds.height))), animated: false)
+        setContentOffset(bounded(CGPoint(x: x, y: y)), animated: false)
         reportSize()
+    }
+
+    private var travel: CGPoint {
+        CGPoint(x: max(0, contentSize.width - bounds.width), y: max(0, contentSize.height - bounds.height))
+    }
+
+    private func bounded(_ point: CGPoint) -> CGPoint {
+        let end = travel
+        return CGPoint(x: min(max(0, point.x), end.x), y: min(max(0, point.y), end.y))
+    }
+
+    func panArtwork(with gesture: UIPanGestureRecognizer) {
+        switch gesture.state {
+        case .began:
+            stopArtworkMotion()
+            panStart = contentOffset
+            #if DEBUG
+            ReaderGestureTestSupport.recordDrag(of: self)
+            #endif
+        case .changed, .ended:
+            guard let start = panStart else { return }
+            let delta = gesture.translation(in: superview)
+            setContentOffset(bounded(CGPoint(x: start.x - delta.x, y: start.y - delta.y)), animated: false)
+            if gesture.state == .ended {
+                panStart = nil
+                let velocity = gesture.velocity(in: superview)
+                startMomentum(velocity: CGPoint(x: -velocity.x, y: -velocity.y))
+            }
+        case .cancelled, .failed:
+            panStart = nil
+        default:
+            break
+        }
+    }
+
+    private func stopArtworkMotion() {
+        panStart = nil
+        momentum.removeAllBehaviors()
+    }
+
+    private func startMomentum(velocity: CGPoint) {
+        guard hypot(velocity.x, velocity.y) > 10 else { return }
+        let item = scrollPosition
+        item.center = contentOffset
+        let drag = UIDynamicItemBehavior(items: [item])
+        // UIScrollView specifies its normal decay per millisecond. UIKit
+        // Dynamics uses continuous resistance per second.
+        drag.resistance = CGFloat(-1000 * log(Double(UIScrollView.DecelerationRate.normal.rawValue)))
+        drag.allowsRotation = false
+        drag.addLinearVelocity(velocity, for: item)
+        drag.action = { [weak self, weak drag] in
+            guard let self, let drag else { return }
+            let offset = bounded(item.center)
+            if contentOffset != offset { setContentOffset(offset, animated: false) }
+            let speed = drag.linearVelocity(for: item)
+            let end = travel
+            let xMoving = abs(speed.x) > 10 && (speed.x < 0 ? offset.x > 0 : offset.x < end.x)
+            let yMoving = abs(speed.y) > 10 && (speed.y < 0 ? offset.y > 0 : offset.y < end.y)
+            if !xMoving && !yMoving { momentum.removeBehavior(drag) }
+        }
+        momentum.addBehavior(drag)
+    }
+
+    private final class ScrollPosition: NSObject, UIDynamicItem {
+        var center = CGPoint.zero
+        let bounds = CGRect(x: 0, y: 0, width: 1, height: 1)
+        var transform = CGAffineTransform.identity
     }
 
     #if DEBUG
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         recordViewport()
-    }
-
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        ReaderGestureTestSupport.recordDrag(of: self)
     }
     #endif
 
@@ -136,6 +193,7 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         switch gesture.state {
         case .began:
             guard imageView.image != nil else { return }
+            stopArtworkMotion()
             pinchStart = (artworkScale, imageFraction(at: gesture.location(in: imageView)))
             reportSize()
         case .changed:
@@ -156,11 +214,6 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             scroll?.imageView.image != nil
-        }
-
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-            other === scroll?.panGestureRecognizer
         }
     }
 

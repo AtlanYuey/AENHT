@@ -156,7 +156,7 @@ final class ReaderGestureUITests: XCTestCase {
 
     private func metrics(_ element: XCUIElement) -> Canvas? {
         guard element.exists, let value = element.value as? String else { return nil }
-        let values = value.prefix(while: { $0 != "|" }).split(separator: ",").compactMap { Double($0) }
+        let values = value.split(separator: ",").compactMap { Double($0) }
         guard values.count == 8 else { return nil }
         return Canvas(x: values[0], y: values[1], maxX: values[2], maxY: values[3],
                       scale: values[4], page: Int(values[5]), overshoot: values[6], drags: Int(values[7]))
