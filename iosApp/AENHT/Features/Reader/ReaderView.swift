@@ -270,7 +270,6 @@ struct ReaderView: View {
             }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(sizeStatus.blocksNavigation)
             .barToolbar {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
@@ -1701,6 +1700,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 /// In the reader a swipe in the middle of the page is the reader's (turning
 /// pages, its swipe actions): only the swipe from the left edge goes back.
 /// While sizing or panning enlarged pages, the edge belongs to the reader too.
+/// The toolbar can still be used to leave and keep the current size.
 private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
     let blocksEdge: Bool
 
