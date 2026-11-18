@@ -134,6 +134,9 @@ struct TouchObserver: UIViewRepresentable {
 
         private func report(_ touch: UITouch) {
             guard let window, window.bounds.width > 0 else { return }
+            #if DEBUG
+            ReaderGestureTestSupport.recordTouch(touch)
+            #endif
             onTouch?(TouchInfo(location: touch.location(in: window), windowSize: window.bounds.size,
                                safeArea: window.safeAreaInsets, onOverlay: isOverlay(touch.view)))
         }

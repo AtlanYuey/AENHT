@@ -26,14 +26,14 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
 
     final class Controller: UIViewController, UIGestureRecognizerDelegate {
         var allowsEdge = true {
-            didSet { if oldValue != allowsEdge { edge?.isEnabled = allowsEdge } }
+            didSet { if oldValue != allowsEdge { edgeZone?.isUserInteractionEnabled = allowsEdge } }
         }
         var openingThumbnail: ReaderThumbnailID?
         var back: (() -> Void)?
         var dismiss: (() -> Void)?
         private weak var navigation: UINavigationController?
         private weak var readerHost: UIViewController?
-        private var edge: UIScreenEdgePanGestureRecognizer?
+        private var edgeZone: UIView?
         private var paused: [ObjectIdentifier: UIGestureRecognizer] = [:]
         private var originalTransition: UIViewController.Transition?
         private var transition: UIViewController.Transition?
@@ -48,13 +48,16 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
                 self.navigation = navigation
                 readerHost = host
                 originalTransition = host.preferredTransition
-                let edge = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdge(_:)))
-                edge.edges = .left
+                let zone = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: navigation.view.bounds.height))
+                zone.autoresizingMask = [.flexibleHeight, .flexibleRightMargin]
+                zone.accessibilityElementsHidden = true
+                zone.isUserInteractionEnabled = allowsEdge
+                let edge = UIPanGestureRecognizer(target: self, action: #selector(handleEdge(_:)))
                 edge.maximumNumberOfTouches = 1
                 edge.delegate = self
-                edge.isEnabled = allowsEdge
-                navigation.view.addGestureRecognizer(edge)
-                self.edge = edge
+                zone.addGestureRecognizer(edge)
+                navigation.view.addSubview(zone)
+                edgeZone = zone
 
                 let options = UIViewController.Transition.ZoomOptions()
                 options.interactiveDismissShouldBegin = { _ in false }
@@ -95,6 +98,9 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
 
         private func updateNavigation() {
             guard let navigation, let readerHost, navigation.topViewController === readerHost else { return }
+            if let edgeZone, navigation.view.subviews.last !== edgeZone {
+                navigation.view.bringSubviewToFront(edgeZone)
+            }
             if readerHost.preferredTransition !== transition { readerHost.preferredTransition = transition }
             if let nativeEdge = navigation.interactivePopGestureRecognizer { pause(nativeEdge) }
             if #available(iOS 26.0, *), let contentPop = navigation.interactiveContentPopGestureRecognizer {
@@ -103,7 +109,7 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
             // The SwiftUI entrance can leave its own dismiss gestures on the
             // hosting view. The reader's scroll gestures live on child views.
             for view in [readerHost.viewIfLoaded, navigation.viewIfLoaded].compactMap({ $0 }) where !(view is UIScrollView) {
-                for gesture in view.gestureRecognizers ?? [] where gesture !== edge {
+                for gesture in view.gestureRecognizers ?? [] {
                     if gesture is UIPanGestureRecognizer || gesture is UIPinchGestureRecognizer { pause(gesture) }
                 }
             }
@@ -147,8 +153,8 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
             if let readerHost, readerHost.preferredTransition === transition {
                 readerHost.preferredTransition = originalTransition
             }
-            if let edge { edge.view?.removeGestureRecognizer(edge) }
-            edge = nil
+            edgeZone?.removeFromSuperview()
+            edgeZone = nil
             target = nil
             transition = nil
             originalTransition = nil
@@ -159,7 +165,7 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
         func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
             guard allowsEdge, let navigation, navigation.topViewController === readerHost,
                   navigation.viewControllers.count > 1, navigation.transitionCoordinator == nil,
-                  let edge = gesture as? UIScreenEdgePanGestureRecognizer
+                  let edge = gesture as? UIPanGestureRecognizer
             else { return false }
             let motion = edge.translation(in: navigation.view)
             let velocity = edge.velocity(in: navigation.view)
@@ -167,18 +173,7 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
             return direction.x > abs(direction.y)
         }
 
-        func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            guard let view = gesture.view else { return false }
-            // Limit priority to touches that actually began at the edge.
-            return touch.location(in: view).x <= view.bounds.minX + 20
-        }
-
-        func gestureRecognizer(_ gesture: UIGestureRecognizer,
-                               shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
-            allowsEdge && gesture === edge && other is UIPanGestureRecognizer
-        }
-
-        @objc private func handleEdge(_ pan: UIScreenEdgePanGestureRecognizer) {
+        @objc private func handleEdge(_ pan: UIPanGestureRecognizer) {
             #if DEBUG
             if ReaderGestureTestSupport.enabled, pan.state == .began {
                 ReaderGestureTestSupport.shared.edgeEvents.append("began")

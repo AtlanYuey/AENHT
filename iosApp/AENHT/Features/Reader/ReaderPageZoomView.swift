@@ -11,6 +11,17 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     private let pinchDelegate = PinchDelegate()
     #if DEBUG
     var testPage: Int?
+
+    override var accessibilityValue: String? {
+        get {
+            guard ReaderGestureTestSupport.enabled, let value = super.accessibilityValue else {
+                return super.accessibilityValue
+            }
+            let touch = ReaderGestureTestSupport.shared.touchPath
+            return "\(value)|\(touch), scroll \(isScrollEnabled), pan \(panGestureRecognizer.isEnabled)"
+        }
+        set { super.accessibilityValue = newValue }
+    }
     #endif
 
     var sizeStatus: ReaderSizeStatus {
