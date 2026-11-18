@@ -10,6 +10,7 @@ final class ReaderGestureUITests: XCTestCase {
         let scale: Double
         let page: Int
         let overshoot: Double
+        let drags: Int
     }
 
     func testPinchedDoublePageMovesWithOneFinger() throws {
@@ -32,7 +33,9 @@ final class ReaderGestureUITests: XCTestCase {
             guard let after = self.metrics(canvas) else { return false }
             return abs(after.x - before.x) > 50 && abs(after.y - before.y) > 35
         }
-        XCTAssertEqual(try XCTUnwrap(metrics(canvas)).page, before.page)
+        let after = try XCTUnwrap(metrics(canvas))
+        XCTAssertGreaterThan(after.drags, before.drags)
+        XCTAssertEqual(after.page, before.page)
         XCTAssertFalse(app.staticTexts["reader-gallery"].exists)
     }
 
@@ -154,9 +157,9 @@ final class ReaderGestureUITests: XCTestCase {
     private func metrics(_ element: XCUIElement) -> Canvas? {
         guard element.exists, let value = element.value as? String else { return nil }
         let values = value.split(separator: ",").compactMap { Double($0) }
-        guard values.count == 7 else { return nil }
+        guard values.count == 8 else { return nil }
         return Canvas(x: values[0], y: values[1], maxX: values[2], maxY: values[3],
-                      scale: values[4], page: Int(values[5]), overshoot: values[6])
+                      scale: values[4], page: Int(values[5]), overshoot: values[6], drags: Int(values[7]))
     }
 
     private func eventually(file: StaticString = #filePath, line: UInt = #line,

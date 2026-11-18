@@ -112,7 +112,7 @@ final class ReaderScrollTests: XCTestCase {
         view.layoutIfNeeded()
         XCTAssertEqual(view.contentSize.width, 1000, accuracy: 0.5)
         XCTAssertEqual(view.contentSize.height, 625, accuracy: 0.5)
-        view.setZoomScale(2, animated: false)
+        view.setArtworkScale(2)
         view.layoutIfNeeded()
         XCTAssertEqual(view.contentSize.width, 2000, accuracy: 0.5)
         XCTAssertEqual(view.contentSize.height, 1250, accuracy: 0.5)

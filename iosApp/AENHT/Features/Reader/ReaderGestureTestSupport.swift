@@ -12,8 +12,13 @@ final class ReaderGestureTestSupport {
     var returnedPage: Int?
     var edgeEvents: [String] = []
     @ObservationIgnored private var overreach: [ObjectIdentifier: CGFloat] = [:]
+    @ObservationIgnored private var dragCount: [ObjectIdentifier: Int] = [:]
 
-    static func measure(_ scroll: UIScrollView, page: Int? = nil) {
+    static func recordDrag(of scroll: UIScrollView) {
+        if enabled { shared.dragCount[ObjectIdentifier(scroll), default: 0] += 1 }
+    }
+
+    static func measure(_ scroll: UIScrollView, page: Int? = nil, scale: CGFloat? = nil) {
         guard enabled else { return }
         scroll.isAccessibilityElement = true
         scroll.accessibilityIdentifier = "reader-canvas"
@@ -27,8 +32,9 @@ final class ReaderGestureTestSupport {
         if scroll.isDragging || scroll.isDecelerating {
             shared.overreach[key] = max(shared.overreach[key, default: 0], outside)
         }
-        scroll.accessibilityValue = [x, y, width, height, scroll.zoomScale, CGFloat(page ?? -1), shared.overreach[key, default: 0]]
-            .map { String(format: "%.3f", Double($0)) }.joined(separator: ",")
+        let values = [x, y, width, height, scale ?? scroll.zoomScale, CGFloat(page ?? -1),
+                      shared.overreach[key, default: 0], CGFloat(shared.dragCount[key, default: 0])]
+        scroll.accessibilityValue = values.map { String(format: "%.3f", Double($0)) }.joined(separator: ",")
     }
 }
 #endif

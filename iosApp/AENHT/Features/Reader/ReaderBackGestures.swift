@@ -167,6 +167,12 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
             return direction.x > abs(direction.y)
         }
 
+        func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard let view = gesture.view else { return false }
+            // Limit priority to touches that actually began at the edge.
+            return touch.location(in: view).x <= view.bounds.minX + 20
+        }
+
         func gestureRecognizer(_ gesture: UIGestureRecognizer,
                                shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
             allowsEdge && gesture === edge && other is UIPanGestureRecognizer

@@ -1646,14 +1646,8 @@ final class ZoomableImageView: ReaderPageZoomView {
 
     private func toggleZoom(at point: CGPoint) {
         guard imageView.image != nil else { return }
-        if sizeStatus.adjusted {
-            setZoomScale(ReaderPageSizing.normalScale, animated: true)
-        } else {
-            let scale: CGFloat = 2.5
-            let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
-            zoom(to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
-                            width: size.width, height: size.height), animated: true)
-        }
+        let next = sizeStatus.adjusted ? ReaderPageSizing.normalScale : 2.5
+        setArtworkScale(next, centeredAt: point, animated: true)
     }
 }
 
