@@ -137,6 +137,7 @@ struct EhGalleryView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
     @Environment(TagStore.self) private var tagStore
+    @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row of pages (the one being read).
     @State private var centeredPage: Int?
     /// Where the row was when its title took it to the first page.
@@ -534,6 +535,7 @@ struct EhGalleryView: View {
                                 EhThumbnailView(thumb: thumb)
                                     .frame(width: height * min(max(ratio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .readerThumbnailSource(gallery: "eh:\(detail.gid)", page: item.id, in: namespace)
                                 Text("\(thumb.page)").font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -650,6 +652,7 @@ struct EhPagesView: View {
     /// Part of the gallery page (with a heading), not a page of its own.
     var embedded = false
     var compactThumbnailWidth: CGFloat? = nil
+    @Environment(\.galleryNamespace) private var namespace
     @State private var progress = ReaderProgress.shared
     @State private var position: Int?
     @State private var thumbnails: [Int: EhThumbnail] = [:]
@@ -659,7 +662,7 @@ struct EhPagesView: View {
     @State private var loadFailed = false
 
     private var gallery: EhGalleryDetail? { detail ?? loaded }
-    private var returnPoint: ReaderProgress.ReturnPoint? { progress.point(gallery: "eh:\(route.gid)") }
+    private var readingPoint: ReaderProgress.ReadingPoint? { progress.point(gallery: "eh:\(route.gid)") }
 
     var body: some View {
         if embedded {
@@ -695,9 +698,11 @@ struct EhPagesView: View {
                 ProgressView().padding()
             }
         }
-        .scrollPosition(id: $position, anchor: .center)
-        .onChange(of: returnPoint, initial: true) { _, point in
-            if let point, let gallery { reveal(point.page, in: gallery) }
+        .followsReader(gallery: "eh:\(route.gid)", position: $position)
+        .onChange(of: readingPoint, initial: true) { _, point in
+            if let point, let gallery, (0..<route.pages).contains(point.page) {
+                loadBatch(for: point.page, in: gallery)
+            }
         }
         .task {
             if gallery == nil { await loadGallery() }
@@ -718,7 +723,8 @@ struct EhPagesView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 130)
                 .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .outlineReadPage(returnPoint?.page == index)
+                .outlineReadPage(readingPoint?.page == index)
+                .readerThumbnailSource(gallery: "eh:\(route.gid)", page: index, in: namespace)
             } else {
                 NavigationLink(value: ReaderRoute(source: source, page: index)) {
                     Group {
@@ -732,7 +738,8 @@ struct EhPagesView: View {
                     .frame(height: 130)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .outlineReadPage(returnPoint?.page == index)
+                    .outlineReadPage(readingPoint?.page == index)
+                    .readerThumbnailSource(gallery: "eh:\(route.gid)", page: index, in: namespace)
                 }
                 .buttonStyle(.plain)
             }
@@ -746,18 +753,15 @@ struct EhPagesView: View {
             let value = try await EhService.shared.gallery(gid: route.gid, token: route.token)
             try Task.checkCancellation()
             detail = value
-            if let point = returnPoint { reveal(point.page, in: value) }
+            if let point = readingPoint, (0..<route.pages).contains(point.page) {
+                position = point.page
+                loadBatch(for: point.page, in: value)
+            }
         } catch is CancellationError {
             return
         } catch {
             loadFailed = true
         }
-    }
-
-    private func reveal(_ index: Int, in gallery: EhGalleryDetail) {
-        guard (0..<route.pages).contains(index) else { return }
-        position = index
-        loadBatch(for: index, in: gallery)
     }
 
     private func batchIndex(for index: Int, in gallery: EhGalleryDetail) -> Int {

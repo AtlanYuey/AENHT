@@ -33,7 +33,7 @@ struct GalleryDestinations: ViewModifier {
                     .environment(\.galleryNamespace, namespace)
             }
             .navigationDestination(for: ReaderRoute.self) { route in
-                ReaderView(route: route)
+                ReaderDestination(route: route, namespace: namespace)
                     .pageTint()
             }
             .navigationDestination(for: PagesRoute.self) { route in

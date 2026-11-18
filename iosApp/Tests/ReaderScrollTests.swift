@@ -89,6 +89,41 @@ final class ReaderScrollTests: XCTestCase {
         XCTAssertGreaterThan(scroll.contentOffset.y, 0)
     }
 
+    func testStripResizeRestoresHorizontalViewingPosition() throws {
+        let (driver, scroll, rows) = fixture()
+        defer { driver.disconnect() }
+        scroll.contentSize.width = 1000
+        scroll.setContentOffset(CGPoint(x: 150, y: 2500), animated: false)
+        let anchor = try XCTUnwrap(driver.resizeAnchor(at: 300))
+        XCTAssertEqual(anchor.horizontalFraction, 0.25, accuracy: 0.001)
+        driver.preserve(anchor, width: 600, canvasWidth: 1200)
+        scroll.contentSize.width = 1200
+        rows[1].frame.size = CGSize(width: 600, height: 3000)
+        driver.register(index: 1, view: rows[1])
+        driver.reportPage()
+        XCTAssertEqual(scroll.contentOffset.x, 200, accuracy: 0.5)
+        XCTAssertEqual(scroll.contentOffset.y, 2900, accuracy: 0.5)
+    }
+
+    func testEnlargedSpreadHasNativePanningOnBothAxes() {
+        let view = ReaderPageZoomView(frame: CGRect(x: 0, y: 0, width: 1000, height: 700))
+        let spread = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 500)).image { _ in }
+        view.display(spread)
+        view.layoutIfNeeded()
+        XCTAssertEqual(view.contentSize.width, 1000, accuracy: 0.5)
+        XCTAssertEqual(view.contentSize.height, 625, accuracy: 0.5)
+        view.setZoomScale(2, animated: false)
+        view.layoutIfNeeded()
+        XCTAssertEqual(view.contentSize.width, 2000, accuracy: 0.5)
+        XCTAssertEqual(view.contentSize.height, 1250, accuracy: 0.5)
+        XCTAssertEqual(view.panGestureRecognizer.maximumNumberOfTouches, 1)
+        XCTAssertTrue(view.isScrollEnabled && view.panGestureRecognizer.isEnabled)
+        view.setContentOffset(CGPoint(x: 300, y: 200), animated: false)
+        XCTAssertEqual(view.contentOffset, CGPoint(x: 300, y: 200))
+        view.resetZoom()
+        XCTAssertEqual(view.contentOffset, .zero)
+    }
+
     func testFastMotionHasTheSameSpeedAt60And120Hz() {
         for hz in [60, 120] {
             var motion = ReaderScrollMotion()

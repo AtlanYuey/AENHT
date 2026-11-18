@@ -38,4 +38,19 @@ final class TabletReaderLayoutTests: XCTestCase {
         XCTAssertFalse(WideGalleryPage.fits(CGSize(width: 834, height: 1194)))
         XCTAssertFalse(WideGalleryPage.fits(CGSize(width: 780, height: 600)))
     }
+
+    func testStripUsesNativeOffsetWithinEachImagesHorizontalRange() {
+        let viewport: CGFloat = 1000
+        let canvas = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport, scale: 1)
+        let image: CGFloat = 600
+        let last = canvas - viewport
+        func leftEdge(at scroll: CGFloat) -> CGFloat {
+            let offset = ReaderPageSizing.stripImageOffset(scrollX: scroll, viewportWidth: viewport,
+                                                           canvasWidth: canvas, imageWidth: image)
+            return (canvas - image) / 2 + offset - scroll
+        }
+        XCTAssertEqual(leftEdge(at: 0), 400, accuracy: 0.5)
+        XCTAssertEqual(leftEdge(at: last / 2), 200, accuracy: 0.5)
+        XCTAssertEqual(leftEdge(at: last), 0, accuracy: 0.5)
+    }
 }

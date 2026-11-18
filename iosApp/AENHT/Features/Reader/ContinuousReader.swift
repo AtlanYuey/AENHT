@@ -28,7 +28,7 @@ struct ContinuousReader: View {
     @State private var failedPage: Int?
     @State private var scale: CGFloat
     @State private var settledScale: CGFloat
-    @State private var horizontalPosition: CGFloat = 0
+    @State private var horizontalOffset: CGFloat?
     @State private var pinchStart: PinchStart?
 
     private struct PinchStart {
@@ -59,12 +59,14 @@ struct ContinuousReader: View {
     }
 
     private func pageList(in viewport: CGSize) -> some View {
-        LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
+        let canvasWidth = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport.width, scale: scale)
+        let scrollX = horizontalOffset ?? (canvasWidth - viewport.width) / 2
+        return LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
             ForEach(pages) { item in
                 ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
                                      knownRatio: driver.knownRatios[item.index],
                                      viewport: viewport, scale: scale, settledScale: settledScale,
-                                     horizontalPosition: horizontalPosition, imageOptions: imageOptions,
+                                     canvasWidth: canvasWidth, scrollX: scrollX, imageOptions: imageOptions,
                                      enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
                                      driver: driver, onLoad: { updatePage(item.index, state: $0) })
                     .id(item.index)
@@ -84,13 +86,16 @@ struct ContinuousReader: View {
 
     private func strip(in viewport: CGSize) -> some View {
         ScrollViewReader { proxy in
-            ScrollView(.vertical) {
+            ScrollView([.vertical, .horizontal]) {
                 pageList(in: viewport)
             }
+            .defaultScrollAnchor(.top, for: .initialOffset)
             .scrollIndicators(.hidden)
             .onScrollGeometryChange(for: CGRect.self) {
-                CGRect(origin: $0.contentOffset, size: $0.containerSize)
+                CGRect(x: $0.contentOffset.x + $0.contentInsets.leading, y: $0.contentOffset.y,
+                       width: $0.containerSize.width, height: $0.containerSize.height)
             } action: { _, new in
+                if horizontalOffset != new.minX { horizontalOffset = new.minX }
                 driver.viewportChanged(new.size)
             }
             .onScrollPhaseChange { _, phase in
@@ -122,8 +127,7 @@ struct ContinuousReader: View {
                 if settings.keepContinuousPageSize { settings.continuousPageScale = Double(settledScale) }
             }
             .onChange(of: resetSizeRequest) {
-                resize(to: ReaderPageSizing.normalScale, in: viewport, anchor: driver.resizeAnchor())
-                horizontalPosition = 0
+                resize(to: ReaderPageSizing.normalScale, in: viewport, anchor: driver.resizeAnchor(), recenter: true)
                 finishSizing(in: viewport)
             }
             .onChange(of: viewport) { configure(viewport: viewport, proxy: proxy); prepare(visiblePages, in: viewport) }
@@ -199,12 +203,6 @@ struct ContinuousReader: View {
                 break
             }
         }
-        driver.onHorizontalPan = { delta in
-            guard pinchStart == nil else { return }
-            horizontalPosition = min(max(horizontalPosition + delta, -1), 1)
-            driver.userInteractionStarted()
-            onInteraction()
-        }
         driver.onMissingResizeRow = { index in
             // SwiftUI may have recycled the anchor while shrinking the stack.
             if driver.restoringRow == index { proxy.scrollTo(index, anchor: .top) }
@@ -212,12 +210,14 @@ struct ContinuousReader: View {
     }
 
     private func resize(to proposed: CGFloat, in viewport: CGSize, anchor: ReaderScrollDriver.ResizeAnchor?,
-                        viewportY: CGFloat? = nil) {
+                        viewportY: CGFloat? = nil, recenter: Bool = false) {
         let next = ReaderPageSizing.clamp(proposed)
         guard next != scale else { return }
         if let anchor {
             let width = ReaderPageSizing.width(in: viewport, aspectRatio: anchor.aspectRatio, scale: next)
-            driver.preserve(anchor, width: width, viewportY: viewportY)
+            let canvasWidth = ReaderPageSizing.stripCanvasWidth(viewportWidth: viewport.width, scale: next)
+            driver.preserve(anchor, width: width, viewportY: viewportY, canvasWidth: canvasWidth,
+                            centerHorizontally: recenter)
         }
         scale = next
         onSizeChanged(ReaderSizeStatus(scale: next, adjusting: pinchStart != nil))
@@ -252,7 +252,8 @@ private struct ContinuousReaderPage: View {
     let viewport: CGSize
     let scale: CGFloat
     let settledScale: CGFloat
-    let horizontalPosition: CGFloat
+    let canvasWidth: CGFloat
+    let scrollX: CGFloat
     let imageOptions: ReaderImageOptions
     let enhanceNow: Bool
     let driver: ReaderScrollDriver
@@ -269,7 +270,8 @@ private struct ContinuousReaderPage: View {
     var body: some View {
         let aspect = ratio
         let width = ReaderPageSizing.width(in: viewport, aspectRatio: aspect, scale: scale)
-        let travel = ReaderPageSizing.travel(viewportWidth: viewport.width, imageWidth: width)
+        let offset = ReaderPageSizing.stripImageOffset(scrollX: scrollX, viewportWidth: viewport.width,
+                                                       canvasWidth: canvasWidth, imageWidth: width)
         Color.clear
             .frame(width: width, height: width / aspect)
             .overlay {
@@ -287,8 +289,8 @@ private struct ContinuousReaderPage: View {
             // The driver's ready check measures the image's width. The outer
             // frame covers the black margins as part of the same scroll view.
             .background(ReaderPageAnchor(index: item.index, driver: driver).allowsHitTesting(false))
-            .offset(x: horizontalPosition * travel)
-            .frame(width: max(1, viewport.width))
+            .offset(x: offset)
+            .frame(width: canvasWidth)
             .clipped()
             .contentShape(Rectangle())
             .onAppear { if item.url == nil { onLoad(.failed) } }

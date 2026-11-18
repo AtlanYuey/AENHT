@@ -689,6 +689,7 @@ private struct PreviewSection: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(DownloadManager.self) private var downloads
+    @Environment(\.galleryNamespace) private var namespace
     /// The page in the middle of the row (the one being read, see followsReader).
     @State private var centered: Int?
     /// Where the row was when its title took it to the first page.
@@ -708,13 +709,14 @@ private struct PreviewSection: View {
             // A row of every page, swiped sideways (like the previous version).
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 10) {
-                    ForEach(Array(detail.pages.enumerated()), id: \.offset) { _, page in
+                    ForEach(Array(detail.pages.enumerated()), id: \.offset) { index, page in
                         NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
                             VStack(spacing: 6) {
                                 RemoteImage(url: downloads.localURL(gallery: detail.id, page: page.number - 1) ?? page.thumbURL,
                                             contentMode: .fill, targetWidth: 240)
                                     .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .readerThumbnailSource(gallery: "nh:\(detail.id)", page: index, in: namespace)
                                 Text("\(page.number)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -757,6 +759,7 @@ struct PageGrid: View {
     var compactThumbnailWidth: CGFloat? = nil
 
     @Environment(DownloadManager.self) private var downloads
+    @Environment(\.galleryNamespace) private var namespace
     @State private var progress = ReaderProgress.shared
 
     var body: some View {
@@ -775,6 +778,7 @@ struct PageGrid: View {
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                             .outlineReadPage(current == page.number - 1)
+                            .readerThumbnailSource(gallery: "nh:\(detail.id)", page: page.number - 1, in: namespace)
                         Text("\(page.number)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)

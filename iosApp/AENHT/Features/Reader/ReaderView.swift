@@ -79,6 +79,8 @@ struct ReaderSource: Hashable {
 struct ReaderRoute: Hashable {
     let source: ReaderSource
     let page: Int
+
+    var startPage: Int { min(max(0, page), max(0, source.pages.count - 1)) }
 }
 
 // MARK: - Reader
@@ -86,7 +88,7 @@ struct ReaderRoute: Hashable {
 struct ReaderView: View {
     let source: ReaderSource
 
-    @State private var page: Int
+    @Binding private var page: Int
     @State private var scrollRequest: ReaderScrollRequest
     @State private var chromeVisible = true
     @State private var autoRead = false
@@ -119,10 +121,10 @@ struct ReaderView: View {
     /// What the prefetcher is loading now.
     @State private var prefetched: Set<URL> = []
 
-    init(route: ReaderRoute) {
+    init(route: ReaderRoute, page: Binding<Int>) {
         source = route.source
-        let start = min(max(0, route.page), max(0, route.source.pages.count - 1))
-        _page = State(initialValue: start)
+        let start = route.startPage
+        _page = page
         _scrollRequest = State(initialValue: ReaderScrollRequest(page: start))
         _sliderValue = State(initialValue: Double(start))
     }
@@ -185,6 +187,7 @@ struct ReaderView: View {
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
                 awake.touched()
+                ReaderProgress.shared.begin(page, gallery: source.item.transitionKey)
                 prefetch(around: page)
                 recordPage()
                 scheduleHide()
@@ -194,7 +197,6 @@ struct ReaderView: View {
                 hider.cancel()
                 awake.stop()
                 diskPrefetcher.stopPrefetching()
-                ReaderProgress.shared.returned(page, gallery: source.item.transitionKey)
                 recordPage()
             }
             .modifier(PageAlerts(askPage: $askPage, pageText: $pageText, notice: $notice, pageCount: pageCount) { target in
@@ -253,9 +255,8 @@ struct ReaderView: View {
 
     private var readerCanvas: some View {
         content
-            // Back from the left edge only: a swipe in the middle is the reader's.
-            .background(EdgeOnlyBackSwipe(blocksEdge: sizeStatus.blocksNavigation ||
-                                         (!settings.readMode.isPaged && sizeStatus.adjusted)).frame(width: 0, height: 0))
+            .background(ReaderBackGestures(allowsEdge: allowsEdgeBack, prepare: prepareBack, back: leaveReader)
+                .frame(width: 0, height: 0))
             .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
@@ -329,6 +330,22 @@ struct ReaderView: View {
     }
 
     // MARK: Pages
+
+    private var allowsEdgeBack: Bool {
+        // A deliberate left-edge swipe in a spread is an exit. A swipe
+        // within the artwork stays available for moving the enlarged spread.
+        guard !sizeStatus.adjusting else { return false }
+        return spreads != nil || (!sizeStatus.enlarged && (settings.readMode.isPaged || !sizeStatus.adjusted))
+    }
+
+    private func prepareBack() {
+        ReaderProgress.shared.track(page, gallery: source.item.transitionKey)
+    }
+
+    private func leaveReader() {
+        prepareBack()
+        dismiss()
+    }
 
     private var pagedReaderID: String {
         "\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)"
@@ -425,7 +442,7 @@ struct ReaderView: View {
         }
         switch gesture {
         case .none: break
-        case .exit: dismiss()
+        case .exit: leaveReader()
         case .controls: chromeVisible.toggle()
         case .goToPage:
             pageText = "\(page + 1)"
@@ -1016,9 +1033,7 @@ struct PagedReader: UIViewControllerRepresentable {
         visible?.configure(imageOptions, active: isActive)
         coordinator.resetSizeIfNeeded(for: visible)
         defer { coordinator.prepare(after: page) }
-        let swipeFades = AppSettings.shared.swipeFades
-        if (controller.dataSource == nil) != swipeFades { controller.dataSource = swipeFades ? nil : coordinator }
-        coordinator.lockPageSwipe(visible?.sizeStatus.blocksNavigation ?? false)
+        coordinator.updatePageTurning(locked: visible?.sizeStatus.blocksNavigation ?? false)
         let sweep = coordinator.pendingSweep
         coordinator.pendingSweep = nil
         guard let current = (controller.viewControllers?.first as? PageController)?.index,
@@ -1045,7 +1060,7 @@ struct PagedReader: UIViewControllerRepresentable {
         private var cache: [Int: PageController] = [:]
         private let imagePreparation = ReaderImagePreparation()
         private weak var pageViewController: UIPageViewController?
-        private weak var pagePan: UIPanGestureRecognizer?
+        private weak var pagingScrollView: UIScrollView?
         private var lastResetSizeRequest: Int
         /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
         var pendingSweep: PageTurn?
@@ -1057,13 +1072,21 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func connect(_ controller: UIPageViewController) {
             pageViewController = controller
-            let scroll = controller.view.subviews.compactMap { $0 as? UIScrollView }.first
-            pagePan = scroll?.panGestureRecognizer
-            pagePan?.maximumNumberOfTouches = 1
+            pagingScrollView = controller.view.subviews.compactMap { $0 as? UIScrollView }.first
+            pagingScrollView?.panGestureRecognizer.maximumNumberOfTouches = 1
         }
 
-        func lockPageSwipe(_ locked: Bool) {
-            if pagePan?.isEnabled == locked { pagePan?.isEnabled = !locked }
+        func updatePageTurning(locked: Bool) {
+            guard let pageViewController else { return }
+            let enabled = !locked && !AppSettings.shared.swipeFades
+            // Turn off the outer pager's scrolling as well as its data source.
+            // The fitted image's own scroll view keeps its native one-finger pan.
+            if (pageViewController.dataSource != nil) != enabled {
+                pageViewController.dataSource = enabled ? self : nil
+            }
+            if pagingScrollView?.isScrollEnabled != enabled {
+                pagingScrollView?.isScrollEnabled = enabled
+            }
         }
 
         func resetSizeIfNeeded(for visible: PageController?) {
@@ -1075,7 +1098,7 @@ struct PagedReader: UIViewControllerRepresentable {
 
         private func sizeChanged(_ status: ReaderSizeStatus, at index: Int) {
             guard (pageViewController?.viewControllers?.first as? PageController)?.index == index else { return }
-            lockPageSwipe(status.blocksNavigation)
+            updatePageTurning(locked: status.blocksNavigation)
             parent.onSizeChanged(status)
         }
 
@@ -1341,8 +1364,7 @@ final class PageController: UIViewController {
 /// Taps on the page-turning edges are handled the moment the finger lifts.
 /// Only taps in the middle wait briefly to see whether a second tap
 /// (double-tap zoom) follows, instead of every tap waiting for it.
-final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
-    private let imageView = UIImageView()
+final class ZoomableImageView: ReaderPageZoomView {
     private let spinner = UIActivityIndicatorView(style: .large)
     /// Shown when the page couldn't be loaded: tapping it loads it again.
     private let retryButton: UIButton = {
@@ -1369,14 +1391,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private var pendingTap: DispatchWorkItem?
     private var lastTapTime: CFTimeInterval = 0
     private var lastTapPoint: CGPoint = .zero
-    private var baseSize: CGSize = .zero
-    private var adjustingSize = false
-    private var reportedSize = ReaderSizeStatus()
-    var sizeStatus: ReaderSizeStatus { ReaderSizeStatus(scale: zoomScale, adjusting: adjustingSize) }
-    var onSizeChanged: ((ReaderSizeStatus) -> Void)?
     /// Its own delegate: a scroll view is the delegate of its own pan and
     /// pinch, which overriding the delegate methods here would change.
     private let swipeDelegate = SwipeDelegate()
+    private lazy var pageSwipe = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
     /// The tap's position in fractions of the page's width and height.
     var onTap: ((CGPoint) -> Void)?
     var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
@@ -1387,20 +1405,6 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        delegate = self
-        minimumZoomScale = ReaderPageSizing.minimumScale
-        maximumZoomScale = ReaderPageSizing.maximumScale
-        bouncesZoom = true
-        showsVerticalScrollIndicator = false
-        showsHorizontalScrollIndicator = false
-        contentInsetAdjustmentBehavior = .never
-        decelerationRate = .fast
-        backgroundColor = .black
-
-        imageView.contentMode = .scaleAspectFit
-        imageView.clipsToBounds = true
-        addSubview(imageView)
-
         spinner.color = .lightGray
         spinner.hidesWhenStopped = true
         addSubview(spinner)
@@ -1418,10 +1422,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             guard let self else { return true }
             return sizeStatus.blocksNavigation
         }
-        let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        pan.delegate = swipeDelegate
-        pan.maximumNumberOfTouches = 1
-        addGestureRecognizer(pan)
+        pageSwipe.delegate = swipeDelegate
+        pageSwipe.maximumNumberOfTouches = 1
+        addGestureRecognizer(pageSwipe)
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -1489,21 +1492,15 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.stopAnimating()
         if animated {
             UIView.transition(with: imageView, duration: 0.2, options: [.transitionCrossDissolve, .allowUserInteraction]) {
-                self.imageView.image = image
+                self.display(image)
             }
         } else {
-            imageView.image = image
+            display(image)
         }
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        if baseSize != bounds.size {
-            baseSize = bounds.size
-            imageView.bounds = CGRect(origin: .zero, size: baseSize)
-            contentSize = CGSize(width: baseSize.width * zoomScale, height: baseSize.height * zoomScale)
-            centerImage()
-        }
         spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
         retryButton.sizeToFit()
         retryButton.center = spinner.center
@@ -1521,15 +1518,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         retryButton.isHidden = true
     }
 
-    func resetZoom() {
+    override func resetZoom() {
         pendingTap?.cancel()
         pendingTap = nil
-        adjustingSize = false
-        if zoomScale != ReaderPageSizing.normalScale {
-            setZoomScale(ReaderPageSizing.normalScale, animated: false)
-            setContentOffset(.zero, animated: false)
-        }
-        reportSize()
+        super.resetZoom()
     }
 
     func load(_ requested: [URL?], rightToLeft: Bool, options: ReaderImageOptions) {
@@ -1543,7 +1535,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         renderedImages = []
         renderedViewport = nil
         resetZoom()
-        imageView.image = nil
+        display(nil)
         hideFailure()
         let requests = urls.map { AutoCropProcessor.request($0, crop: options.crop) }
         guard !requests.isEmpty else { return }
@@ -1612,44 +1604,16 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
     }
 
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        imageView.image == nil ? nil : imageView
-    }
-
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        centerImage()
-        reportSize()
-    }
-
-    func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
-        pendingTap?.cancel()
-        pendingTap = nil
-        adjustingSize = true
-        reportSize()
-    }
-
-    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-        adjustingSize = false
-        let clamped = ReaderPageSizing.clamp(scale)
-        if clamped != zoomScale { setZoomScale(clamped, animated: false) }
-        reportSize()
-    }
-
-    private func reportSize() {
-        let status = sizeStatus
-        guard status != reportedSize else { return }
-        reportedSize = status
-        onSizeChanged?(status)
-    }
-
-    private func centerImage() {
-        let offsetX = max((bounds.width - contentSize.width) / 2, 0)
-        let offsetY = max((bounds.height - contentSize.height) / 2, 0)
-        imageView.center = CGPoint(x: contentSize.width / 2 + offsetX, y: contentSize.height / 2 + offsetY)
+    override func sizeDidChange(_ status: ReaderSizeStatus) {
+        pageSwipe.isEnabled = !status.blocksNavigation
+        if status.adjusting {
+            pendingTap?.cancel()
+            pendingTap = nil
+        }
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        guard bounds.width > 0, !adjustingSize else { return }
+        guard bounds.width > 0, !sizeStatus.adjusting else { return }
         let location = gesture.location(in: self)
         // Position on screen (the scroll view's bounds move when zoomed).
         let point = CGPoint(x: location.x - bounds.minX, y: location.y - bounds.minY)
@@ -1691,60 +1655,6 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
             zoom(to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
                             width: size.width, height: size.height), animated: true)
-        }
-    }
-}
-
-// MARK: - Back swipe
-
-/// In the reader a swipe in the middle of the page is the reader's (turning
-/// pages, its swipe actions): only the swipe from the left edge goes back.
-/// While sizing or panning enlarged pages, the edge belongs to the reader too.
-/// The toolbar can still be used to leave and keep the current size.
-private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
-    let blocksEdge: Bool
-
-    func makeUIViewController(context: Context) -> Controller {
-        let controller = Controller()
-        controller.blocksEdge = blocksEdge
-        return controller
-    }
-
-    func updateUIViewController(_ controller: Controller, context: Context) {
-        controller.blocksEdge = blocksEdge
-    }
-
-    final class Controller: UIViewController {
-        var blocksEdge = false {
-            didSet { if oldValue != blocksEdge { updateEdge() } }
-        }
-        private var contentPop: (gesture: UIGestureRecognizer, enabled: Bool)?
-        private var edgePop: (gesture: UIGestureRecognizer, enabled: Bool)?
-
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            guard let navigation = navigationController else { return }
-            if #available(iOS 26.0, *), let gesture = navigation.interactiveContentPopGestureRecognizer {
-                contentPop = (gesture, gesture.isEnabled)
-                gesture.isEnabled = false
-            }
-            if let gesture = navigation.interactivePopGestureRecognizer {
-                edgePop = (gesture, gesture.isEnabled)
-            }
-            updateEdge()
-        }
-
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            if let contentPop { contentPop.gesture.isEnabled = contentPop.enabled }
-            if let edgePop { edgePop.gesture.isEnabled = edgePop.enabled }
-            contentPop = nil
-            edgePop = nil
-        }
-
-        private func updateEdge() {
-            guard let edgePop else { return }
-            edgePop.gesture.isEnabled = edgePop.enabled && !blocksEdge
         }
     }
 }
@@ -1795,28 +1705,70 @@ private struct PageAlerts: ViewModifier {
     }
 }
 
-// MARK: - Reveal the current page in the gallery
+// MARK: - Return to the current page's thumbnail
 
-/// A return from the reader reveals the page again even when it was read twice.
+private struct ReaderThumbnailID: Hashable {
+    let gallery: String
+    let page: Int
+}
+
+/// The gallery scrolls behind the reader as the current page changes.
 @MainActor
 @Observable
 final class ReaderProgress {
-    struct ReturnPoint: Equatable {
+    struct ReadingPoint: Equatable {
         let page: Int
         private let id = UUID()
     }
 
     static let shared = ReaderProgress()
-    private var returnPoints: [String: ReturnPoint] = [:]
+    private var points: [String: ReadingPoint] = [:]
 
-    func returned(_ page: Int, gallery: String) {
-        returnPoints[gallery] = ReturnPoint(page: page)
+    func begin(_ page: Int, gallery: String) {
+        points[gallery] = ReadingPoint(page: page)
     }
 
-    func point(gallery: String) -> ReturnPoint? { returnPoints[gallery] }
+    func track(_ page: Int, gallery: String) {
+        if points[gallery]?.page != page { points[gallery] = ReadingPoint(page: page) }
+    }
+
+    func point(gallery: String) -> ReadingPoint? { points[gallery] }
+}
+
+struct ReaderDestination: View {
+    let route: ReaderRoute
+    let namespace: Namespace.ID
+    @State private var page: Int
+
+    init(route: ReaderRoute, namespace: Namespace.ID) {
+        self.route = route
+        self.namespace = namespace
+        _page = State(initialValue: route.startPage)
+    }
+
+    var body: some View {
+        let gallery = route.source.item.transitionKey
+        ReaderView(route: route, page: Binding(
+            get: { page },
+            set: { value in
+                ReaderProgress.shared.track(value, gallery: gallery)
+                page = value
+            }
+        ))
+        .navigationTransition(.zoom(sourceID: ReaderThumbnailID(gallery: gallery, page: page), in: namespace))
+    }
 }
 
 extension View {
+    @ViewBuilder
+    func readerThumbnailSource(gallery: String, page: Int, in namespace: Namespace.ID?) -> some View {
+        if let namespace {
+            matchedTransitionSource(id: ReaderThumbnailID(gallery: gallery, page: page), in: namespace)
+        } else {
+            self
+        }
+    }
+
     /// Keeps thumbnails (ids: page indexes) centred on the page being read.
     func followsReader(gallery: String, position: Binding<Int?>) -> some View {
         modifier(FollowsReader(gallery: gallery, position: position))
@@ -1829,10 +1781,18 @@ private struct FollowsReader: ViewModifier {
     @State private var progress = ReaderProgress.shared
 
     func body(content: Content) -> some View {
-        content
-            .scrollPosition(id: $position, anchor: .center)
-            .onChange(of: progress.point(gallery: gallery), initial: true) { _, point in
-                if let point { position = point.page }
-            }
+        ScrollViewReader { proxy in
+            content
+                .scrollPosition(id: $position, anchor: .center)
+                .onChange(of: progress.point(gallery: gallery), initial: true) { _, point in
+                    guard let point else { return }
+                    var transaction = Transaction(animation: nil)
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        position = point.page
+                        proxy.scrollTo(point.page, anchor: .center)
+                    }
+                }
+        }
     }
 }
