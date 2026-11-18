@@ -9,6 +9,9 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     private var reportedSize = ReaderSizeStatus()
     private var pinchStart: (scale: CGFloat, focus: CGPoint)?
     private let pinchDelegate = PinchDelegate()
+    #if DEBUG
+    var testPage: Int?
+    #endif
 
     var sizeStatus: ReaderSizeStatus {
         ReaderSizeStatus(scale: zoomScale, adjusting: adjustingSize || pinchStart != nil)
@@ -25,14 +28,15 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         decelerationRate = .normal
         bouncesZoom = true
         bouncesHorizontally = false
+        panGestureRecognizer.maximumNumberOfTouches = 1
         backgroundColor = .black
 
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         addSubview(imageView)
 
-        // Own the pinch at the artwork. The enclosing pager cannot turn on
-        // two fingers, and the scroll view still handles single-finger pan.
+        // Pinch around the artwork under the fingers. The scroll view owns
+        // the single-finger drag and deceleration at the resulting size.
         pinchGestureRecognizer?.isEnabled = false
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         pinchDelegate.scroll = self
@@ -71,7 +75,7 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
         imageView.center = CGPoint(x: max(bounds.width, size.width) / 2,
                                    y: max(bounds.height, size.height) / 2)
         #if DEBUG
-        if imageView.image != nil { ReaderGestureTestSupport.measure(self) }
+        if imageView.image != nil { ReaderGestureTestSupport.measure(self, page: testPage) }
         #endif
     }
 
@@ -90,13 +94,16 @@ class ReaderPageZoomView: UIScrollView, UIScrollViewDelegate {
     }
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        if gestureRecognizer === panGestureRecognizer, !sizeStatus.enlarged { return false }
+        if gestureRecognizer === panGestureRecognizer {
+            return sizeStatus.enlarged && !sizeStatus.adjusting
+                && (contentSize.width > bounds.width || contentSize.height > bounds.height)
+        }
         return super.gestureRecognizerShouldBegin(gestureRecognizer)
     }
 
     #if DEBUG
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if imageView.image != nil { ReaderGestureTestSupport.measure(self) }
+        if imageView.image != nil { ReaderGestureTestSupport.measure(self, page: testPage) }
     }
     #endif
 

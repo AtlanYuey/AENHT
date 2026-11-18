@@ -1006,7 +1006,7 @@ final class SwipeDelegate: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
-// MARK: - Paged reader (UIPageViewController)
+// MARK: - Paged reader
 
 /// How the paged reader shows another page.
 enum PageTurn: Equatable {
@@ -1021,9 +1021,8 @@ enum PageTurn: Equatable {
     case sweep(vertical: Bool, toStart: Bool)
 }
 
-/// One page at a time, left-to-right, right-to-left or top-to-bottom.
-/// UIPageViewController keeps the neighbouring pages alive, so turning a
-/// page shows an already decoded image instead of a blank one.
+/// One page or spread at a time, left-to-right, right-to-left or top-to-bottom.
+/// The active artwork owns its gestures. There is no scroll view around it.
 struct PagedReader: UIViewControllerRepresentable {
     /// One or two pages (double page) per turn.
     let units: [[ReaderPage]]
@@ -1035,87 +1034,57 @@ struct PagedReader: UIViewControllerRepresentable {
     let onSizeChanged: (ReaderSizeStatus) -> Void
     let onTap: (CGPoint) -> Void
     let onSwipe: (UISwipeGestureRecognizer.Direction) -> Void
-    /// Fade on Swipe: a swipe the way the pages go turns them (forward or not).
+    /// A swipe in the reading direction turns by one unit.
     var onSwipeTurn: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    func makeUIViewController(context: Context) -> UIPageViewController {
-        let controller = UIPageViewController(
-            transitionStyle: .scroll,
-            navigationOrientation: mode == .verticalPaged ? .vertical : .horizontal,
-            options: [.interPageSpacing: 16]
-        )
-        controller.view.backgroundColor = .black
-        // Fade on Swipe: without a data source the pages can't be dragged (the swipe is the reader's).
-        controller.dataSource = AppSettings.shared.swipeFades ? nil : context.coordinator
-        controller.delegate = context.coordinator
-        context.coordinator.connect(controller)
+    func makeUIViewController(context: Context) -> ReaderPageHost {
+        let controller = ReaderPageHost()
+        context.coordinator.host = controller
         if let first = context.coordinator.controller(for: page) {
-            controller.setViewControllers([first], direction: .forward, animated: false)
+            controller.show(first)
         }
         context.coordinator.prepare(after: page)
         return controller
     }
 
-    func updateUIViewController(_ controller: UIPageViewController, context: Context) {
+    func updateUIViewController(_ controller: ReaderPageHost, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        let visible = controller.viewControllers?.first as? PageController
+        let visible = controller.current
         visible?.configure(imageOptions, active: isActive)
         coordinator.resetSizeIfNeeded(for: visible)
         defer { coordinator.prepare(after: page) }
-        coordinator.updatePageTurning()
-        let sweep = coordinator.pendingSweep
-        coordinator.pendingSweep = nil
-        guard let current = (controller.viewControllers?.first as? PageController)?.index,
-              current != page
-        else { return }
-        // A swipe (Fade on Swipe) sweeps; a turn of one page slides, or fades
-        // without the animation; a jump (the slider) shows the page at once.
+        let swipe = coordinator.pendingTurn
+        coordinator.pendingTurn = nil
+        guard let current = visible?.index, current != page else { return }
+        // Swipes keep their own animation. Jumps show the page at once.
         let turn: PageTurn = abs(page - current) != 1 ? .instant
-            : sweep ?? (AppSettings.shared.animatePageTurns ? .slide : .fade)
+            : swipe ?? (AppSettings.shared.animatePageTurns ? .slide : .fade)
         coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
-    static func dismantleUIViewController(_ controller: UIPageViewController, coordinator: Coordinator) {
+    static func dismantleUIViewController(_ controller: ReaderPageHost, coordinator: Coordinator) {
         coordinator.stopPreparation()
     }
 
-    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+    @MainActor
+    final class Coordinator {
         var parent: PagedReader
-        /// The page turn drawn over the page view controller, if one runs.
+        weak var host: ReaderPageHost?
         private var running: (id: Int, cover: UIView, page: UIView)?
         private var turnID = 0
-        /// Page controllers near the current page, reused so a tap shows
-        /// the very page that was already laid out next to this one.
         private var cache: [Int: PageController] = [:]
         private let imagePreparation = ReaderImagePreparation()
-        private weak var pageViewController: UIPageViewController?
-        private weak var pagingPan: UIPanGestureRecognizer?
         private var lastResetSizeRequest: Int
-        /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
-        var pendingSweep: PageTurn?
+        var pendingTurn: PageTurn?
 
         init(_ parent: PagedReader) {
             self.parent = parent
             self.lastResetSizeRequest = parent.resetSizeRequest
-        }
-
-        func connect(_ controller: UIPageViewController) {
-            pageViewController = controller
-            pagingPan = controller.view.subviews.compactMap { $0 as? UIScrollView }.first?.panGestureRecognizer
-            pagingPan?.maximumNumberOfTouches = 1
-        }
-
-        func updatePageTurning() {
-            guard let pageViewController else { return }
-            let enabled = !AppSettings.shared.swipeFades
-            if (pageViewController.dataSource != nil) != enabled {
-                pageViewController.dataSource = enabled ? self : nil
-            }
         }
 
         func resetSizeIfNeeded(for visible: PageController?) {
@@ -1126,7 +1095,7 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         private func sizeChanged(_ status: ReaderSizeStatus, at index: Int) {
-            guard (pageViewController?.viewControllers?.first as? PageController)?.index == index else { return }
+            guard host?.current?.index == index else { return }
             parent.onSizeChanged(status)
         }
 
@@ -1146,19 +1115,18 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func stopPreparation() { imagePreparation.stop() }
 
-        /// A swipe of [t] ended: with Fade on Swipe, one the way the pages go
-        /// turns them (left or up is forward, except right to left). Answers
-        /// whether it did.
+        /// Left or up advances, except in right-to-left reading.
         func swipeTurn(_ t: CGPoint) -> Bool {
-            guard AppSettings.shared.swipeFades,
-                  (pageViewController?.viewControllers?.first as? PageController)?.sizeStatus.blocksNavigation == false
-            else { return false }
+            guard host?.current?.sizeStatus.blocksNavigation == false else { return false }
             let vertical = parent.mode == .verticalPaged
             let along = vertical ? t.y : t.x
             let across = vertical ? t.x : t.y
             guard abs(along) >= 40, abs(along) >= 1.5 * abs(across) else { return false }
-            pendingSweep = .sweep(vertical: vertical, toStart: along < 0)
-            parent.onSwipeTurn(parent.mode == .rightToLeft ? along > 0 : along < 0)
+            let forward = parent.mode == .rightToLeft ? along > 0 : along < 0
+            let next = parent.page + (forward ? 1 : -1)
+            guard parent.units.indices.contains(next) else { return true }
+            pendingTurn = AppSettings.shared.swipeFades ? .sweep(vertical: vertical, toStart: along < 0) : .slide
+            parent.onSwipeTurn(forward)
             return true
         }
 
@@ -1175,40 +1143,31 @@ struct PagedReader: UIViewControllerRepresentable {
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
             controller.onSizeChanged = { [weak self] status in self?.sizeChanged(status, at: index) }
-            // The inner scroll view accepts panning at a close-up size and
-            // fails immediately at the fitted size, handing the turn to UIKit.
-            pagingPan?.require(toFail: controller.imagePan)
             cache[index] = controller
             let current = parent.page
             cache = cache.filter { (current - 1...current + ReaderImagePreparation.turns).contains($0.key) || $0.key == index }
             return controller
         }
 
-        /// Shows [index]. The page view controller switches to it at once and
+        /// Shows [index]. The container switches to it at once and
         /// the turn is drawn over it: the old page (a snapshot) slides away
         /// as the new one slides in, or fades out over it. A turn asked for
         /// while another runs ends that one at once and starts its own, so
         /// fast taps keep turning a page each instead of waiting and jumping.
-        func show(_ index: Int, from current: Int, in pageController: UIPageViewController, turn style: PageTurn) {
+        func show(_ index: Int, from current: Int, in host: ReaderPageHost, turn style: PageTurn) {
             guard let target = controller(for: index) else { return }
-            let forward = index > current
-            let direction: UIPageViewController.NavigationDirection
-            if parent.mode == .rightToLeft {
-                direction = forward ? .reverse : .forward
-            } else {
-                direction = forward ? .forward : .reverse
-            }
+            let entersFromEnd = (index > current) != (parent.mode == .rightToLeft)
             endTurn()
-            let container = pageController.view!
+            let container = host.view!
             var cover: UIView?
-            if style != .instant, let old = pageController.viewControllers?.first?.view,
+            if style != .instant, let old = host.current?.view,
                let snapshot = old.snapshotView(afterScreenUpdates: false) {
                 snapshot.frame = old.convert(old.bounds, to: container)
                 // Taps go through to the new page (fast turns).
                 snapshot.isUserInteractionEnabled = false
                 cover = snapshot
             }
-            pageController.setViewControllers([target], direction: direction, animated: false)
+            host.show(target)
             guard let cover, let page = target.view else { return }
             container.addSubview(cover)
             turnID += 1
@@ -1229,7 +1188,7 @@ struct PagedReader: UIViewControllerRepresentable {
             // The new page comes in from the side the turn goes to.
             let vertical = parent.mode == .verticalPaged
             let distance = (vertical ? container.bounds.height : container.bounds.width) + 16
-            let offset = direction == .forward ? distance : -distance
+            let offset = entersFromEnd ? distance : -distance
             let move = { (amount: CGFloat) in
                 vertical ? CGAffineTransform(translationX: 0, y: amount) : CGAffineTransform(translationX: amount, y: 0)
             }
@@ -1290,34 +1249,40 @@ struct PagedReader: UIViewControllerRepresentable {
             turn.page.transform = .identity
         }
 
-        private func neighbour(of controller: UIViewController, _ delta: Int) -> UIViewController? {
-            guard let page = controller as? PageController, !page.sizeStatus.blocksNavigation else { return nil }
-            let step = parent.mode == .rightToLeft ? -delta : delta
-            return self.controller(for: page.index + step)
-        }
+    }
+}
 
-        func pageViewController(_ pageViewController: UIPageViewController,
-                                viewControllerBefore viewController: UIViewController) -> UIViewController? {
-            neighbour(of: viewController, -1)
-        }
+final class ReaderPageHost: UIViewController {
+    private(set) var current: PageController?
 
-        func pageViewController(_ pageViewController: UIPageViewController,
-                                viewControllerAfter viewController: UIViewController) -> UIViewController? {
-            neighbour(of: viewController, 1)
-        }
+    override func loadView() {
+        let canvas = UIView()
+        canvas.backgroundColor = .black
+        canvas.clipsToBounds = true
+        view = canvas
+    }
 
-        func pageViewController(_ pageViewController: UIPageViewController,
-                                didFinishAnimating finished: Bool,
-                                previousViewControllers: [UIViewController],
-                                transitionCompleted completed: Bool) {
-            guard completed, let current = pageViewController.viewControllers?.first as? PageController else {
-                return
-            }
-            if parent.page != current.index {
-                parent.page = current.index
-            }
-            prepare(after: current.index)
+    func show(_ next: PageController) {
+        let previous = current
+        guard previous !== next else { return }
+        previous?.willMove(toParent: nil)
+        addChild(next)
+        current = next
+        let displayed = view.window != nil
+        if displayed {
+            previous?.beginAppearanceTransition(false, animated: false)
+            next.beginAppearanceTransition(true, animated: false)
         }
+        next.view.frame = view.bounds
+        next.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(next.view)
+        previous?.view.removeFromSuperview()
+        if displayed {
+            previous?.endAppearanceTransition()
+            next.endAppearanceTransition()
+        }
+        previous?.removeFromParent()
+        next.didMove(toParent: self)
     }
 }
 
@@ -1328,7 +1293,7 @@ final class PageController: UIViewController {
     let rightToLeft: Bool
     var onTap: ((CGPoint) -> Void)?
     var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
-    /// Fade on Swipe: a swipe's translation when it ended; answers whether it turned the page.
+    /// The movement of a page swipe when the finger lifts.
     var onSwipeTurn: ((CGPoint) -> Bool)?
     var onSizeChanged: ((ReaderSizeStatus) -> Void)?
     private let zoomView = ZoomableImageView()
@@ -1336,7 +1301,6 @@ final class PageController: UIViewController {
     private var active: Bool
     private var visible = false
     var sizeStatus: ReaderSizeStatus { zoomView.sizeStatus }
-    var imagePan: UIPanGestureRecognizer { zoomView.panGestureRecognizer }
 
     func resetZoom() { zoomView.resetZoom() }
 
@@ -1359,6 +1323,9 @@ final class PageController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        #if DEBUG
+        zoomView.testPage = index
+        #endif
         zoomView.onTap = { [weak self] point in self?.onTap?(point) }
         zoomView.onSwipe = { [weak self] direction in self?.onSwipe?(direction) }
         zoomView.onSwipeTurn = { [weak self] t in self?.onSwipeTurn?(t) ?? false }
@@ -1430,7 +1397,7 @@ final class ZoomableImageView: ReaderPageZoomView {
     /// The tap's position in fractions of the page's width and height.
     var onTap: ((CGPoint) -> Void)?
     var onSwipe: ((UISwipeGestureRecognizer.Direction) -> Void)?
-    /// A swipe's translation when it ended; answers whether it turned the page (Fade on Swipe).
+    /// The movement of a page swipe when the finger lifts.
     var onSwipeTurn: ((CGPoint) -> Bool)?
 
     private static let doubleTapInterval: CFTimeInterval = 0.28
@@ -1462,7 +1429,6 @@ final class ZoomableImageView: ReaderPageZoomView {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard gesture.state == .ended, !sizeStatus.blocksNavigation else { return }
         let translation = gesture.translation(in: self)
-        // Fade on Swipe: a swipe the way the pages go turns them, however slow.
         if onSwipeTurn?(translation) == true { return }
         guard let direction = ReaderSwipe.direction(translation, in: bounds.size) else { return }
         onSwipe?(direction)

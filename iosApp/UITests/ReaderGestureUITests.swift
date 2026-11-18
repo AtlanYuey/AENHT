@@ -15,8 +15,10 @@ final class ReaderGestureUITests: XCTestCase {
     func testPinchedDoublePageMovesWithOneFinger() throws {
         let app = openReader()
         let canvas = canvas(in: app)
+        XCTAssertEqual(try XCTUnwrap(metrics(canvas)).page, 0)
+        drag(app, from: (0.78, 0.45), to: (0.24, 0.45))
+        eventually { self.metrics(canvas)?.page == 1 }
         canvas.pinch(withScale: 2.8, velocity: 1.7)
-        print("After double-page pinch", canvas.value ?? "no viewport measurement")
         eventually { (self.metrics(canvas)?.scale ?? 0) > 1.4 }
         let before = try XCTUnwrap(metrics(canvas))
         XCTAssertGreaterThan(before.maxX, 100)
@@ -25,10 +27,12 @@ final class ReaderGestureUITests: XCTestCase {
         let endX = before.x < before.maxX * 0.55 ? 0.30 : 0.70
         let endY = before.y < before.maxY * 0.55 ? 0.30 : 0.70
         drag(app, from: (1 - endX, 1 - endY), to: (endX, endY))
+        print("Spread offset before drag", before.x, before.y, "and after drag", canvas.value ?? "no viewport measurement")
         eventually {
             guard let after = self.metrics(canvas) else { return false }
             return abs(after.x - before.x) > 50 && abs(after.y - before.y) > 35
         }
+        XCTAssertEqual(try XCTUnwrap(metrics(canvas)).page, before.page)
         XCTAssertFalse(app.staticTexts["reader-gallery"].exists)
     }
 
