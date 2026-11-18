@@ -54,7 +54,7 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
                 edge.edges = .left
                 edge.maximumNumberOfTouches = 1
                 edge.delegate = self
-                if let nativeEdge { edge.require(toFail: nativeEdge) }
+                if nativeEdgeEnabled, let nativeEdge { edge.require(toFail: nativeEdge) }
                 navigation.view.addGestureRecognizer(edge)
                 fallbackEdge = edge
             }
@@ -117,7 +117,7 @@ struct ReaderBackGestures: UIViewControllerRepresentable {
         func restore() {
             for gesture in paused.values { gesture.isEnabled = true }
             paused.removeAll()
-            if let nativeEdge {
+            if let nativeEdge, nativeEdge.delegate === self {
                 nativeEdge.delegate = nativeDelegate
                 nativeEdge.isEnabled = nativeEdgeEnabled
                 if let pan = nativeEdge as? UIPanGestureRecognizer, let nativeMaximumTouches {
