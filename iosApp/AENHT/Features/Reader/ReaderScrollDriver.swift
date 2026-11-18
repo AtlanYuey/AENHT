@@ -245,10 +245,12 @@ final class ReaderScrollDriver: NSObject, UIGestureRecognizerDelegate {
     }
 
     func viewportChanged(_ size: CGSize) {
-        if viewport.width > 0, abs(viewport.width - size.width) > 1 || abs(viewport.height - size.height) > 1 {
+        let widthChanged = viewport.width > 0 && abs(viewport.width - size.width) > 1
+        if widthChanged || abs(viewport.height - size.height) > 1 {
             cancelResize()
-            if running { finish(.resized) }
         }
+        // Showing the controls can change the height without changing the reading position.
+        if widthChanged, running { finish(.resized) }
         viewport = size
         // During playback the display link publishes progress once, after moving the actual view.
         // Geometry callbacks for the same offset must not repeat the coordinate scans.
