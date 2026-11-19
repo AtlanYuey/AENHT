@@ -588,9 +588,16 @@
     <string name="l_585">Taille d\'origine</string>
     <string name="l_586">Garder la taille des pages</string>
     <string name="l_587">Pincez à deux doigts pour réduire ou agrandir les pages. Avec Garder la taille des pages, cette taille reste pour toutes les pages et les galeries suivantes ; faites glisser les côtés noirs pour déplacer les pages. Taille d\'origine, en bas du lecteur, rétablit la taille habituelle.</string>
-    <string name="l_588">Sauvegarde des réglages</string>
-    <string name="l_589">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_590">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_591">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_592">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_588">Tourner les pages</string>
+    <string name="l_589">Fondu au glissement</string>
+    <string name="l_590">Glisser + diffusion</string>
+    <string name="l_591">Les pages glissent avec le doigt.</string>
+    <string name="l_592">Les pages ne bougent pas : la page s\'efface avec un bord doux qui suit votre doigt. Arrêtez-vous et il s\'arrête ; un glissement rapide tourne aussitôt.</string>
+    <string name="l_593">Un glissement fait glisser les pages ; un toucher tourne la page avec un fondu qui se diffuse depuis l\'endroit touché.</string>
+    <string name="l_594">Standard</string>
+    <string name="l_595">Sauvegarde des réglages</string>
+    <string name="l_596">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_597">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_598">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_599">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

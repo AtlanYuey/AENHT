@@ -238,6 +238,26 @@ enum HomeRow: String, CaseIterable, Identifiable {
 }
 
 /// Two pages side by side in the left-to-right / right-to-left modes.
+/// How the paged reader's pages turn (Reading › Page Turn).
+enum PageTurnStyle: String, CaseIterable, Identifiable {
+    /// The pages slide with the finger.
+    case slide
+    /// A swipe fades the page away with a soft edge that follows the finger; the pages don't move.
+    case sweep
+    /// A swipe slides the pages; a tap fades the page away in a circle spreading from the finger.
+    case spread
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .slide: "Regular Turn"
+        case .sweep: "Swipe Fade"
+        case .spread: "Swipe + Spread"
+        }
+    }
+}
+
 enum DoublePage: String, CaseIterable, Identifiable {
     case off, landscape, always
 
@@ -416,6 +436,13 @@ final class AppSettings {
     var doublePageSingleStep: Bool { didSet { save(doublePageSingleStep, "doublePageSingleStep") } }
     /// A swipe turns the page with a fade sweeping the way it went; the pages don't move with the finger.
     var swipeFades: Bool { didSet { save(swipeFades, "swipeFades") } }
+    /// How pages turn. Swipe Fade is also kept as swipeFades (the Android app's setting).
+    var pageTurn: PageTurnStyle {
+        didSet {
+            save(pageTurn.rawValue, "pageTurn")
+            if swipeFades != (pageTurn == .sweep) { swipeFades = pageTurn == .sweep }
+        }
+    }
     /// Reader: plain white / black margins are cut off the pages (paged modes).
     var autoCrop: Bool { didSet { save(autoCrop, "autoCrop") } }
     /// Rows pinned above the Home feed, both sites ("nh-popular,eh-popular").
@@ -566,6 +593,8 @@ final class AppSettings {
         doublePageCover = d.object(forKey: "doublePageCover") as? Bool ?? true
         doublePageSingleStep = d.bool(forKey: "doublePageSingleStep")
         swipeFades = d.bool(forKey: "swipeFades")
+        pageTurn = PageTurnStyle(rawValue: d.string(forKey: "pageTurn") ?? "")
+            ?? (d.bool(forKey: "swipeFades") ? .sweep : .slide)
         autoCrop = d.bool(forKey: "autoCrop")
         homeRowsRaw = d.string(forKey: "homeRows") ?? "nh-popular,nh-week,eh-day,eh-popular"
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
@@ -671,6 +700,7 @@ final class AppSettings {
         values["doublePageCover"] = doublePageCover
         values["doublePageSingleStep"] = doublePageSingleStep
         values["swipeFades"] = swipeFades
+        values["pageTurn"] = pageTurn.rawValue
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
         values["blockedCommenters"] = blockedCommenters
@@ -766,7 +796,11 @@ final class AppSettings {
         case "doublePage": set(\.doublePage, string.flatMap(DoublePage.init(rawValue:)))
         case "doublePageCover": set(\.doublePageCover, number?.boolValue)
         case "doublePageSingleStep": set(\.doublePageSingleStep, number?.boolValue)
-        case "swipeFades": set(\.swipeFades, number?.boolValue)
+        case "swipeFades":
+            set(\.swipeFades, number?.boolValue)
+            // From the Android app (no Page Turn there): Swipe Fade on or off.
+            if pageTurn != .spread, (pageTurn == .sweep) != swipeFades { pageTurn = swipeFades ? .sweep : .slide }
+        case "pageTurn": set(\.pageTurn, string.flatMap(PageTurnStyle.init(rawValue:)))
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)

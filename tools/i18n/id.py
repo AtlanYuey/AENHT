@@ -587,4 +587,11 @@ T = [
     "Atur ulang ukuran",
     "Pertahankan ukuran halaman",
     "Cubit dengan dua jari untuk memperkecil atau memperbesar halaman. Dengan Pertahankan ukuran halaman, ukuran itu tetap untuk setiap halaman dan galeri berikutnya; seret sisi hitam untuk memindahkan halaman. Atur ulang ukuran di bawah pembaca mengembalikan ukuran semula.",
+    "Membalik halaman",
+    "Geser memudar",
+    "Geser + menyebar",
+    "Halaman bergeser mengikuti jari.",
+    "Halaman tidak bergerak: halaman memudar dengan tepi lembut yang mengikuti jari. Berhenti maka ikut berhenti; geser cepat langsung membalik.",
+    "Geser untuk menggeser halaman; ketuk untuk membalik halaman dengan pudar yang menyebar dari titik ketukan.",
+    "Standar",
 ]

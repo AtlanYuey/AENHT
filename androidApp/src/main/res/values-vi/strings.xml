@@ -588,9 +588,16 @@
     <string name="l_585">Đặt lại kích thước</string>
     <string name="l_586">Giữ kích thước trang</string>
     <string name="l_587">Chụm hai ngón tay để thu nhỏ hoặc phóng to trang. Khi bật Giữ kích thước trang, kích thước đó được giữ cho mọi trang và các truyện sau; kéo phần viền đen hai bên để di chuyển trang. Đặt lại kích thước ở dưới trình đọc sẽ đưa về cỡ ban đầu.</string>
-    <string name="l_588">Sao lưu cài đặt</string>
-    <string name="l_589">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_590">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_591">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_592">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_588">Lật trang</string>
+    <string name="l_589">Vuốt mờ dần</string>
+    <string name="l_590">Vuốt + lan tỏa</string>
+    <string name="l_591">Trang trượt theo ngón tay.</string>
+    <string name="l_592">Trang không di chuyển: trang mờ dần với mép mềm đi theo ngón tay. Dừng lại thì nó dừng; vuốt nhanh sẽ lật ngay.</string>
+    <string name="l_593">Vuốt để trượt trang; chạm để lật trang với hiệu ứng mờ lan ra từ chỗ bạn chạm.</string>
+    <string name="l_594">Tiêu chuẩn</string>
+    <string name="l_595">Sao lưu cài đặt</string>
+    <string name="l_596">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_597">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_598">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_599">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

@@ -587,4 +587,11 @@ T = [
     "Redefinir tamanho",
     "Manter tamanho da página",
     "Aperte com dois dedos para diminuir ou aumentar as páginas. Com Manter tamanho da página, esse tamanho fica em todas as páginas e nas próximas galerias; arraste as laterais pretas para mover as páginas. Redefinir tamanho, na parte de baixo do leitor, volta ao tamanho normal.",
+    "Virar página",
+    "Deslizar com esmaecer",
+    "Deslizar + expandir",
+    "As páginas deslizam com o dedo.",
+    "As páginas não se movem: a página some com uma borda suave que segue o dedo. Pare e ela para; um deslize rápido vira na hora.",
+    "Deslizar faz as páginas deslizarem; um toque vira a página com um esmaecer que se espalha de onde você tocou.",
+    "Padrão",
 ]

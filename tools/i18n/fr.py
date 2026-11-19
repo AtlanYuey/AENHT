@@ -587,4 +587,11 @@ T = [
     "Taille d'origine",
     "Garder la taille des pages",
     "Pincez à deux doigts pour réduire ou agrandir les pages. Avec Garder la taille des pages, cette taille reste pour toutes les pages et les galeries suivantes ; faites glisser les côtés noirs pour déplacer les pages. Taille d'origine, en bas du lecteur, rétablit la taille habituelle.",
+    "Tourner les pages",
+    "Fondu au glissement",
+    "Glisser + diffusion",
+    "Les pages glissent avec le doigt.",
+    "Les pages ne bougent pas : la page s'efface avec un bord doux qui suit votre doigt. Arrêtez-vous et il s'arrête ; un glissement rapide tourne aussitôt.",
+    "Un glissement fait glisser les pages ; un toucher tourne la page avec un fondu qui se diffuse depuis l'endroit touché.",
+    "Standard",
 ]

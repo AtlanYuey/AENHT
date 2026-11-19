@@ -587,4 +587,11 @@ T = [
     "Größe zurücksetzen",
     "Seitengröße beibehalten",
     "Mit zwei Fingern zusammen- oder auseinanderziehen, um die Seiten kleiner oder größer zu machen. Mit „Seitengröße beibehalten“ bleibt diese Größe für alle Seiten und die nächsten Galerien; die schwarzen Ränder ziehen, um die Seiten zu verschieben. „Größe zurücksetzen“ unten im Reader stellt die übliche Größe wieder her.",
+    "Umblättern",
+    "Wischen mit Überblendung",
+    "Wischen + Ausbreiten",
+    "Die Seiten gleiten mit dem Finger.",
+    "Die Seiten bewegen sich nicht: Die Seite blendet mit weicher Kante aus, die deinem Finger folgt. Hältst du an, hält sie an; schnelles Wischen blättert sofort um.",
+    "Wischen schiebt die Seiten; Tippen blättert mit einer Überblendung, die sich von der Stelle ausbreitet, wo du getippt hast.",
+    "Standard",
 ]

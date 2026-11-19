@@ -587,4 +587,11 @@ T = [
     "Restablecer tamaño",
     "Mantener tamaño de página",
     "Pellizca con dos dedos para hacer las páginas más pequeñas o más grandes. Con Mantener tamaño de página, ese tamaño se conserva en todas las páginas y en las siguientes galerías; arrastra los lados negros para mover las páginas. Restablecer tamaño, abajo en el lector, recupera el tamaño habitual.",
+    "Pasar página",
+    "Deslizar con fundido",
+    "Deslizar + expandir",
+    "Las páginas se deslizan con el dedo.",
+    "Las páginas no se mueven: la página se desvanece con un borde suave que sigue tu dedo. Si te detienes, se detiene; un deslizamiento rápido pasa la página al instante.",
+    "Al deslizar, las páginas se desplazan; al tocar, la página cambia con un fundido que se expande desde donde tocaste.",
+    "Estándar",
 ]

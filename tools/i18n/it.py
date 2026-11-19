@@ -587,4 +587,11 @@ T = [
     "Ripristina dimensione",
     "Mantieni dimensione pagina",
     "Pizzica con due dita per rimpicciolire o ingrandire le pagine. Con Mantieni dimensione pagina, quella dimensione resta per tutte le pagine e le gallerie successive; trascina i lati neri per spostare le pagine. Ripristina dimensione, in basso nel lettore, riporta la dimensione abituale.",
+    "Cambio pagina",
+    "Scorri con dissolvenza",
+    "Scorri + espansione",
+    "Le pagine scorrono con il dito.",
+    "Le pagine non si muovono: la pagina svanisce con un bordo morbido che segue il dito. Se ti fermi si ferma; uno scorrimento rapido gira subito.",
+    "Lo scorrimento fa scorrere le pagine; un tocco gira la pagina con una dissolvenza che si espande da dove hai toccato.",
+    "Standard",
 ]

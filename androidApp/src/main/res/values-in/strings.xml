@@ -588,9 +588,16 @@
     <string name="l_585">Atur ulang ukuran</string>
     <string name="l_586">Pertahankan ukuran halaman</string>
     <string name="l_587">Cubit dengan dua jari untuk memperkecil atau memperbesar halaman. Dengan Pertahankan ukuran halaman, ukuran itu tetap untuk setiap halaman dan galeri berikutnya; seret sisi hitam untuk memindahkan halaman. Atur ulang ukuran di bawah pembaca mengembalikan ukuran semula.</string>
-    <string name="l_588">Cadangan Pengaturan</string>
-    <string name="l_589">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_590">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_591">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_592">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_588">Membalik halaman</string>
+    <string name="l_589">Geser memudar</string>
+    <string name="l_590">Geser + menyebar</string>
+    <string name="l_591">Halaman bergeser mengikuti jari.</string>
+    <string name="l_592">Halaman tidak bergerak: halaman memudar dengan tepi lembut yang mengikuti jari. Berhenti maka ikut berhenti; geser cepat langsung membalik.</string>
+    <string name="l_593">Geser untuk menggeser halaman; ketuk untuk membalik halaman dengan pudar yang menyebar dari titik ketukan.</string>
+    <string name="l_594">Standar</string>
+    <string name="l_595">Cadangan Pengaturan</string>
+    <string name="l_596">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_597">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_598">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_599">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

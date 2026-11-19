@@ -588,9 +588,16 @@
     <string name="l_585">Restablecer tamaño</string>
     <string name="l_586">Mantener tamaño de página</string>
     <string name="l_587">Pellizca con dos dedos para hacer las páginas más pequeñas o más grandes. Con Mantener tamaño de página, ese tamaño se conserva en todas las páginas y en las siguientes galerías; arrastra los lados negros para mover las páginas. Restablecer tamaño, abajo en el lector, recupera el tamaño habitual.</string>
-    <string name="l_588">Copia de los ajustes</string>
-    <string name="l_589">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_590">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_591">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_592">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_588">Pasar página</string>
+    <string name="l_589">Deslizar con fundido</string>
+    <string name="l_590">Deslizar + expandir</string>
+    <string name="l_591">Las páginas se deslizan con el dedo.</string>
+    <string name="l_592">Las páginas no se mueven: la página se desvanece con un borde suave que sigue tu dedo. Si te detienes, se detiene; un deslizamiento rápido pasa la página al instante.</string>
+    <string name="l_593">Al deslizar, las páginas se desplazan; al tocar, la página cambia con un fundido que se expande desde donde tocaste.</string>
+    <string name="l_594">Estándar</string>
+    <string name="l_595">Copia de los ajustes</string>
+    <string name="l_596">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_597">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_598">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_599">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

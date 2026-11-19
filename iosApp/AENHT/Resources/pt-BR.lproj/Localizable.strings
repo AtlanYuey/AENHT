@@ -587,3 +587,10 @@
 "Reset Size" = "Redefinir tamanho";
 "Keep Page Size" = "Manter tamanho da página";
 "Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size." = "Aperte com dois dedos para diminuir ou aumentar as páginas. Com Manter tamanho da página, esse tamanho fica em todas as páginas e nas próximas galerias; arraste as laterais pretas para mover as páginas. Redefinir tamanho, na parte de baixo do leitor, volta ao tamanho normal.";
+"Page Turn" = "Virar página";
+"Swipe Fade" = "Deslizar com esmaecer";
+"Swipe + Spread" = "Deslizar + expandir";
+"The pages slide with your finger." = "As páginas deslizam com o dedo.";
+"The pages don't move: the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once." = "As páginas não se movem: a página some com uma borda suave que segue o dedo. Pare e ela para; um deslize rápido vira na hora.";
+"A swipe slides the pages; a tap turns the page with a fade spreading from where you tapped." = "Deslizar faz as páginas deslizarem; um toque vira a página com um esmaecer que se espalha de onde você tocou.";
+"Regular Turn" = "Padrão";

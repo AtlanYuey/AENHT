@@ -588,9 +588,16 @@
     <string name="l_585">Redefinir tamanho</string>
     <string name="l_586">Manter tamanho da página</string>
     <string name="l_587">Aperte com dois dedos para diminuir ou aumentar as páginas. Com Manter tamanho da página, esse tamanho fica em todas as páginas e nas próximas galerias; arraste as laterais pretas para mover as páginas. Redefinir tamanho, na parte de baixo do leitor, volta ao tamanho normal.</string>
-    <string name="l_588">Backup dos ajustes</string>
-    <string name="l_589">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_590">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_591">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_592">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_588">Virar página</string>
+    <string name="l_589">Deslizar com esmaecer</string>
+    <string name="l_590">Deslizar + expandir</string>
+    <string name="l_591">As páginas deslizam com o dedo.</string>
+    <string name="l_592">As páginas não se movem: a página some com uma borda suave que segue o dedo. Pare e ela para; um deslize rápido vira na hora.</string>
+    <string name="l_593">Deslizar faz as páginas deslizarem; um toque vira a página com um esmaecer que se espalha de onde você tocou.</string>
+    <string name="l_594">Padrão</string>
+    <string name="l_595">Backup dos ajustes</string>
+    <string name="l_596">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_597">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_598">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_599">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

@@ -588,9 +588,16 @@
     <string name="l_585">サイズをリセット</string>
     <string name="l_586">ページサイズを保持</string>
     <string name="l_587">2本指でつまんでページを縮小・拡大できます。「ページサイズを保持」をオンにすると、その大きさが以降のページや他の作品にも保たれます。左右の黒い部分をドラッグするとページを動かせます。リーダー下部の「サイズをリセット」で元の大きさに戻ります。</string>
-    <string name="l_588">設定のバックアップ</string>
-    <string name="l_589">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_590">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_591">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_592">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_588">ページめくり</string>
+    <string name="l_589">スワイプでフェード</string>
+    <string name="l_590">スワイプ＋広がり</string>
+    <string name="l_591">ページが指に合わせてスライドします。</string>
+    <string name="l_592">ページは動かず、ぼかした境目が指に合わせて進みます。指を止めると止まり、素早くスワイプするとすぐにめくれます。</string>
+    <string name="l_593">スワイプではページがスライドし、タップではタップした位置から広がるフェードでめくれます。</string>
+    <string name="l_594">標準</string>
+    <string name="l_595">設定のバックアップ</string>
+    <string name="l_596">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_597">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_598">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_599">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

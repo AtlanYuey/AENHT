@@ -587,4 +587,11 @@ T = [
     "Đặt lại kích thước",
     "Giữ kích thước trang",
     "Chụm hai ngón tay để thu nhỏ hoặc phóng to trang. Khi bật Giữ kích thước trang, kích thước đó được giữ cho mọi trang và các truyện sau; kéo phần viền đen hai bên để di chuyển trang. Đặt lại kích thước ở dưới trình đọc sẽ đưa về cỡ ban đầu.",
+    "Lật trang",
+    "Vuốt mờ dần",
+    "Vuốt + lan tỏa",
+    "Trang trượt theo ngón tay.",
+    "Trang không di chuyển: trang mờ dần với mép mềm đi theo ngón tay. Dừng lại thì nó dừng; vuốt nhanh sẽ lật ngay.",
+    "Vuốt để trượt trang; chạm để lật trang với hiệu ứng mờ lan ra từ chỗ bạn chạm.",
+    "Tiêu chuẩn",
 ]

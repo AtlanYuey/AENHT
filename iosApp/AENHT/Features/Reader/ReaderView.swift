@@ -750,7 +750,9 @@ struct ReadingSettingsSections: View {
             }
             // How a swipe turns the pages (not the taps: those are in Controls).
             if settings.readMode.isPaged {
-                Toggle("Fade on Swipe", isOn: $settings.swipeFades)
+                Picker("Page Turn", selection: $settings.pageTurn) {
+                    ForEach(PageTurnStyle.allCases) { Text($0.title).tag($0) }
+                }
             }
             if settings.readMode == .leftToRight || settings.readMode == .rightToLeft {
                 Picker("Double Page", selection: $settings.doublePage) {
@@ -777,7 +779,14 @@ struct ReadingSettingsSections: View {
             }
         } footer: {
             if settings.readMode.isPaged {
-                Text("With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.")
+                switch settings.pageTurn {
+                case .slide:
+                    Text("The pages slide with your finger.")
+                case .sweep:
+                    Text("The pages don't move: the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once.")
+                case .spread:
+                    Text("A swipe slides the pages; a tap turns the page with a fade spreading from where you tapped.")
+                }
             }
         }
         Section {
@@ -1009,6 +1018,8 @@ enum PageTurn: Equatable {
     /// The old page fades away from one side to the other with a soft edge,
     /// the way a swipe went (left or up: [toStart]).
     case sweep(vertical: Bool, toStart: Bool)
+    /// The old page fades away in a circle growing from [point] (fractions of the page): a tap.
+    case spread(CGPoint)
 }
 
 /// One page at a time, left-to-right, right-to-left or top-to-bottom.
@@ -1046,14 +1057,16 @@ struct PagedReader: UIViewControllerRepresentable {
         controller.view.backgroundColor = .black
         context.coordinator.pageViewController = controller
         context.coordinator.addCloseDrag(to: controller.view)
+        context.coordinator.addSweepDrag(to: controller.view)
         context.coordinator.lastSizeReset = sizeReset
-        // Fade on Swipe: without a data source the pages can't be dragged (the swipe is the reader's).
-        controller.dataSource = AppSettings.shared.swipeFades ? nil : context.coordinator
+        // Swipe Fade: without a data source the pages can't be dragged (the swipe fades them).
+        controller.dataSource = AppSettings.shared.pageTurn == .sweep ? nil : context.coordinator
         controller.delegate = context.coordinator
         if let first = context.coordinator.controller(for: page) {
             controller.setViewControllers([first], direction: .forward, animated: false)
         }
         context.coordinator.prepare(after: page)
+        context.coordinator.updatePaging()
         return controller
     }
 
@@ -1068,17 +1081,18 @@ struct PagedReader: UIViewControllerRepresentable {
             (controller.viewControllers?.first as? PageController)?.setSize(1, animated: true)
         }
         defer { coordinator.prepare(after: page) }
-        let swipeFades = AppSettings.shared.swipeFades
-        if (controller.dataSource == nil) != swipeFades { controller.dataSource = swipeFades ? nil : coordinator }
-        let sweep = coordinator.pendingSweep
-        coordinator.pendingSweep = nil
+        let sweeps = AppSettings.shared.pageTurn == .sweep
+        if (controller.dataSource == nil) != sweeps { controller.dataSource = sweeps ? nil : coordinator }
+        coordinator.updatePaging()
+        let pending = coordinator.pendingTurn
+        coordinator.pendingTurn = nil
         guard let current = (controller.viewControllers?.first as? PageController)?.index,
               current != page
         else { return }
-        // A swipe (Fade on Swipe) sweeps; a turn of one page slides, or fades
-        // without the animation; a jump (the slider) shows the page at once.
+        // A tap with Swipe + Spread spreads from the finger; a turn of one page
+        // slides, or fades without the animation; a jump (the slider) shows the page at once.
         let turn: PageTurn = abs(page - current) != 1 ? .instant
-            : sweep ?? (AppSettings.shared.animatePageTurns ? .slide : .fade)
+            : pending ?? (AppSettings.shared.animatePageTurns ? .slide : .fade)
         coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
@@ -1095,8 +1109,26 @@ struct PagedReader: UIViewControllerRepresentable {
         /// the very page that was already laid out next to this one.
         private var cache: [Int: PageController] = [:]
         private let imagePreparation = ReaderImagePreparation()
-        /// The sweep of the swipe that asked for the next turn (Fade on Swipe).
-        var pendingSweep: PageTurn?
+        /// How the next turn is drawn when a tap asked for it (Swipe + Spread: from the finger).
+        var pendingTurn: PageTurn?
+        /// A Swipe Fade turn following the finger.
+        private var sweeping: Sweep?
+        private var sweepDrag: UIPanGestureRecognizer?
+
+        private struct Sweep {
+            let cover: UIView
+            let mask: CAGradientLayer
+            /// The mask's position with nothing of the page gone, and how far it goes.
+            let from: CGPoint
+            let distance: CGPoint
+            let length: CGFloat
+            /// The finger goes left or up (the progress counts that way).
+            let toStart: Bool
+            let original: PageController
+            let target: Int
+            var progress: CGFloat = 0
+            var finishing = false
+        }
         weak var pageViewController: UIPageViewController?
         var lastSizeReset = 0
         private var zoom: ReaderZoom = .fitted
@@ -1124,6 +1156,146 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func stopPreparation() { imagePreparation.stop() }
 
+        /// The pages slide under the finger only with Standard and Swipe +
+        /// Spread, and not while the page is enlarged (it moves instead).
+        /// With Swipe Fade nothing moves under the finger: no bounce either.
+        func updatePaging() {
+            guard let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
+            let slides = AppSettings.shared.pageTurn != .sweep && zoom != .enlarged
+            if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
+        }
+
+        // MARK: Swipe Fade, following the finger
+
+        func addSweepDrag(to view: UIView) {
+            let drag = UIPanGestureRecognizer(target: self, action: #selector(sweepDragged(_:)))
+            drag.maximumNumberOfTouches = 1
+            drag.delegate = self
+            view.addGestureRecognizer(drag)
+            sweepDrag = drag
+        }
+
+        private var vertical: Bool { parent.mode == .verticalPaged }
+
+        /// Starts the turn the finger began: the next page goes in place
+        /// under a picture of this one, which the finger fades away.
+        private func beginSweep(along: CGFloat, in container: UIView) {
+            cutTurns()
+            guard let pageController = pageViewController,
+                  let current = pageController.viewControllers?.first as? PageController,
+                  let old = current.view else { return }
+            let toStart = along < 0
+            let forward = parent.mode == .rightToLeft ? !toStart : toStart
+            let target = current.index + (forward ? 1 : -1)
+            guard parent.units.indices.contains(target), let next = controller(for: target),
+                  let cover = old.snapshotView(afterScreenUpdates: false) else { return }
+            cover.frame = old.convert(old.bounds, to: container)
+            cover.isUserInteractionEnabled = false
+            pageController.setViewControllers([next], direction: .forward, animated: false)
+            container.addSubview(cover)
+            let size = cover.bounds.size
+            let length = vertical ? size.height : size.width
+            let soft = length * 0.22
+            let span = length + soft
+            let mask = CAGradientLayer()
+            mask.frame = vertical
+                ? CGRect(x: 0, y: toStart ? 0 : -soft, width: size.width, height: span)
+                : CGRect(x: toStart ? 0 : -soft, y: 0, width: span, height: size.height)
+            let opaque = UIColor.black.cgColor
+            let clear = UIColor.clear.cgColor
+            mask.colors = toStart ? [opaque, opaque, clear] : [clear, opaque, opaque]
+            mask.locations = toStart ? [0, NSNumber(value: Double(length / span)), 1] : [0, NSNumber(value: Double(soft / span)), 1]
+            mask.startPoint = vertical ? CGPoint(x: 0.5, y: 0) : CGPoint(x: 0, y: 0.5)
+            mask.endPoint = vertical ? CGPoint(x: 0.5, y: 1) : CGPoint(x: 1, y: 0.5)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            cover.layer.mask = mask
+            CATransaction.commit()
+            let distance = toStart ? -span : span
+            sweeping = Sweep(cover: cover, mask: mask, from: mask.position,
+                             distance: vertical ? CGPoint(x: 0, y: distance) : CGPoint(x: distance, y: 0),
+                             length: length, toStart: toStart, original: current, target: target)
+        }
+
+        private func setSweep(_ progress: CGFloat) {
+            guard var sweep = sweeping else { return }
+            sweep.progress = min(max(progress, 0), 1)
+            sweeping = sweep
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            sweep.mask.position = CGPoint(x: sweep.from.x + sweep.distance.x * sweep.progress,
+                                          y: sweep.from.y + sweep.distance.y * sweep.progress)
+            CATransaction.commit()
+        }
+
+        /// The finger lifted: on to the next page, or back (it went back, or not far and slowly).
+        private func endSweep(velocity: CGFloat) {
+            guard var sweep = sweeping, !sweep.finishing else { return }
+            let turns = velocity < -250 ? false : (sweep.progress > 0.35 || velocity > 350)
+            sweep.finishing = true
+            sweeping = sweep
+            let end: CGFloat = turns ? 1 : 0
+            let remaining = abs(end - sweep.progress) * sweep.length
+            // At the finger's speed, quick but never a jump.
+            let duration = min(0.3, max(0.12, Double(remaining / max(abs(velocity), 1400))))
+            let to = CGPoint(x: sweep.from.x + sweep.distance.x * end, y: sweep.from.y + sweep.distance.y * end)
+            CATransaction.begin()
+            CATransaction.setCompletionBlock { [weak self] in self?.finishSweep(turned: turns) }
+            let move = CABasicAnimation(keyPath: "position")
+            move.fromValue = NSValue(cgPoint: sweep.mask.position)
+            move.toValue = NSValue(cgPoint: to)
+            move.duration = duration
+            move.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            sweep.mask.position = to
+            sweep.mask.add(move, forKey: "sweep")
+            CATransaction.commit()
+        }
+
+        /// Ends the Swipe Fade turn (at once, when another turn starts).
+        private func finishSweep(turned: Bool) {
+            guard let sweep = sweeping else { return }
+            sweeping = nil
+            sweep.mask.removeAllAnimations()
+            if !turned {
+                // Back: the old page goes in place again under the (whole) picture of it.
+                pageViewController?.setViewControllers([sweep.original], direction: .forward, animated: false)
+            }
+            sweep.cover.removeFromSuperview()
+            if turned {
+                if parent.page != sweep.target { parent.page = sweep.target }
+                prepare(after: sweep.target)
+            }
+        }
+
+        /// A turn starting while another is drawn: that one ends at once, where it was going.
+        private func cutTurns() {
+            // A Swipe Fade turn on its way: done; one still under a finger: back.
+            if let sweep = sweeping { finishSweep(turned: sweep.finishing && sweep.progress > 0) }
+            endTurn()
+        }
+
+        @objc private func sweepDragged(_ drag: UIPanGestureRecognizer) {
+            guard let view = drag.view else { return }
+            let t = drag.translation(in: view)
+            let v = drag.velocity(in: view)
+            let along = vertical ? t.y : t.x
+            let speed = vertical ? v.y : v.x
+            switch drag.state {
+            case .began:
+                parent.onCloseDragBegan()
+                beginSweep(along: along != 0 ? along : speed, in: view)
+            case .changed:
+                guard let sweep = sweeping, !sweep.finishing else { return }
+                // Forward the way the finger first went; back to the start, nothing gone.
+                setSweep((sweep.toStart ? -along : along) / max(sweep.length, 1))
+            case .ended:
+                guard let sweep = sweeping else { return }
+                endSweep(velocity: sweep.toStart ? -speed : speed)
+            default:
+                if sweeping != nil { endSweep(velocity: -1000) }
+            }
+        }
+
         // MARK: Closing by dragging up or down
 
         /// Left and right turn pages: a drag up or down (whichever Controls ›
@@ -1145,6 +1317,16 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            if gestureRecognizer === sweepDrag, let drag = sweepDrag, let view = drag.view {
+                guard AppSettings.shared.pageTurn == .sweep, zoom != .enlarged else { return false }
+                let velocity = drag.velocity(in: view)
+                let along = vertical ? velocity.y : velocity.x
+                let across = vertical ? velocity.x : velocity.y
+                guard abs(along) > abs(across) * 1.2 else { return false }
+                // From the left edge it is the swipe back.
+                let start = drag.location(in: view).x - drag.translation(in: view).x
+                return vertical || start > 24
+            }
             guard gestureRecognizer === closeDrag, let drag = closeDrag, let view = drag.view else { return true }
             guard parent.mode == .leftToRight || parent.mode == .rightToLeft, zoom != .enlarged else { return false }
             let velocity = drag.velocity(in: view)
@@ -1192,25 +1374,14 @@ struct PagedReader: UIViewControllerRepresentable {
             case .fitted: smaller = 1
             case .enlarged: break
             }
-            if let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first {
-                pages.isScrollEnabled = zoom != .enlarged
-            }
+            updatePaging()
             parent.onZoom(zoom)
         }
 
         /// A swipe of [t] ended: with Fade on Swipe, one the way the pages go
         /// turns them (left or up is forward, except right to left). Answers
         /// whether it did.
-        func swipeTurn(_ t: CGPoint) -> Bool {
-            guard AppSettings.shared.swipeFades else { return false }
-            let vertical = parent.mode == .verticalPaged
-            let along = vertical ? t.y : t.x
-            let across = vertical ? t.x : t.y
-            guard abs(along) >= 40, abs(along) >= 1.5 * abs(across) else { return false }
-            pendingSweep = .sweep(vertical: vertical, toStart: along < 0)
-            parent.onSwipeTurn(parent.mode == .rightToLeft ? along > 0 : along < 0)
-            return true
-        }
+        func swipeTurn(_ t: CGPoint) -> Bool { false }
 
         func controller(for index: Int) -> PageController? {
             guard parent.units.indices.contains(index) else { return nil }
@@ -1221,7 +1392,12 @@ struct PagedReader: UIViewControllerRepresentable {
             let controller = PageController(index: index, urls: parent.units[index].map(\.url),
                                             rightToLeft: parent.mode == .rightToLeft,
                                             options: parent.imageOptions, active: parent.isActive)
-            controller.onTap = { [weak self] point in self?.parent.onTap(point) }
+            controller.onTap = { [weak self] point in
+                guard let self else { return }
+                // Swipe + Spread: a tap's turn spreads from the finger.
+                if AppSettings.shared.pageTurn == .spread { pendingTurn = .spread(point) }
+                parent.onTap(point)
+            }
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
             controller.startingSize = { [weak self] in self?.smaller ?? 1 }
@@ -1246,7 +1422,7 @@ struct PagedReader: UIViewControllerRepresentable {
             } else {
                 direction = forward ? .forward : .reverse
             }
-            endTurn()
+            cutTurns()
             let container = pageController.view!
             var cover: UIView?
             if style != .instant, let old = pageController.viewControllers?.first?.view,
@@ -1272,6 +1448,10 @@ struct PagedReader: UIViewControllerRepresentable {
             }
             if case let .sweep(vertical, toStart) = style {
                 sweep(cover, vertical: vertical, toStart: toStart) { [weak self] in self?.endTurn(id) }
+                return
+            }
+            if case let .spread(point) = style {
+                spread(cover, from: point) { [weak self] in self?.endTurn(id) }
                 return
             }
             // The new page comes in from the side the turn goes to.
@@ -1325,6 +1505,40 @@ struct PagedReader: UIViewControllerRepresentable {
             move.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             mask.position = to
             mask.add(move, forKey: "sweep")
+            CATransaction.commit()
+        }
+
+        /// The old page ([cover]) fades away in a circle growing from [point]
+        /// (fractions of the page) with a soft edge, until none of it is left.
+        private func spread(_ cover: UIView, from point: CGPoint, done: @escaping () -> Void) {
+            let size = cover.bounds.size
+            let center = CGPoint(x: size.width * min(max(point.x, 0), 1), y: size.height * min(max(point.y, 0), 1))
+            // To the farthest corner, and the soft edge past it.
+            let corners = [CGPoint.zero, CGPoint(x: size.width, y: 0), CGPoint(x: 0, y: size.height), CGPoint(x: size.width, y: size.height)]
+            let reach = corners.map { hypot($0.x - center.x, $0.y - center.y) }.max() ?? 0
+            let soft: CGFloat = 0.28
+            let radius = reach / (1 - soft)
+            let mask = CAGradientLayer()
+            mask.type = .radial
+            mask.frame = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+            mask.startPoint = CGPoint(x: 0.5, y: 0.5)
+            mask.endPoint = CGPoint(x: 1, y: 1)
+            let opaque = UIColor.black.cgColor
+            let clear = UIColor.clear.cgColor
+            mask.colors = [clear, clear, opaque, opaque]
+            let start: [NSNumber] = [0, 0, NSNumber(value: Double(soft) * 0.4), 1]
+            let end: [NSNumber] = [0, NSNumber(value: Double(1 - soft)), 1, 1]
+            mask.locations = start
+            cover.layer.mask = mask
+            CATransaction.begin()
+            CATransaction.setCompletionBlock(done)
+            let grow = CABasicAnimation(keyPath: "locations")
+            grow.fromValue = start
+            grow.toValue = end
+            grow.duration = 0.42
+            grow.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 0, 0.2, 1)
+            mask.locations = end
+            mask.add(grow, forKey: "spread")
             CATransaction.commit()
         }
 

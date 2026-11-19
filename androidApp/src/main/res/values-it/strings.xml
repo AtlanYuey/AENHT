@@ -588,9 +588,16 @@
     <string name="l_585">Ripristina dimensione</string>
     <string name="l_586">Mantieni dimensione pagina</string>
     <string name="l_587">Pizzica con due dita per rimpicciolire o ingrandire le pagine. Con Mantieni dimensione pagina, quella dimensione resta per tutte le pagine e le gallerie successive; trascina i lati neri per spostare le pagine. Ripristina dimensione, in basso nel lettore, riporta la dimensione abituale.</string>
-    <string name="l_588">Backup impostazioni</string>
-    <string name="l_589">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_590">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_591">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_592">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_588">Cambio pagina</string>
+    <string name="l_589">Scorri con dissolvenza</string>
+    <string name="l_590">Scorri + espansione</string>
+    <string name="l_591">Le pagine scorrono con il dito.</string>
+    <string name="l_592">Le pagine non si muovono: la pagina svanisce con un bordo morbido che segue il dito. Se ti fermi si ferma; uno scorrimento rapido gira subito.</string>
+    <string name="l_593">Lo scorrimento fa scorrere le pagine; un tocco gira la pagina con una dissolvenza che si espande da dove hai toccato.</string>
+    <string name="l_594">Standard</string>
+    <string name="l_595">Backup impostazioni</string>
+    <string name="l_596">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_597">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_598">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_599">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

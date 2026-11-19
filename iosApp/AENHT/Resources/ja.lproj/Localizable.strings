@@ -587,3 +587,10 @@
 "Reset Size" = "サイズをリセット";
 "Keep Page Size" = "ページサイズを保持";
 "Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size." = "2本指でつまんでページを縮小・拡大できます。「ページサイズを保持」をオンにすると、その大きさが以降のページや他の作品にも保たれます。左右の黒い部分をドラッグするとページを動かせます。リーダー下部の「サイズをリセット」で元の大きさに戻ります。";
+"Page Turn" = "ページめくり";
+"Swipe Fade" = "スワイプでフェード";
+"Swipe + Spread" = "スワイプ＋広がり";
+"The pages slide with your finger." = "ページが指に合わせてスライドします。";
+"The pages don't move: the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once." = "ページは動かず、ぼかした境目が指に合わせて進みます。指を止めると止まり、素早くスワイプするとすぐにめくれます。";
+"A swipe slides the pages; a tap turns the page with a fade spreading from where you tapped." = "スワイプではページがスライドし、タップではタップした位置から広がるフェードでめくれます。";
+"Regular Turn" = "標準";
