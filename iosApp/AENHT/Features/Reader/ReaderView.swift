@@ -194,6 +194,7 @@ struct ReaderView: View {
                 recordPage()
             }
             .onChange(of: settings.readMode) {
+                ReaderGestureLock.mode = settings.readMode
                 autoRead = false
                 pageZoom = .fitted
                 scrollRequest = ReaderScrollRequest(page: page)
@@ -206,7 +207,10 @@ struct ReaderView: View {
             }
             .onDisappear { ReaderGestureLock.enlarged = false }
             .task(id: autoRead) { await runAutoRead() }
-            .onAppear { AppChrome.shared.readersOpen += 1 }
+            .onAppear {
+                AppChrome.shared.readersOpen += 1
+                ReaderGestureLock.mode = settings.readMode
+            }
             .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
                 awake.touched()
@@ -1178,7 +1182,14 @@ struct PagedReader: UIViewControllerRepresentable {
             guard let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
             let slides = AppSettings.shared.swipeTurn == .slide && zoom != .enlarged
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
+            // A drag from the left edge is the swipe back (the system's drag, following
+            // the finger), not a slide to the page before: the slide waits for it.
+            for drag in ReaderGestureLock.systemDrags where !waitingFor.contains(where: { $0 === drag }) {
+                pages.panGestureRecognizer.require(toFail: drag)
+                waitingFor.append(drag)
+            }
         }
+        private var waitingFor: [UIGestureRecognizer] = []
 
         // MARK: Swipe Fade, following the finger
 
@@ -1340,12 +1351,14 @@ struct PagedReader: UIViewControllerRepresentable {
                 guard abs(along) > abs(across) * 1.2 else { return false }
                 // From the left edge it is the swipe back.
                 let start = drag.location(in: view).x - drag.translation(in: view).x
-                return vertical || start > 24
+                return vertical || start > ReaderGestureLock.edge
             }
             guard gestureRecognizer === closeDrag, let drag = closeDrag, let view = drag.view else { return true }
             guard parent.mode == .leftToRight || parent.mode == .rightToLeft, zoom != .enlarged else { return false }
             let velocity = drag.velocity(in: view)
             guard abs(velocity.y) > abs(velocity.x) * 1.3 else { return false }
+            // Down is the zoom transition's own drag when it is there (it reveals the gallery page and can be taken back).
+            if velocity.y > 0, ReaderGestureLock.systemCloses { return false }
             return Self.closes(up: velocity.y < 0)
         }
 
@@ -2081,18 +2094,20 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
 
     final class Controller: UIViewController {
         private var blocked: [UIGestureRecognizer] = []
+        private var gated: [UIGestureRecognizer] = []
+        private let gate = ReaderCloseGate()
         private var shown = false
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             shown = true
-            block()
-            // The zoom transition adds its closing gestures when it has
-            // finished, possibly after this: looked for again a moment later.
+            arrange()
+            // The zoom transition adds its gestures when it has finished,
+            // possibly after this: looked for again a moment later.
             for delay in [0.15, 0.5, 1.2] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                     guard let self, shown else { return }
-                    block()
+                    arrange()
                 }
             }
         }
@@ -2103,41 +2118,70 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
             // Leaving the reader (or starting to): the other screens have them again.
             for gesture in blocked { gesture.isEnabled = true }
             blocked = []
+            ReaderGestureLock.systemDrags = []
         }
 
-        /// The system's own ways out of the reader, except the swipe from the
-        /// left edge: iOS 26's swipe back from anywhere, and the zoom
-        /// transition's pinch and drag that close it (they took the pinch
-        /// that makes a page smaller, and the drags that turn pages). The
-        /// reader closes with its own drag up or down instead.
-        private func block() {
-            guard let navigation = navigationController else { return }
-            var found: [UIGestureRecognizer] = []
-            if #available(iOS 26.0, *), let swipe = navigation.interactiveContentPopGestureRecognizer {
-                found.append(swipe)
+        /// The reader's screen: the navigation controller's child it is in.
+        private func readerScreen(_ navigation: UINavigationController) -> UIViewController? {
+            var controller: UIViewController = self
+            while let parent = controller.parent, parent !== navigation { controller = parent }
+            return controller.parent === navigation ? controller : nil
+        }
+
+        /// The zoom transition's drag on the reader's screen follows the
+        /// finger back into the thumbnail, and can be taken back: it stays,
+        /// waiting for the gate, which lets it have only the edge swipe and a
+        /// drag down (ReaderGestureLock). Its pinch (it took the pinch that
+        /// makes a page smaller) and iOS 26's swipe back from anywhere are
+        /// kept from the reader; so are such gestures above the reader's
+        /// screen (shared with the other screens, they can't wait for the gate).
+        private func arrange() {
+            guard let navigation = navigationController, let screen = readerScreen(navigation) else { return }
+            let root = screen.view!
+            if gate.view !== root {
+                gate.view?.removeGestureRecognizer(gate)
+                root.addGestureRecognizer(gate)
             }
-            // On the screens between the reader and the navigation controller
-            // (the reader's own views and gestures are below them).
-            var view: UIView? = parent?.view
+            var block: [UIGestureRecognizer] = []
+            var wait: [UIGestureRecognizer] = []
+            if #available(iOS 26.0, *), let swipe = navigation.interactiveContentPopGestureRecognizer {
+                block.append(swipe)
+            }
+            var view: UIView? = root
             while let current = view, current !== navigation.view.superview {
-                for gesture in current.gestureRecognizers ?? [] where Self.closesReader(gesture, navigation) {
-                    found.append(gesture)
+                for gesture in current.gestureRecognizers ?? [] where Self.isSystemClose(gesture, navigation, gate) {
+                    if gesture is UIPinchGestureRecognizer || current !== root {
+                        block.append(gesture)
+                    } else {
+                        wait.append(gesture)
+                    }
                 }
                 view = current.superview
             }
+            for gesture in wait where !gated.contains(where: { $0 === gesture }) {
+                gesture.require(toFail: gate)
+                gated.append(gesture)
+            }
+            if !gated.isEmpty {
+                ReaderGestureLock.systemDrags = gated
+                // The edge swipe goes to the drag that follows the finger, not the plain back swipe.
+                if #available(iOS 26.0, *), let edge = navigation.interactivePopGestureRecognizer { block.append(edge) }
+            }
             var added: [String] = []
-            for gesture in found where gesture.isEnabled && !blocked.contains(where: { $0 === gesture }) {
+            for gesture in block where gesture.isEnabled && !blocked.contains(where: { $0 === gesture }) {
                 gesture.isEnabled = false
                 blocked.append(gesture)
-                added.append(String(describing: type(of: gesture)))
+                added.append(String(reflecting: type(of: gesture)))
             }
-            if !added.isEmpty {
-                Diagnostics.shared.log(category: "reader", message: "Gestures kept from the reader: " + added.joined(separator: ", "))
+            if !added.isEmpty || !wait.isEmpty {
+                Diagnostics.shared.log(category: "reader", message: "Reader gestures: kept " + added.joined(separator: ", ")
+                                       + "; waiting for the gate " + wait.map { String(reflecting: type(of: $0)) }.joined(separator: ", "))
             }
         }
 
-        private static func closesReader(_ gesture: UIGestureRecognizer, _ navigation: UINavigationController) -> Bool {
-            if gesture === navigation.interactivePopGestureRecognizer { return false }
+        private static func isSystemClose(_ gesture: UIGestureRecognizer, _ navigation: UINavigationController,
+                                          _ gate: UIGestureRecognizer) -> Bool {
+            if gesture === navigation.interactivePopGestureRecognizer || gesture === gate { return false }
             // With the module (SwiftUI's own classes are named "SwiftUI.…").
             let name = String(reflecting: type(of: gesture))
             let delegate = gesture.delegate.map { String(reflecting: type(of: $0)) } ?? ""
@@ -2145,7 +2189,7 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
             if name.contains("SwiftUI") || delegate.contains("SwiftUI") || gesture.delegate is SwipeDelegate { return false }
             if name.localizedCaseInsensitiveContains("zoom") || delegate.localizedCaseInsensitiveContains("zoom") { return true }
             if delegate.localizedCaseInsensitiveContains("transition") || delegate.localizedCaseInsensitiveContains("dismiss") { return true }
-            // Above the reader nothing else pinches or drags.
+            // Above the reader's pages nothing else pinches or drags.
             return gesture is UIPinchGestureRecognizer || (gesture is UIPanGestureRecognizer && !(gesture is UIScreenEdgePanGestureRecognizer))
         }
     }
