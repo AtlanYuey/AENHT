@@ -750,8 +750,11 @@ struct ReadingSettingsSections: View {
             }
             // How a swipe turns the pages (not the taps: those are in Controls).
             if settings.readMode.isPaged {
-                Picker("Page Turn", selection: $settings.pageTurn) {
-                    ForEach(PageTurnStyle.allCases) { Text($0.title).tag($0) }
+                Picker("Swipe to Turn", selection: $settings.swipeTurn) {
+                    ForEach(SwipeTurn.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Tap to Turn", selection: $settings.tapTurn) {
+                    ForEach(TapTurn.allCases) { Text($0.title).tag($0) }
                 }
             }
             if settings.readMode == .leftToRight || settings.readMode == .rightToLeft {
@@ -779,13 +782,16 @@ struct ReadingSettingsSections: View {
             }
         } footer: {
             if settings.readMode.isPaged {
-                switch settings.pageTurn {
-                case .slide:
-                    Text("The pages slide with your finger.")
-                case .sweep:
-                    Text("The pages don't move: the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once.")
-                case .spread:
-                    Text("A swipe slides the pages; a tap turns the page with a fade spreading from where you tapped.")
+                VStack(alignment: .leading, spacing: 4) {
+                    switch settings.swipeTurn {
+                    case .sweep: Text("Swipe Fade: the pages don't move; the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once.")
+                    case .slide: Text("Slide: the pages slide with your finger.")
+                    }
+                    switch settings.tapTurn {
+                    case .spread: Text("Spread Fade: a tap turns the page with a fade spreading from where you tapped.")
+                    case .fade: Text("Page Fade: a tap fades the whole page into the next.")
+                    case .slide: Text("A tap slides the next page in.")
+                    }
                 }
             }
         }
@@ -905,9 +911,8 @@ struct ReadingSettingsSections: View {
             Picker("Tap Zones", selection: $settings.tapZones) {
                 ForEach(TapZones.allCases) { Text($0.title).tag($0) }
             }
-            Toggle("Fade Page Turns", isOn: Binding(get: { !settings.animatePageTurns }, set: { settings.animatePageTurns = !$0 }))
         } footer: {
-            Text("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
+            Text("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")
         }
         Section {
             // Across the tap zones: up and down with left and right zones.
@@ -1060,7 +1065,7 @@ struct PagedReader: UIViewControllerRepresentable {
         context.coordinator.addSweepDrag(to: controller.view)
         context.coordinator.lastSizeReset = sizeReset
         // Swipe Fade: without a data source the pages can't be dragged (the swipe fades them).
-        controller.dataSource = AppSettings.shared.pageTurn == .sweep ? nil : context.coordinator
+        controller.dataSource = AppSettings.shared.swipeTurn == .sweep ? nil : context.coordinator
         controller.delegate = context.coordinator
         if let first = context.coordinator.controller(for: page) {
             controller.setViewControllers([first], direction: .forward, animated: false)
@@ -1081,7 +1086,7 @@ struct PagedReader: UIViewControllerRepresentable {
             (controller.viewControllers?.first as? PageController)?.setSize(1, animated: true)
         }
         defer { coordinator.prepare(after: page) }
-        let sweeps = AppSettings.shared.pageTurn == .sweep
+        let sweeps = AppSettings.shared.swipeTurn == .sweep
         if (controller.dataSource == nil) != sweeps { controller.dataSource = sweeps ? nil : coordinator }
         coordinator.updatePaging()
         let pending = coordinator.pendingTurn
@@ -1089,10 +1094,20 @@ struct PagedReader: UIViewControllerRepresentable {
         guard let current = (controller.viewControllers?.first as? PageController)?.index,
               current != page
         else { return }
-        // A tap with Swipe + Spread spreads from the finger; a turn of one page
-        // slides, or fades without the animation; a jump (the slider) shows the page at once.
-        let turn: PageTurn = abs(page - current) != 1 ? .instant
-            : pending ?? (AppSettings.shared.animatePageTurns ? .slide : .fade)
+        // A turn of one page as Tap to Turn says (a tap's spread starts at the
+        // finger, a page button's in the middle); a jump (the slider) shows the page at once.
+        let turn: PageTurn
+        if abs(page - current) != 1 {
+            turn = .instant
+        } else if let pending {
+            turn = pending
+        } else {
+            switch AppSettings.shared.tapTurn {
+            case .slide: turn = .slide
+            case .fade: turn = .fade
+            case .spread: turn = .spread(CGPoint(x: 0.5, y: 0.5))
+            }
+        }
         coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
@@ -1156,12 +1171,12 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func stopPreparation() { imagePreparation.stop() }
 
-        /// The pages slide under the finger only with Standard and Swipe +
-        /// Spread, and not while the page is enlarged (it moves instead).
-        /// With Swipe Fade nothing moves under the finger: no bounce either.
+        /// The pages slide under the finger only with Swipe to Turn › Slide,
+        /// and not while the page is enlarged (it moves instead). With Swipe
+        /// Fade nothing moves under the finger: no bounce either.
         func updatePaging() {
             guard let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
-            let slides = AppSettings.shared.pageTurn != .sweep && zoom != .enlarged
+            let slides = AppSettings.shared.swipeTurn == .slide && zoom != .enlarged
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
         }
 
@@ -1318,7 +1333,7 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             if gestureRecognizer === sweepDrag, let drag = sweepDrag, let view = drag.view {
-                guard AppSettings.shared.pageTurn == .sweep, zoom != .enlarged else { return false }
+                guard AppSettings.shared.swipeTurn == .sweep, zoom != .enlarged else { return false }
                 let velocity = drag.velocity(in: view)
                 let along = vertical ? velocity.y : velocity.x
                 let across = vertical ? velocity.x : velocity.y
@@ -1394,8 +1409,8 @@ struct PagedReader: UIViewControllerRepresentable {
                                             options: parent.imageOptions, active: parent.isActive)
             controller.onTap = { [weak self] point in
                 guard let self else { return }
-                // Swipe + Spread: a tap's turn spreads from the finger.
-                if AppSettings.shared.pageTurn == .spread { pendingTurn = .spread(point) }
+                // Spread Fade: a tap's turn spreads from the finger.
+                if AppSettings.shared.tapTurn == .spread { pendingTurn = .spread(point) }
                 parent.onTap(point)
             }
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
