@@ -32,6 +32,8 @@ struct ContinuousReader: View {
     @State private var failedPage: Int?
     @State private var viewport: CGSize = .zero
     @State private var pinch = StripPinch()
+    /// The reader opened on its page (once the screen's size is known and the pages are laid out at their width).
+    @State private var placed = false
 
     /// Most pages' shape (width / height), from what the gallery says.
     private var typicalRatio: CGFloat {
@@ -47,9 +49,9 @@ struct ContinuousReader: View {
         return base * ContinuousSizing.clamp(scale, base: base)
     }
 
-    /// Room at the sides of a strip narrower than the screen: the strip can
-    /// be moved across it (from the left edge to the right one).
-    private func sides(_ scale: CGFloat) -> CGFloat { max(0, viewport.width - stripWidth(scale)) }
+    /// Where a strip narrower than the screen starts: it stays in the middle
+    /// (only a strip wider than the screen moves sideways).
+    private func sides(_ scale: CGFloat) -> CGFloat { max(0, (viewport.width - stripWidth(scale)) / 2) }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -75,7 +77,9 @@ struct ContinuousReader: View {
                 }
                 // Not laid out before the screen's size is known (scrolled both ways, nothing bounds the width).
                 .frame(width: viewport.width > 0 ? stripWidth(scale) : 1)
-                .padding(.horizontal, sides(scale))
+                // Narrower than the screen: in the middle, not moving sideways.
+                .frame(minWidth: viewport.width)
+                .opacity(placed ? 1 : 0)
             }
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
@@ -85,10 +89,21 @@ struct ContinuousReader: View {
                 driver.viewportChanged(new.size)
             }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                let first = viewport.width == 0
                 let widthChanged = abs(viewport.width - size.width) > 1
                 viewport = size
-                // First laid out, or turned: the page being read at the top, the strip in the middle.
-                if widthChanged { DispatchQueue.main.async { proxy.scrollTo(page, anchor: .top) } }
+                guard widthChanged else { return }
+                // First laid out: the page that was opened (not the first one, which
+                // shows while the pages have no width yet). Turned: the page being read.
+                let target = first ? request.page : page
+                DispatchQueue.main.async {
+                    proxy.scrollTo(target, anchor: .top)
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(target, anchor: .top)
+                        placed = true
+                        driver.reportPage()
+                    }
+                }
             }
             .onChange(of: stripWidth(scale)) { updateMovable() }
             .onChange(of: viewport) { updateMovable() }
@@ -101,7 +116,6 @@ struct ContinuousReader: View {
             .onAppear {
                 configure()
                 proxy.scrollTo(request.page, anchor: .top)
-                driver.reportPage()
             }
             // The two-finger pinch goes on the strip's own scroll view (once
             // its pages are laid out), like a page's: it isn't the reader's close.
@@ -157,7 +171,8 @@ struct ContinuousReader: View {
     }
 
     private func updateMovable() {
-        let value = viewport.width > 0 && abs(stripWidth(scale) - viewport.width) > 1
+        // Only a strip wider than the screen moves sideways.
+        let value = viewport.width > 0 && stripWidth(scale) > viewport.width + 1
         if movable != value { movable = value }
     }
 
@@ -218,7 +233,8 @@ struct ContinuousReader: View {
         pinch.onEnd = { next in resize(to: next, anchor: pinch.takeAnchor()) }
         driver.secondsPerScreen = settings.autoScrollSecondsPerScreen
         driver.continueOnDrag = settings.continueAutoScrollOnDrag
-        driver.onPage = { index in if page != index { page = index } }
+        // Not before the reader is on its page (the first page shows while nothing has a width yet).
+        driver.onPage = { index in if placed, page != index { page = index } }
         driver.onVisiblePages = { range in
             visiblePages = range
             prepare(range)

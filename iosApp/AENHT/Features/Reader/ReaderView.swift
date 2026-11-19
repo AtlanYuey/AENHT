@@ -374,6 +374,10 @@ struct ReaderView: View {
                 go(step(forward: forward))
             }, sizeReset: sizeReset, onZoom: { zoom in
                 if pageZoom != zoom { pageZoom = zoom }
+            }, onCloseDragBegan: {
+                chromeVisible = false
+            }, onClose: {
+                dismiss()
             })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)")
         } else {
@@ -416,6 +420,10 @@ struct ReaderView: View {
     private func handleSwipe(_ direction: UISwipeGestureRecognizer.Direction) {
         // A strip that moves sideways: the drag moved it.
         if !settings.readMode.isPaged, stripMovable { return }
+        // Pages turned left and right: a swipe up or down that closes was the drag that closed it.
+        if settings.readMode == .leftToRight || settings.readMode == .rightToLeft,
+           direction == .up || direction == .down,
+           PagedReader.Coordinator.closes(up: direction == .up) { return }
         let vertical = settings.tapZones == .leftRight
         let pagesMoveVertically = settings.readMode != .leftToRight && settings.readMode != .rightToLeft
         guard vertical != pagesMoveVertically else { return }
@@ -1021,6 +1029,9 @@ struct PagedReader: UIViewControllerRepresentable {
     var sizeReset = 0
     /// The shown page became fitted, smaller or enlarged.
     var onZoom: (ReaderZoom) -> Void = { _ in }
+    /// A drag up or down that closes the reader began (the controls hide) / closes it.
+    var onCloseDragBegan: () -> Void = {}
+    var onClose: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -1034,6 +1045,7 @@ struct PagedReader: UIViewControllerRepresentable {
         )
         controller.view.backgroundColor = .black
         context.coordinator.pageViewController = controller
+        context.coordinator.addCloseDrag(to: controller.view)
         context.coordinator.lastSizeReset = sizeReset
         // Fade on Swipe: without a data source the pages can't be dragged (the swipe is the reader's).
         controller.dataSource = AppSettings.shared.swipeFades ? nil : context.coordinator
@@ -1074,7 +1086,7 @@ struct PagedReader: UIViewControllerRepresentable {
         coordinator.stopPreparation()
     }
 
-    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate, UIGestureRecognizerDelegate {
         var parent: PagedReader
         /// The page turn drawn over the page view controller, if one runs.
         private var running: (id: Int, cover: UIView, page: UIView)?
@@ -1087,6 +1099,8 @@ struct PagedReader: UIViewControllerRepresentable {
         var pendingSweep: PageTurn?
         weak var pageViewController: UIPageViewController?
         var lastSizeReset = 0
+        private var zoom: ReaderZoom = .fitted
+        private var closeDrag: UIPanGestureRecognizer?
         /// A page made smaller makes the next ones as small (until Reset Size).
         var smaller: CGFloat = 1
 
@@ -1110,9 +1124,69 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func stopPreparation() { imagePreparation.stop() }
 
+        // MARK: Closing by dragging up or down
+
+        /// Left and right turn pages: a drag up or down (whichever Controls ›
+        /// Swipes sets to close) closes the reader, the page following the
+        /// finger. Only at the usual size or smaller: an enlarged page moves.
+        func addCloseDrag(to view: UIView) {
+            let drag = UIPanGestureRecognizer(target: self, action: #selector(closeDragged(_:)))
+            drag.maximumNumberOfTouches = 1
+            drag.delegate = self
+            view.addGestureRecognizer(drag)
+            closeDrag = drag
+        }
+
+        /// Whether a swipe that way closes the reader (Controls › Swipes).
+        static func closes(up: Bool) -> Bool {
+            let settings = AppSettings.shared
+            guard settings.tapZones == .leftRight else { return false }
+            return (up ? settings.swipeUp : settings.swipeDown) == .exit
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer === closeDrag, let drag = closeDrag, let view = drag.view else { return true }
+            guard parent.mode == .leftToRight || parent.mode == .rightToLeft, zoom != .enlarged else { return false }
+            let velocity = drag.velocity(in: view)
+            guard abs(velocity.y) > abs(velocity.x) * 1.3 else { return false }
+            return Self.closes(up: velocity.y < 0)
+        }
+
+        @objc private func closeDragged(_ drag: UIPanGestureRecognizer) {
+            guard let view = drag.view else { return }
+            let t = drag.translation(in: view)
+            let height = max(view.bounds.height, 1)
+            switch drag.state {
+            case .began:
+                parent.onCloseDragBegan()
+            case .changed:
+                // Smaller the further it goes, following the finger.
+                let scale = max(0.55, 1 - abs(t.y) / height * 0.7)
+                view.transform = CGAffineTransform(translationX: t.x, y: t.y).scaledBy(x: scale, y: scale)
+            case .ended:
+                let v = drag.velocity(in: view)
+                let far = abs(t.y) > height * 0.12 || abs(v.y) > 800
+                let sameWay = t.y == 0 || (t.y < 0) == (v.y <= 0) || abs(v.y) < 200
+                if far, sameWay, Self.closes(up: t.y < 0) {
+                    // Closed from where the page is: it zooms on into its thumbnail.
+                    parent.onClose()
+                } else {
+                    springBack(view)
+                }
+            default:
+                springBack(view)
+            }
+        }
+
+        private func springBack(_ view: UIView) {
+            UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0,
+                           options: [.allowUserInteraction]) { view.transform = .identity }
+        }
+
         /// The shown page's size: enlarged, it can't be turned by dragging
         /// (the finger moves it); smaller, the next pages come as small.
         private func zoomChanged(_ zoom: ReaderZoom, scale: CGFloat) {
+            self.zoom = zoom
             switch zoom {
             case .smaller: smaller = scale
             case .fitted: smaller = 1
@@ -1430,6 +1504,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
+        isScrollEnabled = false
         // Pinched smaller down to a size that still reads (readableMinimum), not out of the reader.
         minimumZoomScale = ReaderZoom.smallestPaged
         maximumZoomScale = 4
@@ -1606,6 +1681,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     private func report() {
+        // Only an enlarged page moves under the finger; otherwise the finger turns pages.
+        if isScrollEnabled != isEnlarged { isScrollEnabled = isEnlarged }
         let zoom = ReaderZoom(scale: zoomScale)
         guard zoom != reportedZoom else { return }
         reportedZoom = zoom
@@ -1775,40 +1852,72 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
 
     final class Controller: UIViewController {
         private var blocked: [UIGestureRecognizer] = []
+        private var shown = false
 
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
+            shown = true
             block()
+            // The zoom transition adds its closing gestures when it has
+            // finished, possibly after this: looked for again a moment later.
+            for delay in [0.15, 0.5, 1.2] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard let self, shown else { return }
+                    block()
+                }
+            }
         }
 
         override func viewWillDisappear(_ animated: Bool) {
             super.viewWillDisappear(animated)
+            shown = false
             // Leaving the reader (or starting to): the other screens have them again.
             for gesture in blocked { gesture.isEnabled = true }
             blocked = []
         }
 
+        /// The system's own ways out of the reader, except the swipe from the
+        /// left edge: iOS 26's swipe back from anywhere, and the zoom
+        /// transition's pinch and drag that close it (they took the pinch
+        /// that makes a page smaller, and the drags that turn pages). The
+        /// reader closes with its own drag up or down instead.
         private func block() {
             guard let navigation = navigationController else { return }
             var found: [UIGestureRecognizer] = []
             if #available(iOS 26.0, *), let swipe = navigation.interactiveContentPopGestureRecognizer {
                 found.append(swipe)
             }
-            // The zoom transition's own closing drag: on the screens between the
-            // reader and the navigation controller (not on the reader's own views).
+            // On the screens between the reader and the navigation controller
+            // (the reader's own views and gestures are below them).
             var view: UIView? = parent?.view
             while let current = view, current !== navigation.view.superview {
-                for gesture in current.gestureRecognizers ?? [] where gesture !== navigation.interactivePopGestureRecognizer {
-                    if String(describing: type(of: gesture)).localizedCaseInsensitiveContains("zoom") { found.append(gesture) }
+                for gesture in current.gestureRecognizers ?? [] where Self.closesReader(gesture, navigation) {
+                    found.append(gesture)
                 }
                 view = current.superview
             }
-            for gesture in found where gesture.isEnabled {
+            var added: [String] = []
+            for gesture in found where gesture.isEnabled && !blocked.contains(where: { $0 === gesture }) {
                 gesture.isEnabled = false
                 blocked.append(gesture)
+                added.append(String(describing: type(of: gesture)))
             }
-            Diagnostics.shared.log(category: "reader", message: "Back swipes kept from the page: " +
-                                   (blocked.map { String(describing: type(of: $0)) }.joined(separator: ", ")))
+            if !added.isEmpty {
+                Diagnostics.shared.log(category: "reader", message: "Gestures kept from the reader: " + added.joined(separator: ", "))
+            }
+        }
+
+        private static func closesReader(_ gesture: UIGestureRecognizer, _ navigation: UINavigationController) -> Bool {
+            if gesture === navigation.interactivePopGestureRecognizer { return false }
+            // With the module (SwiftUI's own classes are named "SwiftUI.…").
+            let name = String(reflecting: type(of: gesture))
+            let delegate = gesture.delegate.map { String(reflecting: type(of: $0)) } ?? ""
+            // SwiftUI's gestures (the reader's taps and swipes) and the reader's own.
+            if name.contains("SwiftUI") || delegate.contains("SwiftUI") || gesture.delegate is SwipeDelegate { return false }
+            if name.localizedCaseInsensitiveContains("zoom") || delegate.localizedCaseInsensitiveContains("zoom") { return true }
+            if delegate.localizedCaseInsensitiveContains("transition") || delegate.localizedCaseInsensitiveContains("dismiss") { return true }
+            // Above the reader nothing else pinches or drags.
+            return gesture is UIPinchGestureRecognizer || (gesture is UIPanGestureRecognizer && !(gesture is UIScreenEdgePanGestureRecognizer))
         }
     }
 }
