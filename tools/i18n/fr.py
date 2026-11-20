@@ -599,4 +599,6 @@ T = [
     "Fondu de page : un toucher fond toute la page dans la suivante.",
     "Un toucher fait glisser la page suivante.",
     "L'effet au toucher (glissement, fondu de page ou fondu diffus) se règle dans Lecture › Toucher pour tourner.",
+    "Autoriser des pages plus petites",
+    "Pincer peut rendre une page plus petite que l'écran, entourée de noir. Désactivé, la page remplit au moins l'écran ; pincer ne fait qu'agrandir.",
 ]

@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "Seiten-Überblendung: Tippen blendet die ganze Seite in die nächste über.";
 "A tap slides the next page in." = "Tippen schiebt die nächste Seite herein.";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "Wie Tippen umblättert (Schieben, Seiten- oder ausbreitende Überblendung), stellst du unter Lesen › Tippen zum Umblättern ein.";
+"Allow Smaller Pages" = "Kleinere Seiten erlauben";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Zusammenziehen kann eine Seite kleiner als den Bildschirm machen, mit Schwarz drumherum. Aus füllt die Seite mindestens den Bildschirm; Zusammenziehen vergrößert nur.";

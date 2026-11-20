@@ -387,6 +387,8 @@ final class AppSettings {
     }
     /// That size, against the default one (a whole page on screen).
     var continuousPageScale: Double { didSet { defaults.set(continuousPageScale, forKey: "continuousPageScale") } }
+    /// Paged modes: pinching can make a page smaller than the screen (off: it fills the screen at least).
+    var allowSmallerPages: Bool { didSet { save(allowSmallerPages, "allowSmallerPages") } }
 
     // Tablet Layout (an iPad held sideways). The screen is this device's: not synced.
     /// Home: the two pinned rows side by side.
@@ -570,6 +572,7 @@ final class AppSettings {
         autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: d.object(forKey: "autoScrollSecondsPerScreen") as? Double ?? 10)
         continueAutoScrollOnDrag = d.bool(forKey: "continueAutoScrollOnDrag")
         keepContinuousPageSize = d.object(forKey: "keepContinuousPageSize") as? Bool ?? true
+        allowSmallerPages = d.bool(forKey: "allowSmallerPages")
         continuousPageScale = d.object(forKey: "continuousPageScale") as? Double ?? 1
         tabletHome = d.object(forKey: "tabletHome") as? Bool ?? true
         tabletDetail = d.object(forKey: "tabletDetail") as? Bool ?? true
@@ -728,6 +731,7 @@ final class AppSettings {
         values["doublePageSingleStep"] = doublePageSingleStep
         values["swipeFades"] = swipeFades
         values["swipeTurn"] = swipeTurn.rawValue
+        values["allowSmallerPages"] = allowSmallerPages
         values["tapTurn"] = tapTurn.rawValue
         values["autoCrop"] = autoCrop
         values["homeRows"] = homeRowsRaw
@@ -833,6 +837,7 @@ final class AppSettings {
             if (swipeTurn == .sweep) != swipeFades { swipeTurn = swipeFades ? .sweep : .slide }
         case "swipeTurn": set(\.swipeTurn, string.flatMap(SwipeTurn.init(rawValue:)))
         case "tapTurn": set(\.tapTurn, string.flatMap(TapTurn.init(rawValue:)))
+        case "allowSmallerPages": set(\.allowSmallerPages, number?.boolValue)
         case "autoCrop": set(\.autoCrop, number?.boolValue)
         case "homeRows": set(\.homeRowsRaw, string)
         case "blockedCommenters": set(\.blockedCommenters, string)

@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "整頁漸變：點擊翻頁時，整頁漸變為下一頁。";
 "A tap slides the next page in." = "點擊翻頁時，下一頁滑入。";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "點擊翻頁的效果（頁面滑動、整頁漸變或擴散漸變）在「閱讀 › 點擊翻頁」中設定。";
+"Allow Smaller Pages" = "允許縮小到小於螢幕";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "開啟後，雙指捏合可以把頁面縮小到比螢幕還小，四周留黑邊。關閉時頁面至少鋪滿螢幕，捏合只能放大。";

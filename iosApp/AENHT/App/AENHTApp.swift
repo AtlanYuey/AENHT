@@ -24,7 +24,17 @@ struct AENHTApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            Group {
+                #if DEBUG
+                if ReaderFixture.isActive {
+                    ReaderFixtureScene().onAppear { ReaderFixture.configure(settings) }
+                } else {
+                    RootView()
+                }
+                #else
+                RootView()
+                #endif
+            }
                 .environment(settings)
                 .environment(session)
                 .environment(downloads)

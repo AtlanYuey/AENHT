@@ -600,9 +600,11 @@
     <string name="l_597">Dissolvenza pagina: un tocco dissolve l\'intera pagina nella successiva.</string>
     <string name="l_598">Un tocco fa scorrere dentro la pagina successiva.</string>
     <string name="l_599">L\'effetto del tocco (scorrimento, dissolvenza pagina o a espansione) si imposta in Lettura › Tocca per girare.</string>
-    <string name="l_600">Backup impostazioni</string>
-    <string name="l_601">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_602">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_603">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_604">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_600">Consenti pagine più piccole</string>
+    <string name="l_601">Pizzicando una pagina può diventare più piccola dello schermo, con nero intorno. Disattivato, la pagina riempie almeno lo schermo e il pizzico la ingrandisce soltanto.</string>
+    <string name="l_602">Backup impostazioni</string>
+    <string name="l_603">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_604">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_605">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_606">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

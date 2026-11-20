@@ -600,9 +600,11 @@
     <string name="l_597">Mờ cả trang: chạm để cả trang mờ dần sang trang sau.</string>
     <string name="l_598">Chạm để trang sau trượt vào.</string>
     <string name="l_599">Hiệu ứng khi chạm (trượt, mờ cả trang hoặc mờ lan tỏa) đặt trong Đọc › Chạm để lật.</string>
-    <string name="l_600">Sao lưu cài đặt</string>
-    <string name="l_601">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_602">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_603">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_604">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_600">Cho phép thu nhỏ trang</string>
+    <string name="l_601">Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.</string>
+    <string name="l_602">Sao lưu cài đặt</string>
+    <string name="l_603">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_604">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_605">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_606">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

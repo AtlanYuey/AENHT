@@ -599,4 +599,6 @@ T = [
     "Fundido de página: al tocar, toda la página se funde con la siguiente.",
     "Al tocar, la página siguiente entra deslizándose.",
     "El efecto al tocar (deslizar, fundido de página o fundido expansivo) se ajusta en Lectura › Tocar para pasar.",
+    "Permitir páginas más pequeñas",
+    "Al pellizcar, una página puede quedar más pequeña que la pantalla, con negro alrededor. Desactivado, la página llena al menos la pantalla y pellizcar solo la amplía.",
 ]

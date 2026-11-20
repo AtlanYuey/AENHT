@@ -599,4 +599,6 @@ T = [
     "Dissolvenza pagina: un tocco dissolve l'intera pagina nella successiva.",
     "Un tocco fa scorrere dentro la pagina successiva.",
     "L'effetto del tocco (scorrimento, dissolvenza pagina o a espansione) si imposta in Lettura › Tocca per girare.",
+    "Consenti pagine più piccole",
+    "Pizzicando una pagina può diventare più piccola dello schermo, con nero intorno. Disattivato, la pagina riempie almeno lo schermo e il pizzico la ingrandisce soltanto.",
 ]

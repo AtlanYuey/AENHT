@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "Mờ cả trang: chạm để cả trang mờ dần sang trang sau.";
 "A tap slides the next page in." = "Chạm để trang sau trượt vào.";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "Hiệu ứng khi chạm (trượt, mờ cả trang hoặc mờ lan tỏa) đặt trong Đọc › Chạm để lật.";
+"Allow Smaller Pages" = "Cho phép thu nhỏ trang";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.";

@@ -599,4 +599,6 @@ T = [
     "Pudar halaman: ketukan memudarkan seluruh halaman ke halaman berikutnya.",
     "Ketukan menggeser halaman berikutnya masuk.",
     "Efek ketukan (geser, pudar halaman, atau pudar menyebar) diatur di Membaca › Ketuk untuk membalik.",
+    "Izinkan halaman lebih kecil",
+    "Mencubit dapat membuat halaman lebih kecil dari layar, dengan hitam di sekelilingnya. Jika mati, halaman setidaknya memenuhi layar; cubitan hanya memperbesar.",
 ]

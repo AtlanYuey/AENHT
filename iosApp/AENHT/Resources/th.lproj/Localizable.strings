@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "จางทั้งหน้า: แตะเพื่อให้ทั้งหน้าจางไปเป็นหน้าถัดไป";
 "A tap slides the next page in." = "แตะเพื่อเลื่อนหน้าถัดไปเข้ามา";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "เอฟเฟกต์เมื่อแตะ (เลื่อน จางทั้งหน้า หรือจางแบบกระจาย) ตั้งได้ใน การอ่าน › แตะเพื่อพลิก";
+"Allow Smaller Pages" = "อนุญาตให้ย่อหน้าเล็กกว่าจอ";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "การบีบนิ้วทำให้หน้าเล็กกว่าจอได้ โดยมีขอบดำรอบ ๆ ถ้าปิด หน้าจะเต็มจออย่างน้อย และบีบได้เพียงขยาย";

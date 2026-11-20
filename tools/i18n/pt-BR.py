@@ -599,4 +599,6 @@ T = [
     "Esmaecer página: um toque esmaece a página inteira para a próxima.",
     "Um toque desliza a próxima página.",
     "O efeito do toque (deslizar, esmaecer página ou em expansão) é definido em Leitura › Tocar para virar.",
+    "Permitir páginas menores",
+    "Ao aproximar os dedos, a página pode ficar menor que a tela, com preto em volta. Desativado, a página preenche ao menos a tela e o gesto só amplia.",
 ]

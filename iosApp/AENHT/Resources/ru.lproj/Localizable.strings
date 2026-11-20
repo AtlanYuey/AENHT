@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "Затухание страницы: касание плавно сменяет всю страницу следующей.";
 "A tap slides the next page in." = "Касание сдвигает следующую страницу.";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "Эффект касания (сдвиг, затухание страницы или расходящееся) настраивается в «Чтение › Касание для перелистывания».";
+"Allow Smaller Pages" = "Разрешить уменьшение страниц";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Сведением пальцев страницу можно сделать меньше экрана, с чёрными полями вокруг. Если выключено, страница заполняет экран как минимум, а жест только увеличивает.";

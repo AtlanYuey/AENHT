@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "ページ全体フェード：タップでページ全体が次のページへフェードします。";
 "A tap slides the next page in." = "タップすると次のページがスライドして入ります。";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "タップでめくるときの効果（スライド、ページ全体フェード、広がるフェード）は「読書 › タップでめくる」で設定します。";
+"Allow Smaller Pages" = "画面より小さく縮小";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "オンにすると、ピンチでページを画面より小さくでき、周りは黒くなります。オフのときはページが少なくとも画面いっぱいに表示され、ピンチでは拡大のみです。";

@@ -600,9 +600,11 @@
     <string name="l_597">Pudar halaman: ketukan memudarkan seluruh halaman ke halaman berikutnya.</string>
     <string name="l_598">Ketukan menggeser halaman berikutnya masuk.</string>
     <string name="l_599">Efek ketukan (geser, pudar halaman, atau pudar menyebar) diatur di Membaca › Ketuk untuk membalik.</string>
-    <string name="l_600">Cadangan Pengaturan</string>
-    <string name="l_601">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_602">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_603">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_604">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_600">Izinkan halaman lebih kecil</string>
+    <string name="l_601">Mencubit dapat membuat halaman lebih kecil dari layar, dengan hitam di sekelilingnya. Jika mati, halaman setidaknya memenuhi layar; cubitan hanya memperbesar.</string>
+    <string name="l_602">Cadangan Pengaturan</string>
+    <string name="l_603">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_604">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_605">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_606">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

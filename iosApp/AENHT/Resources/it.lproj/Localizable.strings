@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "Dissolvenza pagina: un tocco dissolve l'intera pagina nella successiva.";
 "A tap slides the next page in." = "Un tocco fa scorrere dentro la pagina successiva.";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "L'effetto del tocco (scorrimento, dissolvenza pagina o a espansione) si imposta in Lettura › Tocca per girare.";
+"Allow Smaller Pages" = "Consenti pagine più piccole";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Pizzicando una pagina può diventare più piccola dello schermo, con nero intorno. Disattivato, la pagina riempie almeno lo schermo e il pizzico la ingrandisce soltanto.";

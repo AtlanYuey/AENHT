@@ -599,3 +599,5 @@
 "Page Fade: a tap fades the whole page into the next." = "전체 페이드: 탭하면 페이지 전체가 다음 페이지로 바뀝니다.";
 "A tap slides the next page in." = "탭하면 다음 페이지가 밀려 들어옵니다.";
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "탭으로 넘길 때의 효과(슬라이드, 전체 페이드, 퍼지는 페이드)는 '읽기 › 탭으로 넘기기'에서 설정합니다.";
+"Allow Smaller Pages" = "화면보다 작게 축소 허용";
+"Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "켜면 두 손가락으로 페이지를 화면보다 작게 줄일 수 있고 주변은 검게 표시됩니다. 끄면 페이지가 최소한 화면을 채우며 확대만 할 수 있습니다.";

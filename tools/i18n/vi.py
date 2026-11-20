@@ -599,4 +599,6 @@ T = [
     "Mờ cả trang: chạm để cả trang mờ dần sang trang sau.",
     "Chạm để trang sau trượt vào.",
     "Hiệu ứng khi chạm (trượt, mờ cả trang hoặc mờ lan tỏa) đặt trong Đọc › Chạm để lật.",
+    "Cho phép thu nhỏ trang",
+    "Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.",
 ]

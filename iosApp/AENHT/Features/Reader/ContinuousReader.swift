@@ -87,6 +87,9 @@ struct ContinuousReader: View {
                 CGRect(origin: $0.contentOffset, size: $0.containerSize)
             } action: { _, new in
                 driver.viewportChanged(new.size)
+                #if DEBUG
+                if let scroll = driver.scroll { ReaderDebugMetrics.shared.record(scroll) }
+                #endif
             }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
                 let first = viewport.width == 0

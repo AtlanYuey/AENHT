@@ -23,6 +23,18 @@ struct ReaderSource: Hashable {
     let item: GalleryItem
     let numPages: Int
 
+    #if DEBUG
+    /// The UI tests' pages (ReaderFixture).
+    init(testPages: [ReaderPage]) {
+        id = 1
+        title = "Reader fixture"
+        pages = testPages
+        shareURL = URL(fileURLWithPath: "/reader-fixture")
+        item = GalleryItem(id: 1, mediaID: "", title: title, thumbnail: nil, numPages: testPages.count)
+        numPages = testPages.count
+    }
+    #endif
+
     @MainActor
     init(detail: GalleryDetail) {
         id = detail.id
@@ -342,6 +354,20 @@ struct ReaderView: View {
                 }
             }
             .toolbar(chromeVisible ? .visible : .hidden, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .overlay(alignment: .top) {
+                // Behind the top bar: the pages fade into black, as iOS 26's soft edges, not a flat bar.
+                if chromeVisible {
+                    LinearGradient(stops: [.init(color: .black.opacity(0.78), location: 0),
+                                           .init(color: .black.opacity(0.45), location: 0.55),
+                                           .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 150)
+                        .ignoresSafeArea(edges: .top)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+            }
             .toolbar(.hidden, for: .tabBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .overlay(alignment: .bottom) {
@@ -350,6 +376,18 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            #if DEBUG
+            .overlay(alignment: .bottomLeading) {
+                if ReaderFixture.isActive {
+                    Text(ReaderDebugMetrics.shared.text)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.yellow)
+                        .padding(4)
+                        .background(.black)
+                        .accessibilityIdentifier("reader-metrics")
+                }
+            }
+            #endif
             .statusBarHidden(!chromeVisible)
             .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
             .environment(\.colorScheme, .dark)
@@ -911,6 +949,11 @@ struct ReadingSettingsSections: View {
 
     @ViewBuilder private var pagedControls: some View {
         Section {
+            Toggle("Allow Smaller Pages", isOn: $settings.allowSmallerPages)
+        } footer: {
+            Text("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")
+        }
+        Section {
             Toggle("Tap to Turn Pages", isOn: $settings.tapToTurnPages)
             Picker("Tap Zones", selection: $settings.tapZones) {
                 ForEach(TapZones.allCases) { Text($0.title).tag($0) }
@@ -1439,7 +1482,7 @@ struct PagedReader: UIViewControllerRepresentable {
             }
             controller.onSwipe = { [weak self] direction in self?.parent.onSwipe(direction) }
             controller.onSwipeTurn = { [weak self] t in self?.swipeTurn(t) ?? false }
-            controller.startingSize = { [weak self] in self?.smaller ?? 1 }
+            controller.startingSize = { [weak self] in AppSettings.shared.allowSmallerPages ? self?.smaller ?? 1 : 1 }
             controller.onZoom = { [weak self] zoom, scale in self?.zoomChanged(zoom, scale: scale) }
             cache[index] = controller
             let current = parent.page
@@ -1918,8 +1961,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     /// The smallest size: the pages as shown stay readable (see ReaderZoom).
     private func updateMinimum() {
-        let fitted = fittedImageSize()
-        minimumZoomScale = ReaderZoom.minimumPaged(fitted: fitted)
+        // Smaller than the screen only when Controls › Allow Smaller Pages says so.
+        minimumZoomScale = AppSettings.shared.allowSmallerPages ? ReaderZoom.minimumPaged(fitted: fittedImageSize()) : 1
     }
 
     /// The image as fitted in the page's bounds (zoom 1).
@@ -2038,7 +2081,16 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         centerImage()
         report()
+        #if DEBUG
+        ReaderDebugMetrics.shared.record(self)
+        #endif
     }
+
+    #if DEBUG
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        ReaderDebugMetrics.shared.record(self)
+    }
+    #endif
 
     func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
         // Almost its size: its size.

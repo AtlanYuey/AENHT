@@ -599,4 +599,6 @@ T = [
     "Seiten-Überblendung: Tippen blendet die ganze Seite in die nächste über.",
     "Tippen schiebt die nächste Seite herein.",
     "Wie Tippen umblättert (Schieben, Seiten- oder ausbreitende Überblendung), stellst du unter Lesen › Tippen zum Umblättern ein.",
+    "Kleinere Seiten erlauben",
+    "Zusammenziehen kann eine Seite kleiner als den Bildschirm machen, mit Schwarz drumherum. Aus füllt die Seite mindestens den Bildschirm; Zusammenziehen vergrößert nur.",
 ]

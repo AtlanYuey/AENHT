@@ -600,9 +600,11 @@
     <string name="l_597">Esmaecer página: um toque esmaece a página inteira para a próxima.</string>
     <string name="l_598">Um toque desliza a próxima página.</string>
     <string name="l_599">O efeito do toque (deslizar, esmaecer página ou em expansão) é definido em Leitura › Tocar para virar.</string>
-    <string name="l_600">Backup dos ajustes</string>
-    <string name="l_601">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_602">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_603">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_604">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_600">Permitir páginas menores</string>
+    <string name="l_601">Ao aproximar os dedos, a página pode ficar menor que a tela, com preto em volta. Desativado, a página preenche ao menos a tela e o gesto só amplia.</string>
+    <string name="l_602">Backup dos ajustes</string>
+    <string name="l_603">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_604">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_605">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_606">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>
