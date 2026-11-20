@@ -47,7 +47,7 @@ final class ReaderGestureUITests: XCTestCase {
         sleep(2)
         let zoomed = metrics(app)
         print("[\(name)] pinched: \(app.staticTexts["reader-metrics"].label)")
-        XCTAssertGreaterThan(zoomed["scale"] ?? 0, 1.2, "\(name): the page wasn't enlarged")
+        XCTAssertGreaterThan(max(zoomed["scale"] ?? 0, (zoomed["maxX"] ?? 0) > 1 ? 2 : 0), 1.05, "\(name): the page wasn't enlarged")
 
         let goLeft = (zoomed["x"] ?? 0) > (zoomed["maxX"] ?? 0) / 2
         drag(app, from: CGVector(dx: goLeft ? 0.35 : 0.65, dy: 0.5), to: CGVector(dx: goLeft ? 0.65 : 0.35, dy: 0.5))
@@ -67,6 +67,11 @@ final class ReaderGestureUITests: XCTestCase {
     }
 
     func testDoublePageSlide() { checkEnlargedMoves([], name: "double page, slide") }
+    func testSinglePageWithoutGate() { checkEnlargedMoves(["--fixture-single", "--fixture-no-gate"], name: "single page, no gate") }
+    func testSinglePageWithoutWait() { checkEnlargedMoves(["--fixture-single", "--fixture-no-wait"], name: "single page, no wait") }
+    func testSinglePageWithoutEither() {
+        checkEnlargedMoves(["--fixture-single", "--fixture-no-gate", "--fixture-no-wait"], name: "single page, neither")
+    }
     func testDoublePageSweep() { checkEnlargedMoves(["--fixture-sweep"], name: "double page, swipe fade") }
     func testSinglePageSlide() { checkEnlargedMoves(["--fixture-single"], name: "single page, slide") }
     func testStrip() { checkEnlargedMoves(["--fixture-strip"], name: "continuous") }

@@ -1233,6 +1233,9 @@ struct PagedReader: UIViewControllerRepresentable {
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
             // A drag from the left edge is the swipe back (the system's drag, following
             // the finger), not a slide to the page before: the slide waits for it.
+            #if DEBUG
+            if ReaderFixture.without("wait") { return }
+            #endif
             for drag in ReaderGestureLock.systemDrags where !waitingFor.contains(where: { $0 === drag }) {
                 pages.panGestureRecognizer.require(toFail: drag)
                 waitingFor.append(drag)
@@ -2097,6 +2100,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         if abs(scale - 1) < 0.04, scale != 1 { setZoomScale(1, animated: true) }
         // The size it was left at (the next pages come as small).
         reportCurrent()
+        #if DEBUG
+        ReaderDebugMetrics.shared.record(self)
+        #endif
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
@@ -2205,6 +2211,9 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
         private func arrange() {
             guard let navigation = navigationController, let screen = readerScreen(navigation) else { return }
             let root = screen.view!
+            #if DEBUG
+            if ReaderFixture.without("gate") { return }
+            #endif
             if gate.view !== root {
                 gate.view?.removeGestureRecognizer(gate)
                 root.addGestureRecognizer(gate)

@@ -6,6 +6,8 @@ import UIKit
 /// pictures, opened from a grid of thumbnails, and what its scroll views do.
 enum ReaderFixture {
     static let isActive = ProcessInfo.processInfo.arguments.contains("--reader-fixture")
+    /// Leaves out a part of the reader's gestures, to find which one gets in the way.
+    static func without(_ part: String) -> Bool { ProcessInfo.processInfo.arguments.contains("--fixture-no-\(part)") }
 
     @MainActor
     static func configure(_ settings: AppSettings) {
@@ -57,8 +59,9 @@ final class ReaderDebugMetrics {
         guard ReaderFixture.isActive else { return }
         let maxX = max(0, scroll.contentSize.width - scroll.bounds.width)
         let maxY = max(0, scroll.contentSize.height - scroll.bounds.height)
-        text = String(format: "scale=%.2f x=%.1f y=%.1f maxX=%.1f maxY=%.1f",
-                      scroll.zoomScale, scroll.contentOffset.x, scroll.contentOffset.y, maxX, maxY)
+        text = String(format: "scale=%.2f x=%.1f y=%.1f maxX=%.1f maxY=%.1f scroll=%d pan=%d",
+                      scroll.zoomScale, scroll.contentOffset.x, scroll.contentOffset.y, maxX, maxY,
+                      scroll.isScrollEnabled ? 1 : 0, scroll.panGestureRecognizer.isEnabled ? 1 : 0)
     }
 }
 
