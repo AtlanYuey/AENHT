@@ -1108,8 +1108,15 @@ struct PagedReader: UIViewControllerRepresentable {
         )
         controller.view.backgroundColor = .black
         context.coordinator.pageViewController = controller
-        context.coordinator.addCloseDrag(to: controller.view)
-        context.coordinator.addSweepDrag(to: controller.view)
+        #if DEBUG
+        let drags = !ReaderFixture.without("drags")
+        #else
+        let drags = true
+        #endif
+        if drags {
+            context.coordinator.addCloseDrag(to: controller.view)
+            context.coordinator.addSweepDrag(to: controller.view)
+        }
         context.coordinator.lastSizeReset = sizeReset
         // Swipe Fade: without a data source the pages can't be dragged (the swipe fades them).
         controller.dataSource = AppSettings.shared.swipeTurn == .sweep ? nil : context.coordinator
@@ -1964,6 +1971,17 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             panGestureRecognizer.addTarget(self, action: #selector(debugPan(_:)))
         }
         #endif
+        #if DEBUG
+        if ReaderFixture.without("layout") {
+            // As before the sizing work: at its size, the image and content are the bounds.
+            if zoomScale == 1 {
+                imageView.frame = CGRect(origin: .zero, size: bounds.size)
+                contentSize = bounds.size
+            }
+            spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
+            return
+        }
+        #endif
         if bounds.size != fittedSize, bounds.width > 0 {
             #if DEBUG
             ReaderDebugMetrics.shared.note(String(format: "fit%.0fx%.0f", bounds.width, bounds.height))
@@ -2137,7 +2155,11 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        #if DEBUG
+        if !ReaderFixture.without("center") { centerImage() }
+        #else
         centerImage()
+        #endif
         report()
         #if DEBUG
         ReaderDebugMetrics.shared.record(self)
