@@ -376,18 +376,6 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            #if DEBUG
-            .overlay(alignment: .bottomLeading) {
-                if ReaderFixture.isActive {
-                    Text(ReaderDebugMetrics.shared.text)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.yellow)
-                        .padding(4)
-                        .background(.black)
-                        .accessibilityIdentifier("reader-metrics")
-                }
-            }
-            #endif
             .statusBarHidden(!chromeVisible)
             .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
             .environment(\.colorScheme, .dark)

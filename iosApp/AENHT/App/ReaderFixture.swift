@@ -48,16 +48,36 @@ enum ReaderFixture {
     }
 }
 
-/// The last scroll view the reader moved: its zoom, offset and how far it can go.
+/// The last scroll view the reader moved: its zoom, offset and how far it can
+/// go, and the gestures' states. Shown in a UIKit label on the window, so
+/// writing it doesn't make SwiftUI draw the reader again (which would itself
+/// lay the pages out again in the middle of a gesture).
 @MainActor
-@Observable
 final class ReaderDebugMetrics {
     static let shared = ReaderDebugMetrics()
-    var text = "none"
     private var metrics = "none"
     private var events: [String] = []
+    private weak var label: UILabel?
 
-    /// A gesture's state change (\(name):\(state)), the last ones shown after the metrics.
+    private func show() {
+        let text = metrics + " | " + events.joined(separator: ",")
+        if label == nil, let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows).first(where: \.isKeyWindow) {
+            let new = UILabel(frame: CGRect(x: 8, y: window.bounds.height - 40, width: window.bounds.width - 16, height: 30))
+            new.font = .monospacedSystemFont(ofSize: 9, weight: .regular)
+            new.textColor = .yellow
+            new.backgroundColor = .black
+            new.numberOfLines = 2
+            new.isUserInteractionEnabled = false
+            new.accessibilityIdentifier = "reader-metrics"
+            window.addSubview(new)
+            label = new
+        }
+        label?.superview?.bringSubviewToFront(label!)
+        label?.text = text
+        label?.accessibilityLabel = text
+    }
+
     func event(_ name: String, _ recognizer: UIGestureRecognizer) {
         guard ReaderFixture.isActive else { return }
         let state: String
@@ -70,16 +90,14 @@ final class ReaderDebugMetrics {
         case .failed: state = "failed"
         @unknown default: state = "?"
         }
-        events.append("\(name):\(state)")
-        if events.count > 14 { events.removeFirst(events.count - 14) }
-        text = metrics + " | " + events.joined(separator: ",")
+        note("\(name):\(state)")
     }
 
     func note(_ value: String) {
         guard ReaderFixture.isActive else { return }
         events.append(value)
         if events.count > 14 { events.removeFirst(events.count - 14) }
-        text = metrics + " | " + events.joined(separator: ",")
+        show()
     }
 
     func record(_ scroll: UIScrollView) {
@@ -89,7 +107,7 @@ final class ReaderDebugMetrics {
         metrics = String(format: "scale=%.2f x=%.1f y=%.1f maxX=%.1f maxY=%.1f scroll=%d pan=%d",
                          scroll.zoomScale, scroll.contentOffset.x, scroll.contentOffset.y, maxX, maxY,
                          scroll.isScrollEnabled ? 1 : 0, scroll.panGestureRecognizer.isEnabled ? 1 : 0)
-        text = metrics + " | " + events.joined(separator: ",")
+        show()
     }
 }
 
