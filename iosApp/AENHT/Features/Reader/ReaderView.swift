@@ -1927,6 +1927,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
         updateMinimum()
         if zoomScale < minimumZoomScale { setZoomScale(minimumZoomScale, animated: false) }
+        #if DEBUG
+        ReaderDebugMetrics.shared.note(String(format: "show min%.2f max%.2f", minimumZoomScale, maximumZoomScale))
+        #endif
     }
 
     #if DEBUG
@@ -1945,6 +1948,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
         #endif
         if bounds.size != fittedSize, bounds.width > 0 {
+            #if DEBUG
+            ReaderDebugMetrics.shared.note(String(format: "fit%.0fx%.0f", bounds.width, bounds.height))
+            #endif
             // A new size (turned, the first layout): fitted again, a smaller size kept.
             fittedSize = bounds.size
             let kept = min(zoomScale, 1)
@@ -1973,6 +1979,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     func resetZoom() {
+        #if DEBUG
+        ReaderDebugMetrics.shared.note("reset")
+        #endif
         pendingTap?.cancel()
         pendingTap = nil
         if zoomScale != 1 {
@@ -1982,6 +1991,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     /// Shows the page at [scale] (1: fitted; less: smaller, as the last page was).
     func setSize(_ scale: CGFloat, animated: Bool) {
+        #if DEBUG
+        ReaderDebugMetrics.shared.note(String(format: "size%.2f", scale))
+        #endif
         let target = min(max(scale, minimumZoomScale), maximumZoomScale)
         if abs(zoomScale - target) > 0.001 { setZoomScale(target, animated: animated) }
         report()
@@ -2116,8 +2128,15 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     #if DEBUG
+    private var seenX: ClosedRange<CGFloat>?
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let x = contentOffset.x
+        seenX = seenX.map { min($0.lowerBound, x)...max($0.upperBound, x) } ?? x...x
         ReaderDebugMetrics.shared.record(self)
+    }
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) { seenX = nil }
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if let seenX { ReaderDebugMetrics.shared.note(String(format: "x%.0f-%.0f", seenX.lowerBound, seenX.upperBound)) }
     }
     #endif
 
