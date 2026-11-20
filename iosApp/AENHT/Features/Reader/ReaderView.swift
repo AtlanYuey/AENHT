@@ -1179,8 +1179,14 @@ struct PagedReader: UIViewControllerRepresentable {
         /// and not while the page is enlarged (it moves instead). With Swipe
         /// Fade nothing moves under the finger: no bounce either.
         func updatePaging() {
+            // The gate and the back swipe ask the shown page itself.
+            ReaderGestureLock.enlargedNow = { [weak self] in self?.enlargedNow ?? false }
+            let enlarged = zoom == .enlarged || enlargedNow
+            // Enlarged, one finger only moves the page: the reader's own drags are off.
+            sweepDrag?.isEnabled = !enlarged
+            closeDrag?.isEnabled = !enlarged
             guard let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
-            let slides = AppSettings.shared.swipeTurn == .slide && zoom != .enlarged
+            let slides = AppSettings.shared.swipeTurn == .slide && !enlarged
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
             // A drag from the left edge is the swipe back (the system's drag, following
             // the finger), not a slide to the page before: the slide waits for it.
@@ -1344,7 +1350,7 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             if gestureRecognizer === sweepDrag, let drag = sweepDrag, let view = drag.view {
-                guard AppSettings.shared.swipeTurn == .sweep, zoom != .enlarged else { return false }
+                guard AppSettings.shared.swipeTurn == .sweep, zoom != .enlarged, !enlargedNow else { return false }
                 let velocity = drag.velocity(in: view)
                 let along = vertical ? velocity.y : velocity.x
                 let across = vertical ? velocity.x : velocity.y
@@ -1354,7 +1360,7 @@ struct PagedReader: UIViewControllerRepresentable {
                 return vertical || start > ReaderGestureLock.edge
             }
             guard gestureRecognizer === closeDrag, let drag = closeDrag, let view = drag.view else { return true }
-            guard parent.mode == .leftToRight || parent.mode == .rightToLeft, zoom != .enlarged else { return false }
+            guard parent.mode == .leftToRight || parent.mode == .rightToLeft, zoom != .enlarged, !enlargedNow else { return false }
             let velocity = drag.velocity(in: view)
             guard abs(velocity.y) > abs(velocity.x) * 1.3 else { return false }
             // Down is the zoom transition's own drag when it is there (it reveals the gallery page and can be taken back).
@@ -1395,6 +1401,11 @@ struct PagedReader: UIViewControllerRepresentable {
 
         /// The shown page's size: enlarged, it can't be turned by dragging
         /// (the finger moves it); smaller, the next pages come as small.
+        /// The shown page is enlarged, asked of the page itself.
+        private var enlargedNow: Bool {
+            (pageViewController?.viewControllers?.first as? PageController)?.isEnlarged ?? false
+        }
+
         private func zoomChanged(_ zoom: ReaderZoom, scale: CGFloat) {
             self.zoom = zoom
             switch zoom {
@@ -1657,6 +1668,9 @@ final class PageController: UIViewController {
         }
         zoomView.load(urls, rightToLeft: rightToLeft, options: options)
     }
+
+    /// Its page is enlarged now (not as last reported).
+    var isEnlarged: Bool { isViewLoaded && zoomView.isEnlarged }
 
     /// Back to the fitted size (the reader's Reset Size), or [scale].
     func setSize(_ scale: CGFloat, animated: Bool) {
@@ -2119,6 +2133,7 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
             for gesture in blocked { gesture.isEnabled = true }
             blocked = []
             ReaderGestureLock.systemDrags = []
+            ReaderGestureLock.enlargedNow = { false }
         }
 
         /// The reader's screen: the navigation controller's child it is in.
@@ -2205,7 +2220,7 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         // Not while a reader's page is enlarged: the finger moves the page.
-        viewControllers.count > 1 && !ReaderGestureLock.enlarged
+        viewControllers.count > 1 && !ReaderGestureLock.isEnlarged
     }
 }
 

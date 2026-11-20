@@ -59,6 +59,9 @@ enum ContinuousSizing {
 enum ReaderGestureLock {
     /// A page is enlarged: the finger moves it, nothing closes the reader.
     static var enlarged = false
+    /// Asks the shown page (or strip) itself, which the reported state can lag behind.
+    static var enlargedNow: () -> Bool = { false }
+    static var isEnlarged: Bool { enlarged || enlargedNow() }
     static var mode: ReadMode = .leftToRight
     /// The zoom transition's own drag closes the reader (found on the reader's screen).
     static var systemCloses: Bool { !systemDrags.isEmpty }
@@ -73,7 +76,7 @@ enum ReaderGestureLock {
     /// never across the pages (that turns them), never in the continuous
     /// modes' scrolling.
     static func allowsSystemClose(start: CGPoint, velocity: CGPoint) -> Bool {
-        if enlarged { return false }
+        if isEnlarged { return false }
         if start.x < edge, velocity.x > 0, velocity.x >= abs(velocity.y) { return true }
         guard mode == .leftToRight || mode == .rightToLeft else { return false }
         guard velocity.y > 0, velocity.y > abs(velocity.x) * 1.3 else { return false }

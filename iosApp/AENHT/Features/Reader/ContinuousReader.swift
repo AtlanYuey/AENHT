@@ -122,8 +122,13 @@ struct ContinuousReader: View {
             .task {
                 for _ in 0..<40 where !pinch.isAttached {
                     if let scroll = driver.scroll {
-                        scroll.isDirectionalLockEnabled = true
+                        // Enlarged, the strip moves every way the finger does (no locking to one direction).
+                        scroll.isDirectionalLockEnabled = false
                         pinch.attach(to: scroll)
+                        ReaderGestureLock.enlargedNow = { [weak scroll] in
+                            guard let scroll else { return false }
+                            return scroll.contentSize.width > scroll.bounds.width + 1
+                        }
                     } else {
                         try? await Task.sleep(for: .milliseconds(50))
                     }
