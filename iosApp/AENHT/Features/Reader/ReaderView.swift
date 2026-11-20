@@ -1935,7 +1935,24 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     #if DEBUG
     private var watching = false
     @objc private func debugPinch(_ g: UIGestureRecognizer) { ReaderDebugMetrics.shared.event("pinch", g) }
-    @objc private func debugPan(_ g: UIGestureRecognizer) { ReaderDebugMetrics.shared.event("pan", g) }
+    @objc private func debugPan(_ g: UIGestureRecognizer) {
+        ReaderDebugMetrics.shared.event("pan", g)
+        guard g.state == .ended, let pan = g as? UIPanGestureRecognizer else { return }
+        // How far the finger went for this view, and how big this view is on the screen.
+        let t = pan.translation(in: self)
+        let onScreen = convert(CGRect(x: 0, y: 0, width: 100, height: 100), to: nil).width
+        var ancestors = ""
+        var view: UIView? = self
+        while let current = view {
+            if !current.transform.isIdentity { ancestors += "T:" + String(describing: type(of: current)) + " " }
+            if let scroll = current as? UIScrollView, scroll !== self, scroll.zoomScale != 1 {
+                ancestors += String(format: "Z%.2f:", scroll.zoomScale) + String(describing: type(of: current)) + " "
+            }
+            view = current.superview
+        }
+        ReaderDebugMetrics.shared.note(String(format: "t%.0f,%.0f screen%.0f dragging%d tracking%d ", t.x, t.y, onScreen,
+                                              isDragging ? 1 : 0, isTracking ? 1 : 0) + ancestors)
+    }
     #endif
 
     override func layoutSubviews() {
