@@ -1353,6 +1353,9 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         @objc private func sweepDragged(_ drag: UIPanGestureRecognizer) {
+            #if DEBUG
+            ReaderDebugMetrics.shared.event("sweep", drag)
+            #endif
             guard let view = drag.view else { return }
             let t = drag.translation(in: view)
             let v = drag.velocity(in: view)
@@ -1415,6 +1418,9 @@ struct PagedReader: UIViewControllerRepresentable {
         }
 
         @objc private func closeDragged(_ drag: UIPanGestureRecognizer) {
+            #if DEBUG
+            ReaderDebugMetrics.shared.event("close", drag)
+            #endif
             guard let view = drag.view else { return }
             let t = drag.translation(in: view)
             let height = max(view.bounds.height, 1)
@@ -1710,6 +1716,10 @@ final class PageController: UIViewController {
         zoomView.onSwipeTurn = { [weak self] t in self?.onSwipeTurn?(t) ?? false }
         zoomView.onZoom = { [weak self] zoom in
             guard let self, visible else { return }
+            #if DEBUG
+            ReaderDebugMetrics.shared.note("zoom:\(zoom)")
+            if ReaderFixture.without("report") { return }
+            #endif
             onZoom?(zoom, zoomView.zoomScale)
         }
         zoomView.load(urls, rightToLeft: rightToLeft, options: options)
@@ -1919,8 +1929,21 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         if zoomScale < minimumZoomScale { setZoomScale(minimumZoomScale, animated: false) }
     }
 
+    #if DEBUG
+    private var watching = false
+    @objc private func debugPinch(_ g: UIGestureRecognizer) { ReaderDebugMetrics.shared.event("pinch", g) }
+    @objc private func debugPan(_ g: UIGestureRecognizer) { ReaderDebugMetrics.shared.event("pan", g) }
+    #endif
+
     override func layoutSubviews() {
         super.layoutSubviews()
+        #if DEBUG
+        if ReaderFixture.isActive, !watching, let pinch = pinchGestureRecognizer {
+            watching = true
+            pinch.addTarget(self, action: #selector(debugPinch(_:)))
+            panGestureRecognizer.addTarget(self, action: #selector(debugPan(_:)))
+        }
+        #endif
         if bounds.size != fittedSize, bounds.width > 0 {
             // A new size (turned, the first layout): fitted again, a smaller size kept.
             fittedSize = bounds.size

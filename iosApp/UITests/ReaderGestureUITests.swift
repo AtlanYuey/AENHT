@@ -67,10 +67,9 @@ final class ReaderGestureUITests: XCTestCase {
     }
 
     func testDoublePageSlide() { checkEnlargedMoves([], name: "double page, slide") }
-    func testSinglePageWithoutGate() { checkEnlargedMoves(["--fixture-single", "--fixture-no-gate"], name: "single page, no gate") }
-    func testSinglePageWithoutWait() { checkEnlargedMoves(["--fixture-single", "--fixture-no-wait"], name: "single page, no wait") }
-    func testSinglePageWithoutEither() {
-        checkEnlargedMoves(["--fixture-single", "--fixture-no-gate", "--fixture-no-wait"], name: "single page, neither")
+    func testSinglePageWithoutReport() { checkEnlargedMoves(["--fixture-single", "--fixture-no-report"], name: "single page, no report") }
+    func testSinglePageWithoutAny() {
+        checkEnlargedMoves(["--fixture-single", "--fixture-no-gate", "--fixture-no-wait", "--fixture-no-report"], name: "single page, none")
     }
     func testDoublePageSweep() { checkEnlargedMoves(["--fixture-sweep"], name: "double page, swipe fade") }
     func testSinglePageSlide() { checkEnlargedMoves(["--fixture-single"], name: "single page, slide") }

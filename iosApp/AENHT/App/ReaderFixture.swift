@@ -54,14 +54,42 @@ enum ReaderFixture {
 final class ReaderDebugMetrics {
     static let shared = ReaderDebugMetrics()
     var text = "none"
+    private var metrics = "none"
+    private var events: [String] = []
+
+    /// A gesture's state change (\(name):\(state)), the last ones shown after the metrics.
+    func event(_ name: String, _ recognizer: UIGestureRecognizer) {
+        guard ReaderFixture.isActive else { return }
+        let state: String
+        switch recognizer.state {
+        case .possible: state = "possible"
+        case .began: state = "began"
+        case .changed: return
+        case .ended: state = "ended"
+        case .cancelled: state = "CANCELLED"
+        case .failed: state = "failed"
+        @unknown default: state = "?"
+        }
+        events.append("\(name):\(state)")
+        if events.count > 14 { events.removeFirst(events.count - 14) }
+        text = metrics + " | " + events.joined(separator: ",")
+    }
+
+    func note(_ value: String) {
+        guard ReaderFixture.isActive else { return }
+        events.append(value)
+        if events.count > 14 { events.removeFirst(events.count - 14) }
+        text = metrics + " | " + events.joined(separator: ",")
+    }
 
     func record(_ scroll: UIScrollView) {
         guard ReaderFixture.isActive else { return }
         let maxX = max(0, scroll.contentSize.width - scroll.bounds.width)
         let maxY = max(0, scroll.contentSize.height - scroll.bounds.height)
-        text = String(format: "scale=%.2f x=%.1f y=%.1f maxX=%.1f maxY=%.1f scroll=%d pan=%d",
-                      scroll.zoomScale, scroll.contentOffset.x, scroll.contentOffset.y, maxX, maxY,
-                      scroll.isScrollEnabled ? 1 : 0, scroll.panGestureRecognizer.isEnabled ? 1 : 0)
+        metrics = String(format: "scale=%.2f x=%.1f y=%.1f maxX=%.1f maxY=%.1f scroll=%d pan=%d",
+                         scroll.zoomScale, scroll.contentOffset.x, scroll.contentOffset.y, maxX, maxY,
+                         scroll.isScrollEnabled ? 1 : 0, scroll.panGestureRecognizer.isEnabled ? 1 : 0)
+        text = metrics + " | " + events.joined(separator: ",")
     }
 }
 
