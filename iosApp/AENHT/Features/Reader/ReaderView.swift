@@ -1806,7 +1806,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
-        isScrollEnabled = false
+        // Never bouncing at its size: only an enlarged page moves (the page view turns the pages).
+        alwaysBounceHorizontal = false
+        alwaysBounceVertical = false
         // Pinched smaller down to a size that still reads (readableMinimum), not out of the reader.
         minimumZoomScale = ReaderZoom.smallestPaged
         maximumZoomScale = 4
@@ -1983,8 +1985,9 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     private func report() {
-        // Only an enlarged page moves under the finger; otherwise the finger turns pages.
-        if isScrollEnabled != isEnlarged { isScrollEnabled = isEnlarged }
+        // Scrolling stays on (switching it while pinching ends the pinch and
+        // leaves the page stuck): at its size or smaller there is nothing to
+        // scroll, so the finger turns pages; enlarged, it moves the page.
         let zoom = ReaderZoom(scale: zoomScale)
         guard zoom != reportedZoom else { return }
         reportedZoom = zoom
