@@ -1848,6 +1848,103 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         pan.delegate = swipeDelegate
         addGestureRecognizer(pan)
+
+        // An enlarged page moves under one finger with the reader's own drag:
+        // the scroll view's own one didn't move it inside the page view (it
+        // began and ended with the whole distance, the page staying put).
+        panGestureRecognizer.isEnabled = false
+        movePan.maximumNumberOfTouches = 1
+        movePan.delegate = moveDelegate
+        moveDelegate.shouldBegin = { [weak self] in self?.isEnlarged ?? false }
+        addGestureRecognizer(movePan)
+    }
+
+    // MARK: Moving an enlarged page
+
+    private lazy var movePan = UIPanGestureRecognizer(target: self, action: #selector(moved(_:)))
+    private let moveDelegate = MoveDelegate()
+    private var moveStart: CGPoint = .zero
+    private var glide: CADisplayLink?
+    private var glideVelocity: CGPoint = .zero
+    private var glideTime: CFTimeInterval = 0
+
+    private final class MoveDelegate: NSObject, UIGestureRecognizerDelegate {
+        var shouldBegin: () -> Bool = { false }
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool { shouldBegin() }
+    }
+
+    private var maxOffset: CGPoint {
+        CGPoint(x: max(0, contentSize.width - bounds.width), y: max(0, contentSize.height - bounds.height))
+    }
+
+    /// [value] within 0…[limit], giving way less and less past the ends while the finger pulls.
+    private static func rubber(_ value: CGFloat, _ limit: CGFloat, _ size: CGFloat) -> CGFloat {
+        if value < 0 { return -size * (1 - 1 / (-value * 0.55 / max(size, 1) + 1)) }
+        if value > limit { return limit + size * (1 - 1 / ((value - limit) * 0.55 / max(size, 1) + 1)) }
+        return value
+    }
+
+    @objc private func moved(_ pan: UIPanGestureRecognizer) {
+        let t = pan.translation(in: self)
+        switch pan.state {
+        case .began:
+            stopGlide()
+            moveStart = contentOffset
+        case .changed:
+            let limit = maxOffset
+            contentOffset = CGPoint(x: Self.rubber(moveStart.x - t.x, limit.x, bounds.width),
+                                    y: Self.rubber(moveStart.y - t.y, limit.y, bounds.height))
+            #if DEBUG
+            ReaderDebugMetrics.shared.record(self)
+            #endif
+        case .ended:
+            let v = pan.velocity(in: self)
+            startGlide(CGPoint(x: -v.x, y: -v.y))
+        default:
+            settle()
+        }
+    }
+
+    /// On at the finger's speed, slowing down as a scroll view does, then back inside the page.
+    private func startGlide(_ velocity: CGPoint) {
+        stopGlide()
+        let limit = maxOffset
+        let outside = contentOffset.x < 0 || contentOffset.y < 0 || contentOffset.x > limit.x || contentOffset.y > limit.y
+        guard !outside, hypot(velocity.x, velocity.y) > 40 else { settle(); return }
+        glideVelocity = velocity
+        glideTime = CACurrentMediaTime()
+        let link = CADisplayLink(target: self, selector: #selector(glided(_:)))
+        link.add(to: .main, forMode: .common)
+        glide = link
+    }
+
+    @objc private func glided(_ link: CADisplayLink) {
+        let now = CACurrentMediaTime()
+        let dt = min(now - glideTime, 1.0 / 30)
+        glideTime = now
+        let decay = CGFloat(pow(Double(UIScrollView.DecelerationRate.normal.rawValue), dt * 1000))
+        glideVelocity = CGPoint(x: glideVelocity.x * decay, y: glideVelocity.y * decay)
+        let limit = maxOffset
+        var next = CGPoint(x: contentOffset.x + glideVelocity.x * CGFloat(dt), y: contentOffset.y + glideVelocity.y * CGFloat(dt))
+        // At an end the page stops there (no flying past it).
+        if next.x < 0 || next.x > limit.x { next.x = min(max(next.x, 0), limit.x); glideVelocity.x = 0 }
+        if next.y < 0 || next.y > limit.y { next.y = min(max(next.y, 0), limit.y); glideVelocity.y = 0 }
+        contentOffset = next
+        if hypot(glideVelocity.x, glideVelocity.y) < 8 { stopGlide() }
+    }
+
+    private func stopGlide() {
+        glide?.invalidate()
+        glide = nil
+    }
+
+    /// Back inside the page when pulled past an end.
+    private func settle() {
+        let limit = maxOffset
+        let inside = CGPoint(x: min(max(contentOffset.x, 0), limit.x), y: min(max(contentOffset.y, 0), limit.y))
+        guard inside != contentOffset else { return }
+        UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0,
+                       options: [.allowUserInteraction, .beginFromCurrentState]) { self.contentOffset = inside }
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -1864,6 +1961,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     deinit {
+        glide?.invalidate()
         loadTask?.cancel()
         enhanceTask?.cancel()
         pendingTap?.cancel()
@@ -1956,7 +2054,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         if ReaderFixture.isActive, !watching, let pinch = pinchGestureRecognizer {
             watching = true
             pinch.addTarget(self, action: #selector(debugPinch(_:)))
-            panGestureRecognizer.addTarget(self, action: #selector(debugPan(_:)))
+            movePan.addTarget(self, action: #selector(debugPan(_:)))
         }
         #endif
         #if DEBUG
@@ -2005,6 +2103,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         #if DEBUG
         ReaderDebugMetrics.shared.note("reset")
         #endif
+        stopGlide()
         pendingTap?.cancel()
         pendingTap = nil
         if zoomScale != 1 {
@@ -2140,6 +2239,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         imageView
+    }
+
+    func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
+        stopGlide()
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
