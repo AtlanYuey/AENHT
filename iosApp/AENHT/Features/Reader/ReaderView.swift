@@ -355,19 +355,6 @@ struct ReaderView: View {
             }
             .toolbar(chromeVisible ? .visible : .hidden, for: .navigationBar)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .overlay(alignment: .top) {
-                // Behind the top bar: the pages fade into black, as iOS 26's soft edges, not a flat bar.
-                if chromeVisible {
-                    LinearGradient(stops: [.init(color: .black.opacity(0.78), location: 0),
-                                           .init(color: .black.opacity(0.45), location: 0.55),
-                                           .init(color: .clear, location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
-                        .frame(height: 150)
-                        .ignoresSafeArea(edges: .top)
-                        .allowsHitTesting(false)
-                        .transition(.opacity)
-                }
-            }
             .toolbar(.hidden, for: .tabBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .overlay(alignment: .bottom) {
@@ -1095,6 +1082,13 @@ struct PagedReader: UIViewControllerRepresentable {
             options: [.interPageSpacing: 16]
         )
         controller.view.backgroundColor = .black
+        if #available(iOS 26.0, *) {
+            // The bar's edge over the pages: soft (the system took a hard band for the page view).
+            for scroll in controller.view.subviews.compactMap({ $0 as? UIScrollView }) {
+                scroll.topEdgeEffect.style = .soft
+                scroll.bottomEdgeEffect.style = .soft
+            }
+        }
         context.coordinator.pageViewController = controller
         #if DEBUG
         let drags = !ReaderFixture.without("drags")
@@ -1811,6 +1805,11 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
+        if #available(iOS 26.0, *) {
+            // Under the top bar the page fades and blurs softly (iOS 26), not a hard band.
+            topEdgeEffect.style = .soft
+            bottomEdgeEffect.style = .soft
+        }
         // Never bouncing at its size: only an enlarged page moves (the page view turns the pages).
         alwaysBounceHorizontal = false
         alwaysBounceVertical = false
@@ -2386,6 +2385,7 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
         private func arrange() {
             guard let navigation = navigationController, let screen = readerScreen(navigation) else { return }
             let root = screen.view!
+            if #available(iOS 26.0, *) { Self.softenEdges(in: root) }
             #if DEBUG
             if ReaderFixture.without("gate") { return }
             #endif
@@ -2428,6 +2428,16 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
                 Diagnostics.shared.log(category: "reader", message: "Reader gestures: kept " + added.joined(separator: ", ")
                                        + "; waiting for the gate " + wait.map { String(reflecting: type(of: $0)) }.joined(separator: ", "))
             }
+        }
+
+        /// The top bar's edge over the reader: soft (fading, blurred), as on the app's other screens.
+        @available(iOS 26.0, *)
+        private static func softenEdges(in view: UIView) {
+            if let scroll = view as? UIScrollView, scroll.topEdgeEffect.style != .soft {
+                scroll.topEdgeEffect.style = .soft
+                scroll.bottomEdgeEffect.style = .soft
+            }
+            for subview in view.subviews { softenEdges(in: subview) }
         }
 
         private static func isSystemClose(_ gesture: UIGestureRecognizer, _ navigation: UINavigationController,

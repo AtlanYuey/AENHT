@@ -83,6 +83,7 @@ struct ContinuousReader: View {
             }
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .paneScrollEdges()
             .onScrollGeometryChange(for: CGRect.self) {
                 CGRect(origin: $0.contentOffset, size: $0.containerSize)
             } action: { _, new in
