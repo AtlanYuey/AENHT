@@ -1090,15 +1090,8 @@ struct PagedReader: UIViewControllerRepresentable {
             }
         }
         context.coordinator.pageViewController = controller
-        #if DEBUG
-        let drags = !ReaderFixture.without("drags")
-        #else
-        let drags = true
-        #endif
-        if drags {
-            context.coordinator.addCloseDrag(to: controller.view)
-            context.coordinator.addSweepDrag(to: controller.view)
-        }
+        context.coordinator.addCloseDrag(to: controller.view)
+        context.coordinator.addSweepDrag(to: controller.view)
         context.coordinator.lastSizeReset = sizeReset
         // Swipe Fade: without a data source the pages can't be dragged (the swipe fades them).
         controller.dataSource = AppSettings.shared.swipeTurn == .sweep ? nil : context.coordinator
@@ -1222,9 +1215,6 @@ struct PagedReader: UIViewControllerRepresentable {
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
             // A drag from the left edge is the swipe back (the system's drag, following
             // the finger), not a slide to the page before: the slide waits for it.
-            #if DEBUG
-            if ReaderFixture.without("wait") { return }
-            #endif
             for drag in ReaderGestureLock.systemDrags where !waitingFor.contains(where: { $0 === drag }) {
                 pages.panGestureRecognizer.require(toFail: drag)
                 waitingFor.append(drag)
@@ -1707,7 +1697,6 @@ final class PageController: UIViewController {
             guard let self, visible else { return }
             #if DEBUG
             ReaderDebugMetrics.shared.note("zoom:\(zoom)")
-            if ReaderFixture.without("report") { return }
             #endif
             onZoom?(zoom, zoomView.zoomScale)
         }
@@ -2056,17 +2045,6 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             movePan.addTarget(self, action: #selector(debugPan(_:)))
         }
         #endif
-        #if DEBUG
-        if ReaderFixture.without("layout") {
-            // As before the sizing work: at its size, the image and content are the bounds.
-            if zoomScale == 1 {
-                imageView.frame = CGRect(origin: .zero, size: bounds.size)
-                contentSize = bounds.size
-            }
-            spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
-            return
-        }
-        #endif
         if bounds.size != fittedSize, bounds.width > 0 {
             #if DEBUG
             ReaderDebugMetrics.shared.note(String(format: "fit%.0fx%.0f", bounds.width, bounds.height))
@@ -2245,11 +2223,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        #if DEBUG
-        if !ReaderFixture.without("center") { centerImage() }
-        #else
         centerImage()
-        #endif
         report()
         #if DEBUG
         ReaderDebugMetrics.shared.record(self)
@@ -2386,9 +2360,6 @@ private struct EdgeOnlyBackSwipe: UIViewControllerRepresentable {
             guard let navigation = navigationController, let screen = readerScreen(navigation) else { return }
             let root = screen.view!
             if #available(iOS 26.0, *) { Self.softenEdges(in: root) }
-            #if DEBUG
-            if ReaderFixture.without("gate") { return }
-            #endif
             if gate.view !== root {
                 gate.view?.removeGestureRecognizer(gate)
                 root.addGestureRecognizer(gate)

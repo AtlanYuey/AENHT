@@ -6,8 +6,6 @@ import UIKit
 /// pictures, opened from a grid of thumbnails, and what its scroll views do.
 enum ReaderFixture {
     static let isActive = ProcessInfo.processInfo.arguments.contains("--reader-fixture")
-    /// Leaves out a part of the reader's gestures, to find which one gets in the way.
-    static func without(_ part: String) -> Bool { ProcessInfo.processInfo.arguments.contains("--fixture-no-\(part)") }
 
     @MainActor
     static func configure(_ settings: AppSettings) {
