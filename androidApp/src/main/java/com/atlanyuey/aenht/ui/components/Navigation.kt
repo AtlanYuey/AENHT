@@ -52,6 +52,14 @@ abstract class Screen {
      */
     open fun zoomTarget(): androidx.compose.ui.geometry.Rect? = null
 
+    /**
+     * Back doesn't leave this screen now (the reader with a page enlarged):
+     * it does [onBackHeld] instead. Read in composition (snapshot state).
+     */
+    open val holdsBack: Boolean get() = false
+
+    open fun onBackHeld() {}
+
     @Composable
     abstract fun Content()
 
@@ -210,7 +218,8 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
         }
     }
 
-    PredictiveBackHandler(enabled = navigator.canPop) { events ->
+    val held = navigator.top.holdsBack
+    PredictiveBackHandler(enabled = navigator.canPop && !held) { events ->
         try {
             events.collect { event -> navigator.dragBack(event.progress) }
             navigator.finishPop()
@@ -219,6 +228,7 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
             throw e
         }
     }
+    androidx.activity.compose.BackHandler(enabled = held) { navigator.top.onBackHeld() }
 }
 
 /** The soft shadow on the leading edge of a screen sliding over another. */

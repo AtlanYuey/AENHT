@@ -674,4 +674,12 @@ object Icons {
             p("M168 128a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM344 128a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM256 216a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM168 304a40 40 0 1 0 0 80a40 40 0 1 0 0-80ZM344 304a40 40 0 1 0 0 80a40 40 0 1 0 0-80Z", fill = true, stroke = 0f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
         )
     }
+
+    /** Four corners (Ionicons scan-outline): Reset Size in the reader. */
+    val Scan: ImageVector by lazy {
+        icon(
+            "Scan",
+        p("M342 444h46a56 56 0 0 0 56-56v-46M444 170v-46a56 56 0 0 0-56-56h-46M170 444h-46a56 56 0 0 1-56-56v-46M68 170v-46a56 56 0 0 1 56-56h46", fill = false, stroke = 32f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+    }
 }

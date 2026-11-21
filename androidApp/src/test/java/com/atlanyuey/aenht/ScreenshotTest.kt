@@ -19,6 +19,8 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.pinch
+import com.atlanyuey.aenht.core.ReadMode
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.performScrollTo
@@ -207,8 +209,8 @@ class ScreenshotTest {
     }
 
     @Test fun readerFade() {
-        // Without the page turn animation, a tap on the edge fades the next page in where it is.
-        AppSettings.animatePageTurns = false
+        // Tap to Turn › Page Fade: a tap on the edge fades the next page in where it is.
+        AppSettings.tapTurn = com.atlanyuey.aenht.core.TapTurn.Fade
         try {
             val tabs = Tabs()
             val source = ReaderSource(
@@ -227,13 +229,76 @@ class ScreenshotTest {
             compose.mainClock.advanceTimeBy(600)
             compose.onRoot().captureRoboImage("build/screens/37_reader_fade_after.png")
         } finally {
-            AppSettings.animatePageTurns = true
+            AppSettings.tapTurn = com.atlanyuey.aenht.core.TapTurn.Slide
+        }
+    }
+
+    @Test fun readerSpreadFade() {
+        // Tap to Turn › Spread Fade: the next page shows in a circle growing from the tap.
+        AppSettings.tapTurn = com.atlanyuey.aenht.core.TapTurn.Spread
+        try {
+            val tabs = Tabs()
+            tabs.home.push(ReaderScreen(sampleSource(), 3))
+            shoot("70_reader_spread_before", tabs, settle = 500)
+            compose.mainClock.autoAdvance = false
+            compose.onRoot().performTouchInput { click(androidx.compose.ui.geometry.Offset(width * 0.9f, height * 0.3f)) }
+            compose.mainClock.advanceTimeBy(160)
+            compose.onRoot().captureRoboImage("build/screens/71_reader_spread_mid.png")
+            compose.mainClock.advanceTimeBy(600)
+            compose.onRoot().captureRoboImage("build/screens/72_reader_spread_after.png")
+        } finally {
+            AppSettings.tapTurn = com.atlanyuey.aenht.core.TapTurn.Slide
+        }
+    }
+
+    private fun sampleSource() = ReaderSource(
+        500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
+        "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
+    )
+
+    /** Allow Smaller Pages: pinched in, the page is smaller than the screen, and Reset Size shows. */
+    @Test fun readerSmaller() {
+        AppSettings.allowSmallerPages = true
+        try {
+            val tabs = Tabs()
+            tabs.home.push(ReaderScreen(sampleSource(), 3))
+            shoot("73_reader_before_pinch", tabs, settle = 500)
+            compose.onRoot().performTouchInput {
+                pinch(
+                    androidx.compose.ui.geometry.Offset(centerX - 300f, centerY), androidx.compose.ui.geometry.Offset(centerX - 120f, centerY),
+                    androidx.compose.ui.geometry.Offset(centerX + 300f, centerY), androidx.compose.ui.geometry.Offset(centerX + 120f, centerY),
+                    durationMillis = 400,
+                )
+            }
+            compose.mainClock.advanceTimeBy(800)
+            compose.waitForIdle()
+            // The controls back, with Reset Size.
+            compose.onRoot().performTouchInput { click(center) }
+            compose.mainClock.advanceTimeBy(600)
+            compose.waitForIdle()
+            compose.onRoot().captureRoboImage("build/screens/74_reader_smaller.png")
+        } finally {
+            AppSettings.allowSmallerPages = false
+        }
+    }
+
+    /** Continuous on a tablet held sideways: by default a whole page shows, in the middle. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletContinuous() {
+        AppSettings.readMode = ReadMode.Vertical
+        AppSettings.continuousPageScale = 1.0
+        try {
+            val tabs = Tabs()
+            tabs.home.push(ReaderScreen(sampleSource(), 3))
+            shoot("75_tablet_continuous", tabs, settle = 800)
+        } finally {
+            AppSettings.readMode = ReadMode.LeftToRight
         }
     }
 
     @Test fun readerSwipeFade() {
-        // Fade on Swipe: a swipe turns the page with a fade sweeping the way it went; the pages don't move.
-        AppSettings.swipeFades = true
+        // Swipe Fade: the page fades away under the finger, the way it goes; the pages don't move.
+        AppSettings.swipeTurn = com.atlanyuey.aenht.core.SwipeTurn.Sweep
         try {
             val tabs = Tabs()
             val source = ReaderSource(
@@ -256,7 +321,7 @@ class ScreenshotTest {
             compose.mainClock.advanceTimeBy(600)
             compose.onRoot().captureRoboImage("build/screens/49_reader_swipe_after.png")
         } finally {
-            AppSettings.swipeFades = false
+            AppSettings.swipeTurn = com.atlanyuey.aenht.core.SwipeTurn.Slide
         }
     }
 
@@ -475,6 +540,49 @@ class ScreenshotTest {
         val tabs = Tabs()
         tabs.home.push(GalleryScreen(500001, null))
         shoot("52_tablet_landscape_gallery", tabs, settle = 2500)
+    }
+
+    /** Tablet Layout › Right Half: Other Versions, Similar and Comments. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeGalleryRelated() {
+        AppSettings.tabletDetailContent = com.atlanyuey.aenht.core.TabletDetailContent.Related
+        try {
+            val tabs = Tabs()
+            tabs.home.push(GalleryScreen(500001, null))
+            shoot("76_tablet_gallery_related", tabs, settle = 2500)
+        } finally {
+            AppSettings.tabletDetailContent = com.atlanyuey.aenht.core.TabletDetailContent.Pages
+        }
+    }
+
+    /** Tablet Layout › Pages Width: Three Columns. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeGalleryNarrow() {
+        AppSettings.tabletNarrowPages = true
+        try {
+            val tabs = Tabs()
+            tabs.home.push(com.atlanyuey.aenht.screens.EhGalleryScreen(4321, "1a2b3c4d5e", null))
+            shoot("77_tablet_eh_gallery_narrow", tabs, settle = 2500)
+        } finally {
+            AppSettings.tabletNarrowPages = false
+        }
+    }
+
+    /** Me on a tablet held sideways: the list and the page side by side; then Tablet Layout. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeMe() {
+        shoot("78_tablet_me", tab = 3)
+        compose.onNodeWithText("Tablet Layout").performClick()
+        compose.mainClock.advanceTimeBy(800)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/79_tablet_layout_settings.png")
+    }
+
+    /** Tablet Layout › Home off: the pinned rows one above the other. */
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscapeHomeOff() {
+        AppSettings.tabletHome = false
+        try { shoot("80_tablet_home_off") } finally { AppSettings.tabletHome = true }
     }
 
     @Config(qualifiers = "w1194dp-h834dp-xhdpi")

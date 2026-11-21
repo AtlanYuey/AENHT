@@ -153,6 +153,14 @@ import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import me.saket.telephoto.zoomable.rememberZoomableState
 import kotlin.math.abs
+import androidx.compose.animation.core.animateDecay
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.input.pointer.positionChange
 
 val ReadMode.icon
     get() = when (this) {
@@ -208,6 +216,23 @@ private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
     return forward
 }
 
+/** The continuous modes' widest pages, against the default width. */
+private const val ContinuousMaxScale = 4f
+
+/** A page's zoom against its fitted size (1: fitted). */
+private val me.saket.telephoto.zoomable.ZoomableState.userZoom: Float
+    get() = contentTransformation.scaleMetadata.userZoom.takeIf { it.isFinite() && it > 0f } ?: 1f
+
+/** Zooms to [zoom] times the fitted size (zoomTo itself takes the image's own scale). */
+private suspend fun me.saket.telephoto.zoomable.ZoomableState.zoomToFitted(
+    zoom: Float,
+    centroid: Offset = Offset.Unspecified,
+    animationSpec: androidx.compose.animation.core.AnimationSpec<Float> = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+) {
+    val fitted = contentTransformation.scaleMetadata.initialScale.scaleX.takeIf { it.isFinite() && it > 0f } ?: return
+    if (centroid.isSpecified) zoomTo(zoom * fitted, centroid, animationSpec) else zoomTo(zoom * fitted, animationSpec = animationSpec)
+}
+
 class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** Opens out of, and closes into, the thumbnail of the page it's on (when it's on screen). */
     override fun zoomTarget() = com.atlanyuey.aenht.ui.components.ReaderThumbs.rect(source.thumbsKey, page)
@@ -239,10 +264,46 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     /** What the pages show, recorded each frame (a fade turn starts from it). */
     private var pagesLayer: androidx.compose.ui.graphics.layer.GraphicsLayer? = null
-    /** Without the page turn animation: the page before a turn, fading out over the new one. */
+    /** A fade turn: the page before it, going away over the new one. */
     private var fadeCover by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
-    private val fadeAlpha = androidx.compose.animation.core.Animatable(0f)
+    /** How the picture of the old page goes away. */
+    private var wipe by mutableStateOf<Wipe>(Wipe.Whole)
+    /** How much of the old page is left (1: all of it). */
+    private var wipeLeft by mutableFloatStateOf(0f)
     private var fadeJob: Job? = null
+
+    /** The shown page's size (paged): 1 fitted, less: smaller, more: enlarged. */
+    private var pageScale by mutableFloatStateOf(1f)
+    /** A page made smaller makes the next ones as small (until Reset Size). */
+    private var smallerCarry = 1f
+    /** Counts Reset Size taps: the pages go back to their size. */
+    private var sizeReset by mutableIntStateOf(0)
+    /** The continuous modes' page width against the default (pinched; Keep Page Size keeps it). */
+    private var stripScale by mutableFloatStateOf(
+        if (AppSettings.keepContinuousPageSize) AppSettings.continuousPageScale.toFloat() else 1f,
+    )
+
+    /** The pages are bigger than usual: they move under the finger, nothing turns them, back resets them. */
+    private val enlarged: Boolean get() = if (AppSettings.readMode.isPaged) pageScale > 1.01f else stripScale > 1.01f
+    /** The pages aren't at their usual size: Reset Size shows. */
+    private val resized: Boolean get() = abs((if (AppSettings.readMode.isPaged) pageScale else stripScale) - 1f) > 0.01f
+
+    override val holdsBack: Boolean get() = enlarged
+    override fun onBackHeld() = resetSize()
+
+    private fun resetSize() {
+        smallerCarry = 1f
+        sizeReset++
+        if (!AppSettings.readMode.isPaged) {
+            stripFling?.cancel()
+            changeStripScale(1f)
+        }
+    }
+
+    private fun changeStripScale(scale: Float) {
+        stripScale = scale
+        if (AppSettings.keepContinuousPageSize) AppSettings.continuousPageScale = scale.toDouble()
+    }
 
     /** The pager's page (a spread in double page) showing [page]. */
     private fun slot(page: Int) = spreads?.slotOf(page) ?: page
@@ -256,15 +317,18 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         HistoryStore.record(source.summary, page)
     }
 
-    private fun go(target: Int, automatic: Boolean = false) {
+    /** Turns to [target] as Tap to Turn says; a spread fade starts at [at] (fractions of the screen; the middle without). */
+    private fun go(target: Int, automatic: Boolean = false, at: Offset? = null) {
         if (!automatic) autoRead = false
         if (target !in 0 until count) return
         val paged = AppSettings.readMode.isPaged
-        val animate = AppSettings.animatePageTurns
+        val tapTurn = AppSettings.tapTurn
+        val animate = tapTurn == com.atlanyuey.aenht.core.TapTurn.Slide
         if (paged && !animate) {
             // A turn during another one ends that one and starts its own.
-            fadeJob?.cancel()
-            fadeJob = uiScope.launch { fadeTo(target) }
+            cutTurns()
+            val style = if (tapTurn == com.atlanyuey.aenht.core.TapTurn.Spread) Wipe.Spread(at?.x ?: 0.5f, at?.y ?: 0.5f) else Wipe.Whole
+            fadeJob = uiScope.launch { fadeTo(target, style) }
         } else {
             uiScope.launch {
                 if (paged) {
@@ -293,51 +357,124 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         if (autoScrollFailedPage == index) autoScrollFailedPage = null
     }
 
-    /**
-     * Shows [target] in place: the page shown now fades out over it (no
-     * motion). With [sweep] (a swipe) it fades away from one side to the
-     * other with a soft edge, the way the finger went.
-     */
-    private suspend fun fadeTo(target: Int, sweep: Sweep? = null) {
+    /** How a turn's picture of the old page goes away. */
+    private sealed interface Wipe {
+        /** It fades as a whole (Page Fade). */
+        data object Whole : Wipe
+        /** From one side to the other with a soft edge, the way the finger goes ([toStart]: left or up). */
+        data class Sweep(val vertical: Boolean, val toStart: Boolean) : Wipe
+        /** In a circle growing from [x], [y] (fractions of the page) with a soft edge (Spread Fade). */
+        data class Spread(val x: Float, val y: Float) : Wipe
+    }
+
+    /** Shows [target] in place: the page shown now goes away over it ([style]), with no motion. */
+    private suspend fun fadeTo(target: Int, style: Wipe) {
         val cover = runCatching { pagesLayer?.toImageBitmap() }.getOrNull()
         pager.scrollToPage(slot(target))
         if (cover == null) return
         fadeCover = cover
-        fadeSweep = sweep
+        wipe = style
         try {
-            fadeAlpha.snapTo(1f)
-            fadeAlpha.animateTo(0f, androidx.compose.animation.core.tween(if (sweep != null) 320 else 250))
+            wipeLeft = 1f
+            val spec = when (style) {
+                is Wipe.Spread -> androidx.compose.animation.core.tween<Float>(420, easing = androidx.compose.animation.core.CubicBezierEasing(0.3f, 0f, 0.2f, 1f))
+                is Wipe.Sweep -> androidx.compose.animation.core.tween(320)
+                Wipe.Whole -> androidx.compose.animation.core.tween(250)
+            }
+            androidx.compose.animation.core.animate(1f, 0f, animationSpec = spec) { value, _ -> wipeLeft = value }
         } finally {
             if (fadeCover === cover) fadeCover = null
         }
     }
 
-    /** Which way a swipe went: across ([vertical] false) or up and down; [toStart]: left or up. */
-    private data class Sweep(val vertical: Boolean, val toStart: Boolean)
+    /** A turn starting while another is drawn: that one ends at once, where it was going. */
+    private fun cutTurns() {
+        fadeJob?.cancel()
+        fadeJob = null
+        sweepBegin?.let { cancelSweep() }
+        fadeCover = null
+    }
 
-    /** The way the fade of a swipe turn sweeps (null: the page fades as a whole). */
-    private var fadeSweep by mutableStateOf<Sweep?>(null)
+    // Swipe Fade, following the finger.
+
+    /** The turn under the finger: started (the picture taken, the next page in place) by this job. */
+    private var sweepBegin: Job? = null
+    private var sweepFrom = 0
+    private var sweepTarget = 0
 
     /**
-     * Fade on Swipe: a swipe the way the pages go turns to the next or the
-     * previous page (by its direction) with a fade sweeping the way it went.
-     * Answers whether the swipe was one.
+     * Starts the turn the finger began ([along]: how far it went, the way
+     * the pages go): the next page goes in place under a picture of this
+     * one, which the finger fades away. False at the first or last page.
      */
-    private fun swipeTurn(delta: Offset, minimum: Float): Boolean {
+    private fun beginSweep(along: Float, vertical: Boolean): Boolean {
+        cutTurns()
+        val toStart = along < 0
+        // Left (or up) is forward, except right to left.
+        val forward = if (isRtl) !toStart else toStart
+        val from = turnBase
+        val target = step(from, forward)
+        if (target !in 0 until count) return false
+        autoRead = false
+        chromeVisible = false
+        sweepFrom = from
+        sweepTarget = target
+        wipe = Wipe.Sweep(vertical, toStart)
+        wipeLeft = 1f
+        sweepBegin = uiScope.launch {
+            val cover = runCatching { pagesLayer?.toImageBitmap() }.getOrNull()
+            pager.scrollToPage(slot(target))
+            fadeCover = cover
+        }
+        return true
+    }
+
+    /** The finger is [progress] of the page's length along (0: where it started). */
+    private fun moveSweep(progress: Float) {
+        if (sweepBegin != null) wipeLeft = 1f - progress.coerceIn(0f, 1f)
+    }
+
+    /** A second finger, or the gesture ended elsewhere: back to the page it started from. */
+    private fun cancelSweep() = endSweep(turns = false, speed = 0f, length = 1f, density = 1f)
+
+    /**
+     * The finger lifted: on to the next page ([turns]) or back, at the
+     * finger's [speed] (px/s along the turn), quick but never a jump.
+     */
+    private fun endSweep(turns: Boolean, speed: Float, length: Float, density: Float) {
+        val begin = sweepBegin ?: return
+        sweepBegin = null
+        val from = sweepFrom
+        fadeJob = uiScope.launch {
+            begin.join()
+            val cover = fadeCover
+            val end = if (turns) 0f else 1f
+            try {
+                if (cover != null) {
+                    val remaining = abs(end - wipeLeft) * length
+                    val millis = (remaining / maxOf(abs(speed), 1400f * density) * 1000f).coerceIn(120f, 300f).toInt()
+                    androidx.compose.animation.core.animate(
+                        wipeLeft, end,
+                        animationSpec = androidx.compose.animation.core.tween(millis, easing = androidx.compose.animation.core.LinearOutSlowInEasing),
+                    ) { value, _ -> wipeLeft = value }
+                }
+            } finally {
+                if (!turns) {
+                    // Back: the old page goes in place again under the (whole) picture of it.
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) { pager.scrollToPage(slot(from)) }
+                    page = from
+                }
+                if (fadeCover === cover) fadeCover = null
+            }
+        }
+    }
+
+    /** A drag the way the pages go (rather than across them). */
+    private fun alongPages(delta: Offset): Boolean {
         val vertical = AppSettings.readMode == ReadMode.VerticalPaged
         val along = if (vertical) delta.y else delta.x
         val across = if (vertical) delta.x else delta.y
-        if (kotlin.math.abs(along) < minimum || kotlin.math.abs(along) < 1.5f * kotlin.math.abs(across)) return false
-        autoRead = false
-        // Left (or up) is forward, except right to left.
-        val forward = if (isRtl) along > 0 else along < 0
-        val target = step(turnBase, forward)
-        chromeVisible = false
-        if (target !in 0 until count) return true
-        fadeJob?.cancel()
-        fadeJob = uiScope.launch { fadeTo(target, Sweep(vertical, toStart = along < 0)) }
-        page = target
-        return true
+        return abs(along) >= 1.5f * abs(across)
     }
 
     /** The page a turn starts from (the target while a turn is running). */
@@ -347,11 +484,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         else -> if (slot(page) == pager.currentPage) page else pageOfSlot(pager.currentPage)
     }
 
-    private fun turn(forward: Boolean) {
+    private fun turn(forward: Boolean, at: Offset? = null) {
         // Turning pages from the edges hides the controls.
         chromeVisible = false
         val base = if (AppSettings.readMode.isPaged) turnBase else page
-        go(step(base, forward))
+        go(step(base, forward), at = at)
     }
 
     /** What the swipes the pages don't use do (Reading settings › Controls). */
@@ -574,7 +711,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         fun ready(item: androidx.compose.foundation.lazy.LazyListItemInfo): Boolean {
                             if (pageLoads[item.index] != PageLoad.Ready) return false
                             val ratio = pageRatios[item.index] ?: return false
-                            val expected = (layout.viewportSize.width / ratio).coerceAtMost(50_000f * density)
+                            val expected = (stripWidth / ratio).coerceAtMost(50_000f * density)
                             return abs(item.size - expected) <= maxOf(2f, expected * 0.001f)
                         }
                         val failed = approaching.firstOrNull { pageLoads[it.index] == PageLoad.Failed }
@@ -670,8 +807,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val delta = up.position - down.position
             if (delta.getDistance() > viewConfiguration.touchSlop) {
                 if (!zoomed()) {
-                    // Fade on Swipe: the pages don't follow the finger; a swipe the way they go turns them.
-                    if (paged && AppSettings.swipeFades && swipeTurn(delta, 40.dp.toPx())) return@awaitEachGesture
+                    // Swipe Fade: a drag the way the pages go is the turn's (it follows the finger).
+                    if (paged && AppSettings.swipeTurn == com.atlanyuey.aenht.core.SwipeTurn.Sweep && alongPages(delta)) return@awaitEachGesture
                     if (up.uptimeMillis - down.uptimeMillis < 700) swiped(delta, maxOf(150.dp.toPx(), 0.2f * size.height))
                 }
                 return@awaitEachGesture
@@ -681,7 +818,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             if (forward != null) {
                 pendingTap?.cancel()
                 pendingTap = null
-                turn(forward)
+                turn(forward, Offset(up.position.x / size.width, up.position.y / size.height))
                 return@awaitEachGesture
             }
             val now = up.uptimeMillis
@@ -703,6 +840,112 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
+    /**
+     * Swipe Fade: a one-finger drag the way the pages go fades this page
+     * away under the finger, onto the next one; let go early or slowly (or
+     * brought back) it comes back. Not while the page is enlarged (the
+     * finger moves it then).
+     */
+    private fun Modifier.sweepDrag(mode: ReadMode): Modifier = pointerInput(mode) {
+        val vertical = mode == ReadMode.VerticalPaged
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            if (AppSettings.swipeTurn != com.atlanyuey.aenht.core.SwipeTurn.Sweep || enlarged) return@awaitEachGesture
+            val tracker = androidx.compose.ui.input.pointer.util.VelocityTracker()
+            tracker.addPosition(down.uptimeMillis, down.position)
+            var total = Offset.Zero
+            var sweeping = false
+            val length = (if (vertical) size.height else size.width).toFloat().coerceAtLeast(1f)
+            val slop = viewConfiguration.touchSlop
+            while (true) {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull { it.id == down.id }
+                if (change == null || event.changes.count { it.pressed } > 1) {
+                    // A second finger (a pinch): back to the page.
+                    if (sweeping) cancelSweep()
+                    return@awaitEachGesture
+                }
+                if (!change.pressed) {
+                    if (sweeping) {
+                        val velocity = tracker.calculateVelocity()
+                        val toStart = (wipe as? Wipe.Sweep)?.toStart ?: false
+                        // Positive: on the way the turn goes.
+                        val speed = (if (vertical) velocity.y else velocity.x).let { if (toStart) -it else it }
+                        val progress = 1f - wipeLeft
+                        val turns = if (speed < -250.dp.toPx()) false else progress > 0.35f || speed > 350.dp.toPx()
+                        endSweep(turns, speed, length, density)
+                    }
+                    return@awaitEachGesture
+                }
+                tracker.addPosition(change.uptimeMillis, change.position)
+                total += change.positionChange()
+                val along = if (vertical) total.y else total.x
+                val across = if (vertical) total.x else total.y
+                if (!sweeping) {
+                    if (enlarged) return@awaitEachGesture
+                    if (abs(along) > slop && abs(along) >= 1.5f * abs(across)) {
+                        if (!beginSweep(along, vertical)) return@awaitEachGesture
+                        sweeping = true
+                    } else if (abs(across) > slop) {
+                        return@awaitEachGesture
+                    }
+                } else {
+                    change.consume()
+                    val toStart = (wipe as? Wipe.Sweep)?.toStart ?: false
+                    // Forward the way the finger first went; back to the start, nothing gone.
+                    moveSweep((if (toStart) -along else along) / length)
+                }
+            }
+        }
+    }
+
+    /**
+     * A page's zoom. Allow Smaller Pages lets a pinch make it smaller than
+     * it fits (down to a size that still reads); shown, it reports its size,
+     * comes as small as the page before when that one was made smaller, and
+     * goes back to its size on Reset Size.
+     */
+    @Composable
+    private fun rememberPageZoom(visible: Boolean, fittedWidth: androidx.compose.ui.unit.Dp): me.saket.telephoto.zoomable.ZoomableState {
+        val smaller = AppSettings.allowSmallerPages
+        // Never smaller than half the fitted size, nor narrower than 300 dp.
+        val minimum = if (smaller && fittedWidth.value > 0) minOf(1f, maxOf(0.5f, 300f / fittedWidth.value)) else 1f
+        val state = rememberZoomableState(
+            ZoomSpec(
+                minimum = me.saket.telephoto.zoomable.ZoomLimit(minimum, me.saket.telephoto.zoomable.OverzoomEffect.RubberBanding),
+                maximum = me.saket.telephoto.zoomable.ZoomLimit(4f, me.saket.telephoto.zoomable.OverzoomEffect.RubberBanding),
+            ),
+        )
+        val seenReset = remember { sizeReset }
+        // (Fitted: resetZoom goes to the smallest size.)
+        LaunchedEffect(sizeReset) { if (sizeReset != seenReset) state.zoomToFitted(1f) }
+        LaunchedEffect(visible, smaller) {
+            if (!visible) return@LaunchedEffect
+            // Until its image is in: at its size (not the size of the page before).
+            pageScale = state.userZoom
+            snapshotFlow { state.contentTransformation.isSpecified }.first { it }
+            val carry = smallerCarry
+            if (smaller && carry < 0.99f && abs(state.userZoom - 1f) < 0.01f) {
+                state.zoomToFitted(carry, animationSpec = androidx.compose.animation.core.snap())
+            }
+            snapshotFlow { state.userZoom }.collect { zoom ->
+                pageScale = zoom
+                when {
+                    zoom < 0.99f -> smallerCarry = zoom
+                    zoom <= 1.01f -> smallerCarry = 1f
+                }
+            }
+        }
+        return state
+    }
+
+    /** Double tap: a page at its size enlarges; one enlarged or made smaller goes back to its size. */
+    private val doubleTap = object : me.saket.telephoto.zoomable.DoubleClickToZoomListener {
+        override suspend fun onDoubleClick(state: me.saket.telephoto.zoomable.ZoomableState, centroid: Offset) {
+            if (abs(state.userZoom - 1f) > 0.01f) state.zoomToFitted(1f, centroid) else state.zoomToFitted(4f, centroid)
+        }
+    }
+
     @Composable
     private fun Paged(mode: ReadMode, options: ReaderImageOptions, active: Boolean) {
         val content: @Composable (Int) -> Unit = { index ->
@@ -711,7 +954,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
         val layer = androidx.compose.ui.graphics.rememberGraphicsLayer()
         pagesLayer = layer
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().sweepDrag(mode)) {
             // The pages, drawn through a layer that a fade turn can copy.
             Box(
                 Modifier
@@ -721,8 +964,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         drawLayer(layer)
                     },
             ) {
-                // Fade on Swipe: the pages don't move with the finger (the swipe is the reader's).
-                val drag = !AppSettings.swipeFades
+                // Swipe Fade: the pages don't slide with the finger (the drag fades them);
+                // enlarged, the finger moves the page and nothing turns.
+                val drag = AppSettings.swipeTurn == com.atlanyuey.aenht.core.SwipeTurn.Slide && !enlarged
                 if (mode == ReadMode.VerticalPaged) {
                     VerticalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, userScrollEnabled = drag, key = { it }) { content(it) }
                 } else {
@@ -735,12 +979,36 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 }
             }
             fadeCover?.let { cover ->
-                val sweep = fadeSweep
+                val style = wipe
                 androidx.compose.foundation.Image(
                     cover, null,
-                    if (sweep == null) {
-                        Modifier.fillMaxSize().graphicsLayer { alpha = fadeAlpha.value }
-                    } else {
+                    when (style) {
+                        Wipe.Whole -> Modifier.fillMaxSize().graphicsLayer { alpha = wipeLeft }
+                        // A hole growing from the tap, with a soft edge, until none of the old page is left.
+                        is Wipe.Spread -> Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                drawContent()
+                                val center = Offset(size.width * style.x.coerceIn(0f, 1f), size.height * style.y.coerceIn(0f, 1f))
+                                val reach = listOf(Offset.Zero, Offset(size.width, 0f), Offset(0f, size.height), Offset(size.width, size.height))
+                                    .maxOf { (it - center).getDistance() }
+                                val soft = 0.28f
+                                val radius = maxOf(1f, reach / (1f - soft))
+                                val progress = 1f - wipeLeft
+                                val clearTo = progress * (1f - soft)
+                                val opaqueFrom = soft * 0.4f + progress * (1f - soft * 0.4f)
+                                drawRect(
+                                    androidx.compose.ui.graphics.Brush.radialGradient(
+                                        0f to Color.Transparent, clearTo to Color.Transparent,
+                                        maxOf(opaqueFrom, clearTo + 0.0001f).coerceAtMost(1f) to Color.Black, 1f to Color.Black,
+                                        center = center, radius = radius,
+                                    ),
+                                    blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+                                )
+                            }
+                        is Wipe.Sweep -> {
+                        val sweep = style
                         // The old page goes from the side the finger started on, with a soft edge.
                         Modifier
                             .fillMaxSize()
@@ -750,7 +1018,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 val length = if (sweep.vertical) size.height else size.width
                                 val soft = length * 0.22f
                                 // Kept: before the edge (left / up swipes) or after it (right / down ones).
-                                val kept = fadeAlpha.value * (length + soft)
+                                val kept = wipeLeft * (length + soft)
                                 val (start, end, stops) = if (sweep.toStart) {
                                     Triple(kept - soft, kept, arrayOf(0f to Color.Black, 1f to Color.Transparent))
                                 } else {
@@ -763,6 +1031,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 }
                                 drawRect(brush, blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
                             }
+                        }
                     },
                     contentScale = ContentScale.FillBounds,
                 )
@@ -778,13 +1047,13 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             ZoomPage(pages.firstOrNull() ?: slot, options, visible)
             return
         }
-        val zoomState = rememberZoomableState(ZoomSpec(maxZoomFactor = 4f))
+        val zoomState = rememberPageZoom(visible, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp)
         val ordered = if (isRtl) pages.reversed() else pages
         Box(
             Modifier
                 .fillMaxSize()
-                .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true)
-                .zoomable(zoomState),
+                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true)
+                .zoomable(zoomState, onDoubleClick = doubleTap),
         ) {
             // A fixed double-page seam. Page Gap adjusts only continuous reading with gaps.
             val gap = 6.dp
@@ -821,12 +1090,16 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     @Composable
     private fun ZoomPage(index: Int, options: ReaderImageOptions, visible: Boolean) {
-        val zoomState = rememberZoomableState(ZoomSpec(maxZoomFactor = 4f))
+        val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+        val ratio = source.pages[index].aspectRatio.takeIf { it.isFinite() && it > 0 } ?: 0.7f
+        // The page's width fitted on the screen.
+        val fitted = minOf(configuration.screenWidthDp.toFloat(), configuration.screenHeightDp * ratio).dp
+        val zoomState = rememberPageZoom(visible, fitted)
         val imageState = rememberZoomableImageState(zoomState)
         Box(
             Modifier
                 .fillMaxSize()
-                .readerTaps(zoomed = { (zoomState.zoomFraction ?: 0f) > 0.01f }, paged = true),
+                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true),
             contentAlignment = Alignment.Center,
         ) {
             val context = LocalContext.current
@@ -837,7 +1110,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 options.request(context, source.pages[index].url, 1).listener(onError = { _, _ -> failed = true }).build()
             }
             val sharp = enhancedPage(context, index, options, 1, visible, attempt) {
-                snapshotFlow { (zoomState.zoomFraction ?: 0f) < 0.01f }.first { it }
+                snapshotFlow { zoomState.userZoom <= 1.01f }.first { it }
             }
             val enhanced = remember(sharp) {
                 sharp?.let { ImageRequest.Builder(context).data(it).crossfade(250).memoryCachePolicy(CachePolicy.DISABLED).build() }
@@ -850,6 +1123,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     state = imageState,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,
+                    onDoubleClick = doubleTap,
                 )
             }
             when {
@@ -868,16 +1142,122 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
+    // The continuous modes' strip of pages.
+
+    /** The strip's width (px), as laid out. */
+    private var stripWidth = 0f
+    /** How far the strip is moved sideways from the middle (px), when it's wider than the screen. */
+    private var stripShift by mutableFloatStateOf(0f)
+    /** How far it can move either way (px). */
+    private var stripSlack = 0f
+    private var stripFling: Job? = null
+
+    /**
+     * Pinching changes the pages' width around the fingers (Keep Page Size
+     * keeps it); wider than the screen, one finger moves the strip sideways
+     * (with momentum) as the list scrolls it up and down, both at once.
+     */
+    private fun Modifier.stripGestures(base: Float, minScale: Float, viewportWidth: Float): Modifier =
+        pointerInput(base, minScale, viewportWidth) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                stripFling?.cancel()
+                val tracker = androidx.compose.ui.input.pointer.util.VelocityTracker()
+                tracker.addPosition(down.uptimeMillis, down.position)
+                var moved = Offset.Zero
+                var panning = false
+                var pinched = false
+                while (true) {
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val pressed = event.changes.filter { it.pressed }
+                    if (pressed.isEmpty()) break
+                    if (pressed.size >= 2) {
+                        pinched = true
+                        val zoom = event.calculateZoom()
+                        val centroid = event.calculateCentroid(useCurrent = true)
+                        if (zoom != 1f && centroid.isSpecified) zoomStrip(zoom, centroid, base, minScale, viewportWidth)
+                        // Two fingers move the strip too.
+                        val pan = event.calculatePan()
+                        stripShift = (stripShift + pan.x).coerceIn(-stripSlack, stripSlack)
+                        if (pan.y != 0f) list.dispatchRawDelta(-pan.y)
+                        event.changes.forEach { if (it.positionChange() != Offset.Zero) it.consume() }
+                        continue
+                    }
+                    // After a pinch, the finger left on the screen does nothing.
+                    if (pinched) continue
+                    val change = pressed.first()
+                    tracker.addPosition(change.uptimeMillis, change.position)
+                    val delta = change.positionChange()
+                    moved += delta
+                    if (!panning && stripSlack > 0f && moved.getDistance() > viewConfiguration.touchSlop) panning = true
+                    if (panning) stripShift = (stripShift + delta.x).coerceIn(-stripSlack, stripSlack)
+                }
+                if (pinched) {
+                    if (AppSettings.keepContinuousPageSize) AppSettings.continuousPageScale = stripScale.toDouble()
+                } else if (panning) {
+                    val velocity = tracker.calculateVelocity().x
+                    if (abs(velocity) > 40f) stripFling = uiScope.launch {
+                        var last = 0f
+                        androidx.compose.animation.core.AnimationState(0f, velocity)
+                            .animateDecay(androidx.compose.animation.core.exponentialDecay<Float>()) {
+                                val next = (stripShift + value - last).coerceIn(-stripSlack, stripSlack)
+                                last = value
+                                if (next == stripShift && abs(velocity) > 0f) cancelAnimation()
+                                stripShift = next
+                            }
+                    }
+                }
+            }
+        }
+
+    /** Pinched by [zoom] around [centroid]: the pages under the fingers stay under them. */
+    private fun zoomStrip(zoom: Float, centroid: Offset, base: Float, minScale: Float, viewportWidth: Float) {
+        val old = stripScale.coerceIn(minScale, ContinuousMaxScale)
+        val new = (old * zoom).coerceIn(minScale, ContinuousMaxScale)
+        val ratio = new / old
+        if (ratio == 1f) return
+        stripScale = new
+        // Across: the point under the fingers, from the strip's middle, scales with it.
+        val fromMiddle = centroid.x - viewportWidth / 2f - stripShift
+        val slack = maxOf(0f, (base * new - viewportWidth) / 2f)
+        stripSlack = slack
+        stripShift = (centroid.x - viewportWidth / 2f - fromMiddle * ratio).coerceIn(-slack, slack)
+        // Down: the same, from the top of the first page on the screen.
+        val into = list.firstVisibleItemScrollOffset + centroid.y
+        list.dispatchRawDelta(into * (ratio - 1f))
+    }
+
     @Composable
     private fun Continuous(mode: ReadMode, options: ReaderImageOptions, active: Boolean) {
         val gap = if (mode == ReadMode.VerticalGap) AppSettings.pageGap.dp else 0.dp
         val context = LocalContext.current
+        val density = LocalDensity.current
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val width = maxWidth
+            val viewportWidth = constraints.maxWidth.toFloat()
+            val viewportHeight = constraints.maxHeight.toFloat()
+            // By default a whole page shows: as wide as fits with its height on
+            // the screen (the gallery's usual page shape), at most the screen's width.
+            val typicalRatio = remember(source) {
+                val ratios = source.pages.take(12).map { it.aspectRatio }.filter { it.isFinite() && it > 0f }.sorted()
+                if (ratios.isEmpty()) 0.7f else ratios[ratios.size / 2]
+            }
+            val base = minOf(viewportWidth, viewportHeight * typicalRatio.coerceIn(0.3f, 2f)).coerceAtLeast(1f)
+            // Never narrower than reads (300 dp, and 60 % of the default).
+            val minScale = minOf(1f, maxOf(0.6f, with(density) { 300.dp.toPx() } / base))
+            val scale = stripScale.coerceIn(minScale, ContinuousMaxScale)
+            val stripPx = base * scale
+            stripWidth = stripPx
+            stripSlack = maxOf(0f, (stripPx - viewportWidth) / 2f)
+            val width = with(density) { stripPx.toDp() }
+            LaunchedEffect(sizeReset) { stripShift = 0f }
             LazyColumn(
-                Modifier.fillMaxSize().readerTaps(zoomed = { false }, paged = false),
+                Modifier
+                    .fillMaxSize()
+                    .stripGestures(base, minScale, viewportWidth)
+                    .readerTaps(zoomed = { enlarged }, paged = false),
                 state = list,
                 verticalArrangement = Arrangement.spacedBy(gap),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 items(source.pages, key = { it.index }) { readerPage ->
                     val attempt = pageRetries[readerPage.index] ?: 0
@@ -892,7 +1272,13 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         onDispose { pageLoads.remove(readerPage.index) }
                     }
                     // Compose's packed constraints need a finite height, even for malformed metadata.
-                    Box(Modifier.fillMaxWidth().height((width.value / ratio).coerceAtMost(50_000f).dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .requiredWidth(width)
+                            .height((width.value / ratio).coerceAtMost(50_000f).dp)
+                            .graphicsLayer { translationX = stripShift.coerceIn(-stripSlack, stripSlack) },
+                        contentAlignment = Alignment.Center,
+                    ) {
                         androidx.compose.runtime.key(attempt) {
                             coil3.compose.AsyncImage(
                                 model = request,
@@ -1191,6 +1577,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             autoRead = !autoRead
                         }
                     }
+                    // Pinched smaller or bigger: back to the usual size.
+                    AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
+                        PanelButton(Icons.Scan, null, tr("Reset Size")) { resetSize() }
+                    }
                     PanelButton(Icons.Sliders, null) { openSettings(overlays) }
                     PanelButton(Icons.ChevronForward, null) { go(step(page, forward = !isRtl)) }
                 }
@@ -1199,15 +1589,15 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     @Composable
-    private fun PanelButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String?, onClick: () -> Unit) {
+    private fun PanelButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String?, description: String? = label, onClick: () -> Unit) {
         Row(
             Modifier
-                .clickable(onClick = onClick)
+                .clickable(onClickLabel = description, onClick = onClick)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            AppIcon(icon, label, size = 20.dp)
+            AppIcon(icon, description, size = 20.dp)
             label?.let { Txt(it, style = Type.body.copy(fontWeight = FontWeight.Medium), maxLines = 1) }
         }
     }
