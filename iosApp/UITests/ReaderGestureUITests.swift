@@ -85,6 +85,10 @@ final class ReaderGestureUITests: XCTestCase {
             sleep(2)
         }
         XCTAssertTrue(app.staticTexts["3 / 12"].exists, "\(name): a tap on the status bar moved the pages")
+        if !app.staticTexts["3 / 12"].exists {
+            app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            sleep(1)
+        }
         app.staticTexts["3 / 12"].doubleTap()
         sleep(2)
         print("[top] \(name) after a title double tap: \(app.staticTexts["reader-metrics"].label)")
