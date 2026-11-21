@@ -79,6 +79,11 @@ final class ReaderGestureUITests: XCTestCase {
         tapStatusBar(app)
         tapStatusBar(app)
         print("[top] \(name) after status bar taps: \(app.staticTexts["reader-metrics"].label)")
+        // The controls may have hidden on their timer meanwhile: a tap in the middle shows them.
+        if !app.staticTexts["3 / 12"].exists {
+            app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            sleep(2)
+        }
         XCTAssertTrue(app.staticTexts["3 / 12"].exists, "\(name): a tap on the status bar moved the pages")
         app.staticTexts["3 / 12"].doubleTap()
         sleep(2)
