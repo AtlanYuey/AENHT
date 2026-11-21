@@ -20,8 +20,18 @@ internal fun pagesInTurn(index: Int, count: Int, spreads: Spreads?): List<Reader
     return pages.map { ReaderPageInTurn(it, pages.size) }
 }
 
-internal fun upcomingReaderPages(after: Int, count: Int, spreads: Spreads?): List<ReaderPageInTurn> =
-    (after + 1..after + 2).flatMap { pagesInTurn(it, count, spreads) }.distinctBy { it.index }
+internal fun upcomingReaderPages(after: Int, count: Int, spreads: Spreads?, turns: Int = 2): List<ReaderPageInTurn> =
+    (after + 1..after + turns).flatMap { pagesInTurn(it, count, spreads) }.distinctBy { it.index }
+
+/**
+ * Pages to have ready ahead of auto scroll at [secondsPerScreen]: about eight
+ * seconds of it (two at least, ten at most), so a fast scroll never reaches a
+ * page that is still being loaded or decoded.
+ */
+internal fun pagesAhead(autoScrolling: Boolean, secondsPerScreen: Double): Int {
+    if (!autoScrolling || !secondsPerScreen.isFinite() || secondsPerScreen <= 0) return 2
+    return kotlin.math.ceil(8 / secondsPerScreen).toInt().plus(1).coerceIn(2, 10)
+}
 
 internal data class ReaderImageOptions(
     val viewport: IntSize,

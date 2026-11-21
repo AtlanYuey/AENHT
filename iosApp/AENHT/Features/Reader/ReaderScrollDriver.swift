@@ -201,7 +201,14 @@ final class ReaderScrollDriver: NSObject {
     private func displayFrame(_ link: CADisplayLink) {
         let old = previousTimestamp
         previousTimestamp = link.targetTimestamp
-        if let old { advance(elapsed: link.targetTimestamp - old) }
+        guard let old else { return }
+        // One frame's step for each frame shown. After a frame the app missed
+        // (a new page laid out, a picture drawn the first time) the strip
+        // doesn't jump ahead to catch up: that jump is the shake you see on
+        // a 60 Hz screen. It falls a frame behind instead, which nobody sees.
+        let frame = link.targetTimestamp - link.timestamp
+        let measured = link.targetTimestamp - old
+        advance(elapsed: frame > 0 ? min(measured, frame * 1.05) : measured)
     }
 
     private func finish(_ reason: StopReason) {

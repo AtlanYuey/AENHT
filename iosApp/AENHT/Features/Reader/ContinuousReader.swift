@@ -158,6 +158,8 @@ struct ContinuousReader: View {
                 failedPage = nil
                 configure()
                 driver.start()
+                // Further ahead while it scrolls on its own.
+                prepare(visiblePages)
             }
             .overlay {
                 if let failedPage {
@@ -256,7 +258,8 @@ struct ContinuousReader: View {
 
     private func prepare(_ range: ClosedRange<Int>?) {
         guard scenePhase == .active, let range else { imagePreparation.stop(); return }
-        let urls = pages.dropFirst(range.upperBound + 1).prefix(ReaderImagePreparation.turns).compactMap(\.url)
+        let ahead = ReaderImagePreparation.ahead(autoScrolling: running, secondsPerScreen: settings.autoScrollSecondsPerScreen)
+        let urls = pages.dropFirst(range.upperBound + 1).prefix(ahead).compactMap(\.url)
         imagePreparation.prepare(urls.map { url in
             .init(request: ReaderStripImages.request(for: url, priority: .low),
                   enhancement: imageOptions.enhancement(for: url, continuous: true))

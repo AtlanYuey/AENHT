@@ -54,6 +54,14 @@ struct ReaderImageEnhancement: Equatable {
 final class ReaderImagePreparation {
     static let turns = 2
 
+    /// Pages to have ready ahead of auto scroll at [secondsPerScreen]: about
+    /// eight seconds of it (two pages at least, ten at most), so a fast scroll
+    /// never reaches a page that is still being loaded or decoded.
+    static func ahead(autoScrolling: Bool, secondsPerScreen: Double) -> Int {
+        guard autoScrolling, secondsPerScreen.isFinite, secondsPerScreen > 0 else { return turns }
+        return min(10, max(turns, Int((8 / secondsPerScreen).rounded(.up)) + 1))
+    }
+
     struct Item {
         let request: ImageRequest
         let enhancement: ReaderImageEnhancement?

@@ -663,8 +663,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         LaunchedEffect(mode, newSpreads, imageOptions, active) {
             if (!active) return@LaunchedEffect
             snapshotFlow {
-                if (mode.isPaged) pager.currentPage else list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: page
-            }.collectLatest { tail -> prepareUpcoming(context, tail, if (mode.isPaged) newSpreads else null, imageOptions) }
+                val tail = if (mode.isPaged) pager.currentPage else list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: page
+                // Further ahead while the strip scrolls on its own.
+                tail to pagesAhead(autoRead && !mode.isPaged, AppSettings.autoScrollSecondsPerScreen)
+            }.collectLatest { (tail, ahead) -> prepareUpcoming(context, tail, if (mode.isPaged) newSpreads else null, imageOptions, ahead) }
         }
         LaunchedEffect(page) { com.atlanyuey.aenht.ui.components.ReaderThumbs.setPage(source.thumbsKey, page) }
         // Dragging the pages hides the controls…
@@ -701,9 +703,21 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     }
                 } else {
                     var previous = withFrameNanos { it }
+                    // The usual frame interval: the median of the last ones (a missed frame doesn't
+                    // change it; a screen that changes its rate does, within a few frames).
+                    val intervals = ArrayDeque<Double>()
                     while (isActive) {
                         val now = withFrameNanos { it }
-                        val elapsed = (now - previous) / 1_000_000_000.0
+                        // One frame's step for each frame shown: after a missed frame the strip
+                        // doesn't jump ahead to catch up (the shake on a 60 Hz screen); it falls a
+                        // frame behind instead.
+                        val measured = (now - previous) / 1_000_000_000.0
+                        if (measured > 0) {
+                            intervals.addLast(measured)
+                            if (intervals.size > 15) intervals.removeFirst()
+                        }
+                        val usual = intervals.sorted().let { if (it.isEmpty()) measured else it[it.size / 2] }
+                        val elapsed = minOf(measured, usual * 1.05)
                         previous = now
                         // The finger and inertial scrolling own the list until they finish. Keep the
                         // playback flag on when requested, but never push against a user's gesture.
@@ -1326,8 +1340,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private data class PreparedPage(val index: Int, val options: ReaderImageOptions, val pagesPerTurn: Int)
     private val preparedSizes = mutableMapOf<PreparedPage, IntSize>()
 
-    private suspend fun prepareUpcoming(context: android.content.Context, after: Int, spreads: Spreads?, options: ReaderImageOptions) {
-        val next = upcomingReaderPages(after, count, spreads)
+    private suspend fun prepareUpcoming(context: android.content.Context, after: Int, spreads: Spreads?, options: ReaderImageOptions, turns: Int = 2) {
+        val next = upcomingReaderPages(after, count, spreads, turns)
         val keep = pagesInTurn(after, count, spreads) + next
         preparedSizes.keys.retainAll(keep.map { PreparedPage(it.index, options, it.pagesPerTurn) }.toSet())
         val loader = SingletonImageLoader.get(context)
