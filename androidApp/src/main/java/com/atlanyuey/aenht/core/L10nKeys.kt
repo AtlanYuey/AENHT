@@ -607,10 +607,13 @@ object L10nKeys {
         "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." to R.string.l_599,
         "Allow Smaller Pages" to R.string.l_600,
         "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." to R.string.l_601,
-        "Settings Backup" to R.string.l_602,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_603,
-        "Android's own backup also keeps these settings." to R.string.l_604,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_605,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_606,
+        "Double Tap Top to Go to Start" to R.string.l_602,
+        "Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." to R.string.l_603,
+        "Double-tap the title at the top of the reader to go back to the first page." to R.string.l_604,
+        "Settings Backup" to R.string.l_605,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_606,
+        "Android's own backup also keeps these settings." to R.string.l_607,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_608,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_609,
     )
 }

@@ -601,4 +601,7 @@ T = [
     "L'effetto del tocco (scorrimento, dissolvenza pagina o a espansione) si imposta in Lettura › Tocca per girare.",
     "Consenti pagine più piccole",
     "Pizzicando una pagina può diventare più piccola dello schermo, con nero intorno. Disattivato, la pagina riempie almeno lo schermo e il pizzico la ingrandisce soltanto.",
+    "Doppio tocco in alto per tornare all'inizio",
+    "Tocca due volte la barra di stato o il titolo in alto nel lettore per tornare alla prima pagina. Un solo tocco lì non fa nulla, quindi toccare vicino al pulsante Indietro non ti sposta mai.",
+    "Tocca due volte il titolo in alto nel lettore per tornare alla prima pagina.",
 ]

@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "탭으로 넘길 때의 효과(슬라이드, 전체 페이드, 퍼지는 페이드)는 '읽기 › 탭으로 넘기기'에서 설정합니다.";
 "Allow Smaller Pages" = "화면보다 작게 축소 허용";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "켜면 두 손가락으로 페이지를 화면보다 작게 줄일 수 있고 주변은 검게 표시됩니다. 끄면 페이지가 최소한 화면을 채우며 확대만 할 수 있습니다.";
+"Double Tap Top to Go to Start" = "상단 두 번 탭하여 처음으로";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "리더 상단의 상태 표시줄이나 제목을 두 번 탭하면 첫 페이지로 돌아갑니다. 한 번 탭하면 아무 일도 일어나지 않으므로 뒤로 버튼 근처를 잘못 눌러도 이동하지 않습니다.";
+"Double-tap the title at the top of the reader to go back to the first page." = "리더 상단의 제목을 두 번 탭하면 첫 페이지로 돌아갑니다.";

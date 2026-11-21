@@ -404,6 +404,8 @@ final class AppSettings {
     var tabletMe: Bool { didSet { defaults.set(tabletMe, forKey: "tabletMe") } }
     var preloadPages: Int { didSet { save(preloadPages, "preloadPages") } }
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
+    /// The reader: a double tap on the status bar or the title goes to the first page (a single tap does nothing).
+    var doubleTapTopToStart: Bool { didSet { save(doubleTapTopToStart, "doubleTapTopToStart") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
     /// Gap between pages in the "Continuous with Gaps" mode, in points.
     var pageGap: Double { didSet { save(pageGap, "pageGap") } }
@@ -581,6 +583,7 @@ final class AppSettings {
         tabletMe = d.object(forKey: "tabletMe") as? Bool ?? true
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
+        doubleTapTopToStart = d.object(forKey: "doubleTapTopToStart") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
         pageGap = d.object(forKey: "pageGap") as? Double ?? 6
         screenOn = ScreenOn(rawValue: d.string(forKey: "screenOn") ?? "") ?? .fiveMinutes
@@ -698,6 +701,7 @@ final class AppSettings {
         values["continueAutoScrollOnDrag"] = continueAutoScrollOnDrag
         values["preloadPages"] = preloadPages
         values["tapToTurnPages"] = tapToTurnPages
+        values["doubleTapTopToStart"] = doubleTapTopToStart
         values["animatePageTurns"] = animatePageTurns
         values["pageGap"] = pageGap
         values["screenOn"] = screenOn.rawValue
@@ -794,6 +798,7 @@ final class AppSettings {
         case "continueAutoScrollOnDrag": set(\.continueAutoScrollOnDrag, number?.boolValue)
         case "preloadPages": set(\.preloadPages, number.map { min(max($0.intValue, 1), 10) })
         case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
+        case "doubleTapTopToStart": set(\.doubleTapTopToStart, number?.boolValue)
         case "animatePageTurns":
             set(\.animatePageTurns, number?.boolValue)
             // From the Android app: a slide or a fade (Spread Fade stays, it has none).

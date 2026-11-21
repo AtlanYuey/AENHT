@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "เอฟเฟกต์เมื่อแตะ (เลื่อน จางทั้งหน้า หรือจางแบบกระจาย) ตั้งได้ใน การอ่าน › แตะเพื่อพลิก";
 "Allow Smaller Pages" = "อนุญาตให้ย่อหน้าเล็กกว่าจอ";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "การบีบนิ้วทำให้หน้าเล็กกว่าจอได้ โดยมีขอบดำรอบ ๆ ถ้าปิด หน้าจะเต็มจออย่างน้อย และบีบได้เพียงขยาย";
+"Double Tap Top to Go to Start" = "แตะสองครั้งที่ด้านบนเพื่อกลับไปหน้าแรก";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "แตะสองครั้งที่แถบสถานะหรือชื่อเรื่องด้านบนของตัวอ่านเพื่อกลับไปหน้าแรก แตะครั้งเดียวตรงนั้นจะไม่เกิดอะไรขึ้น จึงไม่กระโดดไปไหนแม้แตะพลาดใกล้ปุ่มย้อนกลับ";
+"Double-tap the title at the top of the reader to go back to the first page." = "แตะสองครั้งที่ชื่อเรื่องด้านบนของตัวอ่านเพื่อกลับไปหน้าแรก";

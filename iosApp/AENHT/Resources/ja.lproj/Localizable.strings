@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "タップでめくるときの効果（スライド、ページ全体フェード、広がるフェード）は「読書 › タップでめくる」で設定します。";
 "Allow Smaller Pages" = "画面より小さく縮小";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "オンにすると、ピンチでページを画面より小さくでき、周りは黒くなります。オフのときはページが少なくとも画面いっぱいに表示され、ピンチでは拡大のみです。";
+"Double Tap Top to Go to Start" = "上端をダブルタップで最初に戻る";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "リーダー上端のステータスバーかタイトルをダブルタップすると最初のページに戻ります。1 回のタップでは何も起きないので、戻るボタン付近を誤ってタップしても移動しません。";
+"Double-tap the title at the top of the reader to go back to the first page." = "リーダー上端のタイトルをダブルタップすると最初のページに戻ります。";

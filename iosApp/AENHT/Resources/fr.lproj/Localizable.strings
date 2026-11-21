@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "L'effet au toucher (glissement, fondu de page ou fondu diffus) se règle dans Lecture › Toucher pour tourner.";
 "Allow Smaller Pages" = "Autoriser des pages plus petites";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Pincer peut rendre une page plus petite que l'écran, entourée de noir. Désactivé, la page remplit au moins l'écran ; pincer ne fait qu'agrandir.";
+"Double Tap Top to Go to Start" = "Toucher deux fois le haut pour revenir au début";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "Touchez deux fois la barre d'état ou le titre en haut du lecteur pour revenir à la première page. Un seul toucher à cet endroit ne fait rien : toucher près du bouton retour ne vous fait jamais quitter votre page.";
+"Double-tap the title at the top of the reader to go back to the first page." = "Touchez deux fois le titre en haut du lecteur pour revenir à la première page.";

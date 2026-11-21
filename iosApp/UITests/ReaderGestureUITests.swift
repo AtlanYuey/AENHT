@@ -66,6 +66,46 @@ final class ReaderGestureUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["reader-metrics"].exists, "\(name): the reader closed")
     }
 
+    // MARK: The top: a single tap on the status bar does nothing, a double tap goes to the first page.
+
+    private func tapStatusBar(_ app: XCUIApplication, twice: Bool) {
+        let bar = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0)).withOffset(CGVector(dx: 0, dy: 6))
+        if twice { bar.doubleTap() } else { bar.tap() }
+        sleep(2)
+    }
+
+    private func pageLabel(_ app: XCUIApplication, _ text: String) -> XCUIElement {
+        app.staticTexts[text]
+    }
+
+    func testStatusBarSingleTapStays() {
+        let app = open(["--fixture-strip"])
+        XCTAssertTrue(pageLabel(app, "3 / 12").waitForExistence(timeout: 5), "opened on page 3: \(app.staticTexts["reader-metrics"].label)")
+        tapStatusBar(app, twice: false)
+        print("[top] after a single tap: \(app.staticTexts["reader-metrics"].label)")
+        XCTAssertTrue(pageLabel(app, "3 / 12").exists, "a single tap on the status bar moved the strip")
+        tapStatusBar(app, twice: true)
+        print("[top] after a double tap: \(app.staticTexts["reader-metrics"].label)")
+        XCTAssertTrue(pageLabel(app, "1 / 12").waitForExistence(timeout: 5), "a double tap on the status bar didn't go to the first page")
+    }
+
+    func testTitleDoubleTapPaged() {
+        let app = open(["--fixture-single"])
+        XCTAssertTrue(pageLabel(app, "3 / 12").waitForExistence(timeout: 5))
+        tapStatusBar(app, twice: false)
+        XCTAssertTrue(pageLabel(app, "3 / 12").exists, "a single tap on the status bar turned the page")
+        pageLabel(app, "3 / 12").doubleTap()
+        XCTAssertTrue(pageLabel(app, "1 / 12").waitForExistence(timeout: 5), "a double tap on the title didn't go to the first page")
+    }
+
+    func testTopTapsOff() {
+        let app = open(["--fixture-strip", "--fixture-no-top-tap"])
+        XCTAssertTrue(pageLabel(app, "3 / 12").waitForExistence(timeout: 5))
+        tapStatusBar(app, twice: true)
+        XCTAssertTrue(pageLabel(app, "3 / 12").exists, "turned off, a double tap on the status bar still moved")
+        XCTAssertTrue(app.staticTexts["reader-metrics"].exists, "the reader closed")
+    }
+
     func testDoublePageSlide() { checkEnlargedMoves([], name: "double page, slide") }
     func testDoublePageSweep() { checkEnlargedMoves(["--fixture-sweep"], name: "double page, swipe fade") }
     func testSinglePageSlide() { checkEnlargedMoves(["--fixture-single"], name: "single page, slide") }

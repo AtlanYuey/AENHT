@@ -21,6 +21,7 @@ enum ReaderFixture {
         settings.superResolution = .off
         settings.autoCrop = false
         settings.readerControlsDelay = 10
+        settings.doubleTapTopToStart = !arguments.contains("--fixture-no-top-tap")
     }
 
     static func source() -> ReaderSource {

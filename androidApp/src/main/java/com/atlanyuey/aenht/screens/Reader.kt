@@ -153,6 +153,7 @@ import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import me.saket.telephoto.zoomable.rememberZoomableState
 import kotlin.math.abs
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.calculatePan
@@ -340,6 +341,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
         page = target
+    }
+
+    /** Double tap on the title (Controls › Double Tap Top to Go to Start): the first page. */
+    private fun goToStart() {
+        if (!AppSettings.doubleTapTopToStart) return
+        jumpToPage(0)
     }
 
     private fun jumpToPage(target: Int) {
@@ -1434,6 +1441,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 Modifier
                     .weight(1f)
                     .glass(RoundedCornerShape(22.dp))
+                    // A double tap on the title: the first page (Controls › Double Tap Top to Go to Start).
+                    .pointerInput(Unit) { detectTapGestures(onDoubleTap = { goToStart() }) }
                     .padding(horizontal = 16.dp, vertical = 5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -1827,6 +1836,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    section(footer = { FooterText(tr("Double-tap the title at the top of the reader to go back to the first page.")) }) {
+        ToggleRow(tr("Double Tap Top to Go to Start"), AppSettings.doubleTapTopToStart, { AppSettings.doubleTapTopToStart = it }, last = true)
+    }
     if (!AppSettings.readMode.isPaged) {
         // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
         section(footer = { FooterText(tr("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")) }) {

@@ -1,3 +1,4 @@
+import SwiftUI
 import CoreGraphics
 import Foundation
 import UIKit
@@ -108,5 +109,62 @@ final class ReaderCloseGate: UIPanGestureRecognizer, UIGestureRecognizerDelegate
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
         true
+    }
+}
+
+/// The reader's status bar taps. The system scrolls a scroll view to the top
+/// on a tap there; the reader's own don't (their scrollsToTop is off), so the
+/// tap comes to this one (a line along the top, nothing to see), which only
+/// counts the taps: a double tap calls [onDoubleTap], a single one does nothing.
+struct ReaderTopTaps: UIViewRepresentable {
+    let onDoubleTap: () -> Void
+
+    func makeUIView(context: Context) -> Sentinel {
+        let view = Sentinel()
+        view.onDoubleTap = onDoubleTap
+        return view
+    }
+
+    func updateUIView(_ view: Sentinel, context: Context) {
+        view.onDoubleTap = onDoubleTap
+    }
+
+    final class Sentinel: UIScrollView, UIScrollViewDelegate {
+        var onDoubleTap: () -> Void = {}
+        private var lastTap: CFTimeInterval = 0
+
+        init() {
+            super.init(frame: .zero)
+            delegate = self
+            scrollsToTop = true
+            backgroundColor = .clear
+            showsVerticalScrollIndicator = false
+            showsHorizontalScrollIndicator = false
+            isAccessibilityElement = false
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            // Somewhere to scroll to the top from (the system skips a scroll view already there).
+            let size = CGSize(width: bounds.width, height: bounds.height + 4)
+            if contentSize != size { contentSize = size }
+            if contentOffset.y < 2 { contentOffset = CGPoint(x: 0, y: 2) }
+        }
+
+        func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+            let now = CACurrentMediaTime()
+            #if DEBUG
+            ReaderDebugMetrics.shared.note("top:tap")
+            #endif
+            if now - lastTap < 0.45 {
+                lastTap = 0
+                onDoubleTap()
+            } else {
+                lastTap = now
+            }
+            return false
+        }
     }
 }

@@ -601,4 +601,7 @@ T = [
     "Wie Tippen umblättert (Schieben, Seiten- oder ausbreitende Überblendung), stellst du unter Lesen › Tippen zum Umblättern ein.",
     "Kleinere Seiten erlauben",
     "Zusammenziehen kann eine Seite kleiner als den Bildschirm machen, mit Schwarz drumherum. Aus füllt die Seite mindestens den Bildschirm; Zusammenziehen vergrößert nur.",
+    "Oben doppelt tippen für den Anfang",
+    "Tippe oben im Reader doppelt auf die Statusleiste oder den Titel, um zur ersten Seite zurückzukehren. Einmal tippen bewirkt dort nichts, ein Tippen neben die Zurück-Taste springt also nie weg.",
+    "Tippe oben im Reader doppelt auf den Titel, um zur ersten Seite zurückzukehren.",
 ]

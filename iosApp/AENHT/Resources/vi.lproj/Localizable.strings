@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "Hiệu ứng khi chạm (trượt, mờ cả trang hoặc mờ lan tỏa) đặt trong Đọc › Chạm để lật.";
 "Allow Smaller Pages" = "Cho phép thu nhỏ trang";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.";
+"Double Tap Top to Go to Start" = "Chạm hai lần phía trên để về đầu";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "Chạm hai lần vào thanh trạng thái hoặc tiêu đề ở đầu trình đọc để về trang đầu. Chạm một lần ở đó không làm gì, nên lỡ chạm gần nút quay lại cũng không bị nhảy trang.";
+"Double-tap the title at the top of the reader to go back to the first page." = "Chạm hai lần vào tiêu đề ở đầu trình đọc để về trang đầu.";

@@ -347,6 +347,7 @@ object AppSettings {
         continueAutoScrollOnDrag = p.getBoolean("continueAutoScrollOnDrag", false)
         preloadPages = p.getInt("preloadPages", 4)
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
+        doubleTapTopToStart = p.getBoolean("doubleTapTopToStart", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
         pageGap = p.getFloat("pageGap", 6f).toDouble()
         screenOn = ScreenOn.of(p.getString("screenOn", null))
@@ -495,6 +496,8 @@ object AppSettings {
     var continueAutoScrollOnDrag by Pref(false) { save("continueAutoScrollOnDrag", it) }
     var preloadPages by Pref(4) { save("preloadPages", it) }
     var tapToTurnPages by Pref(true) { save("tapToTurnPages", it) }
+    /** The reader: a double tap on the title goes to the first page. */
+    var doubleTapTopToStart by Pref(true) { save("doubleTapTopToStart", it) }
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
     /** Gap between pages in the "Continuous with Gaps" mode, in dp. */
     var pageGap by Pref(6.0) { save("pageGap", it) }
@@ -715,6 +718,7 @@ object AppSettings {
         "continueAutoScrollOnDrag" to continueAutoScrollOnDrag,
         "preloadPages" to preloadPages,
         "tapToTurnPages" to tapToTurnPages,
+        "doubleTapTopToStart" to doubleTapTopToStart,
         "animatePageTurns" to animatePageTurns,
         "pageGap" to pageGap,
         "screenOn" to screenOn.raw,
@@ -828,6 +832,7 @@ object AppSettings {
                 "continueAutoScrollOnDrag" -> bool?.let { continueAutoScrollOnDrag = it }
                 "preloadPages" -> number?.let { preloadPages = it.toInt().coerceIn(1, 10) }
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
+                "doubleTapTopToStart" -> bool?.let { doubleTapTopToStart = it }
                 "animatePageTurns" -> bool?.let {
                     animatePageTurns = it
                     if (tapTurn != TapTurn.Spread && (tapTurn == TapTurn.Slide) != it) tapTurn = if (it) TapTurn.Slide else TapTurn.Fade

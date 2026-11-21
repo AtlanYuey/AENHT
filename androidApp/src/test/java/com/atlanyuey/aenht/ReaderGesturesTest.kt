@@ -77,6 +77,7 @@ class ReaderGesturesTest {
         AppSettings.allowSmallerPages = false
         AppSettings.keepContinuousPageSize = true
         AppSettings.continuousPageScale = 1.0
+        AppSettings.doubleTapTopToStart = true
     }
 
     private fun field(reader: ReaderScreen, name: String): Any =
@@ -200,6 +201,31 @@ class ReaderGesturesTest {
         settle(1500)
         // Fitted, not the smallest size Allow Smaller Pages allows.
         assertEquals(1f, pageScale(reader), 0.02f)
+    }
+
+    @Test fun doubleTapOnTheTitleGoesToTheFirstPageUnlessTurnedOff() {
+        val reader = open(ReadMode.Vertical, start = 5)
+        compose.waitUntil(5_000) { page(reader) == 5 }
+        // A single tap on the title does nothing.
+        compose.onNodeWithText("Gestures").performTouchInput { click() }
+        settle()
+        assertEquals(5, page(reader))
+        compose.onNodeWithText("Gestures").performTouchInput { doubleClick() }
+        settle()
+        assertEquals(0, page(reader))
+        // Turned off: nothing.
+        AppSettings.doubleTapTopToStart = false
+        AppSettings.readMode = ReadMode.LeftToRight
+        settle()
+        compose.onRoot().performTouchInput { click(Offset(width * 0.95f, centerY)) }
+        settle()
+        assertEquals(1, page(reader))
+        @Suppress("UNCHECKED_CAST")
+        (field(reader, "chromeVisible\$delegate") as androidx.compose.runtime.MutableState<Boolean>).value = true
+        settle(300)
+        compose.onNodeWithText("Gestures").performTouchInput { doubleClick() }
+        settle()
+        assertEquals(1, page(reader))
     }
 
     @Test fun continuousStripWidthPinchesAndIsKept() {

@@ -601,3 +601,6 @@
 "How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn." = "Wie Tippen umblättert (Schieben, Seiten- oder ausbreitende Überblendung), stellst du unter Lesen › Tippen zum Umblättern ein.";
 "Allow Smaller Pages" = "Kleinere Seiten erlauben";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "Zusammenziehen kann eine Seite kleiner als den Bildschirm machen, mit Schwarz drumherum. Aus füllt die Seite mindestens den Bildschirm; Zusammenziehen vergrößert nur.";
+"Double Tap Top to Go to Start" = "Oben doppelt tippen für den Anfang";
+"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "Tippe oben im Reader doppelt auf die Statusleiste oder den Titel, um zur ersten Seite zurückzukehren. Einmal tippen bewirkt dort nichts, ein Tippen neben die Zurück-Taste springt also nie weg.";
+"Double-tap the title at the top of the reader to go back to the first page." = "Tippe oben im Reader doppelt auf den Titel, um zur ersten Seite zurückzukehren.";

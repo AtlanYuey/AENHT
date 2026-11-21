@@ -309,6 +309,12 @@ struct ReaderView: View {
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
                 viewportPixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
             }
+            .overlay(alignment: .top) {
+                // The status bar's taps: a double tap goes to the first page, a single
+                // one does nothing (the system's would scroll the strip to the top,
+                // a near miss of the back button under it).
+                ReaderTopTaps(onDoubleTap: goToStart).frame(height: 1)
+            }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
             .barToolbar {
@@ -323,6 +329,9 @@ struct ReaderView: View {
                             .monospacedDigit()
                     }
                     .frame(maxWidth: 240)
+                    .contentShape(Rectangle())
+                    // A double tap on the title (or the status bar): the first page.
+                    .onTapGesture(count: 2) { goToStart() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -507,6 +516,15 @@ struct ReaderView: View {
     private func recordPage() {
         modelContext.recordHistory(item: source.item, title: source.title,
                                    numPages: source.numPages, page: page)
+    }
+
+    /// Double tap on the top (Controls › Double Tap Top to Go to Start): back to the first page.
+    private func goToStart() {
+        #if DEBUG
+        ReaderDebugMetrics.shared.note("top:double")
+        #endif
+        guard settings.doubleTapTopToStart else { return }
+        go(0)
     }
 
     private func go(_ target: Int, automatic: Bool = false) {
@@ -910,6 +928,11 @@ struct ReadingSettingsSections: View {
     }
 
     @ViewBuilder private var controls: some View {
+        Section {
+            Toggle("Double Tap Top to Go to Start", isOn: $settings.doubleTapTopToStart)
+        } footer: {
+            Text("Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away.")
+        }
         if settings.readMode.isPaged {
             pagedControls
         } else {
@@ -1213,6 +1236,7 @@ struct PagedReader: UIViewControllerRepresentable {
             guard let pages = pageViewController?.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
             let slides = AppSettings.shared.swipeTurn == .slide && !enlarged
             if pages.isScrollEnabled != slides { pages.isScrollEnabled = slides }
+            pages.scrollsToTop = false
             // A drag from the left edge is the swipe back (the system's drag, following
             // the finger), not a slide to the page before: the slide waits for it.
             for drag in ReaderGestureLock.systemDrags where !waitingFor.contains(where: { $0 === drag }) {
@@ -1794,6 +1818,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
+        // A tap on the status bar doesn't move the page (ReaderTopTaps has it).
+        scrollsToTop = false
         if #available(iOS 26.0, *) {
             // Under the top bar the page fades and blurs softly (iOS 26), not a hard band.
             topEdgeEffect.style = .soft

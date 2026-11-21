@@ -602,9 +602,12 @@
     <string name="l_599">L\'effet au toucher (glissement, fondu de page ou fondu diffus) se règle dans Lecture › Toucher pour tourner.</string>
     <string name="l_600">Autoriser des pages plus petites</string>
     <string name="l_601">Pincer peut rendre une page plus petite que l\'écran, entourée de noir. Désactivé, la page remplit au moins l\'écran ; pincer ne fait qu\'agrandir.</string>
-    <string name="l_602">Sauvegarde des réglages</string>
-    <string name="l_603">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_604">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_605">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_606">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_602">Toucher deux fois le haut pour revenir au début</string>
+    <string name="l_603">Touchez deux fois la barre d\'état ou le titre en haut du lecteur pour revenir à la première page. Un seul toucher à cet endroit ne fait rien : toucher près du bouton retour ne vous fait jamais quitter votre page.</string>
+    <string name="l_604">Touchez deux fois le titre en haut du lecteur pour revenir à la première page.</string>
+    <string name="l_605">Sauvegarde des réglages</string>
+    <string name="l_606">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_607">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_608">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_609">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>
