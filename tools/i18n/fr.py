@@ -602,6 +602,5 @@ T = [
     "Autoriser des pages plus petites",
     "Pincer peut rendre une page plus petite que l'écran, entourée de noir. Désactivé, la page remplit au moins l'écran ; pincer ne fait qu'agrandir.",
     "Toucher deux fois le haut pour revenir au début",
-    "Touchez deux fois la barre d'état ou le titre en haut du lecteur pour revenir à la première page. Un seul toucher à cet endroit ne fait rien : toucher près du bouton retour ne vous fait jamais quitter votre page.",
     "Touchez deux fois le titre en haut du lecteur pour revenir à la première page.",
 ]

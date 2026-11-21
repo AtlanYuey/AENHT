@@ -43,7 +43,7 @@ final class ReaderScrollDriver: NSObject {
         while let current = ancestor {
             if let scroll = current as? UIScrollView {
                 scrollView = scroll
-                // A tap on the status bar doesn't scroll the strip to the top (ReaderTopTaps has it).
+                // A tap on the status bar doesn't scroll the strip to the top (StatusBarTapCatcher has it).
                 if scroll.scrollsToTop { scroll.scrollsToTop = false }
                 break
             }

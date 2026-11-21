@@ -602,6 +602,5 @@ T = [
     "Permitir páginas menores",
     "Ao aproximar os dedos, a página pode ficar menor que a tela, com preto em volta. Desativado, a página preenche ao menos a tela e o gesto só amplia.",
     "Toque duplo no topo para voltar ao início",
-    "Toque duas vezes na barra de status ou no título no topo do leitor para voltar à primeira página. Um toque só ali não faz nada, então tocar perto do botão Voltar nunca tira você da página.",
     "Toque duas vezes no título no topo do leitor para voltar à primeira página.",
 ]

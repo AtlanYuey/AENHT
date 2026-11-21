@@ -112,26 +112,15 @@ final class ReaderCloseGate: UIPanGestureRecognizer, UIGestureRecognizerDelegate
     }
 }
 
-/// The reader's status bar taps. The system scrolls a scroll view to the top
-/// on a tap there; the reader's own don't (their scrollsToTop is off), so the
-/// tap comes to this one (a line along the top, nothing to see), which only
-/// counts the taps: a double tap calls [onDoubleTap], a single one does nothing.
-struct ReaderTopTaps: UIViewRepresentable {
-    let onDoubleTap: () -> Void
+/// Takes the status bar's taps in the reader, and does nothing with them.
+/// The system scrolls a scroll view to the top on such a tap; the reader's
+/// own don't (their scrollsToTop is off), so it comes to this one (a line
+/// along the top, nothing to see) rather than to one behind the reader.
+struct StatusBarTapCatcher: UIViewRepresentable {
+    func makeUIView(context: Context) -> Catcher { Catcher() }
+    func updateUIView(_ view: Catcher, context: Context) {}
 
-    func makeUIView(context: Context) -> Sentinel {
-        let view = Sentinel()
-        view.onDoubleTap = onDoubleTap
-        return view
-    }
-
-    func updateUIView(_ view: Sentinel, context: Context) {
-        view.onDoubleTap = onDoubleTap
-    }
-
-    final class Sentinel: UIScrollView, UIScrollViewDelegate {
-        var onDoubleTap: () -> Void = {}
-
+    final class Catcher: UIScrollView, UIScrollViewDelegate {
         init() {
             super.init(frame: .zero)
             delegate = self
@@ -152,13 +141,10 @@ struct ReaderTopTaps: UIViewRepresentable {
             if contentOffset.y < 2 { contentOffset = CGPoint(x: 0, y: 2) }
         }
 
-        private let taps = DoubleTapCounter()
-
         func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
             #if DEBUG
             ReaderDebugMetrics.shared.note("top:tap")
             #endif
-            taps.tap(onDoubleTap)
             return false
         }
     }

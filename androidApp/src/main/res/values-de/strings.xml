@@ -603,11 +603,10 @@
     <string name="l_600">Kleinere Seiten erlauben</string>
     <string name="l_601">Zusammenziehen kann eine Seite kleiner als den Bildschirm machen, mit Schwarz drumherum. Aus füllt die Seite mindestens den Bildschirm; Zusammenziehen vergrößert nur.</string>
     <string name="l_602">Oben doppelt tippen für den Anfang</string>
-    <string name="l_603">Tippe oben im Reader doppelt auf die Statusleiste oder den Titel, um zur ersten Seite zurückzukehren. Einmal tippen bewirkt dort nichts, ein Tippen neben die Zurück-Taste springt also nie weg.</string>
-    <string name="l_604">Tippe oben im Reader doppelt auf den Titel, um zur ersten Seite zurückzukehren.</string>
-    <string name="l_605">Einstellungen sichern</string>
-    <string name="l_606">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_607">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_608">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_609">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_603">Tippe oben im Reader doppelt auf den Titel, um zur ersten Seite zurückzukehren.</string>
+    <string name="l_604">Einstellungen sichern</string>
+    <string name="l_605">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_606">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_607">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_608">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

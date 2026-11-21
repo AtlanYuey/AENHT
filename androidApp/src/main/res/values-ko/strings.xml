@@ -603,11 +603,10 @@
     <string name="l_600">화면보다 작게 축소 허용</string>
     <string name="l_601">켜면 두 손가락으로 페이지를 화면보다 작게 줄일 수 있고 주변은 검게 표시됩니다. 끄면 페이지가 최소한 화면을 채우며 확대만 할 수 있습니다.</string>
     <string name="l_602">상단 두 번 탭하여 처음으로</string>
-    <string name="l_603">리더 상단의 상태 표시줄이나 제목을 두 번 탭하면 첫 페이지로 돌아갑니다. 한 번 탭하면 아무 일도 일어나지 않으므로 뒤로 버튼 근처를 잘못 눌러도 이동하지 않습니다.</string>
-    <string name="l_604">리더 상단의 제목을 두 번 탭하면 첫 페이지로 돌아갑니다.</string>
-    <string name="l_605">설정 백업</string>
-    <string name="l_606">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_607">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_608">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_609">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_603">리더 상단의 제목을 두 번 탭하면 첫 페이지로 돌아갑니다.</string>
+    <string name="l_604">설정 백업</string>
+    <string name="l_605">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_606">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_607">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_608">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

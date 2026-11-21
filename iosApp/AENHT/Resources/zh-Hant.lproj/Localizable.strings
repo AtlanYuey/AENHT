@@ -602,5 +602,4 @@
 "Allow Smaller Pages" = "允許縮小到小於螢幕";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "開啟後，雙指捏合可以把頁面縮小到比螢幕還小，四周留黑邊。關閉時頁面至少鋪滿螢幕，捏合只能放大。";
 "Double Tap Top to Go to Start" = "點兩下頂部回到開頭";
-"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "點兩下閱讀器頂部的狀態列或標題回到第一頁。點一下那裡不會有任何反應，點返回鍵時誤觸也不會跳走。";
 "Double-tap the title at the top of the reader to go back to the first page." = "點兩下閱讀器頂部的標題回到第一頁。";

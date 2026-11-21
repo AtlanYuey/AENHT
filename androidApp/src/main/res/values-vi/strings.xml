@@ -603,11 +603,10 @@
     <string name="l_600">Cho phép thu nhỏ trang</string>
     <string name="l_601">Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.</string>
     <string name="l_602">Chạm hai lần phía trên để về đầu</string>
-    <string name="l_603">Chạm hai lần vào thanh trạng thái hoặc tiêu đề ở đầu trình đọc để về trang đầu. Chạm một lần ở đó không làm gì, nên lỡ chạm gần nút quay lại cũng không bị nhảy trang.</string>
-    <string name="l_604">Chạm hai lần vào tiêu đề ở đầu trình đọc để về trang đầu.</string>
-    <string name="l_605">Sao lưu cài đặt</string>
-    <string name="l_606">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_607">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_608">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_609">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_603">Chạm hai lần vào tiêu đề ở đầu trình đọc để về trang đầu.</string>
+    <string name="l_604">Sao lưu cài đặt</string>
+    <string name="l_605">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_606">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_607">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_608">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

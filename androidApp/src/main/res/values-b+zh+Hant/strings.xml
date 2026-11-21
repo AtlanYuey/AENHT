@@ -603,11 +603,10 @@
     <string name="l_600">允許縮小到小於螢幕</string>
     <string name="l_601">開啟後，雙指捏合可以把頁面縮小到比螢幕還小，四周留黑邊。關閉時頁面至少鋪滿螢幕，捏合只能放大。</string>
     <string name="l_602">點兩下頂部回到開頭</string>
-    <string name="l_603">點兩下閱讀器頂部的狀態列或標題回到第一頁。點一下那裡不會有任何反應，點返回鍵時誤觸也不會跳走。</string>
-    <string name="l_604">點兩下閱讀器頂部的標題回到第一頁。</string>
-    <string name="l_605">設定備份</string>
-    <string name="l_606">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_607">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_608">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_609">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_603">點兩下閱讀器頂部的標題回到第一頁。</string>
+    <string name="l_604">設定備份</string>
+    <string name="l_605">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_606">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_607">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_608">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

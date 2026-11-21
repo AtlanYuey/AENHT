@@ -603,11 +603,10 @@
     <string name="l_600">Permitir páginas más pequeñas</string>
     <string name="l_601">Al pellizcar, una página puede quedar más pequeña que la pantalla, con negro alrededor. Desactivado, la página llena al menos la pantalla y pellizcar solo la amplía.</string>
     <string name="l_602">Doble toque arriba para ir al inicio</string>
-    <string name="l_603">Toca dos veces la barra de estado o el título en la parte superior del lector para volver a la primera página. Un solo toque ahí no hace nada, así que tocar cerca del botón de volver nunca te lleva a otro sitio.</string>
-    <string name="l_604">Toca dos veces el título en la parte superior del lector para volver a la primera página.</string>
-    <string name="l_605">Copia de los ajustes</string>
-    <string name="l_606">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_607">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_608">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_609">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_603">Toca dos veces el título en la parte superior del lector para volver a la primera página.</string>
+    <string name="l_604">Copia de los ajustes</string>
+    <string name="l_605">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_606">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_607">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_608">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

@@ -602,6 +602,5 @@ T = [
     "Permitir páginas más pequeñas",
     "Al pellizcar, una página puede quedar más pequeña que la pantalla, con negro alrededor. Desactivado, la página llena al menos la pantalla y pellizcar solo la amplía.",
     "Doble toque arriba para ir al inicio",
-    "Toca dos veces la barra de estado o el título en la parte superior del lector para volver a la primera página. Un solo toque ahí no hace nada, así que tocar cerca del botón de volver nunca te lleva a otro sitio.",
     "Toca dos veces el título en la parte superior del lector para volver a la primera página.",
 ]

@@ -602,6 +602,5 @@ T = [
     "Cho phép thu nhỏ trang",
     "Chụm ngón tay có thể làm trang nhỏ hơn màn hình, xung quanh là màu đen. Khi tắt, trang luôn lấp đầy màn hình và chụm chỉ để phóng to.",
     "Chạm hai lần phía trên để về đầu",
-    "Chạm hai lần vào thanh trạng thái hoặc tiêu đề ở đầu trình đọc để về trang đầu. Chạm một lần ở đó không làm gì, nên lỡ chạm gần nút quay lại cũng không bị nhảy trang.",
     "Chạm hai lần vào tiêu đề ở đầu trình đọc để về trang đầu.",
 ]

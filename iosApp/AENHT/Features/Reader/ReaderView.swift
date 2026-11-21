@@ -310,10 +310,9 @@ struct ReaderView: View {
                 viewportPixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
             }
             .overlay(alignment: .top) {
-                // The status bar's taps: a double tap goes to the first page, a single
-                // one does nothing (the system's would scroll the strip to the top,
-                // a near miss of the back button under it).
-                ReaderTopTaps(onDoubleTap: goToStart).frame(height: 1)
+                // A tap on the status bar does nothing here: the system's would scroll
+                // the strip back to the top, a near miss of the back button under it.
+                StatusBarTapCatcher().frame(height: 1)
             }
             .ignoresSafeArea()
             .navigationBarTitleDisplayMode(.inline)
@@ -330,8 +329,8 @@ struct ReaderView: View {
                     }
                     .frame(maxWidth: 240)
                     .contentShape(Rectangle())
-                    // A double tap on the title (or the status bar): the first page.
-                    // Counted from single taps: a toolbar item gets those reliably.
+                    // A double tap on the title: the first page. Counted from single
+                    // taps (a toolbar item gets those reliably).
                     .onTapGesture { topTaps.tap(goToStart) }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -527,7 +526,10 @@ struct ReaderView: View {
         #if DEBUG
         ReaderDebugMetrics.shared.note("top:double")
         #endif
-        guard settings.doubleTapTopToStart else { return }
+        guard settings.doubleTapTopToStart, page != 0 || !settings.readMode.isPaged else { return }
+        // Like Go to Page: the controls stay.
+        turnFromPanel = true
+        autoRead = false
         go(0)
     }
 
@@ -935,7 +937,7 @@ struct ReadingSettingsSections: View {
         Section {
             Toggle("Double Tap Top to Go to Start", isOn: $settings.doubleTapTopToStart)
         } footer: {
-            Text("Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away.")
+            Text("Double-tap the title at the top of the reader to go back to the first page.")
         }
         if settings.readMode.isPaged {
             pagedControls
@@ -1822,7 +1824,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
-        // A tap on the status bar doesn't move the page (ReaderTopTaps has it).
+        // A tap on the status bar doesn't move the page (StatusBarTapCatcher has it).
         scrollsToTop = false
         if #available(iOS 26.0, *) {
             // Under the top bar the page fades and blurs softly (iOS 26), not a hard band.

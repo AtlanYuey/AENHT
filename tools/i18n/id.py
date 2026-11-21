@@ -602,6 +602,5 @@ T = [
     "Izinkan halaman lebih kecil",
     "Mencubit dapat membuat halaman lebih kecil dari layar, dengan hitam di sekelilingnya. Jika mati, halaman setidaknya memenuhi layar; cubitan hanya memperbesar.",
     "Ketuk dua kali bagian atas untuk ke awal",
-    "Ketuk dua kali bilah status atau judul di bagian atas pembaca untuk kembali ke halaman pertama. Satu ketukan di sana tidak melakukan apa-apa, jadi salah ketuk di dekat tombol kembali tidak akan memindahkan halaman.",
     "Ketuk dua kali judul di bagian atas pembaca untuk kembali ke halaman pertama.",
 ]

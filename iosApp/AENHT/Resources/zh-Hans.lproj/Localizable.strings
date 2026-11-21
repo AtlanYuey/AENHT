@@ -645,5 +645,4 @@
 "Allow Smaller Pages" = "允许缩小到小于屏幕";
 "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it." = "开启后，双指捏合可以把页面缩小到比屏幕还小，四周留黑边。关闭时页面至少铺满屏幕，捏合只能放大。";
 "Double Tap Top to Go to Start" = "双击顶部回到开头";
-"Double-tap the status bar or the title at the top of the reader to go back to the first page. A single tap there does nothing, so a tap near the back button never jumps away." = "双击阅读器顶部的状态栏或标题回到第一页。单击那里不会有任何反应，点返回键时误触也不会跳走。";
 "Double-tap the title at the top of the reader to go back to the first page." = "双击阅读器顶部的标题回到第一页。";
