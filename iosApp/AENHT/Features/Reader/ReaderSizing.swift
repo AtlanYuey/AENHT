@@ -131,7 +131,6 @@ struct ReaderTopTaps: UIViewRepresentable {
 
     final class Sentinel: UIScrollView, UIScrollViewDelegate {
         var onDoubleTap: () -> Void = {}
-        private var lastTap: CFTimeInterval = 0
 
         init() {
             super.init(frame: .zero)
@@ -153,18 +152,31 @@ struct ReaderTopTaps: UIViewRepresentable {
             if contentOffset.y < 2 { contentOffset = CGPoint(x: 0, y: 2) }
         }
 
+        private let taps = DoubleTapCounter()
+
         func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
-            let now = CACurrentMediaTime()
             #if DEBUG
             ReaderDebugMetrics.shared.note("top:tap")
             #endif
-            if now - lastTap < 0.45 {
-                lastTap = 0
-                onDoubleTap()
-            } else {
-                lastTap = now
-            }
+            taps.tap(onDoubleTap)
             return false
+        }
+    }
+}
+
+/// Finds a double tap in single taps: a second one soon after the first.
+final class DoubleTapCounter {
+    /// The longest time between the two taps (seconds).
+    static let interval: CFTimeInterval = 0.5
+    private var last: CFTimeInterval = 0
+
+    func tap(_ onDouble: () -> Void) {
+        let now = CACurrentMediaTime()
+        if now - last < Self.interval {
+            last = 0
+            onDouble()
+        } else {
+            last = now
         }
     }
 }

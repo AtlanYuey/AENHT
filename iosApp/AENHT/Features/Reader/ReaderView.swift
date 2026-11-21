@@ -331,7 +331,8 @@ struct ReaderView: View {
                     .frame(maxWidth: 240)
                     .contentShape(Rectangle())
                     // A double tap on the title (or the status bar): the first page.
-                    .onTapGesture(count: 2) { goToStart() }
+                    // Counted from single taps: a toolbar item gets those reliably.
+                    .onTapGesture { topTaps.tap(goToStart) }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
@@ -517,6 +518,9 @@ struct ReaderView: View {
         modelContext.recordHistory(item: source.item, title: source.title,
                                    numPages: source.numPages, page: page)
     }
+
+    /// The title's taps, counted to find a double tap.
+    @State private var topTaps = DoubleTapCounter()
 
     /// Double tap on the top (Controls › Double Tap Top to Go to Start): back to the first page.
     private func goToStart() {
