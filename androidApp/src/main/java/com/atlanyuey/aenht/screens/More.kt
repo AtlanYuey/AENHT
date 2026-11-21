@@ -149,10 +149,45 @@ private val SettingsBlue = Color(0xFF007AFF)
 
 class MoreScreen : Screen() {
     private val list = LazyListState()
+    /** Wide (Tablet Layout › Me): the right half's own pages, of the entry chosen on the left. */
+    private var pane by androidx.compose.runtime.mutableStateOf<com.atlanyuey.aenht.ui.components.Navigator?>(null)
+    private var chosen by androidx.compose.runtime.mutableStateOf("overview")
+
+    private fun show(key: String, screen: Screen) {
+        pane?.stack?.forEach { it.onRemoved() }
+        chosen = key
+        pane = com.atlanyuey.aenht.ui.components.Navigator(screen)
+    }
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+        // A tablet held sideways: Tablet Layout is offered.
+        val tabletLandscape = configuration.smallestScreenWidthDp >= 600 && configuration.screenWidthDp > configuration.screenHeightDp
+        val wide = AppSettings.tabletMe && com.atlanyuey.aenht.ui.components.isWidePage()
+        if (wide) {
+            val current = pane ?: com.atlanyuey.aenht.ui.components.Navigator(OverviewScreen { key, screen -> show(key, screen) })
+                .also { pane = it }
+            androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
+                Box(Modifier.width(400.dp).fillMaxHeight()) {
+                    MoreList(tabletLandscape, chosen) { key, screen -> show(key, screen) }
+                }
+                Box(Modifier.width(0.5.dp).fillMaxHeight().background(AppTheme.colors.separator))
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    com.atlanyuey.aenht.ui.components.NavHost(current)
+                }
+            }
+        } else {
+            // Turned upright on the Tablet Layout page: the entry is gone, back to the overview next time.
+            if (!tabletLandscape && chosen == "tablet") chosen = "overview"
+            MoreList(tabletLandscape, null) { _, screen -> navigator.push(screen) }
+        }
+    }
+
+    /** The Me page's entries; [open] pushes a page, or (wide) shows it on the right. */
+    @Composable
+    private fun MoreList(tabletLandscape: Boolean, selected: String?, open: (String, Screen) -> Unit) {
         GroupedListScreen(tr("Me"), list, largeTitle = true) {
             section {
                 // Both sites' accounts are one row; the next screen has one section per site.
@@ -167,7 +202,8 @@ class MoreScreen : Screen() {
                     chevron = true,
                     last = true,
                     minHeight = 76.dp,
-                    onClick = { navigator.push(AccountsScreen()) },
+                    titleColor = if (selected == "accounts") AppTheme.tint else Color.Unspecified,
+                    onClick = { open("accounts", AccountsScreen()) },
                 )
             }
             section {
@@ -176,33 +212,139 @@ class MoreScreen : Screen() {
                     tr("Downloads"),
                     leading = { SettingsIcon(Icons.DownloadCircle, Color(0xFF34C759)) },
                     value = if (active > 0) "$active" else null,
-                    chevron = true, last = true,
-                    onClick = { navigator.push(DownloadsScreen()) },
+                    chevron = true, last = !tabletLandscape,
+                    titleColor = if (selected == "downloads") AppTheme.tint else Color.Unspecified,
+                    onClick = { open("downloads", DownloadsScreen()) },
                 )
+                if (tabletLandscape) {
+                    SettingsNav(tr("Tablet Layout"), Icons.Layers, Color(0xFF5856D6), last = true, key = "tablet",
+                        selected = selected, open = open) { TabletLayoutScreen() }
+                }
             }
             section {
-                SettingsNav(tr("Home"), Icons.Home, Color(0xFF007AFF)) { HomeSettingsScreen() }
-                SettingsNav(tr("Sites"), Icons.Layers, Color(0xFFFF2D55)) { SitesScreen() }
-                SettingsNav(tr("Filters"), Icons.EyeOff, Color(0xFF8E8E93)) { FiltersScreen() }
-                SettingsNav(tr("Translation"), Icons.Language, Color(0xFF34C759)) { TranslationSettingsScreen() }
-                SettingsNav(tr("Appearance"), Icons.Palette, SettingsBlue) { AppearanceScreen() }
-                SettingsNav(tr("Reading"), Icons.Book, Color(0xFFFF9500)) { ReadingScreen() }
-                SettingsNav(tr("General"), Icons.Gear, Color(0xFF8E8E93)) { GeneralScreen() }
-                SettingsNav(tr("WebDAV Sync"), Icons.Cloud, Color(0xFF5AC8FA)) { WebDavScreen() }
-                SettingsNav(tr("Settings Backup"), Icons.CloudUpload, Color(0xFF32ADE6), last = true) { BackupScreen() }
+                SettingsNav(tr("Home"), Icons.Home, Color(0xFF007AFF), key = "home", selected = selected, open = open) { HomeSettingsScreen() }
+                SettingsNav(tr("Sites"), Icons.Layers, Color(0xFFFF2D55), key = "sites", selected = selected, open = open) { SitesScreen() }
+                SettingsNav(tr("Filters"), Icons.EyeOff, Color(0xFF8E8E93), key = "filters", selected = selected, open = open) { FiltersScreen() }
+                SettingsNav(tr("Translation"), Icons.Language, Color(0xFF34C759), key = "translation", selected = selected, open = open) { TranslationSettingsScreen() }
+                SettingsNav(tr("Appearance"), Icons.Palette, SettingsBlue, key = "appearance", selected = selected, open = open) { AppearanceScreen() }
+                SettingsNav(tr("Reading"), Icons.Book, Color(0xFFFF9500), key = "reading", selected = selected, open = open) { ReadingScreen() }
+                SettingsNav(tr("General"), Icons.Gear, Color(0xFF8E8E93), key = "general", selected = selected, open = open) { GeneralScreen() }
+                SettingsNav(tr("WebDAV Sync"), Icons.Cloud, Color(0xFF5AC8FA), key = "webdav", selected = selected, open = open) { WebDavScreen() }
+                SettingsNav(tr("Settings Backup"), Icons.CloudUpload, Color(0xFF32ADE6), last = true, key = "backup",
+                    selected = selected, open = open) { BackupScreen() }
             }
             section {
-                SettingsNav(tr("Language"), Icons.Globe, Color(0xFF30B0C7)) { LanguageScreen() }
-                SettingsNav(tr("About"), Icons.Info, Color(0xFF5856D6), last = true) { AboutScreen() }
+                // Two columns: the overview the right half starts with.
+                if (selected != null) {
+                    SettingsNav(tr("All"), Icons.Info, Color(0xFF8E8E93), key = "overview", selected = selected, open = open) {
+                        OverviewScreen(open)
+                    }
+                }
+                SettingsNav(tr("Language"), Icons.Globe, Color(0xFF30B0C7), key = "language", selected = selected, open = open) { LanguageScreen() }
+                SettingsNav(tr("About"), Icons.Info, Color(0xFF5856D6), last = true, key = "about", selected = selected, open = open) { AboutScreen() }
+            }
+        }
+    }
+}
+
+/**
+ * Me › Tablet Layout (a tablet held sideways): which screens use the room
+ * for two halves side by side. The same settings as the iOS app's.
+ */
+class TabletLayoutScreen : Screen() {
+    @Composable
+    override fun Content() {
+        GroupedListScreen(tr("Tablet Layout")) {
+            section(footer = { FooterText(tr("The two pinned rows side by side.")) }) {
+                ToggleRow(tr("Tablet Layout on Home"), AppSettings.tabletHome, { AppSettings.tabletHome = it }, last = true)
+            }
+            val pages = AppSettings.tabletDetailContent == com.atlanyuey.aenht.core.TabletDetailContent.Pages
+            section(footer = {
+                FooterText(tr(when {
+                    !AppSettings.tabletDetail -> "Gallery pages show as on a phone: one column."
+                    pages -> "The details on the left, every page on the right. Three Columns keeps the thumbnails' size and leaves more room to the details."
+                    else -> "The details and the pages on the left; the other versions, similar galleries and comments on the right."
+                }))
+            }) {
+                ToggleRow(tr("Tablet Layout for Gallery Pages"), AppSettings.tabletDetail, { AppSettings.tabletDetail = it },
+                    last = !AppSettings.tabletDetail)
+                if (AppSettings.tabletDetail) {
+                    PickerRow(tr("Right Half"), com.atlanyuey.aenht.core.TabletDetailContent.entries, AppSettings.tabletDetailContent,
+                        label = { tr(it.title) }, onSelect = { AppSettings.tabletDetailContent = it }, last = !pages)
+                    // The other versions, similar galleries and comments need the room.
+                    if (pages) {
+                        PickerRow(tr("Pages Width"), listOf(false, true), AppSettings.tabletNarrowPages,
+                            label = { if (it) tr("Three Columns") else tr("Half the Page") },
+                            onSelect = { AppSettings.tabletNarrowPages = it }, last = true)
+                    }
+                }
+            }
+            section(footer = { FooterText(tr("The list on the left, the chosen page on the right.")) }) {
+                ToggleRow(tr("Tablet Layout for Me"), AppSettings.tabletMe, { AppSettings.tabletMe = it }, last = true)
+            }
+        }
+    }
+}
+
+/** The right half of a two-column Me page before an entry is chosen: how things stand, each part opening its page. */
+class OverviewScreen(private val open: (String, Screen) -> Unit) : Screen() {
+    @Composable
+    override fun Content() {
+        GroupedListScreen(tr("All")) {
+            section("Accounts") {
+                val nh = AppSettings.nhentaiEnabled && Session.isLoggedIn
+                val eh = AppSettings.ehentaiEnabled && EhSession.isLoggedIn
+                if (nh) {
+                    ListRow(Session.user?.username ?: "nhentai", subtitle = "nhentai", leading = { Avatar(Session.user?.avatar, 40) },
+                        chevron = true, last = !eh, onClick = { open("accounts", AccountsScreen()) })
+                }
+                if (eh) {
+                    ListRow(if (EhSession.hasExHentai) "E-Hentai · ExHentai" else "E-Hentai", subtitle = tr("Logged In"),
+                        leading = { Avatar(null, 40, monogram = "EH") }, chevron = true, last = true,
+                        onClick = { open("accounts", AccountsScreen()) })
+                }
+                if (!nh && !eh) {
+                    ListRow(tr("Not logged in"), leading = { Avatar(null, 40) }, chevron = true, last = true,
+                        onClick = { open("accounts", AccountsScreen()) })
+                }
+            }
+            section("Downloads") {
+                ListRow(tr("Downloading"), value = "${Downloads.records.count { it.state != DownloadRecord.FINISHED }}",
+                    chevron = true, onClick = { open("downloads", DownloadsScreen()) })
+                ListRow(tr("Downloaded"), value = "${Downloads.records.count { it.state == DownloadRecord.FINISHED }}",
+                    chevron = true, last = true, onClick = { open("downloads", DownloadsScreen()) })
+            }
+            section {
+                ListRow(tr("History"), value = "${com.atlanyuey.aenht.core.HistoryStore.entries.size}")
+                ListRow(tr("Favorites"), value = "${com.atlanyuey.aenht.core.FavoritesStore.records.size}", last = true)
+            }
+            section {
+                val webDav = com.atlanyuey.aenht.core.WebDavService
+                ListRow(tr("WebDAV Sync"), value = when {
+                    !webDav.isConfigured -> tr("Not set up")
+                    webDav.error != null -> webDav.error
+                    webDav.lastSync == null -> tr("Not synced yet")
+                    else -> java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
+                        .format(java.util.Date(webDav.lastSync!!))
+                }, chevron = true, last = true, onClick = { open("webdav", WebDavScreen()) })
+            }
+            section {
+                ListRow(tr("Version"), value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", chevron = true, last = true,
+                    onClick = { open("about", AboutScreen()) })
             }
         }
     }
 }
 
 @Composable
-private fun SettingsNav(title: String, icon: ImageVector, color: Color, last: Boolean = false, screen: () -> Screen) {
+private fun SettingsNav(
+    title: String, icon: ImageVector, color: Color, last: Boolean = false,
+    key: String? = null, selected: String? = null, open: ((String, Screen) -> Unit)? = null, screen: () -> Screen,
+) {
     val navigator = LocalNavigator.current
-    ListRow(title, leading = { SettingsIcon(icon, color) }, chevron = true, last = last, onClick = { navigator.push(screen()) })
+    ListRow(title, leading = { SettingsIcon(icon, color) }, chevron = true, last = last,
+        titleColor = if (key != null && key == selected) AppTheme.tint else Color.Unspecified,
+        onClick = { if (open != null && key != null) open(key, screen()) else navigator.push(screen()) })
 }
 
 @Composable

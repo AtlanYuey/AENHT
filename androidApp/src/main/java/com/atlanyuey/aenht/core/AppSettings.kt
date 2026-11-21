@@ -121,6 +121,41 @@ object HandTracker {
 }
 
 /** Two pages side by side in the left-to-right / right-to-left modes. */
+/** How a swipe turns the paged reader's pages (Reading › Swipe to Turn); the iOS app's values. */
+enum class SwipeTurn(val raw: String, val title: String) {
+    /** The pages slide with the finger. */
+    Slide("slide", "Slide"),
+    /** The pages don't move: the page fades away with a soft edge following the finger. */
+    Sweep("sweep", "Swipe Fade");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw }
+    }
+}
+
+/** How a tap (or a page button) turns the paged reader's pages (Reading › Tap to Turn). */
+enum class TapTurn(val raw: String, val title: String) {
+    Slide("slide", "Slide"),
+    /** The whole page fades into the next. */
+    Fade("fade", "Page Fade"),
+    /** The page fades away in a circle spreading from the finger. */
+    Spread("spread", "Spread Fade");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw }
+    }
+}
+
+/** What the right half of a gallery page shows on a tablet held sideways. */
+enum class TabletDetailContent(val raw: String, val title: String) {
+    Pages("pages", "Pages"),
+    Related("related", "Other Versions, Similar and Comments");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Pages
+    }
+}
+
 enum class DoublePage(val raw: String, val title: String) {
     Off("off", "Off"),
     Landscape("landscape", "In Landscape"),
@@ -347,6 +382,16 @@ object AppSettings {
         doublePageCover = p.getBoolean("doublePageCover", true)
         doublePageSingleStep = p.getBoolean("doublePageSingleStep", false)
         swipeFades = p.getBoolean("swipeFades", false)
+        swipeTurn = SwipeTurn.of(p.getString("swipeTurn", null)) ?: if (swipeFades) SwipeTurn.Sweep else SwipeTurn.Slide
+        tapTurn = TapTurn.of(p.getString("tapTurn", null)) ?: if (animatePageTurns) TapTurn.Slide else TapTurn.Fade
+        allowSmallerPages = p.getBoolean("allowSmallerPages", false)
+        keepContinuousPageSize = p.getBoolean("keepContinuousPageSize", true)
+        continuousPageScale = p.getFloat("continuousPageScale", 1f).toDouble()
+        tabletHome = p.getBoolean("tabletHome", true)
+        tabletDetail = p.getBoolean("tabletDetail", true)
+        tabletDetailContent = TabletDetailContent.of(p.getString("tabletDetailContent", null))
+        tabletNarrowPages = p.getBoolean("tabletNarrowPages", false)
+        tabletMe = p.getBoolean("tabletMe", true)
         autoCrop = p.getBoolean("autoCrop", false)
         homeRowsRaw = p.getString("homeRows", null) ?: DEFAULT_HOME_ROWS
         blockedCommenters = p.getString("blockedCommenters", "") ?: ""
@@ -377,6 +422,18 @@ object AppSettings {
     }
 
     private fun SharedPreferences.intOrNull(key: String) = if (contains(key)) getInt(key, 0) else null
+
+    /** A setting of this device only (not synced, not exported). */
+    private fun local(key: String, value: Any) {
+        if (!::prefs.isInitialized || loading) return
+        prefs.edit().apply {
+            when (value) {
+                is String -> putString(key, value)
+                is Boolean -> putBoolean(key, value)
+                is Double -> putFloat(key, value.toFloat())
+            }
+        }.apply()
+    }
 
     /** Applying settings from WebDAV: their change time is kept, not reset to now. */
     private var applyingSync = false
@@ -500,6 +557,32 @@ object AppSettings {
     var doublePageSingleStep by Pref(false) { save("doublePageSingleStep", it) }
     /** A swipe turns the page with a fade sweeping the way it went; the pages don't move with the finger. */
     var swipeFades by Pref(false) { save("swipeFades", it) }
+    /** How a swipe and a tap turn pages; kept in step with swipeFades / animatePageTurns (older versions). */
+    var swipeTurn by Pref(SwipeTurn.Slide) {
+        save("swipeTurn", it.raw)
+        if (swipeFades != (it == SwipeTurn.Sweep)) swipeFades = it == SwipeTurn.Sweep
+    }
+    var tapTurn by Pref(TapTurn.Slide) {
+        save("tapTurn", it.raw)
+        if (animatePageTurns != (it == TapTurn.Slide)) animatePageTurns = it == TapTurn.Slide
+    }
+    /** Paged modes: pinching can make a page smaller than the screen (off: it fills the screen at least). */
+    var allowSmallerPages by Pref(false) { save("allowSmallerPages", it) }
+    /** Continuous modes: the page width set with two fingers stays (across pages and readers). */
+    var keepContinuousPageSize by Pref(true) {
+        local("keepContinuousPageSize", it)
+        if (!it) continuousPageScale = 1.0
+    }
+    /** That width, against the default one (a whole page on screen). */
+    var continuousPageScale by Pref(1.0) { local("continuousPageScale", it) }
+
+    // Tablet Layout (a tablet held sideways): the screen is this device's, not synced.
+    var tabletHome by Pref(true) { local("tabletHome", it) }
+    var tabletDetail by Pref(true) { local("tabletDetail", it) }
+    var tabletDetailContent by Pref(TabletDetailContent.Pages) { local("tabletDetailContent", it.raw) }
+    /** The pages on the right: three columns of the usual thumbnails, not half the page. */
+    var tabletNarrowPages by Pref(false) { local("tabletNarrowPages", it) }
+    var tabletMe by Pref(true) { local("tabletMe", it) }
     /** Reader: plain white / black margins are cut off the pages (paged modes). */
     var autoCrop by Pref(false) { save("autoCrop", it) }
 
@@ -665,6 +748,9 @@ object AppSettings {
         "doublePageCover" to doublePageCover,
         "doublePageSingleStep" to doublePageSingleStep,
         "swipeFades" to swipeFades,
+        "swipeTurn" to swipeTurn.raw,
+        "tapTurn" to tapTurn.raw,
+        "allowSmallerPages" to allowSmallerPages,
         "autoCrop" to autoCrop,
         "homeRows" to homeRowsRaw,
         "blockedCommenters" to blockedCommenters,
@@ -742,7 +828,10 @@ object AppSettings {
                 "continueAutoScrollOnDrag" -> bool?.let { continueAutoScrollOnDrag = it }
                 "preloadPages" -> number?.let { preloadPages = it.toInt().coerceIn(1, 10) }
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
-                "animatePageTurns" -> bool?.let { animatePageTurns = it }
+                "animatePageTurns" -> bool?.let {
+                    animatePageTurns = it
+                    if (tapTurn != TapTurn.Spread && (tapTurn == TapTurn.Slide) != it) tapTurn = if (it) TapTurn.Slide else TapTurn.Fade
+                }
                 "pageGap" -> number?.let { pageGap = it.toDouble().coerceIn(2.0, 60.0) }
                 "screenOn" -> string?.let { screenOn = ScreenOn.of(it) }
                 "detectClipboard" -> bool?.let { detectClipboard = it }
@@ -774,7 +863,13 @@ object AppSettings {
                 "doublePage" -> string?.let { doublePage = DoublePage.of(it) }
                 "doublePageCover" -> bool?.let { doublePageCover = it }
                 "doublePageSingleStep" -> bool?.let { doublePageSingleStep = it }
-                "swipeFades" -> bool?.let { swipeFades = it }
+                "swipeFades" -> bool?.let {
+                    swipeFades = it
+                    if ((swipeTurn == SwipeTurn.Sweep) != it) swipeTurn = if (it) SwipeTurn.Sweep else SwipeTurn.Slide
+                }
+                "swipeTurn" -> string?.let { raw -> SwipeTurn.of(raw)?.let { swipeTurn = it } }
+                "tapTurn" -> string?.let { raw -> TapTurn.of(raw)?.let { tapTurn = it } }
+                "allowSmallerPages" -> bool?.let { allowSmallerPages = it }
                 "autoCrop" -> bool?.let { autoCrop = it }
                 "homeRows" -> string?.let { homeRowsRaw = it }
                 "blockedCommenters" -> string?.let { blockedCommenters = it }

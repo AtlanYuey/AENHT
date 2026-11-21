@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.core.AppSettings
+import com.atlanyuey.aenht.core.TabletDetailContent
+import com.atlanyuey.aenht.ui.components.pagesPaneWidth
 import com.atlanyuey.aenht.ui.components.rememberAnchor
 import com.atlanyuey.aenht.ui.components.anchor
 import com.atlanyuey.aenht.ui.components.readerThumb
@@ -299,8 +302,10 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 }
             },
         ) { padding ->
-            // Wide (a tablet held sideways): the details on the left, the pages on the right.
-            val wide = com.atlanyuey.aenht.ui.components.isWidePage()
+            // A tablet held sideways (Me › Tablet Layout): the details on the left,
+            // the pages or the related galleries and comments on the right.
+            val tablet = com.atlanyuey.aenht.ui.components.tabletDetailContent()
+            val wide = tablet != null
             PullToRefresh(pulling, { pulling = true; scope.launch { load() } }, topInset = padding.calculateTopPadding()) {
               Row(Modifier.fillMaxSize()) {
                 LazyColumn(
@@ -315,18 +320,10 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         item("actions") { Actions(d) }
                         item("info") { InfoStrip(d, numFavorites) }
                         item("tags") { TagsSection(d) }
-                        if (!wide) item("pages") { PreviewSection(d) }
-                        // Its translations and other versions, then galleries like it.
-                        if (versions.isNotEmpty()) {
-                            item("versionsTitle") { VersionsTitle() }
-                            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions, cutEnd = wide) } }
-                        }
-                        val related = d.related.filter { r -> versions.none { it.key.id == r.id.toLong() } }
-                        if (related.isNotEmpty()) {
-                            item("relatedTitle") { SectionTitle(tr("More Like This")) }
-                            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(related.map(GallerySummary::from), cutEnd = wide) } }
-                        }
-                        item("comments") { CommentsPreview(d) }
+                        // The pages, unless they have the right half to themselves.
+                        if (tablet != TabletDetailContent.Pages) item("pages") { PreviewSection(d) }
+                        // The rest, unless it is the right half.
+                        if (tablet != TabletDetailContent.Related) related(d, cutStart = false, cutEnd = wide)
                     } else if (error != null) {
                         item("error") {
                             EmptyState(
@@ -344,18 +341,38 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                     }
                 }
                 val d = detail
-                if (wide && d != null) {
+                if (tablet == TabletDetailContent.Pages && d != null) {
                     // The pages run the full height, under the bars' soft edges like the details.
                     PagesGrid(
                         d,
                         PaddingValues(start = 12.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 16.dp),
-                        Modifier.weight(1f).fillMaxHeight(),
+                        Modifier.pagesPaneWidth(this).fillMaxHeight(),
                         titled = true,
+                        columns = if (AppSettings.tabletNarrowPages) 3 else null,
                     )
+                } else if (tablet == TabletDetailContent.Related && d != null) {
+                    LazyColumn(
+                        Modifier.weight(1f).fillMaxHeight(),
+                        contentPadding = PaddingValues(top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 110.dp),
+                    ) { related(d, cutStart = true, cutEnd = false) }
                 }
               }
             }
         }
+    }
+
+    /** Its translations and other versions, galleries like it, the comments. */
+    private fun androidx.compose.foundation.lazy.LazyListScope.related(d: GalleryDetail, cutStart: Boolean, cutEnd: Boolean) {
+        if (versions.isNotEmpty()) {
+            item("versionsTitle") { VersionsTitle() }
+            item("versions") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(versions, cutStart = cutStart, cutEnd = cutEnd) } }
+        }
+        val related = d.related.filter { r -> versions.none { it.key.id == r.id.toLong() } }
+        if (related.isNotEmpty()) {
+            item("relatedTitle") { SectionTitle(tr("More Like This")) }
+            item("related") { Box(Modifier.padding(horizontal = 16.dp)) { PopularRow(related.map(GallerySummary::from), cutStart = cutStart, cutEnd = cutEnd) } }
+        }
+        item("comments") { CommentsPreview(d) }
     }
 
     @Composable
@@ -680,11 +697,17 @@ class PagesScreen(private val detail: GalleryDetail) : Screen() {
 
 /** Every page of a gallery in a grid ([titled]: under a "Pages" heading, as half of a wide gallery page). */
 @Composable
-fun PagesGrid(detail: GalleryDetail, contentPadding: PaddingValues, modifier: Modifier = Modifier, titled: Boolean = false) {
+fun PagesGrid(detail: GalleryDetail, contentPadding: PaddingValues, modifier: Modifier = Modifier, titled: Boolean = false, columns: Int? = null) {
     val navigator = LocalNavigator.current
+    val state = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+    // On the page the reader is on (the title is the first item).
+    com.atlanyuey.aenht.ui.components.FollowReader("nh:${detail.id}", state, detail.pages.size) { page ->
+        if (page in detail.pages.indices) page + (if (titled) 1 else 0) else null
+    }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(96.dp),
+        columns = columns?.let { GridCells.Fixed(it) } ?: GridCells.Adaptive(96.dp),
         modifier = modifier,
+        state = state,
         contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),

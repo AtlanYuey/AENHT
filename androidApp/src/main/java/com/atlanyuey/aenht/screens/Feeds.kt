@@ -523,7 +523,7 @@ class HomeScreen : Screen(), TabRoot {
                         // after the feed make it taller instead of going in above
                         // the item the grid keeps in place.
                         fullLine("pinned") {
-                            if (pinned.size == 2 && com.atlanyuey.aenht.ui.components.isWidePage()) {
+                            if (pinned.size == 2 && AppSettings.tabletHome && com.atlanyuey.aenht.ui.components.isWidePage()) {
                                 // Wide (a tablet held sideways): the two rows side by side.
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     pinned.forEachIndexed { i, (row, items) ->

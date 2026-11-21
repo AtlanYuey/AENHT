@@ -479,6 +479,25 @@ fun isWidePage(): Boolean {
     return configuration.screenWidthDp >= 960 && configuration.screenWidthDp > configuration.screenHeightDp
 }
 
+/** What the right half of a gallery page shows, or null: one column, as on a phone (Me › Tablet Layout). */
+@Composable
+fun tabletDetailContent(): com.atlanyuey.aenht.core.TabletDetailContent? =
+    if (com.atlanyuey.aenht.core.AppSettings.tabletDetail && isWidePage()) com.atlanyuey.aenht.core.AppSettings.tabletDetailContent else null
+
+/** The pages pane of a gallery page: as wide as half the page, or narrowed to three columns (Pages Width). */
+@Composable
+fun Modifier.pagesPaneWidth(scope: androidx.compose.foundation.layout.RowScope): Modifier {
+    if (!com.atlanyuey.aenht.core.AppSettings.tabletNarrowPages) return with(scope) { weight(1f) }
+    // Three columns of thumbnails as wide as they are in half of the page.
+    val page = LocalConfiguration.current.screenWidthDp.toFloat()
+    val inset = 16f
+    val spacing = 10f
+    val available = page / 2 - inset * 2
+    val count = maxOf(3f, kotlin.math.floor((available + spacing) / (96f + spacing)))
+    val tile = minOf(160f, (available - (count - 1) * spacing) / count)
+    return width((tile * 3 + spacing * 2 + inset * 2).dp)
+}
+
 /**
  * Number of columns: the count chosen in Card Size for a phone or a tablet
  * in the orientation (a narrow window shows fewer rather than cards

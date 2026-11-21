@@ -58,6 +58,24 @@ fun FollowReader(gallery: String, state: LazyListState, count: Int) {
 }
 
 /**
+ * Keeps a grid of pages on the page the reader is on, centred: [index]
+ * gives a page's item index in the grid (null while it isn't there yet).
+ */
+@Composable
+fun FollowReader(gallery: String, state: androidx.compose.foundation.lazy.grid.LazyGridState, count: Int, index: (Int) -> Int?) {
+    LaunchedEffect(gallery, count) {
+        snapshotFlow { ReaderThumbs.page(gallery) }.filterNotNull().collect { page ->
+            val target = index(page) ?: return@collect
+            state.scrollToItem(target)
+            val info = state.layoutInfo
+            val item = info.visibleItemsInfo.firstOrNull { it.index == target } ?: return@collect
+            val viewport = info.viewportEndOffset - info.viewportStartOffset
+            state.scrollBy(item.offset.y - (viewport - item.size.height) / 2f)
+        }
+    }
+}
+
+/**
  * The title of a row of pages, tapped: the row goes to the first page;
  * tapped again, back to where it was (like the Home tab). Scrolling by
  * hand starts over.

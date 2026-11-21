@@ -1257,15 +1257,29 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
-    section(footer = if (AppSettings.readMode.isPaged) ({ FooterText(tr("With Fade on Swipe, the pages don't move with your finger: a swipe turns to the next or previous page, and the new one fades in, sweeping the way you swiped.")) }) else null) {
+    section(footer = if (AppSettings.readMode.isPaged) ({
+        FooterText(
+            tr(if (AppSettings.swipeTurn == com.atlanyuey.aenht.core.SwipeTurn.Sweep)
+                "Swipe Fade: the pages don't move; the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once."
+            else "Slide: the pages slide with your finger.") + "\n" +
+                tr(when (AppSettings.tapTurn) {
+                    com.atlanyuey.aenht.core.TapTurn.Spread -> "Spread Fade: a tap turns the page with a fade spreading from where you tapped."
+                    com.atlanyuey.aenht.core.TapTurn.Fade -> "Page Fade: a tap fades the whole page into the next."
+                    com.atlanyuey.aenht.core.TapTurn.Slide -> "A tap slides the next page in."
+                }),
+        )
+    }) else null) {
         PickerRow(
             tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
             label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
             last = !(AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) && !AppSettings.readMode.isPaged && AppSettings.readMode != ReadMode.VerticalGap,
         )
-        // How a swipe turns the pages (not the taps: those are in Controls).
+        // How a swipe and a tap turn the pages, chosen apart.
         if (AppSettings.readMode.isPaged) {
-            ToggleRow(tr("Fade on Swipe"), AppSettings.swipeFades, { AppSettings.swipeFades = it })
+            PickerRow(tr("Swipe to Turn"), com.atlanyuey.aenht.core.SwipeTurn.entries, AppSettings.swipeTurn,
+                label = { tr(it.title) }, onSelect = { AppSettings.swipeTurn = it })
+            PickerRow(tr("Tap to Turn"), com.atlanyuey.aenht.core.TapTurn.entries, AppSettings.tapTurn,
+                label = { tr(it.title) }, onSelect = { AppSettings.tapTurn = it })
         }
         if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
             PickerRow(
@@ -1423,11 +1437,21 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
-    section(footer = { FooterText(tr("With fading page turns, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
+    if (!AppSettings.readMode.isPaged) {
+        // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
+        section(footer = { FooterText(tr("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")) }) {
+            ToggleRow(tr("Keep Page Size"), AppSettings.keepContinuousPageSize, { AppSettings.keepContinuousPageSize = it })
+            ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
+        }
+        return
+    }
+    section(footer = { FooterText(tr("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")) }) {
+        ToggleRow(tr("Allow Smaller Pages"), AppSettings.allowSmallerPages, { AppSettings.allowSmallerPages = it }, last = true)
+    }
+    section(footer = { FooterText(tr("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")) }) {
         ToggleRow(tr("Tap to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
         PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
             label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it })
-        ToggleRow(tr("Fade Page Turns"), !AppSettings.animatePageTurns, { AppSettings.animatePageTurns = !it })
         ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
     }
     section("Swipes", footer = { FooterText(tr("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")) }) {
