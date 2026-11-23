@@ -662,3 +662,10 @@
 "Try it here: double-tap or squeeze the pencil." = "在这里试试：轻点两下或轻捏笔身。";
 "Double-tap received." = "收到轻点两下。";
 "Squeeze received." = "收到轻捏。";
+"Keyboard and Page Turner" = "键盘与翻页器";
+"Keys Turn Pages" = "按键翻页";
+"Swap Next and Previous" = "交换上一页和下一页";
+"Connected: %@" = "已连接：%@";
+"Keyboard" = "键盘";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器在 iPhone 和 iPad 上无法翻页。";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器请使用「音量键翻页」。";

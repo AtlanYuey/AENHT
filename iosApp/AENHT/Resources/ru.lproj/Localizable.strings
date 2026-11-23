@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "Попробуйте здесь: дважды коснитесь карандаша или сожмите его.";
 "Double-tap received." = "Двойное касание получено.";
 "Squeeze received." = "Сжатие получено.";
+"Keyboard and Page Turner" = "Клавиатура и перелистыватель";
+"Keys Turn Pages" = "Клавиши листают страницы";
+"Swap Next and Previous" = "Поменять «вперёд» и «назад»";
+"Connected: %@" = "Подключено: %@";
+"Keyboard" = "Клавиатура";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page Down и пробел — следующая страница; ← ↑ и Page Up — предыдущая (← → следуют направлению чтения). В непрерывных режимах они прокручивают один экран. Большинство Bluetooth-перелистывателей отправляют эти клавиши; те, что отправляют кнопки громкости, не могут листать страницы на iPhone и iPad.";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page Down и пробел — следующая страница; ← ↑ и Page Up — предыдущая (← → следуют направлению чтения). В непрерывных режимах они прокручивают один экран. Большинство Bluetooth-перелистывателей отправляют эти клавиши; для тех, что отправляют кнопки громкости, есть «Листать клавишами громкости».";

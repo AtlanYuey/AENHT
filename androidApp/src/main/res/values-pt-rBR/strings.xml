@@ -620,9 +620,16 @@
     <string name="l_617">Experimente aqui: toque duas vezes ou aperte a caneta.</string>
     <string name="l_618">Toque duplo recebido.</string>
     <string name="l_619">Aperto recebido.</string>
-    <string name="l_620">Backup dos ajustes</string>
-    <string name="l_621">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_622">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_623">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_624">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_620">Teclado e passador de páginas</string>
+    <string name="l_621">As teclas viram as páginas</string>
+    <string name="l_622">Trocar próxima e anterior</string>
+    <string name="l_623">Conectado: %s</string>
+    <string name="l_624">Teclado</string>
+    <string name="l_625">→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; os que enviam os botões de volume não viram páginas no iPhone e no iPad.</string>
+    <string name="l_626">→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; para os que enviam os botões de volume, use Botões de volume passam página.</string>
+    <string name="l_627">Backup dos ajustes</string>
+    <string name="l_628">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_629">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_630">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_631">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

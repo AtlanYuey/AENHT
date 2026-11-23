@@ -620,9 +620,16 @@
     <string name="l_617">Essayez ici : touchez deux fois ou pressez le crayon.</string>
     <string name="l_618">Double toucher reçu.</string>
     <string name="l_619">Pression reçue.</string>
-    <string name="l_620">Sauvegarde des réglages</string>
-    <string name="l_621">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_622">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_623">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_624">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_620">Clavier et tourne-page</string>
+    <string name="l_621">Les touches tournent les pages</string>
+    <string name="l_622">Inverser suivante et précédente</string>
+    <string name="l_623">Connecté : %s</string>
+    <string name="l_624">Clavier</string>
+    <string name="l_625">→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; ceux qui envoient les boutons de volume ne peuvent pas tourner les pages sur iPhone et iPad.</string>
+    <string name="l_626">→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; pour ceux qui envoient les boutons de volume, utilisez Touches de volume pour tourner les pages.</string>
+    <string name="l_627">Sauvegarde des réglages</string>
+    <string name="l_628">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_629">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_630">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_631">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

@@ -619,4 +619,11 @@ T = [
     "Essayez ici : touchez deux fois ou pressez le crayon.",
     "Double toucher reçu.",
     "Pression reçue.",
+    "Clavier et tourne-page",
+    "Les touches tournent les pages",
+    "Inverser suivante et précédente",
+    "Connecté : %@",
+    "Clavier",
+    "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; ceux qui envoient les boutons de volume ne peuvent pas tourner les pages sur iPhone et iPad.",
+    "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; pour ceux qui envoient les boutons de volume, utilisez Touches de volume pour tourner les pages.",
 ]

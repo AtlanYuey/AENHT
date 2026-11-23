@@ -5,8 +5,10 @@ import UIKit
 struct ReaderScrollRequest: Equatable {
     let page: Int
     var animated = false
+    /// Scroll this many screens (down; up when negative) from where the strip is, instead (keys).
+    var screens = 0
     private let id = UUID()
-    init(page: Int, animated: Bool = false) { self.page = page; self.animated = animated }
+    init(page: Int, animated: Bool = false, screens: Int = 0) { self.page = page; self.animated = animated; self.screens = screens }
 }
 
 struct ContinuousReader: View {
@@ -142,6 +144,15 @@ struct ContinuousReader: View {
             .onChange(of: request) { _, new in
                 driver.stop()
                 running = false
+                if new.screens != 0, let scroll = driver.scroll {
+                    // A screen at a time, a little of the last one still showing.
+                    let inset = scroll.adjustedContentInset
+                    let height = scroll.bounds.height - inset.top - inset.bottom
+                    let bottom = max(-inset.top, scroll.contentSize.height - scroll.bounds.height + inset.bottom)
+                    let y = min(max(scroll.contentOffset.y + CGFloat(new.screens) * height * 0.9, -inset.top), bottom)
+                    scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: y), animated: true)
+                    return
+                }
                 if new.animated {
                     withAnimation(.smooth(duration: 0.3)) { proxy.scrollTo(new.page, anchor: .top) }
                 } else {

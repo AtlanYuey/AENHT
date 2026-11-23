@@ -228,6 +228,48 @@ class ReaderGesturesTest {
         assertEquals(1, page(reader))
     }
 
+    @Test fun pageKeysMapLikeAPageTurner() {
+        fun key(code: Int, shift: Boolean = false) = PageKey.of(android.view.KeyEvent(0, 0, android.view.KeyEvent.ACTION_DOWN, code, 0,
+            if (shift) android.view.KeyEvent.META_SHIFT_ON else 0))
+        assertEquals(PageKey.Next, key(android.view.KeyEvent.KEYCODE_PAGE_DOWN))
+        assertEquals(PageKey.Next, key(android.view.KeyEvent.KEYCODE_SPACE))
+        assertEquals(PageKey.Previous, key(android.view.KeyEvent.KEYCODE_SPACE, shift = true))
+        assertEquals(PageKey.Previous, key(android.view.KeyEvent.KEYCODE_DPAD_UP))
+        assertEquals(PageKey.Right, key(android.view.KeyEvent.KEYCODE_DPAD_RIGHT))
+        assertNull(key(android.view.KeyEvent.KEYCODE_A))
+        // The arrows follow the reading direction; Swap turns them all round.
+        assertTrue(PageKey.forward(PageKey.Right, rightToLeft = false, swap = false))
+        assertFalse(PageKey.forward(PageKey.Right, rightToLeft = true, swap = false))
+        assertTrue(PageKey.forward(PageKey.Left, rightToLeft = true, swap = false))
+        assertTrue(PageKey.forward(PageKey.Next, rightToLeft = true, swap = false))
+        assertFalse(PageKey.forward(PageKey.Next, rightToLeft = false, swap = true))
+    }
+
+    @Test fun keysTurnAPageOrScrollAScreen() {
+        val reader = open(ReadMode.LeftToRight)
+        ReaderKeys.deviceTurn!!(true)
+        settle()
+        assertEquals(3, page(reader))
+        ReaderKeys.deviceTurn!!(false)
+        settle()
+        assertEquals(2, page(reader))
+        // Enlarged: nothing turns.
+        pinchOut()
+        settle()
+        ReaderKeys.deviceTurn!!(true)
+        settle()
+        assertEquals(2, page(reader))
+        // Continuous: a screen down, then back up.
+        AppSettings.readMode = ReadMode.Vertical
+        settle()
+        val list = ReaderScreen::class.java.getDeclaredField("list").let { it.isAccessible = true; it.get(reader) as androidx.compose.foundation.lazy.LazyListState }
+        val before = list.firstVisibleItemIndex to list.firstVisibleItemScrollOffset
+        ReaderKeys.deviceTurn!!(true)
+        settle()
+        val after = list.firstVisibleItemIndex to list.firstVisibleItemScrollOffset
+        assertTrue("a key scrolls the strip down ($before -> $after)", after.first > before.first || (after.first == before.first && after.second > before.second))
+    }
+
     @Test fun continuousStripWidthPinchesAndIsKept() {
         AppSettings.continuousPageScale = 1.0
         val reader = open(ReadMode.Vertical)

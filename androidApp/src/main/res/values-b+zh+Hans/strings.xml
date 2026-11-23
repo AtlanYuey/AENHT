@@ -620,9 +620,16 @@
     <string name="l_617">在这里试试：轻点两下或轻捏笔身。</string>
     <string name="l_618">收到轻点两下。</string>
     <string name="l_619">收到轻捏。</string>
-    <string name="l_620">设置备份</string>
-    <string name="l_621">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_622">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_623">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_624">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_620">键盘与翻页器</string>
+    <string name="l_621">按键翻页</string>
+    <string name="l_622">交换上一页和下一页</string>
+    <string name="l_623">已连接：%s</string>
+    <string name="l_624">键盘</string>
+    <string name="l_625">→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器在 iPhone 和 iPad 上无法翻页。</string>
+    <string name="l_626">→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器请使用「音量键翻页」。</string>
+    <string name="l_627">设置备份</string>
+    <string name="l_628">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_629">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_630">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_631">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

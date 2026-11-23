@@ -620,9 +620,16 @@
     <string name="l_617">Coba di sini: ketuk dua kali atau remas pensil.</string>
     <string name="l_618">Ketuk dua kali diterima.</string>
     <string name="l_619">Remas diterima.</string>
-    <string name="l_620">Cadangan Pengaturan</string>
-    <string name="l_621">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_622">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_623">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_624">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_620">Keyboard dan pembalik halaman</string>
+    <string name="l_621">Tombol membalik halaman</string>
+    <string name="l_622">Tukar berikutnya dan sebelumnya</string>
+    <string name="l_623">Terhubung: %s</string>
+    <string name="l_624">Keyboard</string>
+    <string name="l_625">→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; yang mengirim tombol volume tidak bisa membalik halaman di iPhone dan iPad.</string>
+    <string name="l_626">→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; untuk yang mengirim tombol volume, gunakan Tombol volume membalik halaman.</string>
+    <string name="l_627">Cadangan Pengaturan</string>
+    <string name="l_628">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_629">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_630">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_631">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

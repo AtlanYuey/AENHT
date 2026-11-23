@@ -619,4 +619,11 @@ T = [
     "Experimente aqui: toque duas vezes ou aperte a caneta.",
     "Toque duplo recebido.",
     "Aperto recebido.",
+    "Teclado e passador de páginas",
+    "As teclas viram as páginas",
+    "Trocar próxima e anterior",
+    "Conectado: %@",
+    "Teclado",
+    "→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; os que enviam os botões de volume não viram páginas no iPhone e no iPad.",
+    "→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; para os que enviam os botões de volume, use Botões de volume passam página.",
 ]

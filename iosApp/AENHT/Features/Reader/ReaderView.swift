@@ -300,6 +300,14 @@ struct ReaderView: View {
             // The Apple Pencil's double-tap and squeeze (Controls › Apple Pencil).
             .background(PencilGestures(onDoubleTap: { pencil(settings.pencilDoubleTap) },
                                        onSqueeze: { pencil(settings.pencilSqueeze) }))
+            // A keyboard's or page turner's keys (Controls › Keyboard and Page Turner).
+            .onAppear {
+                ExternalKeyboards.shared.onKey = { key in
+                    guard settings.pageKeys else { return }
+                    turnByDevice(forward: PageKey.forward(key, rightToLeft: isRTL, swap: settings.pageKeysSwap))
+                }
+            }
+            .onDisappear { ExternalKeyboards.shared.onKey = nil }
             .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
@@ -440,11 +448,23 @@ struct ReaderView: View {
         switch action {
         case .none: break
         case .nextPage, .previousPage:
-            guard !isEnlarged, !showSettings else { return }
-            let forward = action == .nextPage
-            go(step(forward: forward))
+            turnByDevice(forward: action == .nextPage)
         case .controls: chromeVisible.toggle()
         case .autoRead: autoRead.toggle()
+        }
+    }
+
+    /// A page turn from a device (the pencil, a keyboard or page turner):
+    /// a page; in the continuous modes a screen. Not while a page is enlarged
+    /// (as from the edges) or a sheet or the page number prompt is open.
+    private func turnByDevice(forward: Bool) {
+        guard !showSettings, !askPage else { return }
+        if settings.readMode.isPaged {
+            guard !isEnlarged else { return }
+            go(step(forward: forward))
+        } else {
+            autoRead = false
+            scrollRequest = ReaderScrollRequest(page: page, screens: forward ? 1 : -1)
         }
     }
 
@@ -951,8 +971,9 @@ struct ReadingSettingsSections: View {
     }
 
     @ViewBuilder private var controls: some View {
-        // The pencil's gestures, on an iPad.
-        if PencilSupport.current != nil {
+        // A connected keyboard or page turner, and a pencil once it has been used here.
+        PageKeysSection()
+        if PencilSupport.current != nil, settings.pencilSeen != .nothing {
             ApplePencilSection()
         }
         Section {

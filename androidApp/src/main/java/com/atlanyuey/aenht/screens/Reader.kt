@@ -153,6 +153,7 @@ import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import me.saket.telephoto.zoomable.rememberZoomableState
 import kotlin.math.abs
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.animation.core.animateDecay
 import androidx.compose.foundation.gestures.calculateZoom
@@ -176,6 +177,8 @@ val ReadMode.icon
 object ReaderKeys {
     /** Turns forward (true) or back; null when no reader is open. */
     var handler: ((Boolean) -> Unit)? = null
+    /** A keyboard's or page turner's turn: a page, a screen in the continuous modes. */
+    var deviceTurn: ((Boolean) -> Unit)? = null
 }
 
 /** Grayscale and / or inverted colors for the pages (Android 12+). */
@@ -595,7 +598,22 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 val base = if (AppSettings.readMode.isPaged) turnBase else page
                 go(step(base, forward))
             }
-            onDispose { ReaderKeys.handler = null }
+            ReaderKeys.deviceTurn = { forward ->
+                lastTouch = android.os.SystemClock.uptimeMillis()
+                if (AppSettings.readMode.isPaged) {
+                    // Not while a page is enlarged (as from the edges).
+                    if (!enlarged) go(step(turnBase, forward))
+                } else {
+                    autoRead = false
+                    // A screen at a time, a little of the last one still showing.
+                    uiScope.launch {
+                        val info = list.layoutInfo
+                        val screen = (info.viewportEndOffset - info.viewportStartOffset) * 0.9f
+                        list.animateScrollBy(if (forward) screen else -screen)
+                    }
+                }
+            }
+            onDispose { ReaderKeys.handler = null; ReaderKeys.deviceTurn = null }
         }
         // Keep Screen On: held on until that long after the last touch, then
         // left to the system's own screen timeout (never turned off sooner).
@@ -1850,6 +1868,24 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    // A keyboard or Bluetooth page turner: only while one is connected.
+    val keyboards = com.atlanyuey.aenht.core.ExternalKeys.names
+    if (keyboards.isNotEmpty()) {
+        section(
+            "Keyboard and Page Turner",
+            footer = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FooterText(tr("Connected: %@", keyboards.joinToString(", ")))
+                    FooterText(tr("→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages."))
+                }
+            },
+        ) {
+            ToggleRow(tr("Keys Turn Pages"), AppSettings.pageKeys, { AppSettings.pageKeys = it }, last = !AppSettings.pageKeys)
+            if (AppSettings.pageKeys) {
+                ToggleRow(tr("Swap Next and Previous"), AppSettings.pageKeysSwap, { AppSettings.pageKeysSwap = it }, last = true)
+            }
+        }
+    }
     section(footer = { FooterText(tr("Double-tap the title at the top of the reader to go back to the first page.")) }) {
         ToggleRow(tr("Double Tap Top to Go to Start"), AppSettings.doubleTapTopToStart, { AppSettings.doubleTapTopToStart = it }, last = true)
     }

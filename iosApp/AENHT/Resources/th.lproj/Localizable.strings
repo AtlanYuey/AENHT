@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "ลองที่นี่: แตะสองครั้งหรือบีบปากกา";
 "Double-tap received." = "ได้รับการแตะสองครั้งแล้ว";
 "Squeeze received." = "ได้รับการบีบแล้ว";
+"Keyboard and Page Turner" = "คีย์บอร์ดและรีโมตพลิกหน้า";
+"Keys Turn Pages" = "ปุ่มพลิกหน้า";
+"Swap Next and Previous" = "สลับหน้าถัดไปกับก่อนหน้า";
+"Connected: %@" = "เชื่อมต่อแล้ว: %@";
+"Keyboard" = "คีย์บอร์ด";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page Down และ Space ไปหน้าถัดไป ส่วน ← ↑ และ Page Up ไปหน้าก่อนหน้า (← → เป็นไปตามทิศทางการอ่าน) ในโหมดต่อเนื่องจะเลื่อนทีละหนึ่งหน้าจอ รีโมตพลิกหน้าบลูทูธส่วนใหญ่ส่งปุ่มเหล่านี้ ส่วนแบบที่ส่งปุ่มปรับเสียงจะพลิกหน้าบน iPhone และ iPad ไม่ได้";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page Down และ Space ไปหน้าถัดไป ส่วน ← ↑ และ Page Up ไปหน้าก่อนหน้า (← → เป็นไปตามทิศทางการอ่าน) ในโหมดต่อเนื่องจะเลื่อนทีละหนึ่งหน้าจอ รีโมตพลิกหน้าบลูทูธส่วนใหญ่ส่งปุ่มเหล่านี้ ส่วนแบบที่ส่งปุ่มปรับเสียงให้ใช้ ใช้ปุ่มเสียงเปลี่ยนหน้า";

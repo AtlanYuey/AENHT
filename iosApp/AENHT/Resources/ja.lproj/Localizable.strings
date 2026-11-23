@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "ここで試せます：ペンをダブルタップまたはスクイーズしてください。";
 "Double-tap received." = "ダブルタップを受信しました。";
 "Squeeze received." = "スクイーズを受信しました。";
+"Keyboard and Page Turner" = "キーボードとページめくり器";
+"Keys Turn Pages" = "キーでページをめくる";
+"Swap Next and Previous" = "次と前を入れ替える";
+"Connected: %@" = "接続中：%@";
+"Keyboard" = "キーボード";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは iPhone と iPad ではページをめくれません。";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは「音量ボタンでページ送り」を使ってください。";

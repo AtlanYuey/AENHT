@@ -620,9 +620,16 @@
     <string name="l_617">Try it here: double-tap or squeeze the pencil.</string>
     <string name="l_618">Double-tap received.</string>
     <string name="l_619">Squeeze received.</string>
-    <string name="l_620">Settings Backup</string>
-    <string name="l_621">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_622">Android\'s own backup also keeps these settings.</string>
-    <string name="l_623">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_624">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_620">Keyboard and Page Turner</string>
+    <string name="l_621">Keys Turn Pages</string>
+    <string name="l_622">Swap Next and Previous</string>
+    <string name="l_623">Connected: %s</string>
+    <string name="l_624">Keyboard</string>
+    <string name="l_625">→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can\'t turn pages on iPhone and iPad.</string>
+    <string name="l_626">→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages.</string>
+    <string name="l_627">Settings Backup</string>
+    <string name="l_628">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_629">Android\'s own backup also keeps these settings.</string>
+    <string name="l_630">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_631">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

@@ -618,5 +618,12 @@
  "While reading, double-tap Apple Pencil (2nd generation) or Pro, or squeeze Apple Pencil Pro, held away from the screen.",
  "Try it here: double-tap or squeeze the pencil.",
  "Double-tap received.",
- "Squeeze received."
+ "Squeeze received.",
+ "Keyboard and Page Turner",
+ "Keys Turn Pages",
+ "Swap Next and Previous",
+ "Connected: %@",
+ "Keyboard",
+ "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad.",
+ "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages."
 ]

@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "Thử tại đây: chạm hai lần hoặc bóp bút.";
 "Double-tap received." = "Đã nhận chạm hai lần.";
 "Squeeze received." = "Đã nhận thao tác bóp.";
+"Keyboard and Page Turner" = "Bàn phím và bộ lật trang";
+"Keys Turn Pages" = "Phím lật trang";
+"Swap Next and Previous" = "Đổi trang sau và trang trước";
+"Connected: %@" = "Đã kết nối: %@";
+"Keyboard" = "Bàn phím";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng không thể lật trang trên iPhone và iPad.";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng hãy dùng Phím âm lượng để lật trang.";

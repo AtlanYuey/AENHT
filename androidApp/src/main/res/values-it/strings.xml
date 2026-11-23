@@ -620,9 +620,16 @@
     <string name="l_617">Prova qui: tocca due volte o stringi la matita.</string>
     <string name="l_618">Doppio tocco ricevuto.</string>
     <string name="l_619">Stretta ricevuta.</string>
-    <string name="l_620">Backup impostazioni</string>
-    <string name="l_621">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_622">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_623">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_624">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_620">Tastiera e voltapagine</string>
+    <string name="l_621">I tasti girano le pagine</string>
+    <string name="l_622">Scambia successiva e precedente</string>
+    <string name="l_623">Connesso: %s</string>
+    <string name="l_624">Tastiera</string>
+    <string name="l_625">→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; quelli che inviano i tasti del volume non possono girare le pagine su iPhone e iPad.</string>
+    <string name="l_626">→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; per quelli che inviano i tasti del volume usa Tasti volume per sfogliare.</string>
+    <string name="l_627">Backup impostazioni</string>
+    <string name="l_628">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_629">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_630">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_631">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

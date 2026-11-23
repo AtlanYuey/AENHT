@@ -620,9 +620,16 @@
     <string name="l_617">Pruébalo aquí: toca dos veces o aprieta el lápiz.</string>
     <string name="l_618">Doble toque recibido.</string>
     <string name="l_619">Apretón recibido.</string>
-    <string name="l_620">Copia de los ajustes</string>
-    <string name="l_621">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_622">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_623">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_624">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_620">Teclado y pasapáginas</string>
+    <string name="l_621">Las teclas pasan página</string>
+    <string name="l_622">Intercambiar siguiente y anterior</string>
+    <string name="l_623">Conectado: %s</string>
+    <string name="l_624">Teclado</string>
+    <string name="l_625">→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; los que envían los botones de volumen no pueden pasar páginas en iPhone y iPad.</string>
+    <string name="l_626">→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; para los que envían los botones de volumen, usa Teclas de volumen pasan página.</string>
+    <string name="l_627">Copia de los ajustes</string>
+    <string name="l_628">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_629">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_630">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_631">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

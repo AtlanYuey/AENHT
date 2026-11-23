@@ -500,6 +500,10 @@ final class AppSettings {
     /// The Apple Pencil in the reader: a double-tap (2nd generation, Pro) and a squeeze (Pro).
     var pencilDoubleTap: PencilAction { didSet { save(pencilDoubleTap.rawValue, "pencilDoubleTap") } }
     var pencilSqueeze: PencilAction { didSet { save(pencilSqueeze.rawValue, "pencilSqueeze") } }
+    /// A keyboard's or Bluetooth page turner's arrows, Page Up / Down and Space turn pages.
+    var pageKeys: Bool { didSet { save(pageKeys, "pageKeys") } }
+    /// Their next and previous the other way round (some page turners).
+    var pageKeysSwap: Bool { didSet { save(pageKeysSwap, "pageKeysSwap") } }
     /// The gestures the pencil used with this iPad has sent (which pencil it is): this device's.
     var pencilSeen: PencilSeen { didSet { defaults.set(pencilSeen.rawValue, forKey: "pencilSeen") } }
     var swipeDown: ReaderGesture { didSet { save(swipeDown.rawValue, "swipeDown") } }
@@ -656,6 +660,8 @@ final class AppSettings {
         swipeUp = ReaderGesture(rawValue: d.string(forKey: "swipeUp") ?? "") ?? .none
         pencilDoubleTap = PencilAction(rawValue: d.string(forKey: "pencilDoubleTap") ?? "") ?? .nextPage
         pencilSqueeze = PencilAction(rawValue: d.string(forKey: "pencilSqueeze") ?? "") ?? .previousPage
+        pageKeys = d.object(forKey: "pageKeys") as? Bool ?? true
+        pageKeysSwap = d.bool(forKey: "pageKeysSwap")
         pencilSeen = PencilSeen(rawValue: d.integer(forKey: "pencilSeen")) ?? .nothing
         swipeDown = ReaderGesture(rawValue: d.string(forKey: "swipeDown") ?? "") ?? .exit
         swipeLeft = ReaderGesture(rawValue: d.string(forKey: "swipeLeft") ?? "") ?? .none
@@ -768,6 +774,8 @@ final class AppSettings {
         values["swipeUp"] = swipeUp.rawValue
         values["pencilDoubleTap"] = pencilDoubleTap.rawValue
         values["pencilSqueeze"] = pencilSqueeze.rawValue
+        values["pageKeys"] = pageKeys
+        values["pageKeysSwap"] = pageKeysSwap
         values["swipeDown"] = swipeDown.rawValue
         values["swipeLeft"] = swipeLeft.rawValue
         values["swipeRight"] = swipeRight.rawValue
@@ -876,6 +884,8 @@ final class AppSettings {
         case "swipeUp": set(\.swipeUp, string.flatMap(ReaderGesture.init(rawValue:)))
         case "pencilDoubleTap": set(\.pencilDoubleTap, string.flatMap(PencilAction.init(rawValue:)))
         case "pencilSqueeze": set(\.pencilSqueeze, string.flatMap(PencilAction.init(rawValue:)))
+        case "pageKeys": set(\.pageKeys, number?.boolValue)
+        case "pageKeysSwap": set(\.pageKeysSwap, number?.boolValue)
         case "swipeDown": set(\.swipeDown, string.flatMap(ReaderGesture.init(rawValue:)))
         case "swipeLeft": set(\.swipeLeft, string.flatMap(ReaderGesture.init(rawValue:)))
         case "swipeRight": set(\.swipeRight, string.flatMap(ReaderGesture.init(rawValue:)))

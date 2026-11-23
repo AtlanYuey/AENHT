@@ -619,4 +619,11 @@ T = [
     "Prova qui: tocca due volte o stringi la matita.",
     "Doppio tocco ricevuto.",
     "Stretta ricevuta.",
+    "Tastiera e voltapagine",
+    "I tasti girano le pagine",
+    "Scambia successiva e precedente",
+    "Connesso: %@",
+    "Tastiera",
+    "→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; quelli che inviano i tasti del volume non possono girare le pagine su iPhone e iPad.",
+    "→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; per quelli che inviano i tasti del volume usa Tasti volume per sfogliare.",
 ]

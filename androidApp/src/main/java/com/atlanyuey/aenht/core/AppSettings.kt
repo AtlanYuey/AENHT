@@ -373,6 +373,8 @@ object AppSettings {
         filterRules = p.getString("filterRules", "") ?: ""
         llmServices = p.getString("llmServices", "") ?: ""
         volumeKeyTurns = p.getBoolean("volumeKeyTurns", false)
+        pageKeys = p.getBoolean("pageKeys", true)
+        pageKeysSwap = p.getBoolean("pageKeysSwap", false)
         readerBrightness = p.getFloat("readerBrightness", 1f).toDouble().coerceIn(0.2, 1.0)
         readerGrayscale = p.getBoolean("readerGrayscale", false)
         readerInvert = p.getBoolean("readerInvert", false)
@@ -544,6 +546,10 @@ object AppSettings {
 
     /** Reader: the volume keys turn pages. */
     var volumeKeyTurns by Pref(false) { save("volumeKeyTurns", it) }
+    /** A keyboard's or Bluetooth page turner's arrows, Page Up / Down and Space turn pages. */
+    var pageKeys by Pref(true) { save("pageKeys", it) }
+    /** Their next and previous the other way round (some page turners). */
+    var pageKeysSwap by Pref(false) { save("pageKeysSwap", it) }
     /** Reader: page brightness (0.2–1), separate from the screen's. */
     var readerBrightness by Pref(1.0) { save("readerBrightness", it) }
     var readerGrayscale by Pref(false) { save("readerGrayscale", it) }
@@ -743,6 +749,8 @@ object AppSettings {
         "filterRules" to filterRules,
         "llmServices" to llmServices,
         "volumeKeyTurns" to volumeKeyTurns,
+        "pageKeys" to pageKeys,
+        "pageKeysSwap" to pageKeysSwap,
         "readerBrightness" to readerBrightness,
         "readerGrayscale" to readerGrayscale,
         "readerInvert" to readerInvert,
@@ -860,6 +868,8 @@ object AppSettings {
                 "filterRules" -> string?.let { if (it != filterRules) { filterRules = it; Filters.changed() } }
                 "llmServices" -> string?.let { llmServices = it }
                 "volumeKeyTurns" -> bool?.let { volumeKeyTurns = it }
+                "pageKeys" -> bool?.let { pageKeys = it }
+                "pageKeysSwap" -> bool?.let { pageKeysSwap = it }
                 "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
                 "readerGrayscale" -> bool?.let { readerGrayscale = it }
                 "readerInvert" -> bool?.let { readerInvert = it }

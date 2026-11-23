@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "Coba di sini: ketuk dua kali atau remas pensil.";
 "Double-tap received." = "Ketuk dua kali diterima.";
 "Squeeze received." = "Remas diterima.";
+"Keyboard and Page Turner" = "Keyboard dan pembalik halaman";
+"Keys Turn Pages" = "Tombol membalik halaman";
+"Swap Next and Previous" = "Tukar berikutnya dan sebelumnya";
+"Connected: %@" = "Terhubung: %@";
+"Keyboard" = "Keyboard";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; yang mengirim tombol volume tidak bisa membalik halaman di iPhone dan iPad.";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; untuk yang mengirim tombol volume, gunakan Tombol volume membalik halaman.";

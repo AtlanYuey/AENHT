@@ -619,4 +619,11 @@ T = [
     "Coba di sini: ketuk dua kali atau remas pensil.",
     "Ketuk dua kali diterima.",
     "Remas diterima.",
+    "Keyboard dan pembalik halaman",
+    "Tombol membalik halaman",
+    "Tukar berikutnya dan sebelumnya",
+    "Terhubung: %@",
+    "Keyboard",
+    "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; yang mengirim tombol volume tidak bisa membalik halaman di iPhone dan iPad.",
+    "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; untuk yang mengirim tombol volume, gunakan Tombol volume membalik halaman.",
 ]

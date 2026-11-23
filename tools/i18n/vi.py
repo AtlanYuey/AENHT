@@ -619,4 +619,11 @@ T = [
     "Thử tại đây: chạm hai lần hoặc bóp bút.",
     "Đã nhận chạm hai lần.",
     "Đã nhận thao tác bóp.",
+    "Bàn phím và bộ lật trang",
+    "Phím lật trang",
+    "Đổi trang sau và trang trước",
+    "Đã kết nối: %@",
+    "Bàn phím",
+    "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng không thể lật trang trên iPhone và iPad.",
+    "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng hãy dùng Phím âm lượng để lật trang.",
 ]

@@ -619,3 +619,10 @@
 "Try it here: double-tap or squeeze the pencil." = "Essayez ici : touchez deux fois ou pressez le crayon.";
 "Double-tap received." = "Double toucher reçu.";
 "Squeeze received." = "Pression reçue.";
+"Keyboard and Page Turner" = "Clavier et tourne-page";
+"Keys Turn Pages" = "Les touches tournent les pages";
+"Swap Next and Previous" = "Inverser suivante et précédente";
+"Connected: %@" = "Connecté : %@";
+"Keyboard" = "Clavier";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; ceux qui envoient les boutons de volume ne peuvent pas tourner les pages sur iPhone et iPad.";
+"→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; pour ceux qui envoient les boutons de volume, utilisez Touches de volume pour tourner les pages.";

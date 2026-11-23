@@ -82,7 +82,7 @@ android {
         // Android 10: what the app lock prompt and the system bars need is there from it on.
         minSdk = 29
         targetSdk = 37
-        versionCode = 9
+        versionCode = 10
         versionName = "0.2.3"
         // Super-resolution's native code (ncnn): ARM phones, 64 and 32 bit.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }

@@ -619,4 +619,11 @@ T = [
     "Pruébalo aquí: toca dos veces o aprieta el lápiz.",
     "Doble toque recibido.",
     "Apretón recibido.",
+    "Teclado y pasapáginas",
+    "Las teclas pasan página",
+    "Intercambiar siguiente y anterior",
+    "Conectado: %@",
+    "Teclado",
+    "→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; los que envían los botones de volumen no pueden pasar páginas en iPhone y iPad.",
+    "→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; para los que envían los botones de volumen, usa Teclas de volumen pasan página.",
 ]

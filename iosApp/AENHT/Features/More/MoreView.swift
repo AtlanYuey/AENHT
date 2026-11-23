@@ -101,8 +101,8 @@ struct MoreView: View {
                 SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
                     .badge(downloads.records.filter { $0.state == .downloading }.count)
             }
-            // On an iPad: what the Apple Pencil's double-tap and squeeze do in the reader.
-            if UIDevice.current.userInterfaceIdiom == .pad {
+            // On an iPad whose pencil can double-tap or squeeze: what those do in the reader.
+            if PencilSupport.current?.doubleTaps == true {
                 row(.applePencil) {
                     SettingsLabel(LocalizedStringKey("Apple Pencil"), systemImage: "applepencil", color: .gray)
                 }

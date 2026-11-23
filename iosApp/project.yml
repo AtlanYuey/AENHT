@@ -39,6 +39,8 @@ targets:
       - path: Tests/AppVersionTests.swift
       - path: AENHT/Features/Reader/ApplePencilSupport.swift
       - path: Tests/ApplePencilSupportTests.swift
+      - path: AENHT/Features/Reader/PageKeyMapping.swift
+      - path: Tests/PageKeyMappingTests.swift
     dependencies:
       - package: Nuke
         product: Nuke

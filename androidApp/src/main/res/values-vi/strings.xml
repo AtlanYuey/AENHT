@@ -620,9 +620,16 @@
     <string name="l_617">Thử tại đây: chạm hai lần hoặc bóp bút.</string>
     <string name="l_618">Đã nhận chạm hai lần.</string>
     <string name="l_619">Đã nhận thao tác bóp.</string>
-    <string name="l_620">Sao lưu cài đặt</string>
-    <string name="l_621">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_622">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_623">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_624">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_620">Bàn phím và bộ lật trang</string>
+    <string name="l_621">Phím lật trang</string>
+    <string name="l_622">Đổi trang sau và trang trước</string>
+    <string name="l_623">Đã kết nối: %s</string>
+    <string name="l_624">Bàn phím</string>
+    <string name="l_625">→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng không thể lật trang trên iPhone và iPad.</string>
+    <string name="l_626">→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng hãy dùng Phím âm lượng để lật trang.</string>
+    <string name="l_627">Sao lưu cài đặt</string>
+    <string name="l_628">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_629">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_630">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_631">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

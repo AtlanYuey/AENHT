@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        com.atlanyuey.aenht.core.ExternalKeys.start(this)
         window.isNavigationBarContrastEnforced = false
         handle(intent)
         if (savedInstanceState == null) com.atlanyuey.aenht.core.AppLock.onLaunch()
@@ -76,6 +77,23 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         if (!isChangingConfigurations) com.atlanyuey.aenht.core.AppLock.onBackground()
+    }
+
+    /**
+     * A keyboard's or page turner's keys turn the pages in the reader (Keys
+     * Turn Pages): taken before the views, which would move the focus with them.
+     */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val turn = com.atlanyuey.aenht.screens.ReaderKeys.deviceTurn
+        val key = com.atlanyuey.aenht.core.PageKey.of(event)
+        if (turn != null && key != null && com.atlanyuey.aenht.core.AppSettings.pageKeys) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val rtl = com.atlanyuey.aenht.core.AppSettings.readMode == com.atlanyuey.aenht.core.ReadMode.RightToLeft
+                turn(com.atlanyuey.aenht.core.PageKey.forward(key, rtl, com.atlanyuey.aenht.core.AppSettings.pageKeysSwap))
+            }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     /** The volume keys turn pages in the reader (when that setting is on). */

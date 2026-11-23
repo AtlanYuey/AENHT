@@ -619,4 +619,11 @@ T = [
     "Hier ausprobieren: auf den Stift doppelt tippen oder ihn drücken.",
     "Doppeltippen empfangen.",
     "Drücken empfangen.",
+    "Tastatur und Seitenwender",
+    "Tasten blättern um",
+    "Weiter und Zurück tauschen",
+    "Verbunden: %@",
+    "Tastatur",
+    "→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; solche, die die Lautstärketasten senden, können auf iPhone und iPad nicht umblättern.",
+    "→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; für solche, die die Lautstärketasten senden, gibt es Lautstärketasten blättern.",
 ]

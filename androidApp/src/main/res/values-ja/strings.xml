@@ -620,9 +620,16 @@
     <string name="l_617">ここで試せます：ペンをダブルタップまたはスクイーズしてください。</string>
     <string name="l_618">ダブルタップを受信しました。</string>
     <string name="l_619">スクイーズを受信しました。</string>
-    <string name="l_620">設定のバックアップ</string>
-    <string name="l_621">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_622">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_623">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_624">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_620">キーボードとページめくり器</string>
+    <string name="l_621">キーでページをめくる</string>
+    <string name="l_622">次と前を入れ替える</string>
+    <string name="l_623">接続中：%s</string>
+    <string name="l_624">キーボード</string>
+    <string name="l_625">→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは iPhone と iPad ではページをめくれません。</string>
+    <string name="l_626">→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは「音量ボタンでページ送り」を使ってください。</string>
+    <string name="l_627">設定のバックアップ</string>
+    <string name="l_628">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_629">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_630">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_631">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>
