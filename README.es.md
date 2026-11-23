@@ -61,6 +61,8 @@ Usar aplicaciones separadas para nhentai y E-Hentai obliga a mantener favoritos,
 Funciones comunes:
 
 - **Lector:** varias direcciones, doble página, recorte automático, paso automático de páginas, desplazamiento continuo a velocidad ajustable, superresolución, zonas táctiles, gestos, pantalla encendida, brillo, escala de grises e inversión.
+- **Tabletas:** diseños para tableta en horizontal (inicio, páginas de galería y Perfil), configurables por separado en iPad y tabletas Android.
+- **Dispositivos externos:** Apple Pencil (doble toque, apretar), lápices Android —incluidos los Air actions del Galaxy S Pen—, lápices de Windows como el Surface Pen, y teclados o pasapáginas Bluetooth pasan páginas; sus ajustes aparecen cuando el dispositivo se conecta o se usa.
 - **Traducción:** etiquetas al chino; títulos y comentarios mediante IA, Microsoft Translator o traducción en el dispositivo.
 - **Filtros:** reglas compartidas de etiquetas, títulos y expresiones regulares.
 - **Sincronización:** WebDAV entre iOS y Android; iCloud para los ajustes de iOS.
@@ -139,7 +141,7 @@ El encabezado **Páginas** de una galería alterna entre la primera página y la
 - Los gestos se coordinan con las zonas táctiles: si las zonas están a izquierda/derecha, los gestos verticales pueden salir, mostrar controles o activar la lectura automática; con zonas arriba/abajo, esos gestos pasan al eje horizontal. Los deslizamientos en la dirección de lectura siguen pasando páginas.
 - La pantalla se mantiene encendida cinco minutos desde el último toque por defecto y después vuelve al bloqueo automático del sistema, sin adelantarlo.
 - La separación central de la doble página es de 6 pt por defecto. El ajuste de separación entre páginas solo corresponde al modo continuo con espacios.
-- En horizontal, la tableta muestra información y páginas lado a lado, dos columnas de recomendaciones y una sección Perfil con dos paneles. El resumen incluye cuentas, descargas, historial, favoritos, sincronización y versión. Las portadas cortadas conservan las esquinas redondeadas; iOS 26 añade desenfoques graduales suaves.
+- En horizontal, la tableta muestra información y páginas lado a lado, dos columnas de recomendaciones y una sección Perfil con dos paneles. El resumen incluye cuentas, descargas, historial, favoritos, sincronización y versión. Las portadas cortadas conservan las esquinas redondeadas; iOS 26 añade desenfoques graduales suaves. Cada parte se puede desactivar en **Perfil › Diseño de tableta**; la mitad derecha de la galería muestra las páginas (media pantalla o tres columnas estrechas) u otras versiones, galerías similares y comentarios, y el panel de páginas sigue la página que se lee.
 - Al girar, las listas conservan la tarjeta visible. En iOS se utiliza UICollectionView para las listas de galerías.
 
 ### 5. Superresolución cuando hace falta
@@ -201,7 +203,10 @@ En el selector de aplicaciones se pueden desenfocar solo imágenes, imágenes y 
 - Recorte automático de bordes blancos, intervalo de paso automático y precarga de páginas siguientes.
 - Desplazamiento continuo a velocidad ajustable. A 3 segundos por pantalla o menos, se muestra una advertencia roja. El interruptor para continuar tras deslizar está debajo de la velocidad y desactivado por defecto.
 - El lector decodifica de antemano las dos imágenes que siguen bajo la pantalla en el modo continuo, o las dos siguientes vistas en el modo paginado (hasta cuatro imágenes con doble página). Esta función está siempre activa. El ajuste de precarga controla por separado cuántas páginas se descargan de antemano.
-- Animaciones opcionales, fundido al desactivarlas y paso por deslizamiento con fundido direccional sin arrastrar la página con el dedo.
+- Deslizar para pasar: desplazamiento, o deslizar con fundido (la página no se mueve y un borde de fundido suave sigue al dedo; volver atrás lo cancela). Tocar para pasar: desplazamiento, fundido de página o fundido expansivo (desde donde se toca).
+- Tamaño de página: pellizca para ampliar y mueve la página con un dedo (con inercia); ampliada no pasa ni se cierra, y abajo aparece «Restablecer tamaño». En los modos paginados se puede permitir que la página sea más pequeña que la pantalla. La lectura continua muestra por defecto el ancho de una página entera; se ajusta pellizcando y «Mantener tamaño de página» lo recuerda.
+- Doble toque en el título superior para ir a la primera página; en el lector, tocar la barra de estado no mueve nada.
+- Apple Pencil (iPad): doble toque o apretar (Pro) sin tocar la pantalla; la generación se deduce del modelo de iPad y de los gestos recibidos. Lápices Android: botón del lápiz, segundo botón y botón trasero configurables; Air actions del Galaxy S Pen. Lápices de Windows (Surface Pen): el botón superior. Teclados y pasapáginas Bluetooth: flechas, Re Pág / Av Pág y Espacio (una pantalla cada vez en lectura continua).
 - Zonas táctiles laterales o superiores/inferiores; gestos largos perpendiculares para salir, mostrar controles o activar la lectura automática; pellizco y doble toque para ampliar.
 - Pantalla encendida: desactivado, 5 minutos, 10 minutos o siempre. Superresolución: desactivada, automática o siempre, con modelos adicionales.
 - Brillo, escala de grises e inversión solo en las páginas; salto, guardado y uso compartido de páginas; botones de volumen para pasar página en Android.
@@ -284,6 +289,9 @@ Instala el APK directamente. Las versiones publicadas conservan el certificado p
 | Lector | Zonas táctiles / centro | Pasar página / mostrar controles |
 | Lector | Deslizamiento largo perpendicular | Salir, controles o lectura automática, según ajuste |
 | Lector | Pellizco / doble toque | Ampliar |
+| Lector | Doble toque en el título | Primera página |
+| Lector (iPad) | Apple Pencil: doble toque / apretar | Página siguiente / anterior (configurable) |
+| Lector | Teclado o pasapáginas: → ↓ Espacio / ← ↑ | Página siguiente / anterior |
 
 ## Estructura del proyecto
 
@@ -344,6 +352,8 @@ Las capturas se generan en `androidApp/build/screens/`. GitHub Actions compila A
 - [x] Traducción de títulos y comentarios con IA, Microsoft o local; etiquetas traducidas
 - [x] Primera implementación de superresolución con modelos de anime Real-ESRGAN
 - [x] Sincronización WebDAV e iCloud
+- [x] Diseños para tableta en iPad y tabletas Android
+- [x] Pasar páginas con Apple Pencil, lápices Android, lápices de Windows, teclados y pasapáginas
 - ❌ **Traducción de páginas de cómic (reconocer y traducir texto de las imágenes): no se contempla por ahora.** Traducir un cómic entero consume demasiados tokens. En iPhone / iPad se puede usar [AY-Translate](https://github.com/AtlanYuey/AY_Translate) para reconocer y traducir solo la página actual mediante una captura de pantalla.
 - [ ] Favoritos locales sin iniciar sesión
 - [ ] Importar datos de AEros-NHT

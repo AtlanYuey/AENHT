@@ -61,6 +61,8 @@ Using separate apps for nhentai and E-Hentai means separate favorites, histories
 Features shared by both sites:
 
 - **Reader:** reading directions, double pages, automatic cropping, automatic page turns, continuous auto scrolling with adjustable speed, super-resolution, tap zones, gestures, keep-awake, brightness, grayscale, and inversion.
+- **Tablets:** Tablet Layout settings for the home page, gallery pages and Me in landscape, on iPad and Android tablets.
+- **External devices:** Apple Pencil (double-tap, squeeze), Android styluses including Galaxy S Pen Air actions, Windows pens such as Surface Pen, and keyboards or Bluetooth page turners turn pages; their settings appear once a device is connected or used.
 - **Translation:** Chinese tag translations; titles and comments through AI services, Microsoft Translator, or on-device translation.
 - **Filtering:** shared tag, title, and regular-expression rules.
 - **Sync:** WebDAV between iOS and Android, plus iCloud settings sync on iOS.
@@ -140,7 +142,7 @@ The gallery's **Pages** heading similarly switches between the first page and th
 - Tap zones and swipe gestures work together. With left/right tap zones, vertical gestures can exit, show controls, or toggle auto reading; with top/bottom zones, those gestures move to the horizontal axis. Swipes along the reading direction remain page turns.
 - Keep-awake defaults to five minutes from the last touch, then hands control back to the system's auto-lock. It does not lock earlier than the system.
 - Double pages use a 6 pt center gap by default. Page-spacing settings apply only to continuous reading with gaps.
-- In tablet landscape, gallery information and pages sit side by side, home recommendations form two columns, and **Me** uses a two-pane layout. The overview includes accounts, downloads, history and favorite counts, sync, and version information. Split covers keep rounded corners; iOS 26 adds soft gradient blur.
+- In tablet landscape, gallery information and pages sit side by side, home recommendations form two columns, and **Me** uses a two-pane layout. The overview includes accounts, downloads, history and favorite counts, sync, and version information. Split covers keep rounded corners; iOS 26 adds soft gradient blur. Each part can be turned off in **Me › Tablet Layout**; the gallery page's right half shows the pages (half the page or three narrow columns) or other versions, similar galleries and comments, and the pages pane follows the page being read.
 - Rotation preserves the visible card while relaying out the list. iOS gallery lists use UICollectionView.
 
 ### 5. Super-resolution when needed
@@ -202,7 +204,10 @@ The app switcher can blur images only, blur images and text, blur the whole app,
 - Automatic white-border cropping, adjustable automatic page-turn intervals, and preloading of following pages.
 - Continuous auto scrolling with adjustable speed. At three seconds per screen or faster, the speed warning turns red. **Continue Auto Scroll While Dragging** is below the speed control and off by default.
 - The reader decodes the next two images below the screen in continuous mode, or the next two turns in paged mode (up to four images with two-page spreads). This runs by default. The preload page count separately controls how many pages are downloaded ahead.
-- Optional page-turn animations, a fade when disabled, and directional swipe-fade page turns without dragging the page under the finger.
+- Swipe to Turn: slide, or Swipe Fade (the page stays and a soft fade edge follows the finger; drag back to cancel). Tap to Turn: slide, Page Fade, or Spread Fade (spreading from where you tapped).
+- Page size: pinch to enlarge and move the page with one finger (with momentum); an enlarged page doesn't turn or close, and Reset Size appears at the bottom. Paged modes can allow pages smaller than the screen. Continuous reading shows a whole page's width by default; pinch to change it, and Keep Page Size remembers it.
+- Double-tap the title at the top to go to the first page; a tap on the status bar does nothing in the reader.
+- Apple Pencil (iPad): double-tap or squeeze (Pro), held away from the screen; the pencil's generation is inferred from the iPad model and the gestures received. Android styluses: configurable pen, second and tail buttons; Galaxy S Pen Air actions. Windows pens (Surface Pen): the top button. Keyboards and Bluetooth page turners: arrows, Page Up / Down and Space (a screen at a time in continuous reading).
 - Left/right or top/bottom tap zones; long perpendicular swipes can exit, toggle controls, or start/stop auto reading. Pinch and double tap zoom the page.
 - Keep-awake: off, five minutes, ten minutes, or always. Super-resolution: off, automatic, or always, with downloadable higher-quality models.
 - Page-only brightness, grayscale, and inversion; jump to a page, save or share one page; Android volume-key page turns.
@@ -285,6 +290,9 @@ Install the Android APK directly. Release APKs use a consistent signing certific
 | Reader | Tap zones / center | Turn page / show controls |
 | Reader | Long perpendicular swipe | Configured exit, controls, or auto reading |
 | Reader | Pinch / double tap | Zoom |
+| Reader | Double-tap the title | First page |
+| Reader (iPad) | Apple Pencil double-tap / squeeze | Next / previous page (configurable) |
+| Reader | Keyboard or page turner: → ↓ Space / ← ↑ | Next / previous page |
 
 ## Project structure
 
@@ -345,6 +353,8 @@ Screenshot output is in `androidApp/build/screens/`. GitHub Actions builds APKs 
 - [x] AI, Microsoft, and on-device title/comment translation; tag translation
 - [x] First super-resolution implementation with Real-ESRGAN anime models
 - [x] WebDAV and iCloud sync
+- [x] Tablet layouts on iPad and Android tablets
+- [x] Apple Pencil, Android stylus, Windows pen, keyboard and page-turner page turns
 - ❌ **Comic-page translation (recognizing and translating text in images): not planned for now.** Translating an entire comic consumes too many tokens. On iPhone / iPad, use [AY-Translate](https://github.com/AtlanYuey/AY_Translate) to recognize and translate only the current page from a screenshot.
 - [ ] Local favorites without login
 - [ ] Data import from AEros-NHT
