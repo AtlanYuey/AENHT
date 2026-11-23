@@ -83,7 +83,7 @@ android {
         minSdk = 29
         targetSdk = 37
         versionCode = 10
-        versionName = "0.2.3"
+        versionName = "0.2.4"
         // Super-resolution's native code (ncnn): ARM phones, 64 and 32 bit.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         externalNativeBuild {
