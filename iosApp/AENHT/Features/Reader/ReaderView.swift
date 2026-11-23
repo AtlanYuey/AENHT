@@ -297,6 +297,9 @@ struct ReaderView: View {
         content
             // Back from the left edge only: a swipe in the middle is the reader's.
             .background(EdgeOnlyBackSwipe().frame(width: 0, height: 0))
+            // The Apple Pencil's double-tap and squeeze (Controls › Apple Pencil).
+            .background(PencilGestures(onDoubleTap: { pencil(settings.pencilDoubleTap) },
+                                       onSqueeze: { pencil(settings.pencilSqueeze) }))
             .blur(radius: privacy == .blurImages ? 40 : 0)
             .grayscale(settings.readerGrayscale ? 1 : 0)
             .modifier(InvertIf(enabled: settings.readerInvert))
@@ -428,6 +431,20 @@ struct ReaderView: View {
         }
         hider.schedule(after: settings.readerControlsDelay) {
             if !sliderEditing, !showSettings { chromeVisible = false }
+        }
+    }
+
+    /// The Apple Pencil's double-tap or squeeze: what Controls › Apple Pencil says.
+    /// An enlarged page turns as it does from the edges: not (the finger moves it).
+    private func pencil(_ action: PencilAction) {
+        switch action {
+        case .none: break
+        case .nextPage, .previousPage:
+            guard !isEnlarged, !showSettings else { return }
+            let forward = action == .nextPage
+            go(step(forward: forward))
+        case .controls: chromeVisible.toggle()
+        case .autoRead: autoRead.toggle()
         }
     }
 
@@ -934,6 +951,10 @@ struct ReadingSettingsSections: View {
     }
 
     @ViewBuilder private var controls: some View {
+        // The pencil's gestures, on an iPad.
+        if PencilSupport.current != nil {
+            ApplePencilSection()
+        }
         Section {
             Toggle("Double Tap Top to Go to Start", isOn: $settings.doubleTapTopToStart)
         } footer: {

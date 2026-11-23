@@ -5,7 +5,7 @@ import UIKit
 /// The Me page's entries: on a wide screen (an iPad held sideways) they are
 /// the left column and open in the right one (MoreTab).
 enum MorePage: Hashable {
-    case overview, accounts, downloads, tabletLayout, sites, filters, translation, appearance, reading, general, iCloud, webDav, language, about
+    case overview, accounts, downloads, applePencil, tabletLayout, sites, filters, translation, appearance, reading, general, iCloud, webDav, language, about
 
     /// The page an entry opens; [selection] lets the overview open the others.
     @MainActor @ViewBuilder
@@ -14,6 +14,7 @@ enum MorePage: Hashable {
         case .overview: MoreOverview(selection: selection)
         case .accounts: AccountsView()
         case .downloads: DownloadsView()
+        case .applePencil: ApplePencilSettingsView()
         case .tabletLayout: TabletLayoutSettingsView()
         case .sites: SitesSettingsView()
         case .filters: FiltersSettingsView()
@@ -99,6 +100,12 @@ struct MoreView: View {
             row(.downloads) {
                 SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
                     .badge(downloads.records.filter { $0.state == .downloading }.count)
+            }
+            // On an iPad: what the Apple Pencil's double-tap and squeeze do in the reader.
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                row(.applePencil) {
+                    SettingsLabel(LocalizedStringKey("Apple Pencil"), systemImage: "applepencil", color: .gray)
+                }
             }
             if showsTabletLayout {
                 row(.tabletLayout) {

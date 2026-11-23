@@ -190,6 +190,22 @@ enum ReaderGesture: String, CaseIterable, Identifiable {
     }
 }
 
+/// What a gesture of the Apple Pencil does in the reader (double-tap, squeeze).
+enum PencilAction: String, CaseIterable, Identifiable {
+    case none, nextPage, previousPage, controls, autoRead
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .none: String(localized: "Nothing")
+        case .nextPage: String(localized: "Next Page")
+        case .previousPage: String(localized: "Previous Page")
+        case .controls: String(localized: "Show or Hide Controls")
+        case .autoRead: String(localized: "Start or Stop Auto Read")
+        }
+    }
+}
+
 /// What the app shows when it is in the background (the app switcher's picture).
 enum BackgroundPrivacy: String, CaseIterable, Identifiable {
     case off, blurApp, cover, blurContent, blurImages
@@ -481,6 +497,11 @@ final class AppSettings {
     var tapZones: TapZones { didSet { save(tapZones.rawValue, "tapZones") } }
     /// Reader swipes the pages don't use: up / down in the left-right modes, left / right in the top-to-bottom ones.
     var swipeUp: ReaderGesture { didSet { save(swipeUp.rawValue, "swipeUp") } }
+    /// The Apple Pencil in the reader: a double-tap (2nd generation, Pro) and a squeeze (Pro).
+    var pencilDoubleTap: PencilAction { didSet { save(pencilDoubleTap.rawValue, "pencilDoubleTap") } }
+    var pencilSqueeze: PencilAction { didSet { save(pencilSqueeze.rawValue, "pencilSqueeze") } }
+    /// The gestures the pencil used with this iPad has sent (which pencil it is): this device's.
+    var pencilSeen: PencilSeen { didSet { defaults.set(pencilSeen.rawValue, forKey: "pencilSeen") } }
     var swipeDown: ReaderGesture { didSet { save(swipeDown.rawValue, "swipeDown") } }
     var swipeLeft: ReaderGesture { didSet { save(swipeLeft.rawValue, "swipeLeft") } }
     var swipeRight: ReaderGesture { didSet { save(swipeRight.rawValue, "swipeRight") } }
@@ -633,6 +654,9 @@ final class AppSettings {
         blockedCommenters = d.string(forKey: "blockedCommenters") ?? ""
         tapZones = TapZones(rawValue: d.string(forKey: "tapZones") ?? "") ?? .leftRight
         swipeUp = ReaderGesture(rawValue: d.string(forKey: "swipeUp") ?? "") ?? .none
+        pencilDoubleTap = PencilAction(rawValue: d.string(forKey: "pencilDoubleTap") ?? "") ?? .nextPage
+        pencilSqueeze = PencilAction(rawValue: d.string(forKey: "pencilSqueeze") ?? "") ?? .previousPage
+        pencilSeen = PencilSeen(rawValue: d.integer(forKey: "pencilSeen")) ?? .nothing
         swipeDown = ReaderGesture(rawValue: d.string(forKey: "swipeDown") ?? "") ?? .exit
         swipeLeft = ReaderGesture(rawValue: d.string(forKey: "swipeLeft") ?? "") ?? .none
         swipeRight = ReaderGesture(rawValue: d.string(forKey: "swipeRight") ?? "") ?? .exit
@@ -742,6 +766,8 @@ final class AppSettings {
         values["blockedCommenters"] = blockedCommenters
         values["tapZones"] = tapZones.rawValue
         values["swipeUp"] = swipeUp.rawValue
+        values["pencilDoubleTap"] = pencilDoubleTap.rawValue
+        values["pencilSqueeze"] = pencilSqueeze.rawValue
         values["swipeDown"] = swipeDown.rawValue
         values["swipeLeft"] = swipeLeft.rawValue
         values["swipeRight"] = swipeRight.rawValue
@@ -848,6 +874,8 @@ final class AppSettings {
         case "blockedCommenters": set(\.blockedCommenters, string)
         case "tapZones": set(\.tapZones, string.flatMap(TapZones.init(rawValue:)))
         case "swipeUp": set(\.swipeUp, string.flatMap(ReaderGesture.init(rawValue:)))
+        case "pencilDoubleTap": set(\.pencilDoubleTap, string.flatMap(PencilAction.init(rawValue:)))
+        case "pencilSqueeze": set(\.pencilSqueeze, string.flatMap(PencilAction.init(rawValue:)))
         case "swipeDown": set(\.swipeDown, string.flatMap(ReaderGesture.init(rawValue:)))
         case "swipeLeft": set(\.swipeLeft, string.flatMap(ReaderGesture.init(rawValue:)))
         case "swipeRight": set(\.swipeRight, string.flatMap(ReaderGesture.init(rawValue:)))

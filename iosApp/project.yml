@@ -20,7 +20,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: minimal
     MARKETING_VERSION: "0.2.3"
-    CURRENT_PROJECT_VERSION: "22"
+    CURRENT_PROJECT_VERSION: "23"
     AENHT_PRERELEASE: ""
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
@@ -37,6 +37,8 @@ targets:
       - path: Tests/ReaderImagePreparationTests.swift
       - path: AENHT/Core/AppVersion.swift
       - path: Tests/AppVersionTests.swift
+      - path: AENHT/Features/Reader/ApplePencilSupport.swift
+      - path: Tests/ApplePencilSupportTests.swift
     dependencies:
       - package: Nuke
         product: Nuke

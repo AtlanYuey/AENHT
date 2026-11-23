@@ -602,5 +602,21 @@
  "Allow Smaller Pages",
  "Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.",
  "Double Tap Top to Go to Start",
- "Double-tap the title at the top of the reader to go back to the first page."
+ "Double-tap the title at the top of the reader to go back to the first page.",
+ "Next Page",
+ "Previous Page",
+ "Apple Pencil",
+ "Double-Tap",
+ "Squeeze",
+ "Detected: Apple Pencil Pro (it was squeezed).",
+ "Detected: Apple Pencil (2nd generation) or Pro (it was double-tapped).",
+ "Double-tap is off in Settings › Apple Pencil, so the reader doesn't respond to it.",
+ "Squeeze is off in Settings › Apple Pencil, so the reader doesn't respond to it.",
+ "This iPad works with Apple Pencil Pro: while reading, double-tap or squeeze it, held away from the screen.",
+ "This iPad works with Apple Pencil (2nd generation): while reading, double-tap it, held away from the screen. Squeezing needs Apple Pencil Pro, which this iPad doesn't work with.",
+ "The Apple Pencil this iPad works with can't double-tap or squeeze, so it can't turn pages.",
+ "While reading, double-tap Apple Pencil (2nd generation) or Pro, or squeeze Apple Pencil Pro, held away from the screen.",
+ "Try it here: double-tap or squeeze the pencil.",
+ "Double-tap received.",
+ "Squeeze received."
 ]
