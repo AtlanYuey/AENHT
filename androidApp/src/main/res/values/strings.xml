@@ -627,9 +627,16 @@
     <string name="l_624">Keyboard</string>
     <string name="l_625">→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can\'t turn pages on iPhone and iPad.</string>
     <string name="l_626">→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages.</string>
-    <string name="l_627">Settings Backup</string>
-    <string name="l_628">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_629">Android\'s own backup also keeps these settings.</string>
-    <string name="l_630">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_631">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_627">Stylus</string>
+    <string name="l_628">Pen Button</string>
+    <string name="l_629">Second Button</string>
+    <string name="l_630">Tail Button</string>
+    <string name="l_631">While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen.</string>
+    <string name="l_632">Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen\'s button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too.</string>
+    <string name="l_633">A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one.</string>
+    <string name="l_634">Settings Backup</string>
+    <string name="l_635">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_636">Android\'s own backup also keeps these settings.</string>
+    <string name="l_637">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_638">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

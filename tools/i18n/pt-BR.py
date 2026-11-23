@@ -626,4 +626,11 @@ T = [
     "Teclado",
     "→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; os que enviam os botões de volume não viram páginas no iPhone e no iPad.",
     "→ ↓, Page Down e Espaço vão para a próxima página; ← ↑ e Page Up para a anterior (← → seguem a direção de leitura). Nos modos contínuos, rolam uma tela. A maioria dos passadores de página Bluetooth envia essas teclas; para os que enviam os botões de volume, use Botões de volume passam página.",
+    "Caneta",
+    "Botão da caneta",
+    "Segundo botão",
+    "Botão traseiro",
+    "Durante a leitura, pressione um botão da caneta sobre a tela; canetas com botões Bluetooth (Android 14 ou posterior) funcionam também longe dela. Os botões dependem da caneta.",
+    "Galaxy S Pen: ative o AENHT em Configurações › Recursos avançados › S Pen › Air actions. Depois, um toque no botão da S Pen vai para a próxima página, dois para a anterior, e gestos para a esquerda e direita no ar também viram a página.",
+    "Uma caneta do Windows pareada por Bluetooth (como a Surface Pen): um clique no botão de cima vai para a próxima página, dois cliques para a anterior.",
 ]

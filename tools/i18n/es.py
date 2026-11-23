@@ -626,4 +626,11 @@ T = [
     "Teclado",
     "→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; los que envían los botones de volumen no pueden pasar páginas en iPhone y iPad.",
     "→ ↓, Av Pág y Espacio pasan a la página siguiente; ← ↑ y Re Pág a la anterior (← → siguen la dirección de lectura). En los modos continuos desplazan una pantalla. La mayoría de pasapáginas Bluetooth envían estas teclas; para los que envían los botones de volumen, usa Teclas de volumen pasan página.",
+    "Lápiz",
+    "Botón del lápiz",
+    "Segundo botón",
+    "Botón trasero",
+    "Mientras lees, pulsa un botón del lápiz sostenido sobre la pantalla; los lápices con botones Bluetooth (Android 14 o posterior) funcionan también lejos de ella. Los botones dependen del lápiz.",
+    "Galaxy S Pen: activa AENHT en Ajustes › Funciones avanzadas › S Pen › Air actions. Así, una pulsación del botón del S Pen pasa a la página siguiente, dos a la anterior, y deslizar a izquierda o derecha en el aire también pasa página.",
+    "Un lápiz de Windows emparejado por Bluetooth (como Surface Pen): un clic en su botón superior pasa a la página siguiente, dos clics a la anterior.",
 ]

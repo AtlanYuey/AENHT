@@ -627,9 +627,16 @@
     <string name="l_624">Bàn phím</string>
     <string name="l_625">→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng không thể lật trang trên iPhone và iPad.</string>
     <string name="l_626">→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng hãy dùng Phím âm lượng để lật trang.</string>
-    <string name="l_627">Sao lưu cài đặt</string>
-    <string name="l_628">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_629">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_630">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_631">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_627">Bút cảm ứng</string>
+    <string name="l_628">Nút bút</string>
+    <string name="l_629">Nút thứ hai</string>
+    <string name="l_630">Nút đuôi bút</string>
+    <string name="l_631">Khi đọc, giữ bút phía trên màn hình rồi bấm nút bút; bút có nút Bluetooth (Android 14 trở lên) dùng được cả khi cách xa màn hình. Số nút tùy theo bút.</string>
+    <string name="l_632">Galaxy S Pen: bật AENHT trong Cài đặt › Tính năng nâng cao › S Pen › Air actions. Sau đó bấm nút S Pen một lần để sang trang sau, hai lần để về trang trước, vẫy sang trái hoặc phải trên không cũng lật trang.</string>
+    <string name="l_633">Bút Windows ghép nối qua Bluetooth (như Surface Pen): bấm nút trên cùng một lần để sang trang sau, hai lần để về trang trước.</string>
+    <string name="l_634">Sao lưu cài đặt</string>
+    <string name="l_635">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_636">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_637">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_638">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

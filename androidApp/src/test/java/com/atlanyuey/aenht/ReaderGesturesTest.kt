@@ -78,6 +78,9 @@ class ReaderGesturesTest {
         AppSettings.keepContinuousPageSize = true
         AppSettings.continuousPageScale = 1.0
         AppSettings.doubleTapTopToStart = true
+        AppSettings.stylusPrimary = StylusAction.NextPage
+        AppSettings.stylusSecondary = StylusAction.PreviousPage
+        AppSettings.stylusTail = StylusAction.Controls
     }
 
     private fun field(reader: ReaderScreen, name: String): Any =
@@ -243,6 +246,33 @@ class ReaderGesturesTest {
         assertTrue(PageKey.forward(PageKey.Left, rightToLeft = true, swap = false))
         assertTrue(PageKey.forward(PageKey.Next, rightToLeft = true, swap = false))
         assertFalse(PageKey.forward(PageKey.Next, rightToLeft = false, swap = true))
+    }
+
+    @Test fun penButtonsAndWindowsPenKeysMap() {
+        // A Windows pen's (Surface Pen's) top button: F20 a click, F19 a double click.
+        fun key(code: Int) = PageKey.of(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, code))
+        assertEquals(PageKey.Next, key(android.view.KeyEvent.KEYCODE_F20))
+        assertEquals(PageKey.Previous, key(android.view.KeyEvent.KEYCODE_F19))
+        // Android 14's stylus keys, and a hovering pen's barrel buttons.
+        assertEquals(StylusButton.Primary, StylusButton.ofKey(android.view.KeyEvent.KEYCODE_STYLUS_BUTTON_PRIMARY))
+        assertEquals(StylusButton.Secondary, StylusButton.ofKey(android.view.KeyEvent.KEYCODE_STYLUS_BUTTON_SECONDARY))
+        assertEquals(StylusButton.Tail, StylusButton.ofKey(android.view.KeyEvent.KEYCODE_STYLUS_BUTTON_TAIL))
+        assertNull(StylusButton.ofKey(android.view.KeyEvent.KEYCODE_A))
+        assertEquals(StylusButton.Primary, StylusButton.ofMotionButton(android.view.MotionEvent.BUTTON_STYLUS_PRIMARY))
+    }
+
+    @Test fun penButtonsDoWhatControlsSay() {
+        val reader = open(ReadMode.LeftToRight)
+        ReaderKeys.stylus!!(StylusButton.Primary)
+        settle()
+        assertEquals(3, page(reader))
+        ReaderKeys.stylus!!(StylusButton.Secondary)
+        settle()
+        assertEquals(2, page(reader))
+        AppSettings.stylusPrimary = StylusAction.None
+        ReaderKeys.stylus!!(StylusButton.Primary)
+        settle()
+        assertEquals("set to nothing, the button does nothing", 2, page(reader))
     }
 
     @Test fun keysTurnAPageOrScrollAScreen() {

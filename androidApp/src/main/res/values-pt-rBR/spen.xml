@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Labels of the Galaxy S Pen Air actions (res/xml/spen_remote_actions.xml). -->
+<resources>
+    <string name="spen_next">Próxima página</string>
+    <string name="spen_previous">Página anterior</string>
+</resources>

@@ -626,3 +626,10 @@
 "Keyboard" = "키보드";
 "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓, Page Down, 스페이스는 다음 페이지로, ← ↑, Page Up은 이전 페이지로 넘깁니다(← →는 읽는 방향을 따름). 연속 모드에서는 한 화면씩 스크롤합니다. 대부분의 블루투스 페이지 넘김 리모컨은 이 키를 보냅니다. 음량 버튼을 보내는 리모컨은 iPhone과 iPad에서 페이지를 넘길 수 없습니다.";
 "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓, Page Down, 스페이스는 다음 페이지로, ← ↑, Page Up은 이전 페이지로 넘깁니다(← →는 읽는 방향을 따름). 연속 모드에서는 한 화면씩 스크롤합니다. 대부분의 블루투스 페이지 넘김 리모컨은 이 키를 보냅니다. 음량 버튼을 보내는 리모컨은 '볼륨 키로 페이지 넘기기'를 사용하세요.";
+"Stylus" = "스타일러스";
+"Pen Button" = "펜 버튼";
+"Second Button" = "두 번째 버튼";
+"Tail Button" = "펜 끝 버튼";
+"While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "읽는 중에 화면 위에 펜을 띄운 채 버튼을 누르세요. 블루투스 버튼이 있는 펜(Android 14 이상)은 화면에서 떼어도 됩니다. 버튼 구성은 펜마다 다릅니다.";
+"Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen: 설정 › 유용한 기능 › S Pen › 에어 액션에서 AENHT를 켜세요. S Pen 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어가며, 공중에서 좌우로 움직여도 넘길 수 있습니다.";
+"A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "블루투스로 연결한 Windows 펜(Surface 펜 등): 윗부분 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어갑니다.";

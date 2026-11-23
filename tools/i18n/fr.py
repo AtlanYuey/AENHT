@@ -626,4 +626,11 @@ T = [
     "Clavier",
     "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; ceux qui envoient les boutons de volume ne peuvent pas tourner les pages sur iPhone et iPad.",
     "→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; pour ceux qui envoient les boutons de volume, utilisez Touches de volume pour tourner les pages.",
+    "Stylet",
+    "Bouton du stylet",
+    "Second bouton",
+    "Bouton arrière",
+    "Pendant la lecture, appuyez sur un bouton du stylet tenu au-dessus de l'écran ; les stylets à boutons Bluetooth (Android 14 ou ultérieur) fonctionnent aussi à distance. Les boutons dépendent du stylet.",
+    "Galaxy S Pen : activez AENHT dans Paramètres › Fonctions avancées › S Pen › Air actions. Un appui sur le bouton du S Pen passe alors à la page suivante, deux appuis à la précédente, et des gestes vers la gauche ou la droite en l'air tournent aussi les pages.",
+    "Un stylet Windows jumelé en Bluetooth (comme le Surface Pen) : un clic sur son bouton du haut passe à la page suivante, un double clic à la précédente.",
 ]

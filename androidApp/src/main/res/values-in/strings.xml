@@ -627,9 +627,16 @@
     <string name="l_624">Keyboard</string>
     <string name="l_625">→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; yang mengirim tombol volume tidak bisa membalik halaman di iPhone dan iPad.</string>
     <string name="l_626">→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; untuk yang mengirim tombol volume, gunakan Tombol volume membalik halaman.</string>
-    <string name="l_627">Cadangan Pengaturan</string>
-    <string name="l_628">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_629">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_630">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_631">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_627">Stylus</string>
+    <string name="l_628">Tombol pena</string>
+    <string name="l_629">Tombol kedua</string>
+    <string name="l_630">Tombol ujung belakang</string>
+    <string name="l_631">Saat membaca, tekan tombol stylus yang diarahkan di atas layar; pena dengan tombol Bluetooth (Android 14 dan lebih baru) juga berfungsi dari jauh. Tombol yang ada bergantung pada penanya.</string>
+    <string name="l_632">Galaxy S Pen: aktifkan AENHT di Pengaturan › Fitur lanjutan › S Pen › Air actions. Lalu satu tekan tombol S Pen ke halaman berikutnya, dua tekan ke halaman sebelumnya, dan gerakan ke kiri dan kanan di udara juga membalik halaman.</string>
+    <string name="l_633">Pena Windows yang dipasangkan lewat Bluetooth (seperti Surface Pen): sekali klik tombol atasnya ke halaman berikutnya, klik dua kali ke halaman sebelumnya.</string>
+    <string name="l_634">Cadangan Pengaturan</string>
+    <string name="l_635">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_636">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_637">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_638">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

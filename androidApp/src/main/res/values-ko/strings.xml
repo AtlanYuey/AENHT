@@ -627,9 +627,16 @@
     <string name="l_624">키보드</string>
     <string name="l_625">→ ↓, Page Down, 스페이스는 다음 페이지로, ← ↑, Page Up은 이전 페이지로 넘깁니다(← →는 읽는 방향을 따름). 연속 모드에서는 한 화면씩 스크롤합니다. 대부분의 블루투스 페이지 넘김 리모컨은 이 키를 보냅니다. 음량 버튼을 보내는 리모컨은 iPhone과 iPad에서 페이지를 넘길 수 없습니다.</string>
     <string name="l_626">→ ↓, Page Down, 스페이스는 다음 페이지로, ← ↑, Page Up은 이전 페이지로 넘깁니다(← →는 읽는 방향을 따름). 연속 모드에서는 한 화면씩 스크롤합니다. 대부분의 블루투스 페이지 넘김 리모컨은 이 키를 보냅니다. 음량 버튼을 보내는 리모컨은 \'볼륨 키로 페이지 넘기기\'를 사용하세요.</string>
-    <string name="l_627">설정 백업</string>
-    <string name="l_628">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_629">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_630">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_631">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_627">스타일러스</string>
+    <string name="l_628">펜 버튼</string>
+    <string name="l_629">두 번째 버튼</string>
+    <string name="l_630">펜 끝 버튼</string>
+    <string name="l_631">읽는 중에 화면 위에 펜을 띄운 채 버튼을 누르세요. 블루투스 버튼이 있는 펜(Android 14 이상)은 화면에서 떼어도 됩니다. 버튼 구성은 펜마다 다릅니다.</string>
+    <string name="l_632">Galaxy S Pen: 설정 › 유용한 기능 › S Pen › 에어 액션에서 AENHT를 켜세요. S Pen 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어가며, 공중에서 좌우로 움직여도 넘길 수 있습니다.</string>
+    <string name="l_633">블루투스로 연결한 Windows 펜(Surface 펜 등): 윗부분 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어갑니다.</string>
+    <string name="l_634">설정 백업</string>
+    <string name="l_635">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_636">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_637">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_638">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

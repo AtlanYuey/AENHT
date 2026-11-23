@@ -179,6 +179,8 @@ object ReaderKeys {
     var handler: ((Boolean) -> Unit)? = null
     /** A keyboard's or page turner's turn: a page, a screen in the continuous modes. */
     var deviceTurn: ((Boolean) -> Unit)? = null
+    /** A stylus button: what Controls › Stylus says it does. */
+    var stylus: ((com.atlanyuey.aenht.core.StylusButton) -> Unit)? = null
 }
 
 /** Grayscale and / or inverted colors for the pages (Android 12+). */
@@ -613,7 +615,21 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     }
                 }
             }
-            onDispose { ReaderKeys.handler = null; ReaderKeys.deviceTurn = null }
+            ReaderKeys.stylus = { button ->
+                val action = when (button) {
+                    com.atlanyuey.aenht.core.StylusButton.Primary -> AppSettings.stylusPrimary
+                    com.atlanyuey.aenht.core.StylusButton.Secondary -> AppSettings.stylusSecondary
+                    com.atlanyuey.aenht.core.StylusButton.Tail -> AppSettings.stylusTail
+                }
+                when (action) {
+                    com.atlanyuey.aenht.core.StylusAction.None -> {}
+                    com.atlanyuey.aenht.core.StylusAction.NextPage -> ReaderKeys.deviceTurn?.invoke(true)
+                    com.atlanyuey.aenht.core.StylusAction.PreviousPage -> ReaderKeys.deviceTurn?.invoke(false)
+                    com.atlanyuey.aenht.core.StylusAction.Controls -> chromeVisible = !chromeVisible
+                    com.atlanyuey.aenht.core.StylusAction.AutoRead -> autoRead = !autoRead
+                }
+            }
+            onDispose { ReaderKeys.handler = null; ReaderKeys.deviceTurn = null; ReaderKeys.stylus = null }
         }
         // Keep Screen On: held on until that long after the last touch, then
         // left to the system's own screen timeout (never turned off sooner).
@@ -1868,6 +1884,25 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    // A stylus: once one has been used on this device.
+    if (AppSettings.stylusSeen) {
+        val actions = com.atlanyuey.aenht.core.StylusAction.entries
+        section(
+            "Stylus",
+            footer = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FooterText(tr("While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen."))
+                    if (com.atlanyuey.aenht.core.ExternalKeys.hasSPen) {
+                        FooterText(tr("Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too."))
+                    }
+                }
+            },
+        ) {
+            PickerRow(tr("Pen Button"), actions, AppSettings.stylusPrimary, label = { tr(it.title) }, onSelect = { AppSettings.stylusPrimary = it })
+            PickerRow(tr("Second Button"), actions, AppSettings.stylusSecondary, label = { tr(it.title) }, onSelect = { AppSettings.stylusSecondary = it })
+            PickerRow(tr("Tail Button"), actions, AppSettings.stylusTail, label = { tr(it.title) }, onSelect = { AppSettings.stylusTail = it }, last = true)
+        }
+    }
     // A keyboard or Bluetooth page turner: only while one is connected.
     val keyboards = com.atlanyuey.aenht.core.ExternalKeys.names
     if (keyboards.isNotEmpty()) {
@@ -1877,6 +1912,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FooterText(tr("Connected: %@", keyboards.joinToString(", ")))
                     FooterText(tr("→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages."))
+                    FooterText(tr("A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one."))
                 }
             },
         ) {

@@ -146,6 +146,19 @@ enum class TapTurn(val raw: String, val title: String) {
     }
 }
 
+/** What a stylus button does in the reader (like the Apple Pencil's gestures on iPad). */
+enum class StylusAction(val raw: String, val title: String) {
+    None("none", "Nothing"),
+    NextPage("nextPage", "Next Page"),
+    PreviousPage("previousPage", "Previous Page"),
+    Controls("controls", "Show or Hide Controls"),
+    AutoRead("autoRead", "Start or Stop Auto Read");
+
+    companion object {
+        fun of(raw: String?, default: StylusAction) = entries.firstOrNull { it.raw == raw } ?: default
+    }
+}
+
 /** What the right half of a gallery page shows on a tablet held sideways. */
 enum class TabletDetailContent(val raw: String, val title: String) {
     Pages("pages", "Pages"),
@@ -375,6 +388,10 @@ object AppSettings {
         volumeKeyTurns = p.getBoolean("volumeKeyTurns", false)
         pageKeys = p.getBoolean("pageKeys", true)
         pageKeysSwap = p.getBoolean("pageKeysSwap", false)
+        stylusPrimary = StylusAction.of(p.getString("stylusPrimary", null), StylusAction.NextPage)
+        stylusSecondary = StylusAction.of(p.getString("stylusSecondary", null), StylusAction.PreviousPage)
+        stylusTail = StylusAction.of(p.getString("stylusTail", null), StylusAction.Controls)
+        stylusSeen = p.getBoolean("stylusSeen", false)
         readerBrightness = p.getFloat("readerBrightness", 1f).toDouble().coerceIn(0.2, 1.0)
         readerGrayscale = p.getBoolean("readerGrayscale", false)
         readerInvert = p.getBoolean("readerInvert", false)
@@ -550,6 +567,12 @@ object AppSettings {
     var pageKeys by Pref(true) { save("pageKeys", it) }
     /** Their next and previous the other way round (some page turners). */
     var pageKeysSwap by Pref(false) { save("pageKeysSwap", it) }
+    /** A stylus's buttons in the reader: the (first) barrel button, the second one, the tail. */
+    var stylusPrimary by Pref(StylusAction.NextPage) { save("stylusPrimary", it.raw) }
+    var stylusSecondary by Pref(StylusAction.PreviousPage) { save("stylusSecondary", it.raw) }
+    var stylusTail by Pref(StylusAction.Controls) { save("stylusTail", it.raw) }
+    /** A stylus has been used on this device: its settings show (this device's). */
+    var stylusSeen by Pref(false) { local("stylusSeen", it) }
     /** Reader: page brightness (0.2–1), separate from the screen's. */
     var readerBrightness by Pref(1.0) { save("readerBrightness", it) }
     var readerGrayscale by Pref(false) { save("readerGrayscale", it) }
@@ -751,6 +774,9 @@ object AppSettings {
         "volumeKeyTurns" to volumeKeyTurns,
         "pageKeys" to pageKeys,
         "pageKeysSwap" to pageKeysSwap,
+        "stylusPrimary" to stylusPrimary.raw,
+        "stylusSecondary" to stylusSecondary.raw,
+        "stylusTail" to stylusTail.raw,
         "readerBrightness" to readerBrightness,
         "readerGrayscale" to readerGrayscale,
         "readerInvert" to readerInvert,
@@ -870,6 +896,9 @@ object AppSettings {
                 "volumeKeyTurns" -> bool?.let { volumeKeyTurns = it }
                 "pageKeys" -> bool?.let { pageKeys = it }
                 "pageKeysSwap" -> bool?.let { pageKeysSwap = it }
+                "stylusPrimary" -> string?.let { stylusPrimary = StylusAction.of(it, stylusPrimary) }
+                "stylusSecondary" -> string?.let { stylusSecondary = StylusAction.of(it, stylusSecondary) }
+                "stylusTail" -> string?.let { stylusTail = StylusAction.of(it, stylusTail) }
                 "readerBrightness" -> number?.let { readerBrightness = it.toDouble().coerceIn(0.2, 1.0) }
                 "readerGrayscale" -> bool?.let { readerGrayscale = it }
                 "readerInvert" -> bool?.let { readerInvert = it }

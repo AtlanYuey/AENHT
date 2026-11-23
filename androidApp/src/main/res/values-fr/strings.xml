@@ -627,9 +627,16 @@
     <string name="l_624">Clavier</string>
     <string name="l_625">→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; ceux qui envoient les boutons de volume ne peuvent pas tourner les pages sur iPhone et iPad.</string>
     <string name="l_626">→ ↓, Page suivante et Espace passent à la page suivante ; ← ↑ et Page précédente à la précédente (← → suivent le sens de lecture). En mode continu, elles font défiler un écran. La plupart des tourne-pages Bluetooth envoient ces touches ; pour ceux qui envoient les boutons de volume, utilisez Touches de volume pour tourner les pages.</string>
-    <string name="l_627">Sauvegarde des réglages</string>
-    <string name="l_628">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_629">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_630">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_631">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_627">Stylet</string>
+    <string name="l_628">Bouton du stylet</string>
+    <string name="l_629">Second bouton</string>
+    <string name="l_630">Bouton arrière</string>
+    <string name="l_631">Pendant la lecture, appuyez sur un bouton du stylet tenu au-dessus de l\'écran ; les stylets à boutons Bluetooth (Android 14 ou ultérieur) fonctionnent aussi à distance. Les boutons dépendent du stylet.</string>
+    <string name="l_632">Galaxy S Pen : activez AENHT dans Paramètres › Fonctions avancées › S Pen › Air actions. Un appui sur le bouton du S Pen passe alors à la page suivante, deux appuis à la précédente, et des gestes vers la gauche ou la droite en l\'air tournent aussi les pages.</string>
+    <string name="l_633">Un stylet Windows jumelé en Bluetooth (comme le Surface Pen) : un clic sur son bouton du haut passe à la page suivante, un double clic à la précédente.</string>
+    <string name="l_634">Sauvegarde des réglages</string>
+    <string name="l_635">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_636">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_637">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_638">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

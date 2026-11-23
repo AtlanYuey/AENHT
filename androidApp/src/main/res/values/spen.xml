@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Labels of the Galaxy S Pen Air actions (res/xml/spen_remote_actions.xml). -->
+<resources>
+    <string name="spen_actions" translatable="false">AENHT</string>
+    <string name="spen_next">Next Page</string>
+    <string name="spen_previous">Previous Page</string>
+</resources>

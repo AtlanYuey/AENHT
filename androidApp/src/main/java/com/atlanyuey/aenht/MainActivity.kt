@@ -84,6 +84,15 @@ class MainActivity : ComponentActivity() {
      * Turn Pages): taken before the views, which would move the focus with them.
      */
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        // A stylus's Bluetooth buttons (Android 14 and later): what Controls › Stylus says.
+        com.atlanyuey.aenht.core.StylusButton.ofKey(event.keyCode)?.let { button ->
+            com.atlanyuey.aenht.core.AppSettings.stylusSeen = true
+            val act = com.atlanyuey.aenht.screens.ReaderKeys.stylus
+            if (act != null) {
+                if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) act(button)
+                return true
+            }
+        }
         val turn = com.atlanyuey.aenht.screens.ReaderKeys.deviceTurn
         val key = com.atlanyuey.aenht.core.PageKey.of(event)
         if (turn != null && key != null && com.atlanyuey.aenht.core.AppSettings.pageKeys) {
@@ -94,6 +103,33 @@ class MainActivity : ComponentActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    /** A stylus touching the screen: its settings show (Controls › Stylus). */
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        noteStylus(event)
+        return super.dispatchTouchEvent(event)
+    }
+
+    /**
+     * A stylus hovering: its settings show; a barrel button pressed while it
+     * hovers is the reader's (what Controls › Stylus says).
+     */
+    override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
+        val stylus = noteStylus(event)
+        val act = com.atlanyuey.aenht.screens.ReaderKeys.stylus
+        if (stylus && act != null && event.actionMasked == android.view.MotionEvent.ACTION_BUTTON_PRESS) {
+            com.atlanyuey.aenht.core.StylusButton.ofMotionButton(event.actionButton)?.let { act(it); return true }
+        }
+        return super.dispatchGenericMotionEvent(event)
+    }
+
+    /** Whether [event] is a stylus's (remembered once: its settings show from then on). */
+    private fun noteStylus(event: android.view.MotionEvent): Boolean {
+        val tool = event.getToolType(0)
+        val stylus = tool == android.view.MotionEvent.TOOL_TYPE_STYLUS || tool == android.view.MotionEvent.TOOL_TYPE_ERASER
+        if (stylus && !com.atlanyuey.aenht.core.AppSettings.stylusSeen) com.atlanyuey.aenht.core.AppSettings.stylusSeen = true
+        return stylus
     }
 
     /** The volume keys turn pages in the reader (when that setting is on). */

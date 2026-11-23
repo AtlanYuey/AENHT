@@ -627,9 +627,16 @@
     <string name="l_624">キーボード</string>
     <string name="l_625">→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは iPhone と iPad ではページをめくれません。</string>
     <string name="l_626">→ ↓、Page Down、スペースで次のページ、← ↑、Page Up で前のページへ（← → は読む方向に従います）。連続モードでは 1 画面ずつスクロールします。多くの Bluetooth ページめくり器はこれらのキーを送ります。音量ボタンを送るものは「音量ボタンでページ送り」を使ってください。</string>
-    <string name="l_627">設定のバックアップ</string>
-    <string name="l_628">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_629">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_630">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_631">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_627">スタイラス</string>
+    <string name="l_628">ペンのボタン</string>
+    <string name="l_629">2 つ目のボタン</string>
+    <string name="l_630">ペン尻のボタン</string>
+    <string name="l_631">読書中、画面の上にかざしたペンのボタンを押します。Bluetooth ボタン付きのペン（Android 14 以降）は画面から離しても使えます。どのボタンがあるかはペンによります。</string>
+    <string name="l_632">Galaxy S Pen：「設定 › 便利な機能 › S Pen › エアアクション」で AENHT をオンにします。S Pen のボタンを 1 回押すと次のページ、2 回押すと前のページへ、空中で左右に振ってもページをめくれます。</string>
+    <string name="l_633">Bluetooth でペアリングした Windows 用ペン（Surface ペンなど）：上部ボタンを 1 回押すと次のページ、2 回で前のページへ。</string>
+    <string name="l_634">設定のバックアップ</string>
+    <string name="l_635">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_636">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_637">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_638">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

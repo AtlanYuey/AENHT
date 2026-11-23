@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Galaxy S Pen Air actions (S Pen Remote): the S Pen's button and its
+  gestures in the air arrive as these keys, which the reader turns pages
+  with (MainActivity.dispatchKeyEvent). The user turns AENHT on in
+  Settings › Advanced features › S Pen › Air actions, and can choose other
+  gestures there.
+-->
+<remote-actions version="1.2" actionset_label="@string/spen_actions">
+    <action id="next_page" label="@string/spen_next" priority="1" trigger_key="PAGE_DOWN">
+        <preference name="gesture" value="click" />
+    </action>
+    <action id="previous_page" label="@string/spen_previous" priority="2" trigger_key="PAGE_UP">
+        <preference name="gesture" value="double_click" />
+    </action>
+    <action id="next_page_swipe" label="@string/spen_next" priority="3" trigger_key="PAGE_DOWN">
+        <preference name="gesture" value="swipe_left" />
+    </action>
+    <action id="previous_page_swipe" label="@string/spen_previous" priority="4" trigger_key="PAGE_UP">
+        <preference name="gesture" value="swipe_right" />
+    </action>
+</remote-actions>

@@ -627,9 +627,16 @@
     <string name="l_624">Tastatur</string>
     <string name="l_625">→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; solche, die die Lautstärketasten senden, können auf iPhone und iPad nicht umblättern.</string>
     <string name="l_626">→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; für solche, die die Lautstärketasten senden, gibt es Lautstärketasten blättern.</string>
-    <string name="l_627">Einstellungen sichern</string>
-    <string name="l_628">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_629">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_630">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_631">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_627">Eingabestift</string>
+    <string name="l_628">Stifttaste</string>
+    <string name="l_629">Zweite Taste</string>
+    <string name="l_630">Endtaste</string>
+    <string name="l_631">Beim Lesen eine Taste des über dem Bildschirm gehaltenen Stifts drücken; Stifte mit Bluetooth-Tasten (Android 14 und neuer) funktionieren auch weiter weg. Welche Tasten es gibt, hängt vom Stift ab.</string>
+    <string name="l_632">Galaxy S Pen: AENHT unter Einstellungen › Erweiterte Funktionen › S Pen › Air Actions einschalten. Dann blättert ein Druck auf die S Pen-Taste zur nächsten Seite, ein Doppeldruck zur vorherigen, und Wischen nach links und rechts in der Luft blättert auch.</string>
+    <string name="l_633">Ein per Bluetooth gekoppelter Windows-Stift (etwa Surface Pen): ein Klick auf die obere Taste blättert zur nächsten Seite, ein Doppelklick zur vorherigen.</string>
+    <string name="l_634">Einstellungen sichern</string>
+    <string name="l_635">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_636">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_637">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_638">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

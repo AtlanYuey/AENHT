@@ -626,4 +626,11 @@ T = [
     "Bàn phím",
     "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng không thể lật trang trên iPhone và iPad.",
     "→ ↓, Page Down và phím cách sang trang sau; ← ↑ và Page Up về trang trước (← → theo hướng đọc). Ở chế độ cuộn liên tục, mỗi lần cuộn một màn hình. Hầu hết bộ lật trang Bluetooth gửi các phím này; loại gửi nút âm lượng hãy dùng Phím âm lượng để lật trang.",
+    "Bút cảm ứng",
+    "Nút bút",
+    "Nút thứ hai",
+    "Nút đuôi bút",
+    "Khi đọc, giữ bút phía trên màn hình rồi bấm nút bút; bút có nút Bluetooth (Android 14 trở lên) dùng được cả khi cách xa màn hình. Số nút tùy theo bút.",
+    "Galaxy S Pen: bật AENHT trong Cài đặt › Tính năng nâng cao › S Pen › Air actions. Sau đó bấm nút S Pen một lần để sang trang sau, hai lần để về trang trước, vẫy sang trái hoặc phải trên không cũng lật trang.",
+    "Bút Windows ghép nối qua Bluetooth (như Surface Pen): bấm nút trên cùng một lần để sang trang sau, hai lần để về trang trước.",
 ]

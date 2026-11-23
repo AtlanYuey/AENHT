@@ -626,4 +626,11 @@ T = [
     "Keyboard",
     "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; yang mengirim tombol volume tidak bisa membalik halaman di iPhone dan iPad.",
     "→ ↓, Page Down, dan Spasi ke halaman berikutnya; ← ↑ dan Page Up ke halaman sebelumnya (← → mengikuti arah baca). Di mode berkelanjutan, menggulir satu layar. Sebagian besar pembalik halaman Bluetooth mengirim tombol ini; untuk yang mengirim tombol volume, gunakan Tombol volume membalik halaman.",
+    "Stylus",
+    "Tombol pena",
+    "Tombol kedua",
+    "Tombol ujung belakang",
+    "Saat membaca, tekan tombol stylus yang diarahkan di atas layar; pena dengan tombol Bluetooth (Android 14 dan lebih baru) juga berfungsi dari jauh. Tombol yang ada bergantung pada penanya.",
+    "Galaxy S Pen: aktifkan AENHT di Pengaturan › Fitur lanjutan › S Pen › Air actions. Lalu satu tekan tombol S Pen ke halaman berikutnya, dua tekan ke halaman sebelumnya, dan gerakan ke kiri dan kanan di udara juga membalik halaman.",
+    "Pena Windows yang dipasangkan lewat Bluetooth (seperti Surface Pen): sekali klik tombol atasnya ke halaman berikutnya, klik dua kali ke halaman sebelumnya.",
 ]

@@ -626,4 +626,11 @@ T = [
     "Tastiera",
     "→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; quelli che inviano i tasti del volume non possono girare le pagine su iPhone e iPad.",
     "→ ↓, Pagina giù e Spazio vanno alla pagina successiva; ← ↑ e Pagina su alla precedente (← → seguono la direzione di lettura). Nelle modalità continue scorrono di una schermata. La maggior parte dei voltapagine Bluetooth invia questi tasti; per quelli che inviano i tasti del volume usa Tasti volume per sfogliare.",
+    "Penna",
+    "Tasto della penna",
+    "Secondo tasto",
+    "Tasto posteriore",
+    "Durante la lettura, premi un tasto della penna tenuta sopra lo schermo; le penne con tasti Bluetooth (Android 14 e successivi) funzionano anche lontano. I tasti dipendono dalla penna.",
+    "Galaxy S Pen: attiva AENHT in Impostazioni › Funzioni avanzate › S Pen › Air actions. Poi una pressione del tasto della S Pen va alla pagina successiva, due alla precedente, e i movimenti a sinistra e a destra nell'aria girano le pagine.",
+    "Una penna Windows associata via Bluetooth (come Surface Pen): un clic sul tasto superiore va alla pagina successiva, un doppio clic alla precedente.",
 ]

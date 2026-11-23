@@ -626,4 +626,11 @@ T = [
     "Tastatur",
     "→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; solche, die die Lautstärketasten senden, können auf iPhone und iPad nicht umblättern.",
     "→ ↓, Bild ab und Leertaste blättern zur nächsten Seite, ← ↑ und Bild auf zur vorherigen (← → folgen der Leserichtung). In den fortlaufenden Modi scrollen sie einen Bildschirm. Die meisten Bluetooth-Seitenwender senden diese Tasten; für solche, die die Lautstärketasten senden, gibt es Lautstärketasten blättern.",
+    "Eingabestift",
+    "Stifttaste",
+    "Zweite Taste",
+    "Endtaste",
+    "Beim Lesen eine Taste des über dem Bildschirm gehaltenen Stifts drücken; Stifte mit Bluetooth-Tasten (Android 14 und neuer) funktionieren auch weiter weg. Welche Tasten es gibt, hängt vom Stift ab.",
+    "Galaxy S Pen: AENHT unter Einstellungen › Erweiterte Funktionen › S Pen › Air Actions einschalten. Dann blättert ein Druck auf die S Pen-Taste zur nächsten Seite, ein Doppeldruck zur vorherigen, und Wischen nach links und rechts in der Luft blättert auch.",
+    "Ein per Bluetooth gekoppelter Windows-Stift (etwa Surface Pen): ein Klick auf die obere Taste blättert zur nächsten Seite, ein Doppelklick zur vorherigen.",
 ]

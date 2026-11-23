@@ -50,17 +50,29 @@ final class ExternalKeyboards {
             guard pressed else { return }
             let shift = input.button(forKeyCode: .leftShift)?.isPressed == true
                 || input.button(forKeyCode: .rightShift)?.isPressed == true
-            let key: PageKey?
-            switch code {
-            case .downArrow, .pageDown: key = .next
-            case .upArrow, .pageUp: key = .previous
-            case .spacebar: key = shift ? .previous : .next
-            case .rightArrow: key = .right
-            case .leftArrow: key = .left
-            default: key = nil
-            }
+            let key = ExternalKeyboards.pageKey(code, shift: shift)
             guard let key else { return }
             MainActor.assumeIsolated { ExternalKeyboards.shared.onKey?(key) }
+        }
+    }
+}
+
+extension ExternalKeyboards {
+    /// The page key [code] is (with Shift held: [shift]), if it is one.
+    nonisolated static func pageKey(_ code: GCKeyCode, shift: Bool) -> PageKey? {
+        switch code {
+        case .downArrow, .pageDown: return .next
+        case .upArrow, .pageUp: return .previous
+        case .spacebar: return shift ? .previous : .next
+        case .rightArrow: return .right
+        case .leftArrow: return .left
+        default:
+            // A Windows pen's (Surface Pen's) top button: F20 clicked, F19 double-clicked (HID usages).
+            switch code.rawValue {
+            case 0x6F: return .next
+            case 0x6E: return .previous
+            default: return nil
+            }
         }
     }
 }
@@ -85,6 +97,7 @@ struct PageKeysSection: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Connected: \(name)")
                     Text("→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad.")
+                    Text("A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one.")
                 }
             }
         }

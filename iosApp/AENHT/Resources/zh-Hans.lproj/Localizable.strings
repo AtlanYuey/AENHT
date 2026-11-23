@@ -669,3 +669,10 @@
 "Keyboard" = "键盘";
 "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons can't turn pages on iPhone and iPad." = "→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器在 iPhone 和 iPad 上无法翻页。";
 "→ ↓, Page Down and Space turn to the next page; ← ↑ and Page Up to the previous one (← → follow the reading direction). In the continuous modes they scroll a screen. Most Bluetooth page turners send these keys; ones that send the volume buttons use Volume Keys Turn Pages." = "→ ↓、Page Down 和空格翻到下一页；← ↑ 和 Page Up 翻到上一页（← → 跟随阅读方向）。连续模式下按一次滚动一屏。大多数蓝牙翻页器发送的就是这些按键；发送音量键的翻页器请使用「音量键翻页」。";
+"Stylus" = "手写笔";
+"Pen Button" = "笔身按键";
+"Second Button" = "第二按键";
+"Tail Button" = "笔尾按键";
+"While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "阅读时，把笔悬停在屏幕上方按笔上的按键；带蓝牙按键的笔（Android 14 及以上）离开屏幕也能用。笔有哪些按键取决于笔的型号。";
+"Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen：在「设置 › 高级功能 › S Pen › 隔空操作」里打开 AENHT。之后按一下 S Pen 按键翻到下一页，按两下翻到上一页，在空中向左、向右挥动也能翻页。";
+"A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "通过蓝牙配对的 Windows 笔（如 Surface 触控笔）：按一下笔尾按键翻到下一页，按两下翻到上一页。";
