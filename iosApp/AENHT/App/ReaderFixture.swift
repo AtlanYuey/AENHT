@@ -20,7 +20,8 @@ enum ReaderFixture {
         settings.continuousPageScale = 1
         settings.superResolution = .off
         settings.autoCrop = false
-        settings.readerControlsDelay = 10
+        // Long enough for a test to reach the controls before they hide.
+        settings.readerControlsDelay = 120
         settings.doubleTapTopToStart = !arguments.contains("--fixture-no-top-tap")
     }
 
