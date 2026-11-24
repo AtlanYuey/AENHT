@@ -626,7 +626,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 }
                 com.atlanyuey.aenht.ui.components.FollowReader("nh:${d.id}", rowState, d.pages.size)
                 LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(d.pages, key = { it.number }) { page ->
+                    items(d.pages.distinctBy { it.number }, key = { it.number }) { page ->
                         Column(
                             Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(d), page.number - 1)) },
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -665,7 +665,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }.take(10), key = { it.id }) { comment ->
+                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }.distinctBy { it.id }.take(10), key = { it.id }) { comment ->
                         Box(
                             Modifier
                                 .width(300.dp)
@@ -718,7 +718,7 @@ fun PagesGrid(detail: GalleryDetail, contentPadding: PaddingValues, modifier: Mo
                 Box(Modifier.offset(x = (-16).dp)) { SectionTitle(tr("Pages")) }
             }
         }
-        items(detail.pages, key = { it.number }) { page ->
+        items(detail.pages.distinctBy { it.number }, key = { it.number }) { page ->
             Column(
                 Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(detail), page.number - 1)) },
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -878,7 +878,7 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                             EmptyState(Icons.Comment, tr("No Comments"))
                         }
                     }
-                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }, key = { it.id }) { CommentBubble(it) }
+                    items(comments.filter { !Filters.hidesComment(it.poster?.username ?: "", it.body) }.distinctBy { it.id }, key = { it.id }) { CommentBubble(it) }
                     // More pages: the next one loads when the end shows.
                     if (comments.isNotEmpty() && page < pageCount) item(key = "more") {
                         Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {

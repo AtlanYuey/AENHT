@@ -18,7 +18,7 @@
 </p>
 
 > [!WARNING]
-> Current version: 0.2.5. The project is actively developed. For adults aged 18 and over only.
+> Current version: 0.2.6. The project is actively developed. For adults aged 18 and over only.
 > This project is not affiliated with nhentai or E-Hentai.
 
 <p align="center">
@@ -267,7 +267,7 @@ Install the Android APK directly. Release APKs use a consistent signing certific
 2. Choose enabled sites and page defaults under **Me › Sites**.
 3. Login is optional for browsing, searching, reading, and downloading. Account favorites, comments, and ExHentai require login.
    - nhentai: **Me › Accounts › nhentai › Log In**, or create a key under nhentai.net › Settings › API Keys and choose API-key login.
-   - E-Hentai: **Me › Accounts › E-Hentai › Log In**. If web login fails, copy `ipb_member_id`, `ipb_pass_hash`, and, for ExHentai, `igneous` from a logged-in browser, then choose cookie login.
+   - E-Hentai: **Me › Accounts › E-Hentai › Log In**. If web login fails, copy `ipb_member_id`, `ipb_pass_hash`, and, for ExHentai, `igneous` from a logged-in browser, then choose cookie login: the copied text is recognized and filled in (a Cookie header, a cookie extension's JSON export or cookies.txt; copy them all at once).
    - With ExHentai access, enable its switch under the E-Hentai account or site settings.
 
 ### Translation and sync setup

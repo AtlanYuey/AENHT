@@ -53,3 +53,27 @@ val LogErrors = kotlinx.coroutines.CoroutineExceptionHandler { _, error ->
 @androidx.compose.runtime.Composable
 fun rememberSafeScope(): kotlinx.coroutines.CoroutineScope = androidx.compose.runtime.rememberCoroutineScope { LogErrors }
 
+/**
+ * Opens [intent] (a link in the browser, the share sheet); when no app on the
+ * device takes it, nothing happens (logged) instead of the app closing.
+ */
+fun startSafely(context: android.content.Context, intent: android.content.Intent) {
+    try {
+        if (context !is android.app.Activity) intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        com.atlanyuey.aenht.core.startSafely(context, intent)
+    } catch (e: android.content.ActivityNotFoundException) {
+        Diagnostics.log("error", "No app opens ${intent.action} ${intent.data?.scheme ?: intent.type ?: ""}")
+    } catch (e: SecurityException) {
+        Diagnostics.log("error", "Not allowed to open ${intent.action}: ${e.message}")
+    }
+}
+
+/** Runs an activity-result launch ([launch]); without an app for it, nothing happens (logged). */
+inline fun launchSafely(launch: () -> Unit) {
+    try {
+        launch()
+    } catch (e: android.content.ActivityNotFoundException) {
+        Diagnostics.log("error", "No app for this: ${e.message}")
+    }
+}
+

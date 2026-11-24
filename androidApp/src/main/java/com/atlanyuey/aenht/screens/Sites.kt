@@ -221,6 +221,8 @@ class EhLoginScreen : Screen() {
             contentUnderGlass = false,
         ) { padding ->
             AndroidView(
+                // Gone with the page (a WebView left alive keeps its memory and page running).
+                onRelease = { web -> web.stopLoading(); web.destroy() },
                 modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
                     WebView(context).apply {
@@ -929,6 +931,8 @@ class EhWebScreen(private val url: String, private val titleKey: String) : Scree
         // A WebView: not drawn into the bar's glass (it flickered there).
         ScreenScaffold(title = tr(titleKey), trailing = { if (loading) ActivityIndicator(size = 18.dp) }, contentUnderGlass = false) { padding ->
             AndroidView(
+                // Gone with the page (a WebView left alive keeps its memory and page running).
+                onRelease = { web -> web.stopLoading(); web.destroy() },
                 modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
                     WebView(context).apply {

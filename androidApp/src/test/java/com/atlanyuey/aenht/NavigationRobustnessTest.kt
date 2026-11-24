@@ -33,9 +33,16 @@ import kotlin.random.Random
 class NavigationRobustnessTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun open(tab: Int): Tabs {
+    /**
+     * The sample sites and images: no network, and no image decoded on a
+     * worker thread (Robolectric's native graphics could abort the test run there).
+     */
+    @org.junit.Before fun sampleSites() {
         if (Net.interceptors.isEmpty()) Net.interceptors.add(FakeApi)
         SingletonImageLoader.setUnsafe(ImageLoader.Builder(ApplicationProvider.getApplicationContext()).components { add(FakeImages) }.build())
+    }
+
+    private fun open(tab: Int): Tabs {
         val tabs = Tabs()
         val linked = mutableStateOf<GalleryLink?>(null)
         compose.setContent { AppTheme { RootView(linked, tabs, tab) } }
@@ -66,7 +73,6 @@ class NavigationRobustnessTest {
     }
 
     @Test fun aTabSwitchDuringAPushDoesNotLeaveThePageHalfWay() {
-        if (Net.interceptors.isEmpty()) Net.interceptors.add(FakeApi)
         val tabs = Tabs()
         val shown = androidx.compose.runtime.mutableIntStateOf(2)
         host(tabs, shown)
@@ -84,7 +90,6 @@ class NavigationRobustnessTest {
     }
 
     @Test fun aTabSwitchDuringAPopFinishesIt() {
-        if (Net.interceptors.isEmpty()) Net.interceptors.add(FakeApi)
         val tabs = Tabs()
         val shown = androidx.compose.runtime.mutableIntStateOf(2)
         host(tabs, shown)
@@ -104,7 +109,6 @@ class NavigationRobustnessTest {
     }
 
     @Test fun aPushWhileAPopRunsFinishesThePopFirst() {
-        if (Net.interceptors.isEmpty()) Net.interceptors.add(FakeApi)
         val tabs = Tabs()
         val shown = androidx.compose.runtime.mutableIntStateOf(0)
         host(tabs, shown)

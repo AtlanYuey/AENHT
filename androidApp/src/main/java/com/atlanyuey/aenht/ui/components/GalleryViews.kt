@@ -236,7 +236,7 @@ fun Context.shareLink(url: String, title: String? = null) {
         putExtra(Intent.EXTRA_TEXT, url)
         title?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
     }
-    startActivity(Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    com.atlanyuey.aenht.core.startSafely(this, Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 fun Context.copyText(text: String) {
@@ -574,7 +574,8 @@ fun GalleryLayout(
 
 /** Galleries in a [GalleryLayout]: cards, or rows in the list style. */
 fun LazyStaggeredGridScope.galleryItems(items: List<GallerySummary>, style: GalleryListStyle, onItemShown: (Int) -> Unit = {}) {
-    itemsIndexed(items, key = { _, item -> item.key.storageKey }) { index, item ->
+    // One of each (a key used twice closes the app).
+    itemsIndexed(items.distinctBy { it.key.storageKey }, key = { _, item -> item.key.storageKey }) { index, item ->
         androidx.compose.runtime.LaunchedEffect(item.key) { onItemShown(index) }
         if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
     }

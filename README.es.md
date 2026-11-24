@@ -18,7 +18,7 @@
 </p>
 
 > [!WARNING]
-> Versión actual: 0.2.5. El proyecto está en desarrollo activo. Solo para personas de 18 años o más.
+> Versión actual: 0.2.6. El proyecto está en desarrollo activo. Solo para personas de 18 años o más.
 > Este proyecto no está afiliado a nhentai ni a E-Hentai.
 
 <p align="center">
@@ -266,7 +266,7 @@ Instala el APK directamente. Las versiones publicadas conservan el certificado p
 2. Elige sitios y pantallas iniciales en **Perfil › Sitios**.
 3. No hace falta cuenta para explorar, buscar, leer o descargar. Los favoritos de la cuenta, comentarios y ExHentai requieren sesión.
    - nhentai: **Perfil › Cuentas › nhentai › Iniciar sesión** o crea una clave en nhentai.net › Settings › API Keys y usa el acceso con clave API.
-   - E-Hentai: **Perfil › Cuentas › E-Hentai › Iniciar sesión**. Si falla el acceso web, copia `ipb_member_id`, `ipb_pass_hash` y, para ExHentai, `igneous` de un navegador con sesión, y elige acceso con cookies.
+   - E-Hentai: **Perfil › Cuentas › E-Hentai › Iniciar sesión**. Si falla el acceso web, copia `ipb_member_id`, `ipb_pass_hash` y, para ExHentai, `igneous` de un navegador con sesión, y elige acceso con cookies: el texto copiado se reconoce y se rellena solo (cabecera Cookie, JSON de una extensión de cookies o cookies.txt; cópialas todas a la vez).
    - Activa ExHentai desde la cuenta E-Hentai o los ajustes de sitios cuando tu cuenta tenga permiso.
 
 ### Configurar traducción y sincronización

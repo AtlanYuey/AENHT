@@ -401,7 +401,7 @@ class AccountScreen : Screen() {
                 section {
                     ListRow(tr("User ID"), value = "${user.id}")
                     ListRow(tr("Profile"), value = "nhentai.net", chevron = true, last = true, onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("${NHHost.SITE}/users/${user.id}/")))
+                        com.atlanyuey.aenht.core.startSafely(context, Intent(Intent.ACTION_VIEW, Uri.parse("${NHHost.SITE}/users/${user.id}/")))
                     })
                 }
             }
@@ -445,6 +445,8 @@ class LoginScreen : Screen() {
             contentUnderGlass = false,
         ) { padding ->
             AndroidView(
+                // Gone with the page (a WebView left alive keeps its memory and page running).
+                onRelease = { web -> web.stopLoading(); web.destroy() },
                 modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
                     WebView(context).apply {
@@ -628,7 +630,7 @@ class DownloadsScreen : Screen() {
                                 putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(android.content.Intent.createChooser(send, null))
+                            com.atlanyuey.aenht.core.startSafely(context, android.content.Intent.createChooser(send, null))
                         }
                     })
                     if (android.os.Build.VERSION.SDK_INT >= 29) {
@@ -679,7 +681,7 @@ class DownloadsScreen : Screen() {
                     color = AppTheme.colors.secondaryLabel,
                 )
             }
-            items(group, key = { it.key.storageKey }) { record ->
+            items(group.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { record ->
                 val anchor = rememberAnchor()
                 val storageKey = record.key.storageKey
                 SwipeToDelete(onDelete = { Downloads.delete(record.key) }) {
@@ -1070,9 +1072,9 @@ class BackupScreen : Screen() {
                     FooterText(tr("Android's own backup also keeps these settings."))
                 }
             }) {
-                ListRow(tr("Export Settings"), leading = { AppIcon(Icons.Share, null, tint = AppTheme.tint) }, onClick = { exporter.launch(fileName) })
+                ListRow(tr("Export Settings"), leading = { AppIcon(Icons.Share, null, tint = AppTheme.tint) }, onClick = { com.atlanyuey.aenht.core.launchSafely { exporter.launch(fileName) } })
                 ListRow(tr("Import Settings"), leading = { AppIcon(Icons.Folder, null, tint = AppTheme.tint) }, last = true, onClick = {
-                    importer.launch(arrayOf("application/json", "text/plain", "*/*"))
+                    com.atlanyuey.aenht.core.launchSafely { importer.launch(arrayOf("application/json", "text/plain", "*/*")) }
                 })
             }
         }
@@ -1123,7 +1125,7 @@ class AboutScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.current
-        fun open(url: String) = context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        fun open(url: String) = com.atlanyuey.aenht.core.startSafely(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         GroupedListScreen(tr("About")) {
             item {
                 Column(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1154,7 +1156,7 @@ class AboutScreen : Screen() {
                         putExtra(Intent.EXTRA_SUBJECT, "AENHT diagnostics")
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
-                    context.startActivity(Intent.createChooser(send, null))
+                    com.atlanyuey.aenht.core.startSafely(context, Intent.createChooser(send, null))
                 })
             }
             section {
@@ -1214,7 +1216,7 @@ class ReferencesScreen : Screen() {
                 projects.forEachIndexed { i, project ->
                     ListRow("${project.name} · ${project.author}", subtitle = tr(project.role), chevron = true,
                         last = i == projects.lastIndex,
-                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(project.url))) })
+                        onClick = { com.atlanyuey.aenht.core.startSafely(context, Intent(Intent.ACTION_VIEW, Uri.parse(project.url))) })
                 }
             }
         }
@@ -1239,7 +1241,7 @@ class LicensesScreen : Screen() {
                         onClick = {
                             val text = license.text
                             if (text != null) navigator.push(LicenseTextScreen(license.name, text))
-                            else context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(license.url)))
+                            else com.atlanyuey.aenht.core.startSafely(context, Intent(Intent.ACTION_VIEW, Uri.parse(license.url)))
                         },
                     )
                 }
@@ -1316,7 +1318,7 @@ class UpdatesScreen : Screen() {
     @Composable
     override fun Content() {
         val context = LocalContext.current
-        fun open(url: String) = context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        fun open(url: String) = com.atlanyuey.aenht.core.startSafely(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         LaunchedEffect(Unit) {
             try {
                 info = com.atlanyuey.aenht.shared.app.UpdateChecker().check(com.atlanyuey.aenht.BuildConfig.VERSION_NAME)

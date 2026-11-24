@@ -1567,7 +1567,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             putExtra(android.content.Intent.EXTRA_STREAM, uri)
             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(android.content.Intent.createChooser(send, null))
+        com.atlanyuey.aenht.core.startSafely(context, android.content.Intent.createChooser(send, null))
     }
 
     private fun openSettings(overlays: com.atlanyuey.aenht.ui.components.OverlayController) {

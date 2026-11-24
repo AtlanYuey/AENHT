@@ -277,7 +277,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 MenuButton(Icons.Ellipsis, tr("More"), {
                     listOf(buildList {
                         add(MenuItem(labels[0], Icons.Safari) {
-                            context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(EhClient.api.galleryUrl(gid, token))))
+                            com.atlanyuey.aenht.core.startSafely(context, android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(EhClient.api.galleryUrl(gid, token))))
                         })
                         val d = detail
                         if (d != null && d.archiverKey != null && EhSession.isLoggedIn) {
@@ -611,7 +611,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
             }
             com.atlanyuey.aenht.ui.components.FollowReader("eh:${d.gid}", rowState, d.thumbnails.size)
             LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(d.thumbnails, key = { it.page }) { thumb ->
+                items(d.thumbnails.distinctBy { it.page }, key = { it.page }) { thumb ->
                     Column(
                         Modifier.clickable { navigator.push(ReaderScreen(ReaderSource.from(d, card), thumb.page - 1)) },
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -646,7 +646,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(shown.take(10), key = { it.id }) { comment ->
+                    items(shown.distinctBy { it.id }.take(10), key = { it.id }) { comment ->
                         Box(
                             Modifier.width(300.dp).clip(RoundedCornerShape(18.dp)).background(AppTheme.colors.quaternaryFill).padding(14.dp),
                         ) { EhCommentBubble(comment, maxLines = 5) }
@@ -771,7 +771,7 @@ class EhCommentsScreen(private val detail: EhGalleryDetail) : Screen() {
                     val blocked = AppSettings.blockedCommenterSet
                     val shown = comments.filter { it.author !in blocked && !Filters.hidesComment(it.author, it.text) }
                     if (shown.isEmpty()) item { EmptyState(Icons.Comment, tr("No Comments")) }
-                    items(shown, key = { it.id }) { comment ->
+                    items(shown.distinctBy { it.id }, key = { it.id }) { comment ->
                         val anchor = rememberAnchor()
                         Box(
                             Modifier
@@ -882,7 +882,7 @@ class EhArchiveScreen(private val detail: EhGalleryDetail) : Screen() {
                                     putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
-                                context.startActivity(android.content.Intent.createChooser(send, null))
+                                com.atlanyuey.aenht.core.startSafely(context, android.content.Intent.createChooser(send, null))
                             }, last = android.os.Build.VERSION.SDK_INT < 29)
                             if (android.os.Build.VERSION.SDK_INT >= 29) {
                                 ButtonRow(tr("Save to Downloads"), {
@@ -967,7 +967,7 @@ class EhTorrentsScreen(private val gid: Long, private val token: String) : Scree
                             t.name,
                             subtitle = "${t.size} · ${tr("Seeds")} ${t.seeds} · ${tr("Peers")} ${t.peers} · ${t.posted}",
                             last = i == list.lastIndex,
-                            onClick = { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(t.url))) },
+                            onClick = { com.atlanyuey.aenht.core.startSafely(context, android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(t.url))) },
                         )
                     }
                 }
@@ -978,7 +978,7 @@ class EhTorrentsScreen(private val gid: Long, private val token: String) : Scree
 
 /** A gallery's page thumbnails; more thumbnail pages load while scrolling. */
 class EhPagesState(val detail: EhGalleryDetail, private val scope: kotlinx.coroutines.CoroutineScope) {
-    val thumbs = mutableStateListOf<EhThumbnail>().apply { addAll(detail.thumbnails) }
+    val thumbs = mutableStateListOf<EhThumbnail>().apply { addAll(detail.thumbnails.distinctBy { it.page }) }
     private var nextPage = 1
     private var loading = false
 

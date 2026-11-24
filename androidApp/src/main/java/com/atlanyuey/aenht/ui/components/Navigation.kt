@@ -286,7 +286,10 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
     }
 
     val held = navigator.top.holdsBack
-    PredictiveBackHandler(enabled = navigator.canPop && !held) { events ->
+    // An open menu, alert or sheet takes Back first (this handler, added when
+    // a tab is shown, would otherwise come before the overlays' one).
+    val overlayOpen = LocalOverlays.current.items.isNotEmpty()
+    PredictiveBackHandler(enabled = navigator.canPop && !held && !overlayOpen) { events ->
         navigator.beginBack()
         try {
             events.collect { event -> navigator.dragBack(event.progress) }
@@ -296,7 +299,7 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
             throw e
         }
     }
-    androidx.activity.compose.BackHandler(enabled = held) { navigator.top.onBackHeld() }
+    androidx.activity.compose.BackHandler(enabled = held && !overlayOpen) { navigator.top.onBackHeld() }
 }
 
 /** The soft shadow on the leading edge of a screen sliding over another. */

@@ -28,7 +28,7 @@
 </p>
 
 > [!WARNING]
-> 当前版本 0.2.5，项目仍在积极开发中。仅供 18 岁以上用户使用。
+> 当前版本 0.2.6，项目仍在积极开发中。仅供 18 岁以上用户使用。
 > 本项目与 nhentai、E-Hentai 均无关联。
 
 <p align="center">
@@ -315,7 +315,7 @@ flowchart LR
 - 每个站点支持多个账号，点按即可切换。E-Hentai 没有头像，用「EH」字母头像表示。
 - **nhentai**：账号登录，或者用 API Key 登录；可以使用账号的云端标签黑名单。
 - **E-Hentai**：
-  - 网页登录，或者手动填写 Cookie（里站需要 `igneous`，通常会自动获取）。
+  - 网页登录，或者用 Cookie 登录（里站需要 `igneous`，通常会自动获取）；复制的 Cookie 会自动识别并填入。
   - 检查里站权限。
   - 查看图片配额和重置所需的 GP。
   - 打开站点设置和 My Tags 页面。
@@ -368,7 +368,7 @@ flowchart LR
 2. 在「我的 › 站点」里选择启用哪些站点，以及每个页面打开时显示什么。
 3. 登录（可选）。不登录也能浏览、搜索、阅读和下载；收藏、评论和里站需要登录：
    - **nhentai**：「我的 › 账号 › nhentai › 登录」，或者在 nhentai.net › Settings › API Keys 创建 Key，然后选「用 API Key 登录」。
-   - **E-Hentai**：「我的 › 账号 › E-Hentai › 登录」。如果网页登录失败，从已登录的浏览器复制 `ipb_member_id`、`ipb_pass_hash`（里站还需要 `igneous`），然后选「用 Cookie 登录」。
+   - **E-Hentai**：「我的 › 账号 › E-Hentai › 登录」。如果网页登录失败，从已登录的浏览器复制 `ipb_member_id`、`ipb_pass_hash`（里站还需要 `igneous`），然后选「用 Cookie 登录」：复制的内容会被自动识别并填好（Cookie 请求头、Cookie 扩展导出的 JSON 或 cookies.txt 都可以，一次复制全部即可）。
    - **ExHentai**：账号有里站权限时，在「我的 › 账号 › E-Hentai」或「我的 › 站点」里打开「使用里站」。
 
 ### 设置翻译

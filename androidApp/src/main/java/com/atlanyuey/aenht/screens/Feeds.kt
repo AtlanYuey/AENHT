@@ -176,6 +176,8 @@ fun FeedMenus(language: LanguageFilter, sort: SearchSort, onLanguage: (LanguageF
 /** A full-width row that extends into the grid's side padding. */
 fun Modifier.bleed(horizontal: androidx.compose.ui.unit.Dp) = layout { measurable, constraints ->
     val extra = (horizontal * 2).roundToPx()
+    // (Without a width limit there's nothing to extend into: measured as it is.)
+    if (!constraints.hasBoundedWidth) return@layout measurable.measure(constraints).let { p -> layout(p.width, p.height) { p.place(0, 0) } }
     val placeable = measurable.measure(
         constraints.copy(minWidth = constraints.minWidth + extra, maxWidth = constraints.maxWidth + extra),
     )
@@ -214,7 +216,7 @@ fun PopularRow(items: List<GallerySummary>, cutStart: Boolean = false, cutEnd: B
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             flingBehavior = rememberSnapFlingBehavior(state),
         ) {
-            items(items, key = { it.key.storageKey }) { item ->
+            items(items.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { item ->
                 GalleryCard(item, GalleryListStyle.Grid, Modifier.width(cardWidth))
             }
         }
@@ -225,6 +227,7 @@ fun PopularRow(items: List<GallerySummary>, cutStart: Boolean = false, cutEnd: B
 private fun Modifier.bleedSides(start: androidx.compose.ui.unit.Dp, end: androidx.compose.ui.unit.Dp) = layout { measurable, constraints ->
     val s = start.roundToPx()
     val e = end.roundToPx()
+    if (!constraints.hasBoundedWidth) return@layout measurable.measure(constraints).let { p -> layout(p.width, p.height) { p.placeRelative(0, 0) } }
     val placeable = measurable.measure(constraints.copy(minWidth = constraints.minWidth + s + e, maxWidth = constraints.maxWidth + s + e))
     layout(constraints.maxWidth, placeable.height) { placeable.placeRelative(-s, 0) }
 }
@@ -393,7 +396,8 @@ class HomeScreen : Screen(), TabRoot {
         }
         if (searching) {
             searchPanel.Effects()
-            BackHandler { endSearch() }
+            // (An open menu or sheet closes first.)
+            BackHandler(enabled = LocalOverlays.current.items.isEmpty()) { endSearch() }
         }
         val pinned = AppSettings.homeRows(site).mapNotNull { row ->
             rows[row]?.let { com.atlanyuey.aenht.core.Filters.visible(it) }?.takeIf { it.isNotEmpty() }?.let { row to it }
@@ -994,7 +998,7 @@ class HistoryScreen : Screen(), TabRoot {
             }
             sections.forEach { (day, dayEntries) ->
                 item("day$day") { DayHeader(day) }
-                items(dayEntries, key = { it.key.storageKey }) { entry ->
+                items(dayEntries.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { entry ->
                     SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) {
                         CompositionLocalProvider(LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1)) {
                         GalleryRow(
@@ -1197,7 +1201,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
     @Composable
     private fun Suggestions(padding: PaddingValues) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
-            items(state.suggestions, key = { "${it.type}:${it.name}:${it.id}" }) { tag ->
+            items(state.suggestions.distinctBy { "${it.type}:${it.name}:${it.id}" }, key = { "${it.type}:${it.name}:${it.id}" }) { tag ->
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -1239,7 +1243,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                         TextButton(tr("Clear"), { AppSettings.clearRecentSearches() })
                     }
                 }
-                items(recents.toList(), key = { it }) { entry ->
+                items(recents.toList().distinct(), key = { it }) { entry ->
                     // An entry is a search on a site (shown at its end): tapping it searches there.
                     val term = com.atlanyuey.aenht.shared.site.SearchHistory.query(entry)
                     val entrySite = com.atlanyuey.aenht.shared.site.SearchHistory.site(entry)
