@@ -85,7 +85,13 @@ android {
         versionCode = 11
         versionName = "0.2.4"
         // Super-resolution's native code (ncnn): ARM phones, 64 and 32 bit.
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            // The emulator tests' x86_64 Android (-Paenht.emulator): never in the published apps.
+            if (providers.gradleProperty("aenht.emulator").isPresent) abiFilters += "x86_64"
+        }
+        // Tests on a real Android (an emulator in CI): its own regex engine (ICU), WebView, rendering.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
                 arguments += listOf(
@@ -231,4 +237,10 @@ dependencies {
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.coil.test)
+
+    // Tests on a real Android (androidTest, run on an emulator in CI).
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }

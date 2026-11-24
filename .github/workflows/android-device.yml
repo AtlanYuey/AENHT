@@ -1,0 +1,84 @@
+name: Android device
+
+# The Android app on a real Android (an Android 15 emulator), not the
+# desktop JVM the other tests run on: its regex engine (ICU), WebView and
+# rendering differ. The regexes are also compiled with ICU directly. The
+# screen is recorded and the log kept (artifact "android-device").
+on:
+  push:
+    branches: [main, dev, 'claude/**']
+    paths-ignore: ['iosApp/**', '**.md', 'docs/**']
+  workflow_dispatch:
+
+concurrency:
+  group: android-device-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  device:
+    name: Regexes on ICU, tests on an Android 15 emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install SDK packages
+        run: |
+          SDKMANAGER=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # x86_64 native code too (-Paenht.emulator), for the emulator; never in the published apps.
+      - name: Build the app and its device tests
+        run: ./gradlew --no-daemon -Paenht.emulator :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Tests on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb logcat -c
+            adb shell "nohup screenrecord --time-limit 175 /sdcard/device-tests.mp4 > /dev/null 2>&1 &"
+            ./gradlew --no-daemon -Paenht.emulator :androidApp:connectedDebugAndroidTest || touch device-tests-failed
+            sleep 5
+            adb pull /sdcard/device-tests.mp4 . || true
+            adb logcat -d > logcat.txt
+            test ! -f device-tests-failed
+
+      - name: Regexes compiled with ICU (Android's regex engine)
+        if: always()
+        run: |
+          sudo apt-get install -y -q python3-icu > /dev/null
+          python3 tools/checks/icu_regex.py shared/src/commonMain androidApp/src/main
+
+      - name: Keep the recording, the log and the test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-device
+          path: |
+            device-tests.mp4
+            logcat.txt
+            androidApp/build/reports/androidTests/
+            androidApp/build/outputs/androidTest-results/
+          if-no-files-found: warn
