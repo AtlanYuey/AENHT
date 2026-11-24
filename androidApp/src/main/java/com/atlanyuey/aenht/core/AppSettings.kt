@@ -361,6 +361,11 @@ object AppSettings {
         preloadPages = p.getInt("preloadPages", 4)
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
         doubleTapTopToStart = p.getBoolean("doubleTapTopToStart", true)
+        compactControls = p.getBoolean("compactControls", false)
+        compactSettingsButton = p.getBoolean("compactSettingsButton", false)
+        compactAutoReadButton = p.getBoolean("compactAutoReadButton", false)
+        controlsMiddleOnly = p.getBoolean("controlsMiddleOnly", false)
+        favoritesRefreshOnOpen = p.getBoolean("favoritesRefreshOnOpen", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
         pageGap = p.getFloat("pageGap", 6f).toDouble()
         screenOn = ScreenOn.of(p.getString("screenOn", null))
@@ -517,6 +522,16 @@ object AppSettings {
     var tapToTurnPages by Pref(true) { save("tapToTurnPages", it) }
     /** The reader: a double tap on the title goes to the first page. */
     var doubleTapTopToStart by Pref(true) { save("doubleTapTopToStart", it) }
+    /** The reader's control bar in one row (the slider); its buttons float above it, when on. */
+    var compactControls by Pref(false) { save("compactControls", it) }
+    /** With the compact control bar: the Reader Settings button floats above it. */
+    var compactSettingsButton by Pref(false) { save("compactSettingsButton", it) }
+    /** With the compact control bar: the Auto Read / Auto Scroll button floats above it. */
+    var compactAutoReadButton by Pref(false) { save("compactAutoReadButton", it) }
+    /** Only a tap in the middle shows or hides the reader's controls; the sides do nothing. */
+    var controlsMiddleOnly by Pref(false) { save("controlsMiddleOnly", it) }
+    /** Favorites reload each time their tab is opened. */
+    var favoritesRefreshOnOpen by Pref(true) { save("favoritesRefreshOnOpen", it) }
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
     /** Gap between pages in the "Continuous with Gaps" mode, in dp. */
     var pageGap by Pref(6.0) { save("pageGap", it) }
@@ -748,6 +763,11 @@ object AppSettings {
         "preloadPages" to preloadPages,
         "tapToTurnPages" to tapToTurnPages,
         "doubleTapTopToStart" to doubleTapTopToStart,
+        "compactControls" to compactControls,
+        "compactSettingsButton" to compactSettingsButton,
+        "compactAutoReadButton" to compactAutoReadButton,
+        "controlsMiddleOnly" to controlsMiddleOnly,
+        "favoritesRefreshOnOpen" to favoritesRefreshOnOpen,
         "animatePageTurns" to animatePageTurns,
         "pageGap" to pageGap,
         "screenOn" to screenOn.raw,
@@ -867,6 +887,11 @@ object AppSettings {
                 "preloadPages" -> number?.let { preloadPages = it.toInt().coerceIn(1, 10) }
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
                 "doubleTapTopToStart" -> bool?.let { doubleTapTopToStart = it }
+                "compactControls" -> bool?.let { compactControls = it }
+                "compactSettingsButton" -> bool?.let { compactSettingsButton = it }
+                "compactAutoReadButton" -> bool?.let { compactAutoReadButton = it }
+                "controlsMiddleOnly" -> bool?.let { controlsMiddleOnly = it }
+                "favoritesRefreshOnOpen" -> bool?.let { favoritesRefreshOnOpen = it }
                 "animatePageTurns" -> bool?.let {
                     animatePageTurns = it
                     if (tapTurn != TapTurn.Spread && (tapTurn == TapTurn.Slide) != it) tapTurn = if (it) TapTurn.Slide else TapTurn.Fade

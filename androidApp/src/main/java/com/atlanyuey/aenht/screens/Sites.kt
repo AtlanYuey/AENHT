@@ -398,6 +398,9 @@ class SitesScreen : Screen() {
                     ToggleRow(tr("Search Both Sites"), AppSettings.searchBothSites, { AppSettings.searchBothSites = it }, last = true)
                 }
             }
+            section(footer = { FooterText(tr("Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes.")) }) {
+                ToggleRow(tr("Refresh Favorites When Opened"), AppSettings.favoritesRefreshOnOpen, { AppSettings.favoritesRefreshOnOpen = it }, last = true)
+            }
             if (AppSettings.ehentaiEnabled) {
                 section("E-Hentai") {
                     ListRow(tr("Account"), value = if (EhSession.isLoggedIn) tr("Logged In") else tr("Not logged in"), chevron = true,

@@ -10,6 +10,9 @@ struct HistoryView: View {
     @State private var storageError: String?
     @State private var clearing = false
     @State private var site: SiteKind? = AppSettings.shared.site(AppSettings.shared.historySite)
+    /// Choosing entries to delete (Select, or Select in an entry's context menu).
+    @State private var selection: GallerySelection?
+    @State private var confirmDeleteChosen = false
 
     private var siteEntries: [HistoryEntry] {
         guard let site else { return entries }
@@ -17,6 +20,13 @@ struct HistoryView: View {
     }
 
     private var showsSites: Bool { site == nil && settings.enabledSites.count > 1 }
+
+    /// The entries chosen (Select), as they show.
+    private var chosenEntries: [HistoryEntry] {
+        guard let selection else { return [] }
+        let keys = Set(selection.keys)
+        return filtered.filter { keys.contains($0.key) }
+    }
 
     private var filtered: [HistoryEntry] {
         let text = searchText.trimmingCharacters(in: .whitespaces)
@@ -59,6 +69,13 @@ struct HistoryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search History")
         .barToolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(selection == nil ? "Select" : "Done") {
+                    selection = selection == nil ? GallerySelection() : nil
+                }
+                .fontWeight(selection == nil ? .regular : .semibold)
+                .disabled(selection == nil && entries.isEmpty)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 SiteFilterMenu(site: $site)
             }
@@ -73,6 +90,23 @@ struct HistoryView: View {
             }
         }
         .environment(\.showsSiteBadge, showsSites)
+        .environment(\.gallerySelection, selection)
+        .environment(\.gallerySelect) { item in selection = GallerySelection(item) }
+        // While choosing: the selection bar takes the tab bar's place.
+        .toolbar(selection == nil ? .automatic : .hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom) {
+            if let selection {
+                GallerySelectionBar(selection: selection, items: filtered.map(\.item), action: "Delete") {
+                    confirmDeleteChosen = true
+                }
+            }
+        }
+        .confirmationDialog("Delete \(chosenEntries.count) from history?", isPresented: $confirmDeleteChosen, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                for entry in chosenEntries { delete(entry) }
+                selection = nil
+            }
+        }
         .onAppear {
             if settings.historySite == .follow { site = settings.site(.follow) }
         }

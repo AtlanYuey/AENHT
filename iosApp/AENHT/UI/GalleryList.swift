@@ -59,6 +59,8 @@ struct GalleryList: View {
     /// The tab whose first page this is: its tab button takes the list to the top, back, or (twice) refreshes.
     var tab: AppTab? = nil
     var tabTapEnabled = true
+    /// Its tab was chosen (from another one), while the list is near its top.
+    var onTabOpened: (() async -> Void)? = nil
     /// Scrolling down hides the tab bar (Appearance › Hide Tab Bar When Scrolling).
     var hidesBars = true
     /// How far the list is scrolled and where the first block ends (Home's header docking in the bar).
@@ -78,7 +80,8 @@ struct GalleryList: View {
                 columns: [settings.columns(isLandscape: false), settings.columns(isLandscape: true)],
                 dynamicType: dynamicTypeSize
             ),
-            tabTap: tab == nil ? nil : chrome.tabTap
+            tabTap: tab == nil ? nil : chrome.tabTap,
+            tabOpened: tab == nil ? nil : chrome.tabOpened
         )
         // Opened in the stack's path, like the links on the gallery's page (RoutedNavigationStack).
         .environment(\.openGallery) { item in openRoute?(OpenedGallery(item)) }
@@ -101,13 +104,14 @@ private struct GalleryListRepresentable: UIViewControllerRepresentable {
     let list: GalleryList
     let layout: GalleryListLayoutKey
     let tabTap: TabTap?
+    let tabOpened: TabTap?
 
     func makeUIViewController(context: Context) -> GalleryListController {
         GalleryListController()
     }
 
     func updateUIViewController(_ controller: GalleryListController, context: Context) {
-        controller.update(list: list, layout: layout, tabTap: tabTap, environment: context.environment)
+        controller.update(list: list, layout: layout, tabTap: tabTap, tabOpened: tabOpened, environment: context.environment)
     }
 
     static func dismantleUIViewController(_ controller: GalleryListController, coordinator: ()) {
@@ -136,6 +140,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
     private var appTab: AppTab?
     private var tabTapEnabled = true
     private var lastTabTap: TabTap?
+    private var lastTabOpened: TabTap?
     /// What of the environment the cells' views show that doesn't reach them
     /// by itself: when it changes (the app comes back and its privacy blur
     /// ends, the theme changes), every cell is drawn again.
@@ -144,6 +149,8 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
     private struct CellEnvironment: Equatable {
         var privacy: BackgroundPrivacy
         var colorScheme: ColorScheme
+        /// Choosing started or ended (Select): every card shows it, or stops.
+        var choosing: ObjectIdentifier?
     }
 
     private let metrics = CardMetrics()
@@ -212,7 +219,7 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
 
     // MARK: Updates from SwiftUI
 
-    func update(list: GalleryList, layout: GalleryListLayoutKey, tabTap: TabTap?, environment: EnvironmentValues) {
+    func update(list: GalleryList, layout: GalleryListLayoutKey, tabTap: TabTap?, tabOpened: TabTap?, environment: EnvironmentValues) {
         loadViewIfNeeded()
         self.environment = environment
         onItemAppear = list.onItemAppear
@@ -225,7 +232,8 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         let relayout = layoutKey != nil && layoutKey != layout
         if relayout { metrics.clear() }
         layoutKey = layout
-        let cells = CellEnvironment(privacy: environment.privacyMode, colorScheme: environment.colorScheme)
+        let cells = CellEnvironment(privacy: environment.privacyMode, colorScheme: environment.colorScheme,
+                                    choosing: environment.gallerySelection.map(ObjectIdentifier.init))
         let redraw = cellEnvironment != nil && cellEnvironment != cells
         cellEnvironment = cells
         apply(list.blocks, relayout: relayout, redraw: redraw)
@@ -234,6 +242,14 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
         if let tabTap {
             if let last = lastTabTap, last != tabTap, tabTap.tab == appTab { tabTapped() }
             lastTabTap = tabTap
+        }
+        if let tabOpened {
+            // Chosen again: reloaded when near the top (scrolled further down, the place stays).
+            if let last = lastTabOpened, last != tabOpened, tabOpened.tab == appTab, let opened = list.onTabOpened {
+                let offset = collectionView.contentOffset.y + collectionView.adjustedContentInset.top
+                if offset < collectionView.bounds.height * 2 { Task { @MainActor in await opened() } }
+            }
+            lastTabOpened = tabOpened
         }
     }
 
@@ -715,6 +731,8 @@ private struct ListCellEnvironment: ViewModifier {
             .environment(\.galleryCoverBadge, values.galleryCoverBadge)
             .environment(\.galleryMenuItems, values.galleryMenuItems)
             .environment(\.showsSiteBadge, values.showsSiteBadge)
+            .environment(\.gallerySelection, values.gallerySelection)
+            .environment(\.gallerySelect, values.gallerySelect)
             .environment(\.openRoute, values.openRoute)
             .environment(\.openGallery, values.openGallery)
             .tint(AppSettings.shared.accent.color)

@@ -20,6 +20,14 @@ struct FavoritesView: View {
     @State private var showLogin = false
     @State private var showEhLogin = false
     @State private var pickFolders = false
+    /// When the list last reloaded because the tab was chosen.
+    @State private var openedRefresh = Date.distantPast
+    /// Choosing favorites to remove (Select, or Select in a gallery's context menu).
+    @State private var selection: GallerySelection?
+    @State private var confirmRemove = false
+    /// Removing the chosen ones from the sites (one request each).
+    @State private var removing = false
+    @State private var removeError: String?
     private let store = FavoritesStore.shared
 
     /// Holds the folder for the E-Hentai feed's closure.
@@ -46,6 +54,59 @@ struct FavoritesView: View {
         Task {
             if site == .nhentai { await nhFeed.reload() } else if site == .ehentai { await ehFeed.reload() }
         }
+    }
+
+    /// Refresh Favorites When Opened is on, and the last reload on opening
+    /// was a few seconds ago at least (tabs switched quickly).
+    private func openedRefreshDue() -> Bool {
+        guard settings.favoritesRefreshOnOpen, Date().timeIntervalSince(openedRefresh) > 5 else { return false }
+        openedRefresh = Date()
+        return true
+    }
+
+    /// What shows now (Select All chooses these).
+    private var shownItems: [GalleryItem] {
+        if let site {
+            guard loggedIn(site) else { return [] }
+            return (site == .ehentai ? ehFeed : nhFeed).items
+        }
+        return store.cards(folders: Set(settings.favoritesAllFolders))
+            .filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
+    }
+
+    private var chosenItems: [GalleryItem] {
+        guard let selection else { return [] }
+        let keys = Set(selection.keys)
+        return shownItems.filter { keys.contains($0.uid) }
+    }
+
+    /// Removes [items] from the favorites on their sites, one at a time (the
+    /// sites limit how fast); stops at the first error, which is shown. Those
+    /// removed leave the lists and the saved copy.
+    private func removeChosen(_ items: [GalleryItem]) async {
+        guard !removing, !items.isEmpty else { return }
+        removing = true
+        var done = Set<String>()
+        var failure: String?
+        for item in items {
+            do {
+                if item.site == .ehentai {
+                    try await EhService.shared.setFavorite(gid: item.id, token: item.token ?? "", folder: nil)
+                } else {
+                    _ = try await NHClient.shared.setFavorite(item.id, false)
+                }
+                done.insert(item.uid)
+                await store.removed(item)
+            } catch {
+                failure = ErrorText.of(error)
+                break
+            }
+        }
+        nhFeed.remove(uids: done)
+        ehFeed.remove(uids: done)
+        removing = false
+        if failure == nil { selection = nil } else { selection?.remove(done) }
+        removeError = failure
     }
 
     private func loggedIn(_ site: SiteKind) -> Bool {
@@ -82,7 +143,8 @@ struct FavoritesView: View {
                         },
                     ],
                     refresh: { await store.sync() },
-                    tab: .favorites
+                    tab: .favorites,
+                    onTabOpened: { if openedRefreshDue() { await store.syncIfStale() } }
                 )
                 .environment(\.showsSiteBadge, true)
             } else {
@@ -100,7 +162,12 @@ struct FavoritesView: View {
                     ],
                     onItemAppear: { item in Task { await feed.loadMoreIfNeeded(after: item) } },
                     refresh: { await feed.reload() },
-                    tab: .favorites
+                    tab: .favorites,
+                    onTabOpened: {
+                        // Me › Sites › Refresh Favorites When Opened: a gallery just favorited shows.
+                        guard openedRefreshDue(), let site, loggedIn(site), feed.hasLoaded, !feed.isLoading else { return }
+                        await feed.reload()
+                    }
                 )
             }
         }
@@ -116,6 +183,15 @@ struct FavoritesView: View {
             Button("Cancel", role: .cancel) {}
         }
         .barToolbar {
+            if site.map(loggedIn) ?? true {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(selection == nil ? "Select" : "Done") {
+                        selection = selection == nil ? GallerySelection() : nil
+                    }
+                    .fontWeight(selection == nil ? .regular : .semibold)
+                    .disabled(removing || (selection == nil && shownItems.isEmpty))
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     draftQuery = query
@@ -132,6 +208,30 @@ struct FavoritesView: View {
                     }
                 }
             }
+        }
+        .environment(\.gallerySelection, selection)
+        .environment(\.gallerySelect) { item in if !removing { selection = GallerySelection(item) } }
+        // While choosing: the selection bar takes the tab bar's place.
+        .toolbar(selection == nil ? .automatic : .hidden, for: .tabBar)
+        .safeAreaInset(edge: .bottom) {
+            if let selection {
+                GallerySelectionBar(selection: selection, items: shownItems, action: "Remove", busy: removing) {
+                    confirmRemove = true
+                }
+            }
+        }
+        .confirmationDialog("Remove \(chosenItems.count) from favorites?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                let items = chosenItems
+                Task { await removeChosen(items) }
+            }
+        } message: {
+            Text("They are removed from your favorites on the site too.")
+        }
+        .alert("Couldn't Remove", isPresented: Binding(get: { removeError != nil }, set: { if !$0 { removeError = nil } })) {
+            Button("OK") { removeError = nil }
+        } message: {
+            Text(removeError ?? "")
         }
         .sheet(isPresented: $showLogin) { LoginView() }
         .sheet(isPresented: $showEhLogin) { EhLoginView() }

@@ -132,6 +132,10 @@ import com.atlanyuey.aenht.ui.components.GlassCircleButton
 import com.atlanyuey.aenht.ui.components.LargeTitle
 import com.atlanyuey.aenht.ui.components.LocalNavigator
 import com.atlanyuey.aenht.ui.components.LocalOverlays
+import com.atlanyuey.aenht.ui.components.GallerySelection
+import com.atlanyuey.aenht.ui.components.GallerySelectionBar
+import com.atlanyuey.aenht.ui.components.LocalGallerySelection
+import com.atlanyuey.aenht.ui.components.LocalGallerySelect
 import com.atlanyuey.aenht.ui.components.MenuButton
 import com.atlanyuey.aenht.ui.components.PullToRefresh
 import com.atlanyuey.aenht.ui.components.Screen
@@ -691,6 +695,50 @@ class FavoritesScreen : Screen(), TabRoot {
     private val taps = TabTaps(scope)
     /** What a pull does now (set while the list shows). */
     private var refreshAction: (() -> Unit)? = null
+    /** Choosing favorites to remove (Select, or Select in a gallery's long-press menu). */
+    private var selection by mutableStateOf<GallerySelection?>(null)
+    /** Removing the chosen ones from the site (one request each). */
+    private var removing by mutableStateOf(false)
+
+    // While choosing: the selection bar takes the tab bar's place, and Back stops choosing.
+    override val hidesTabBar: Boolean get() = selection != null
+    override val holdsBack: Boolean get() = selection != null
+    override fun onBackHeld() { if (!removing) selection = null }
+
+    /**
+     * Removes [chosen] from the favorites on their sites, one at a time (the
+     * sites limit how fast); stops at the first error, which is shown. Those
+     * removed leave the lists and the saved copy.
+     */
+    private fun removeChosen(chosen: List<GallerySummary>, onError: (String) -> Unit) {
+        if (removing || chosen.isEmpty()) return
+        removing = true
+        scope.launch {
+            val done = mutableSetOf<String>()
+            var failure: String? = null
+            for (item in chosen) {
+                try {
+                    when (item.site) {
+                        Site.NHENTAI -> NHClient.setFavorite(item.key.id.toInt(), false)
+                        Site.EHENTAI -> EhClient.setFavorite(item.key.id, item.key.token.orEmpty(), null)
+                    }
+                    done += item.key.storageKey
+                    FavoritesStore.removed(item.key)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    failure = com.atlanyuey.aenht.core.errorText(e)
+                    break
+                }
+            }
+            nhFeedState.items.removeAll { it.key.storageKey in done }
+            ehFeedState.items.removeAll { it.key.storageKey in done }
+            removing = false
+            val left = selection
+            if (failure == null) selection = null else left?.keys?.removeAll(done)
+            failure?.let(onError)
+        }
+    }
 
     override fun tabTapped() {
         taps.tapped(
@@ -700,9 +748,35 @@ class FavoritesScreen : Screen(), TabRoot {
         )
     }
 
+    /** When the favorites were last reloaded on opening (not more often than every few seconds). */
+    private var openedRefresh = 0L
+
     override fun onAppear() {
         // "Same as Home" follows the site the home page is on now.
         if (AppSettings.favoritesSite == SiteChoice.Follow) site = AppSettings.site(SiteChoice.Follow)
+        refreshOnOpen()
+    }
+
+    /**
+     * Me › Sites › Refresh Favorites When Opened: one site's list reloads its
+     * first page (one request), unless it's scrolled past it (the place stays);
+     * All syncs its copy when it's old. A gallery favorited in the app is in
+     * the list then, without pulling to refresh.
+     */
+    private fun refreshOnOpen() {
+        if (!AppSettings.favoritesRefreshOnOpen) return
+        val now = System.currentTimeMillis()
+        if (now - openedRefresh < 5_000) return
+        openedRefresh = now
+        val current = site
+        if (current == null) {
+            FavoritesStore.syncIfStale()
+            return
+        }
+        val feed = if (current == Site.EHENTAI) ehFeedState else nhFeedState
+        if (!loggedIn(current) || !feed.hasLoaded || feed.isLoading) return
+        if (grid.firstVisibleItemIndex > 20) return
+        feed.reload()
     }
 
     private fun loggedIn(s: Site) = if (s == Site.NHENTAI) Session.isLoggedIn else EhSession.isLoggedIn
@@ -721,13 +795,50 @@ class FavoritesScreen : Screen(), TabRoot {
         LaunchedEffect(Unit) { snapshotFlow { ehFolder }.drop(1).collect { ehFeedState.reload() } }
         LaunchedEffect(feed.isLoading, FavoritesStore.syncing) { if (!feed.isLoading && FavoritesStore.syncing == null) pulling = false }
         val needsLogin = current != null && !loggedIn(current)
+        val overlays = LocalOverlays.current
+        val chosen = selection
+        val removeLabel = tr("Remove")
+        val cancelLabel = tr("Cancel")
+        val removeMessage = tr("They are removed from your favorites on the site too.")
+        val removeFailed = tr("Couldn't Remove")
+        // What shows now (Select All chooses these).
+        val shown = if (current == null) {
+            FavoritesStore.cards(null, AppSettings.favoritesAllFolders.takeIf { it.size < 10 })
+                .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+        } else {
+            feed.items.toList()
+        }
         ScreenScaffold(
             title = tr("Favorites"),
             showTitle = { needsLogin || grid.pastTitle() },
+            leading = if (needsLogin) null else ({
+                com.atlanyuey.aenht.ui.components.TextButton(
+                    if (chosen != null) tr("Done") else tr("Select"),
+                    { selection = if (chosen == null) GallerySelection() else null },
+                    enabled = !removing && (chosen != null || shown.isNotEmpty()),
+                    bold = chosen != null,
+                )
+            }),
+            overlay = {
+                if (chosen != null && !needsLogin) {
+                    GallerySelectionBar(chosen, shown, if (removing) tr("Removing…") else removeLabel) {
+                        if (removing) return@GallerySelectionBar
+                        val items = shown.filter { it in chosen }
+                        overlays.alert(
+                            L10n.string("Remove %lld from favorites?", items.size), removeMessage,
+                            listOf(
+                                DialogButton(cancelLabel, ButtonRole.Cancel),
+                                DialogButton(removeLabel, ButtonRole.Destructive) {
+                                    removeChosen(items) { error -> overlays.alert(removeFailed, error) }
+                                },
+                            ),
+                        )
+                    }
+                }
+            },
             trailing = {
                 if (current == null) SyncIndicator()
                 if (!needsLogin) {
-                    val overlays = LocalOverlays.current
                     val title = tr("Search Favorites")
                     val search = tr("Search")
                     val cancel = tr("Cancel")
@@ -761,9 +872,12 @@ class FavoritesScreen : Screen(), TabRoot {
             }
             refreshAction = refresh
             PullToRefresh(pulling, refresh, topInset = padding.calculateTopPadding()) {
+              CompositionLocalProvider(
+                  LocalGallerySelection provides chosen,
+                  LocalGallerySelect provides { item -> if (!removing) selection = GallerySelection().also { it.toggle(item) } },
+              ) {
                 if (current == null) {
-                    val cards = FavoritesStore.cards(null, AppSettings.favoritesAllFolders.takeIf { it.size < 10 })
-                        .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+                    val cards = shown
                     CompositionLocalProvider(LocalShowsSiteBadge provides true) {
                         GalleryGrid(
                             cards, grid, padding,
@@ -777,6 +891,7 @@ class FavoritesScreen : Screen(), TabRoot {
                                     }
                                 }
                             },
+                            footer = { if (chosen != null) fullLine("selection-room") { androidx.compose.foundation.layout.Spacer(Modifier.height(64.dp)) } },
                         )
                     }
                 } else {
@@ -784,9 +899,13 @@ class FavoritesScreen : Screen(), TabRoot {
                         feed.items, grid, padding,
                         onItemShown = { feed.loadMoreIfNeeded(it) },
                         header = { fullLine("title") { FavoritesTitle() } },
-                        footer = { feedFooter(feed, L10n.string("No Favorites") to Icons.Heart) },
+                        footer = {
+                            feedFooter(feed, L10n.string("No Favorites") to Icons.Heart)
+                            if (chosen != null) fullLine("selection-room") { androidx.compose.foundation.layout.Spacer(Modifier.height(64.dp)) }
+                        },
                     )
                 }
+              }
             }
         }
     }
@@ -896,6 +1015,13 @@ class HistoryScreen : Screen(), TabRoot {
     }
     private var search by mutableStateOf("")
     private var site by mutableStateOf(AppSettings.site(AppSettings.historySite))
+    /** Choosing entries to delete (Select, or Select in an entry's long-press menu). */
+    private var selection by mutableStateOf<GallerySelection?>(null)
+
+    // While choosing: the selection bar takes the tab bar's place, and Back stops choosing.
+    override val hidesTabBar: Boolean get() = selection != null
+    override val holdsBack: Boolean get() = selection != null
+    override fun onBackHeld() { selection = null }
 
     override fun onAppear() {
         if (AppSettings.historySite == SiteChoice.Follow) site = AppSettings.site(SiteChoice.Follow)
@@ -921,10 +1047,38 @@ class HistoryScreen : Screen(), TabRoot {
         val clearTitle = tr("Clear all history?")
         val clearLabel = tr("Clear History")
         val cards = AppSettings.libraryStyle == LibraryStyle.Cards
+        val chosen = selection
+        val deleteLabel = tr("Delete")
+        val cancelLabel = tr("Cancel")
         ScreenScaffold(
             title = tr("History"),
             showTitle = {
                 if (cards) grid.pastTitle() else list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60
+            },
+            leading = {
+                com.atlanyuey.aenht.ui.components.TextButton(
+                    if (chosen != null) tr("Done") else tr("Select"),
+                    { selection = if (chosen == null) GallerySelection() else null },
+                    enabled = chosen != null || entries.isNotEmpty(),
+                    bold = chosen != null,
+                )
+            },
+            overlay = {
+                if (chosen != null) {
+                    GallerySelectionBar(chosen, filtered.map { it.summary }, deleteLabel) {
+                        val keys = filtered.filter { it.summary in chosen }.map { it.key }
+                        overlays.alert(
+                            L10n.string("Delete %lld from history?", keys.size), null,
+                            listOf(
+                                DialogButton(cancelLabel, ButtonRole.Cancel),
+                                DialogButton(deleteLabel, ButtonRole.Destructive) {
+                                    keys.forEach { HistoryStore.delete(it) }
+                                    selection = null
+                                },
+                            ),
+                        )
+                    }
+                }
             },
             trailing = {
                 SiteFilterButton(site, { site = it })
@@ -937,10 +1091,15 @@ class HistoryScreen : Screen(), TabRoot {
                 )
             },
         ) { padding ->
-            if (cards) {
-                Cards(padding, entries.isEmpty(), filtered, sections)
-            } else {
-                Rows(padding, entries.isEmpty(), filtered, sections)
+            CompositionLocalProvider(
+                LocalGallerySelection provides chosen,
+                LocalGallerySelect provides { item -> selection = GallerySelection().also { it.toggle(item) } },
+            ) {
+                if (cards) {
+                    Cards(padding, entries.isEmpty(), filtered, sections)
+                } else {
+                    Rows(padding, entries.isEmpty(), filtered, sections)
+                }
             }
         }
     }
@@ -973,6 +1132,8 @@ class HistoryScreen : Screen(), TabRoot {
                     fullLine("day$day") { DayHeader(day, inset = 4.dp) }
                     galleryItems(dayEntries.map { it.summary }, style)
                 }
+                // Room for the selection bar.
+                if (selection != null) fullLine("selection-room") { androidx.compose.foundation.layout.Spacer(Modifier.height(64.dp)) }
             }
         }
     }
@@ -999,17 +1160,20 @@ class HistoryScreen : Screen(), TabRoot {
             sections.forEach { (day, dayEntries) ->
                 item("day$day") { DayHeader(day) }
                 items(dayEntries.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { entry ->
-                    SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) {
+                    val row = @Composable {
                         CompositionLocalProvider(LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1)) {
-                        GalleryRow(
-                            entry.summary,
-                            Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
-                            subtitle = historySubtitle(entry),
-                        )
+                            GalleryRow(
+                                entry.summary,
+                                Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
+                                subtitle = historySubtitle(entry),
+                            )
                         }
                     }
+                    // Choosing: a tap chooses, no swipe.
+                    if (selection != null) row() else SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) { row() }
                 }
             }
+            if (selection != null) item("selection-room") { androidx.compose.foundation.layout.Spacer(Modifier.height(64.dp)) }
         }
     }
 

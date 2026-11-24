@@ -318,6 +318,7 @@ struct ReaderView: View {
             .background(Color.black)
             .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscape = $0 }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                canvasSize = size
                 viewportPixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
             }
             .overlay(alignment: .top) {
@@ -424,7 +425,10 @@ struct ReaderView: View {
                 chromeVisible = false
             }
             .contentShape(Rectangle())
-            .onTapGesture { chromeVisible.toggle() }
+            .onTapGesture { location in
+                let point = CGPoint(x: location.x / max(canvasSize.width, 1), y: location.y / max(canvasSize.height, 1))
+                if ReaderTapZones.togglesControls(at: point, paged: false) { chromeVisible.toggle() }
+            }
             .gesture(ReaderPan { handleSwipe($0) })
         }
     }
@@ -555,6 +559,9 @@ struct ReaderView: View {
                                    numPages: source.numPages, page: page)
     }
 
+    /// The reader's size in points (where a tap is, as a fraction of it).
+    @State private var canvasSize: CGSize = .zero
+
     /// The title's taps, counted to find a double tap.
     @State private var topTaps = DoubleTapCounter()
 
@@ -626,21 +633,36 @@ struct ReaderView: View {
     // MARK: Bottom panel
 
     private var bottomPanel: some View {
+        VStack(spacing: 0) {
+            if settings.compactControls { floatingButtons }
+            if settings.compactControls { compactBar } else { fullBar }
+        }
+        .frame(maxWidth: 640)
+    }
+
+    /// The page slider (right to left for right-to-left reading).
+    private var pageSlider: some View {
+        Slider(
+            value: $sliderValue,
+            in: 0...Double(max(1, pageCount - 1)),
+            step: 1,
+            onEditingChanged: { editing in
+                sliderEditing = editing
+                if !editing { goFromPanel(Int(sliderValue)) }
+            }
+        )
+        .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
+    }
+
+    /// The control bar: the slider, then Auto Read, Reset Size and the settings.
+    /// Turning is a tap or a swipe on the page: no arrows here.
+    private var fullBar: some View {
         VStack(spacing: 10) {
             HStack(spacing: 12) {
                 Text("\(page + 1)")
                     .font(.footnote.monospacedDigit())
                     .frame(minWidth: 28)
-                Slider(
-                    value: $sliderValue,
-                    in: 0...Double(max(1, pageCount - 1)),
-                    step: 1,
-                    onEditingChanged: { editing in
-                        sliderEditing = editing
-                        if !editing { goFromPanel(Int(sliderValue)) }
-                    }
-                )
-                .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
+                pageSlider
                 Text("\(pageCount)")
                     .font(.footnote.monospacedDigit())
                     .frame(minWidth: 28)
@@ -648,12 +670,6 @@ struct ReaderView: View {
             // Each control is touched over at least 44 × 44 pt (the glyphs alone are
             // too small to hit on iPad), and a touch between them stays on the panel.
             HStack(spacing: 0) {
-                Button {
-                    goFromPanel(step(forward: isRTL))
-                } label: {
-                    Image(systemName: "chevron.left").panelTarget()
-                }
-                Spacer(minLength: 8)
                 Button {
                     autoRead.toggle()
                 } label: {
@@ -663,8 +679,8 @@ struct ReaderView: View {
                         .minimumScaleFactor(0.75)
                         .panelTarget()
                 }
+                Spacer(minLength: 8)
                 if isResized {
-                    Spacer(minLength: 8)
                     // Pinched smaller or bigger: back to the usual size.
                     Button {
                         resetSize()
@@ -675,20 +691,14 @@ struct ReaderView: View {
                             .panelTarget()
                     }
                     .transition(.opacity)
+                    Spacer(minLength: 8)
                 }
-                Spacer(minLength: 8)
                 Button {
                     showSettings = true
                 } label: {
                     Image(systemName: "slider.horizontal.3").panelTarget()
                 }
                 .accessibilityLabel("Reader Settings")
-                Spacer(minLength: 8)
-                Button {
-                    goFromPanel(step(forward: !isRTL))
-                } label: {
-                    Image(systemName: "chevron.right").panelTarget()
-                }
             }
             .buttonStyle(.borderless)
             .font(.body.weight(.medium))
@@ -703,7 +713,66 @@ struct ReaderView: View {
         .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
-        .frame(maxWidth: 640)
+    }
+
+    /// Controls › Control Bar › Compact: one row, the slider with the page
+    /// and the pages left under it.
+    private var compactBar: some View {
+        VStack(spacing: 0) {
+            pageSlider
+            ZStack {
+                Text(verbatim: "\(page + 1) / \(pageCount)")
+                    .monospacedDigit()
+                Text("Pages left: \(max(0, pageCount - 1 - page))")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .font(.caption2)
+            .lineLimit(1)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
+        .modifier(GlassPanel(cornerRadius: 22))
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+    }
+
+    /// With the compact bar: the buttons turned on (and Reset Size, when the
+    /// pages were resized), floating on the left above it.
+    @ViewBuilder private var floatingButtons: some View {
+        let showSettingsButton = settings.compactSettingsButton
+        let showAutoRead = settings.compactAutoReadButton
+        if showSettingsButton || showAutoRead || isResized {
+            HStack(spacing: 10) {
+                if showSettingsButton {
+                    Button { showSettings = true } label: {
+                        Image(systemName: "slider.horizontal.3").floatingTarget()
+                    }
+                    .accessibilityLabel("Reader Settings")
+                }
+                if showAutoRead {
+                    Button { autoRead.toggle() } label: {
+                        Image(systemName: autoRead ? "pause.fill" : "play.fill").floatingTarget()
+                    }
+                    .accessibilityLabel(autoReadTitle)
+                }
+                if isResized {
+                    Button { resetSize() } label: {
+                        Image(systemName: "arrow.up.left.and.down.right.magnifyingglass").floatingTarget()
+                    }
+                    .accessibilityLabel("Reset Size")
+                    .transition(.opacity)
+                }
+                Spacer(minLength: 0)
+            }
+            .buttonStyle(.borderless)
+            .font(.body.weight(.medium))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 2)
+        }
     }
 }
 
@@ -713,6 +782,13 @@ private extension View {
         frame(minWidth: 44, minHeight: 44)
             .padding(.horizontal, 4)
             .contentShape(Rectangle())
+    }
+
+    /// A floating round button above the compact control bar (44 pt).
+    func floatingTarget() -> some View {
+        frame(width: 44, height: 44)
+            .modifier(GlassPanel(cornerRadius: 22))
+            .contentShape(Circle())
     }
 }
 
@@ -819,20 +895,13 @@ struct ReadingSettingsSections: View {
         }
     }
 
+    /// Reading: how the pages go (direction, double page, gap), how they
+    /// turn, auto read / auto scroll, and loading ahead.
     @ViewBuilder private var reading: some View {
         Section {
             Picker("Reading Direction", selection: $settings.readMode) {
                 ForEach(ReadMode.allCases) { mode in
                     Label(mode.title, systemImage: mode.systemImage).tag(mode)
-                }
-            }
-            // How a swipe turns the pages (not the taps: those are in Controls).
-            if settings.readMode.isPaged {
-                Picker("Swipe to Turn", selection: $settings.swipeTurn) {
-                    ForEach(SwipeTurn.allCases) { Text($0.title).tag($0) }
-                }
-                Picker("Tap to Turn", selection: $settings.tapTurn) {
-                    ForEach(TapTurn.allCases) { Text($0.title).tag($0) }
                 }
             }
             if settings.readMode == .leftToRight || settings.readMode == .rightToLeft {
@@ -843,9 +912,6 @@ struct ReadingSettingsSections: View {
                     Toggle("Cover Page Alone", isOn: $settings.doublePageCover)
                     Toggle("Turn One Page at a Time", isOn: $settings.doublePageSingleStep)
                 }
-            }
-            if settings.readMode.isPaged {
-                Toggle("Auto Crop Margins", isOn: $settings.autoCrop)
             }
             if settings.readMode == .verticalGap {
                 VStack(alignment: .leading) {
@@ -858,8 +924,19 @@ struct ReadingSettingsSections: View {
                     }
                 }
             }
-        } footer: {
-            if settings.readMode.isPaged {
+        }
+        // How a swipe and a tap turn the pages, chosen apart (which taps turn: Controls).
+        if settings.readMode.isPaged {
+            Section {
+                Picker("Swipe to Turn", selection: $settings.swipeTurn) {
+                    ForEach(SwipeTurn.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Tap to Turn", selection: $settings.tapTurn) {
+                    ForEach(TapTurn.allCases) { Text($0.title).tag($0) }
+                }
+            } header: {
+                Text("Page Turns")
+            } footer: {
                 VStack(alignment: .leading, spacing: 4) {
                     switch settings.swipeTurn {
                     case .sweep: Text("Swipe Fade: the pages don't move; the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once.")
@@ -920,6 +997,10 @@ struct ReadingSettingsSections: View {
                 }
                 Toggle("Continue Auto Scroll While Dragging", isOn: $settings.continueAutoScrollOnDrag)
             }
+        } header: {
+            Text(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")
+        }
+        Section {
             Stepper(value: $settings.preloadPages, in: 1...10) {
                 LabeledContent("Preload Pages", value: "\(settings.preloadPages)")
             }
@@ -928,6 +1009,7 @@ struct ReadingSettingsSections: View {
         }
     }
 
+    /// Display: the pages' look and size, super resolution, the screen.
     @ViewBuilder private var display: some View {
         Section {
             VStack(alignment: .leading) {
@@ -943,6 +1025,25 @@ struct ReadingSettingsSections: View {
         } footer: {
             Text("Brightness, grayscale and inverted colors apply only to the pages.")
         }
+        // The pages' size: cut margins, smaller than the screen, kept from one gallery to the next.
+        if settings.readMode.isPaged {
+            Section {
+                Toggle("Auto Crop Margins", isOn: $settings.autoCrop)
+                Toggle("Allow Smaller Pages", isOn: $settings.allowSmallerPages)
+            } header: {
+                Text("Page Size")
+            } footer: {
+                Text("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")
+            }
+        } else {
+            Section {
+                Toggle("Keep Page Size", isOn: $settings.keepContinuousPageSize)
+            } header: {
+                Text("Page Size")
+            } footer: {
+                Text("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")
+            }
+        }
         SuperResolutionSection(settings: settings)
         Section {
             Picker("Keep Screen On", selection: $settings.screenOn) {
@@ -950,6 +1051,27 @@ struct ReadingSettingsSections: View {
             }
         } footer: {
             Text("The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).")
+        }
+    }
+
+    /// Controls: the control bar (what it shows, when it shows), the taps and
+    /// swipes that turn pages, then the devices in use (a keyboard or page
+    /// turner, Apple Pencil).
+    @ViewBuilder private var controls: some View {
+        Section {
+            Toggle("Compact Control Bar", isOn: $settings.compactControls)
+            if settings.compactControls {
+                Toggle("Reader Settings Button", isOn: $settings.compactSettingsButton)
+                Toggle(settings.readMode.isPaged ? "Auto Read Button" : "Auto Scroll Button", isOn: $settings.compactAutoReadButton)
+            }
+            Toggle("Tap the Middle to Show Controls", isOn: $settings.controlsMiddleOnly)
+        } header: {
+            Text("Control Bar")
+        } footer: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right.")
+                Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")
+            }
         }
         Section {
             VStack(alignment: .leading) {
@@ -968,58 +1090,40 @@ struct ReadingSettingsSections: View {
         } footer: {
             Text("The reader's controls hide on their own after this long without a touch.")
         }
-    }
-
-    @ViewBuilder private var controls: some View {
-        // A connected keyboard or page turner, and a pencil once it has been used here.
-        PageKeysSection()
-        if PencilSupport.current != nil, settings.pencilSeen != .nothing {
-            ApplePencilSection()
-        }
         Section {
             Toggle("Double Tap Top to Go to Start", isOn: $settings.doubleTapTopToStart)
         } footer: {
             Text("Double-tap the title at the top of the reader to go back to the first page.")
         }
+        // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
         if settings.readMode.isPaged {
-            pagedControls
-        } else {
-            // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
             Section {
-                Toggle("Keep Page Size", isOn: $settings.keepContinuousPageSize)
+                Toggle("Tap to Turn Pages", isOn: $settings.tapToTurnPages)
+                Picker("Tap Zones", selection: $settings.tapZones) {
+                    ForEach(TapZones.allCases) { Text($0.title).tag($0) }
+                }
             } footer: {
-                Text("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")
+                Text("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")
+            }
+            Section {
+                // Across the tap zones: up and down with left and right zones.
+                if settings.tapZones == .leftRight {
+                    gesturePicker("Swipe Down", $settings.swipeDown)
+                    gesturePicker("Swipe Up", $settings.swipeUp)
+                } else {
+                    gesturePicker("Swipe Right", $settings.swipeRight)
+                    gesturePicker("Swipe Left", $settings.swipeLeft)
+                }
+            } header: {
+                Text("Swipes")
+            } footer: {
+                Text("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")
             }
         }
-    }
-
-    @ViewBuilder private var pagedControls: some View {
-        Section {
-            Toggle("Allow Smaller Pages", isOn: $settings.allowSmallerPages)
-        } footer: {
-            Text("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")
-        }
-        Section {
-            Toggle("Tap to Turn Pages", isOn: $settings.tapToTurnPages)
-            Picker("Tap Zones", selection: $settings.tapZones) {
-                ForEach(TapZones.allCases) { Text($0.title).tag($0) }
-            }
-        } footer: {
-            Text("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")
-        }
-        Section {
-            // Across the tap zones: up and down with left and right zones.
-            if settings.tapZones == .leftRight {
-                gesturePicker("Swipe Down", $settings.swipeDown)
-                gesturePicker("Swipe Up", $settings.swipeUp)
-            } else {
-                gesturePicker("Swipe Right", $settings.swipeRight)
-                gesturePicker("Swipe Left", $settings.swipeLeft)
-            }
-        } header: {
-            Text("Swipes")
-        } footer: {
-            Text("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")
+        // A connected keyboard or page turner, and a pencil once it has been used here.
+        PageKeysSection()
+        if PencilSupport.current != nil, settings.pencilSeen != .nothing {
+            ApplePencilSection()
         }
     }
 
@@ -1051,6 +1155,24 @@ enum ReaderTapZones {
             if point.y < edge { forward = false } else if point.y > 1 - edge { forward = true } else { return nil }
         }
         return forward
+    }
+
+    /// Whether [point] (fractions of the page) is on a side, not the middle:
+    /// the outer 30 % where the tap zones are (left and right in the
+    /// continuous modes). With Controls › Tap the Middle to Show Controls, a
+    /// tap there doesn't show or hide the controls.
+    @MainActor
+    static func isSide(_ point: CGPoint, paged: Bool) -> Bool {
+        if paged, AppSettings.shared.tapZones == .topBottom {
+            return point.y < edge || point.y > 1 - edge
+        }
+        return point.x < edge || point.x > 1 - edge
+    }
+
+    /// Whether a tap at [point] that doesn't turn the page shows or hides the controls.
+    @MainActor
+    static func togglesControls(at point: CGPoint, paged: Bool) -> Bool {
+        !(AppSettings.shared.controlsMiddleOnly && isSide(point, paged: paged))
     }
 }
 
@@ -2357,6 +2479,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         lastTapPoint = point
         let work = DispatchWorkItem { [weak self] in
             self?.pendingTap = nil
+            // Not a turn: the controls (not from a side, with Tap the Middle to Show Controls).
+            guard MainActor.assumeIsolated({ ReaderTapZones.togglesControls(at: fraction, paged: true) }) else { return }
             self?.onTap?(CGPoint(x: 0.5, y: 0.5))
         }
         pendingTap = work

@@ -222,6 +222,19 @@ private fun tapTurn(fx: Float, fy: Float, rtl: Boolean): Boolean? {
     return forward
 }
 
+/**
+ * Whether a tap at [fx], [fy] (fractions of the page) that doesn't turn the
+ * page shows or hides the controls: not from a side (the outer 30 % where the
+ * tap zones are; left and right in the continuous modes) with Controls ›
+ * Tap the Middle to Show Controls.
+ */
+internal fun tapTogglesControls(fx: Float, fy: Float, paged: Boolean): Boolean {
+    if (!AppSettings.controlsMiddleOnly) return true
+    val side = if (paged && AppSettings.tapZones == com.atlanyuey.aenht.core.TapZones.TopBottom) fy < 0.3f || fy > 0.7f
+    else fx < 0.3f || fx > 0.7f
+    return !side
+}
+
 /** The continuous modes' widest pages, against the default width. */
 private const val ContinuousMaxScale = 4f
 
@@ -887,10 +900,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             lastTapTime = now
             lastTapPosition = up.position
             pendingTap?.cancel()
+            val toggles = tapTogglesControls(up.position.x / size.width, up.position.y / size.height, paged)
             pendingTap = scope.launch {
                 delay(if (paged) 280 else 0)
                 pendingTap = null
-                chromeVisible = !chromeVisible
+                if (toggles) chromeVisible = !chromeVisible
             }
         }
     }
@@ -1590,58 +1604,93 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun BottomPanel() {
         val overlays = LocalOverlays.current
-        var slider by remember(page) { mutableStateOf(page.toFloat()) }
-        Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
+        val compact = AppSettings.compactControls
+        val autoReadLabel = if (AppSettings.readMode.isPaged) {
+            if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
+        } else {
+            if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
+        }
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (compact) {
+                // The buttons turned on (Controls › Control Bar), floating on the left above the bar.
+                val showSettings = AppSettings.compactSettingsButton
+                val showAutoRead = AppSettings.compactAutoReadButton
+                if (showSettings || showAutoRead || resized) {
+                    Row(
+                        Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        if (showSettings) GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) })
+                        if (showAutoRead) GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead })
+                        AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
+                            GlassCircleButton(Icons.Scan, tr("Reset Size"), { resetSize() })
+                        }
+                    }
+                }
+            }
             Column(
                 Modifier
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .widthIn(max = 640.dp)
                     .fillMaxWidth()
-                    .glass(RoundedCornerShape(28.dp), GlassStyle.Panel)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .glass(RoundedCornerShape(if (compact) 22.dp else 28.dp), GlassStyle.Panel)
+                    .padding(horizontal = 20.dp, vertical = if (compact) 8.dp else 12.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 8.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Txt("${page + 1}", style = Type.footnote, maxLines = 1)
-                    CompositionLocalProvider(LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-                        Box(Modifier.weight(1f)) {
-                            GlassSlider(
-                                value = slider,
-                                onChange = { value ->
-                                    autoRead = false
-                                    slider = value
-                                    val target = value.toInt().coerceIn(0, count - 1)
-                                    if (target != page) {
-                                        jumpToPage(target)
-                                    }
-                                },
-                                range = 0f..maxOf(1f, (count - 1).toFloat()),
-                                background = Color(0xFF2C2C2E),
-                            )
-                        }
-                    }
-                    Txt("$count", style = Type.footnote, maxLines = 1)
+                    if (!compact) Txt("${page + 1}", style = Type.footnote, maxLines = 1)
+                    Box(Modifier.weight(1f)) { PageSlider() }
+                    if (!compact) Txt("$count", style = Type.footnote, maxLines = 1)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    PanelButton(Icons.ChevronBack, null) { go(step(page, forward = isRtl)) }
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        val label = if (AppSettings.readMode.isPaged) {
-                            if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
-                        } else {
-                            if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
-                        }
-                        PanelButton(if (autoRead) Icons.Pause else Icons.Play, label) {
-                            autoRead = !autoRead
-                        }
+                if (compact) {
+                    // One row: under the slider, the page and the pages left.
+                    Box(Modifier.fillMaxWidth()) {
+                        Txt("${page + 1} / $count", Modifier.align(Alignment.Center), style = Type.caption2, maxLines = 1)
+                        Txt(
+                            L10n.string("Pages left: %lld", (count - 1 - page).coerceAtLeast(0)),
+                            Modifier.align(Alignment.CenterEnd),
+                            style = Type.caption2,
+                            color = AppTheme.colors.secondaryLabel,
+                            maxLines = 1,
+                        )
                     }
-                    // Pinched smaller or bigger: back to the usual size.
-                    AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
-                        PanelButton(Icons.Scan, null, tr("Reset Size")) { resetSize() }
+                } else {
+                    // Turning is a tap or a swipe on the page: no arrows here.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PanelButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel) { autoRead = !autoRead }
+                        androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                        // Pinched smaller or bigger: back to the usual size.
+                        AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
+                            PanelButton(Icons.Scan, tr("Reset Size")) { resetSize() }
+                        }
+                        PanelButton(Icons.Sliders, null, tr("Reader Settings")) { openSettings(overlays) }
                     }
-                    PanelButton(Icons.Sliders, null) { openSettings(overlays) }
-                    PanelButton(Icons.ChevronForward, null) { go(step(page, forward = !isRtl)) }
                 }
             }
+        }
+    }
+
+    /** The page slider of the control bar (right to left for right-to-left reading). */
+    @Composable
+    private fun PageSlider() {
+        var slider by remember(page) { mutableStateOf(page.toFloat()) }
+        CompositionLocalProvider(LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            GlassSlider(
+                value = slider,
+                onChange = { value ->
+                    autoRead = false
+                    slider = value
+                    val target = value.toInt().coerceIn(0, count - 1)
+                    if (target != page) {
+                        jumpToPage(target)
+                    }
+                },
+                range = 0f..maxOf(1f, (count - 1).toFloat()),
+                background = Color(0xFF2C2C2E),
+            )
         }
     }
 
@@ -1703,45 +1752,31 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
     }
 }
 
+/**
+ * Reading: how the pages go (direction, double page, gap), how they turn,
+ * auto read / auto scroll, and loading ahead.
+ */
 private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
-    section(footer = if (AppSettings.readMode.isPaged) ({
-        FooterText(
-            tr(if (AppSettings.swipeTurn == com.atlanyuey.aenht.core.SwipeTurn.Sweep)
-                "Swipe Fade: the pages don't move; the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once."
-            else "Slide: the pages slide with your finger.") + "\n" +
-                tr(when (AppSettings.tapTurn) {
-                    com.atlanyuey.aenht.core.TapTurn.Spread -> "Spread Fade: a tap turns the page with a fade spreading from where you tapped."
-                    com.atlanyuey.aenht.core.TapTurn.Fade -> "Page Fade: a tap fades the whole page into the next."
-                    com.atlanyuey.aenht.core.TapTurn.Slide -> "A tap slides the next page in."
-                }),
-        )
-    }) else null) {
+    val mode = AppSettings.readMode
+    val sideways = mode == ReadMode.LeftToRight || mode == ReadMode.RightToLeft
+    section {
         PickerRow(
-            tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
+            tr("Reading Direction"), ReadMode.entries, mode,
             label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },
-            last = !(AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) && !AppSettings.readMode.isPaged && AppSettings.readMode != ReadMode.VerticalGap,
+            last = !sideways && mode != ReadMode.VerticalGap,
         )
-        // How a swipe and a tap turn the pages, chosen apart.
-        if (AppSettings.readMode.isPaged) {
-            PickerRow(tr("Swipe to Turn"), com.atlanyuey.aenht.core.SwipeTurn.entries, AppSettings.swipeTurn,
-                label = { tr(it.title) }, onSelect = { AppSettings.swipeTurn = it })
-            PickerRow(tr("Tap to Turn"), com.atlanyuey.aenht.core.TapTurn.entries, AppSettings.tapTurn,
-                label = { tr(it.title) }, onSelect = { AppSettings.tapTurn = it })
-        }
-        if (AppSettings.readMode == ReadMode.LeftToRight || AppSettings.readMode == ReadMode.RightToLeft) {
+        if (sideways) {
             PickerRow(
                 tr("Double Page"), DoublePage.entries, AppSettings.doublePage,
                 label = { tr(it.title) }, onSelect = { AppSettings.doublePage = it },
+                last = AppSettings.doublePage == DoublePage.Off,
             )
             if (AppSettings.doublePage != DoublePage.Off) {
                 ToggleRow(tr("Cover Page Alone"), AppSettings.doublePageCover, { AppSettings.doublePageCover = it })
-                ToggleRow(tr("Turn One Page at a Time"), AppSettings.doublePageSingleStep, { AppSettings.doublePageSingleStep = it })
+                ToggleRow(tr("Turn One Page at a Time"), AppSettings.doublePageSingleStep, { AppSettings.doublePageSingleStep = it }, last = true)
             }
         }
-        if (AppSettings.readMode.isPaged) {
-            ToggleRow(tr("Auto Crop Margins"), AppSettings.autoCrop, { AppSettings.autoCrop = it }, last = true)
-        }
-        if (AppSettings.readMode == ReadMode.VerticalGap) {
+        if (mode == ReadMode.VerticalGap) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Row {
                     Txt(tr("Page Gap"), Modifier.weight(1f))
@@ -1755,9 +1790,29 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
             }
         }
     }
-    section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
+    // How a swipe and a tap turn the pages, chosen apart (which taps turn: Controls).
+    if (mode.isPaged) {
+        section("Page Turns", footer = {
+            FooterText(
+                tr(if (AppSettings.swipeTurn == com.atlanyuey.aenht.core.SwipeTurn.Sweep)
+                    "Swipe Fade: the pages don't move; the page fades away with a soft edge that follows your finger. Stop and it stops; a quick swipe turns at once."
+                else "Slide: the pages slide with your finger.") + "\n" +
+                    tr(when (AppSettings.tapTurn) {
+                        com.atlanyuey.aenht.core.TapTurn.Spread -> "Spread Fade: a tap turns the page with a fade spreading from where you tapped."
+                        com.atlanyuey.aenht.core.TapTurn.Fade -> "Page Fade: a tap fades the whole page into the next."
+                        com.atlanyuey.aenht.core.TapTurn.Slide -> "A tap slides the next page in."
+                    }),
+            )
+        }) {
+            PickerRow(tr("Swipe to Turn"), com.atlanyuey.aenht.core.SwipeTurn.entries, AppSettings.swipeTurn,
+                label = { tr(it.title) }, onSelect = { AppSettings.swipeTurn = it })
+            PickerRow(tr("Tap to Turn"), com.atlanyuey.aenht.core.TapTurn.entries, AppSettings.tapTurn,
+                label = { tr(it.title) }, onSelect = { AppSettings.tapTurn = it }, last = true)
+        }
+    }
+    section(if (mode.isPaged) "Auto Read" else "Auto Scroll") {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-            if (AppSettings.readMode.isPaged) {
+            if (mode.isPaged) {
                 Row {
                     Txt(tr("Auto Read Interval"), Modifier.weight(1f))
                     Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
@@ -1799,10 +1854,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
                 }
             }
         }
-        RowSeparator()
-        if (!AppSettings.readMode.isPaged) {
-            ToggleRow(tr("Continue Auto Scroll While Dragging"), AppSettings.continueAutoScrollOnDrag, { AppSettings.continueAutoScrollOnDrag = it })
+        if (!mode.isPaged) {
+            RowSeparator()
+            ToggleRow(tr("Continue Auto Scroll While Dragging"), AppSettings.continueAutoScrollOnDrag, { AppSettings.continueAutoScrollOnDrag = it }, last = true)
         }
+    }
+    section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
         ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {
             Stepper(AppSettings.preloadPages, 1..10) { AppSettings.preloadPages = it }
         }
@@ -1863,10 +1920,43 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
         ToggleRow(tr("Grayscale"), AppSettings.readerGrayscale, { AppSettings.readerGrayscale = it })
         ToggleRow(tr("Invert Colors"), AppSettings.readerInvert, { AppSettings.readerInvert = it }, last = true)
     }
+    // The pages' size: cut margins, smaller than the screen, kept from one gallery to the next.
+    if (AppSettings.readMode.isPaged) {
+        section("Page Size", footer = { FooterText(tr("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")) }) {
+            ToggleRow(tr("Auto Crop Margins"), AppSettings.autoCrop, { AppSettings.autoCrop = it })
+            ToggleRow(tr("Allow Smaller Pages"), AppSettings.allowSmallerPages, { AppSettings.allowSmallerPages = it }, last = true)
+        }
+    } else {
+        section("Page Size", footer = { FooterText(tr("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")) }) {
+            ToggleRow(tr("Keep Page Size"), AppSettings.keepContinuousPageSize, { AppSettings.keepContinuousPageSize = it }, last = true)
+        }
+    }
     superResolutionSection()
     section(footer = { FooterText(tr("The reader keeps the screen on this long after the last touch, then leaves it to the system's own auto-lock (it never turns the screen off sooner than the system would).")) }) {
         PickerRow(tr("Keep Screen On"), com.atlanyuey.aenht.core.ScreenOn.entries, AppSettings.screenOn,
             label = { tr(it.title) }, onSelect = { AppSettings.screenOn = it }, last = true)
+    }
+}
+
+/**
+ * Controls: the control bar (what it shows, when it shows), the taps and
+ * swipes that turn pages, the volume keys, then the devices in use (a
+ * stylus, a keyboard or page turner).
+ */
+private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    val paged = AppSettings.readMode.isPaged
+    section("Control Bar", footer = {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FooterText(tr("Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right."))
+            FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
+        }
+    }) {
+        ToggleRow(tr("Compact Control Bar"), AppSettings.compactControls, { AppSettings.compactControls = it })
+        if (AppSettings.compactControls) {
+            ToggleRow(tr("Reader Settings Button"), AppSettings.compactSettingsButton, { AppSettings.compactSettingsButton = it })
+            ToggleRow(tr(if (paged) "Auto Read Button" else "Auto Scroll Button"), AppSettings.compactAutoReadButton, { AppSettings.compactAutoReadButton = it })
+        }
+        ToggleRow(tr("Tap the Middle to Show Controls"), AppSettings.controlsMiddleOnly, { AppSettings.controlsMiddleOnly = it }, last = true)
     }
     section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
@@ -1881,9 +1971,30 @@ private fun androidx.compose.foundation.lazy.LazyListScope.displayTab() {
             )
         }
     }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
+    section(footer = { FooterText(tr("Double-tap the title at the top of the reader to go back to the first page.")) }) {
+        ToggleRow(tr("Double Tap Top to Go to Start"), AppSettings.doubleTapTopToStart, { AppSettings.doubleTapTopToStart = it }, last = true)
+    }
+    if (paged) {
+        section(footer = { FooterText(tr("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")) }) {
+            ToggleRow(tr("Tap to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
+            PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
+                label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it }, last = true)
+        }
+        section("Swipes", footer = { FooterText(tr("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")) }) {
+            val g = com.atlanyuey.aenht.core.ReaderGesture.entries
+            // Across the tap zones: up and down with left and right zones.
+            if (AppSettings.tapZones == com.atlanyuey.aenht.core.TapZones.LeftRight) {
+                PickerRow(tr("Swipe Down"), g, AppSettings.swipeDown, label = { tr(it.title) }, onSelect = { AppSettings.swipeDown = it })
+                PickerRow(tr("Swipe Up"), g, AppSettings.swipeUp, label = { tr(it.title) }, onSelect = { AppSettings.swipeUp = it }, last = true)
+            } else {
+                PickerRow(tr("Swipe Right"), g, AppSettings.swipeRight, label = { tr(it.title) }, onSelect = { AppSettings.swipeRight = it })
+                PickerRow(tr("Swipe Left"), g, AppSettings.swipeLeft, label = { tr(it.title) }, onSelect = { AppSettings.swipeLeft = it }, last = true)
+            }
+        }
+    }
+    section {
+        ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
+    }
     // A stylus: once one has been used on this device.
     if (AppSettings.stylusSeen) {
         val actions = com.atlanyuey.aenht.core.StylusAction.entries
@@ -1920,37 +2031,6 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
             if (AppSettings.pageKeys) {
                 ToggleRow(tr("Swap Next and Previous"), AppSettings.pageKeysSwap, { AppSettings.pageKeysSwap = it }, last = true)
             }
-        }
-    }
-    section(footer = { FooterText(tr("Double-tap the title at the top of the reader to go back to the first page.")) }) {
-        ToggleRow(tr("Double Tap Top to Go to Start"), AppSettings.doubleTapTopToStart, { AppSettings.doubleTapTopToStart = it }, last = true)
-    }
-    if (!AppSettings.readMode.isPaged) {
-        // Taps, tap zones and swipes turn pages: the continuous modes scroll instead.
-        section(footer = { FooterText(tr("Pinch with two fingers to make the pages smaller or bigger. With Keep Page Size, that size stays for every page and the next galleries; drag the black sides to move the pages. Reset Size, at the bottom of the reader, brings back the usual size.")) }) {
-            ToggleRow(tr("Keep Page Size"), AppSettings.keepContinuousPageSize, { AppSettings.keepContinuousPageSize = it })
-            ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
-        }
-        return
-    }
-    section(footer = { FooterText(tr("Pinching in can make a page smaller than the screen, with black around it. Off, a page fills the screen at least; pinching only enlarges it.")) }) {
-        ToggleRow(tr("Allow Smaller Pages"), AppSettings.allowSmallerPages, { AppSettings.allowSmallerPages = it }, last = true)
-    }
-    section(footer = { FooterText(tr("How a tap turns the page (slide, page fade or spread fade) is set in Reading › Tap to Turn.")) }) {
-        ToggleRow(tr("Tap to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
-        PickerRow(tr("Tap Zones"), com.atlanyuey.aenht.core.TapZones.entries, AppSettings.tapZones,
-            label = { tr(it.title) }, onSelect = { AppSettings.tapZones = it })
-        ToggleRow(tr("Volume Keys Turn Pages"), AppSettings.volumeKeyTurns, { AppSettings.volumeKeyTurns = it }, last = true)
-    }
-    section("Swipes", footer = { FooterText(tr("A long swipe. Not when it goes the way the pages turn or scroll (that turns them), nor while a page is zoomed in.")) }) {
-        val g = com.atlanyuey.aenht.core.ReaderGesture.entries
-        // Across the tap zones: up and down with left and right zones.
-        if (AppSettings.tapZones == com.atlanyuey.aenht.core.TapZones.LeftRight) {
-            PickerRow(tr("Swipe Down"), g, AppSettings.swipeDown, label = { tr(it.title) }, onSelect = { AppSettings.swipeDown = it })
-            PickerRow(tr("Swipe Up"), g, AppSettings.swipeUp, label = { tr(it.title) }, onSelect = { AppSettings.swipeUp = it }, last = true)
-        } else {
-            PickerRow(tr("Swipe Right"), g, AppSettings.swipeRight, label = { tr(it.title) }, onSelect = { AppSettings.swipeRight = it })
-            PickerRow(tr("Swipe Left"), g, AppSettings.swipeLeft, label = { tr(it.title) }, onSelect = { AppSettings.swipeLeft = it }, last = true)
         }
     }
 }

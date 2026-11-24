@@ -11,6 +11,48 @@ extension EnvironmentValues {
     @Entry var galleryMenuItems: ((GalleryItem) -> AnyView)? = nil
     /// Lists that mix both sites mark each cover with NH / EH (top right).
     @Entry var showsSiteBadge: Bool = false
+    /// The list's galleries chosen while choosing (Favorites, History: Select); nil otherwise.
+    @Entry var gallerySelection: GallerySelection? = nil
+    /// Starts choosing with this gallery chosen (Select in the context menu); nil where the list can't.
+    @Entry var gallerySelect: ((GalleryItem) -> Void)? = nil
+}
+
+/// Galleries chosen in a list (Favorites, History: Select). While it's
+/// given, a tap on a card or row chooses it instead of opening it, and its
+/// cover shows whether it's chosen.
+@MainActor @Observable
+final class GallerySelection {
+    /// The chosen galleries' ids (`uid`), in the order chosen.
+    private(set) var keys: [String] = []
+
+    init(_ first: GalleryItem? = nil) {
+        if let first { keys = [first.uid] }
+    }
+
+    func contains(_ item: GalleryItem) -> Bool { keys.contains(item.uid) }
+
+    func toggle(_ item: GalleryItem) {
+        if let index = keys.firstIndex(of: item.uid) { keys.remove(at: index) } else { keys.append(item.uid) }
+    }
+
+    /// Whether all of [items] are chosen.
+    func hasAll(_ items: [GalleryItem]) -> Bool {
+        !items.isEmpty && items.allSatisfy { keys.contains($0.uid) }
+    }
+
+    /// All of [items] chosen, or (when they all are) none.
+    func toggleAll(_ items: [GalleryItem]) {
+        if hasAll(items) {
+            keys = []
+        } else {
+            var seen = Set<String>()
+            keys = items.map(\.uid).filter { seen.insert($0).inserted }
+        }
+    }
+
+    func remove(_ uids: Set<String>) {
+        keys.removeAll { uids.contains($0) }
+    }
 }
 
 /// Registers the gallery / search destinations of a navigation stack and
@@ -113,8 +155,14 @@ struct GalleryLinkButton<Label: View>: View {
 
     @Environment(\.openGallery) private var openGallery
 
+    @Environment(\.gallerySelection) private var selection
+
     var body: some View {
-        if let openGallery {
+        if let selection {
+            // Choosing: a tap chooses or unchooses.
+            Button { selection.toggle(item) } label: { label() }
+                .accessibilityAddTraits(selection.contains(item) ? .isSelected : [])
+        } else if let openGallery {
             Button { openGallery(item) } label: { label() }
         } else if item.site == .ehentai {
             NavigationLink(value: EhGalleryRoute(gid: item.id, token: item.token ?? "", preview: item), label: label)
@@ -152,6 +200,7 @@ struct CoverView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(TagStore.self) private var tagStore
     @Environment(\.showsSiteBadge) private var showsSiteBadge
+    @Environment(\.gallerySelection) private var selection
 
     /// The badge's color: the category on both sites (nhentai's category
     /// tag, in E-Hentai's category colors).
@@ -183,8 +232,24 @@ struct CoverView: View {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                if showsSiteBadge {
+                if showsSiteBadge, selection == nil {
                     LanguageBadge(text: item.site.badge).padding(6)
+                }
+            }
+            .overlay {
+                // Choosing: a check in a circle (filled when chosen), the cover dimmed when not.
+                if let selection {
+                    let chosen = selection.contains(item)
+                    ZStack(alignment: .topTrailing) {
+                        Color.black.opacity(chosen ? 0 : 0.18)
+                        Image(systemName: chosen ? "checkmark.circle.fill" : "circle")
+                            .font(.title3.weight(.semibold))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, chosen ? Color.accentColor : Color.black.opacity(0.3))
+                            .background(Circle().fill(chosen ? Color.white : Color.black.opacity(0.3)).padding(2))
+                            .padding(6)
+                    }
+                    .allowsHitTesting(false)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -525,8 +590,14 @@ struct GalleryContextMenu: View {
     let item: GalleryItem
 
     @Environment(\.galleryMenuItems) private var extraItems
+    @Environment(\.gallerySelect) private var select
 
     var body: some View {
+        if let select {
+            Button { select(item) } label: {
+                Label("Select", systemImage: "checkmark.circle")
+            }
+        }
         if let extraItems {
             extraItems(item)
             Divider()
@@ -649,5 +720,42 @@ struct FeedPlaceholder: View {
         } else if feed.items.isEmpty {
             ContentUnavailableView(emptyTitle, systemImage: emptyImage)
         }
+    }
+}
+
+/// The bar at the bottom while choosing galleries (Favorites, History): all
+/// of them (or none), how many are chosen, and what's done to them.
+struct GallerySelectionBar: View {
+    let selection: GallerySelection
+    let items: [GalleryItem]
+    let action: LocalizedStringKey
+    var busy = false
+    let perform: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(selection.hasAll(items) ? "Deselect All" : "Select All") { selection.toggleAll(items) }
+                .disabled(items.isEmpty || busy)
+            Spacer(minLength: 4)
+            Text("\(selection.keys.count) Selected")
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            if busy {
+                ProgressView()
+            } else {
+                Button(action, role: .destructive, action: perform)
+                    .fontWeight(.semibold)
+                    .disabled(selection.keys.isEmpty)
+            }
+        }
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 18)
+        .frame(minHeight: 50)
+        .modifier(GlassPanel(cornerRadius: 25))
+        .frame(maxWidth: 560)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 }

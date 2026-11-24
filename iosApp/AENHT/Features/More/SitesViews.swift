@@ -460,6 +460,11 @@ struct SitesSettingsView: View {
                     Text("Searches both sites at once. E-Hentai pauses networks that send too many requests, so this is off by default.")
                 }
             }
+            Section {
+                Toggle("Refresh Favorites When Opened", isOn: $settings.favoritesRefreshOnOpen)
+            } footer: {
+                Text("Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes.")
+            }
             if settings.ehentaiEnabled {
                 Section("E-Hentai") {
                     NavigationLink { Group {

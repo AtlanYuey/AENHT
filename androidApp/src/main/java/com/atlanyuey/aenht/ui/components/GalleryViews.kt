@@ -190,11 +190,31 @@ fun CoverView(
         } else if (categoryTint != null) {
             Box(Modifier.padding(8.dp).align(Alignment.TopStart).size(10.dp).clip(Capsule()).background(categoryTint))
         }
-        if (LocalShowsSiteBadge.current) {
+        val selection = LocalGallerySelection.current
+        if (LocalShowsSiteBadge.current && selection == null) {
             CoverBadge(item.site.shortLabel, Modifier.padding(6.dp).align(Alignment.TopEnd))
         }
         overlay(Modifier.align(Alignment.BottomCenter))
         LocalCoverBadge.current?.invoke(this, item)
+        if (selection != null) SelectionMark(item in selection)
+    }
+}
+
+/** Over a cover while choosing: a check in a circle (filled when chosen), the cover dimmed when not. */
+@Composable
+private fun BoxScope.SelectionMark(chosen: Boolean) {
+    if (!chosen) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.18f)))
+    Box(
+        Modifier
+            .align(Alignment.TopEnd)
+            .padding(6.dp)
+            .size(24.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(if (chosen) AppTheme.tint else Color.Black.copy(alpha = 0.3f))
+            .border(1.5.dp, Color.White, androidx.compose.foundation.shape.CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (chosen) AppIcon(Icons.Check, null, tint = Color.White, size = 14.dp)
     }
 }
 
@@ -206,6 +226,35 @@ val LocalShowsSiteBadge = compositionLocalOf { false }
 
 /** More items for a gallery's long-press menu (Delete in History and Downloads). */
 val LocalGalleryMenuItems = compositionLocalOf<((GallerySummary) -> List<MenuItem>)?> { null }
+
+/**
+ * Galleries chosen in a list (Favorites, History: Select). While it's
+ * given, a tap on a card or row chooses it instead of opening it, and its
+ * cover shows whether it's chosen.
+ */
+class GallerySelection {
+    /** The chosen galleries' storage keys, in the order chosen. */
+    val keys = androidx.compose.runtime.mutableStateListOf<String>()
+
+    operator fun contains(item: GallerySummary) = item.key.storageKey in keys
+
+    fun toggle(item: GallerySummary) {
+        val key = item.key.storageKey
+        if (!keys.remove(key)) keys.add(key)
+    }
+
+    /** All of [items] chosen, or (when they all are) none. */
+    fun toggleAll(items: List<GallerySummary>) {
+        val all = items.map { it.key.storageKey }
+        if (all.isNotEmpty() && keys.containsAll(all)) keys.clear() else { keys.clear(); keys.addAll(all.distinct()) }
+    }
+}
+
+/** The list's selection while choosing (see [GallerySelection]); null otherwise. */
+val LocalGallerySelection = compositionLocalOf<GallerySelection?> { null }
+
+/** Starts choosing with this gallery chosen ("Select" in the long-press menu); null where the list can't. */
+val LocalGallerySelect = compositionLocalOf<((GallerySummary) -> Unit)?> { null }
 
 // MARK: - Cards
 
@@ -262,14 +311,24 @@ fun Modifier.galleryClick(item: GallerySummary): Modifier {
     val anchor = rememberAnchor()
     val share = tr("Share")
     val copy = tr("Copy Link")
+    val selectLabel = tr("Select")
     val extra = LocalGalleryMenuItems.current
+    val selection = LocalGallerySelection.current
+    val select = LocalGallerySelect.current
+    // Choosing: a tap (or a long press) chooses or unchooses.
+    if (selection != null) {
+        return this.anchor(anchor).combinedClickable(onClick = { selection.toggle(item) }, onLongClick = { selection.toggle(item) })
+    }
     return this
         .anchor(anchor)
         .combinedClickable(
             onClick = { navigator.push(galleryScreen(item)) },
             onLongClick = {
-                val more = extra?.invoke(item)?.takeIf { it.isNotEmpty() }?.let { listOf(it) } ?: emptyList()
-                overlays.menu(anchor.bounds, more + galleryMenu(context, item, share, copy))
+                val first = buildList {
+                    if (select != null) add(MenuItem(selectLabel, Icons.CheckCircle) { select(item) })
+                    extra?.invoke(item)?.let { addAll(it) }
+                }
+                overlays.menu(anchor.bounds, (if (first.isEmpty()) emptyList() else listOf(first)) + galleryMenu(context, item, share, copy))
             },
         )
 }

@@ -18,6 +18,9 @@ final class AppChrome {
 
     /// The last tap on the button of the tab that shows (see tabReselected).
     var tabTap = TabTap(tab: .home, count: 0)
+
+    /// The last time another tab was chosen (Favorites reloads then: Me › Sites).
+    var tabOpened = TabTap(tab: .home, count: 0)
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s

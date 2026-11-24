@@ -88,6 +88,11 @@ struct RootView: View {
             }
         }
         .onAppear { lock.unlock() }
+        // Another tab chosen (on iPhone and iPad alike): its list may reload (Favorites).
+        .onChange(of: selection) { _, tab in
+            let chrome = AppChrome.shared
+            chrome.tabOpened = TabTap(tab: tab == .search ? .home : tab, count: chrome.tabOpened.count + 1)
+        }
         // Unlocked: the content shows at once, though the prompt is still going away.
         .onChange(of: lock.locked) { _, locked in if !locked { hidden = false } }
         .task {

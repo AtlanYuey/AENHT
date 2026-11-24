@@ -422,6 +422,16 @@ final class AppSettings {
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
     /// The reader: a double tap on the status bar or the title goes to the first page (a single tap does nothing).
     var doubleTapTopToStart: Bool { didSet { save(doubleTapTopToStart, "doubleTapTopToStart") } }
+    /// The reader's control bar in one row (the slider); its buttons float above it, when on.
+    var compactControls: Bool { didSet { save(compactControls, "compactControls") } }
+    /// With the compact control bar: the Reader Settings button floats above it.
+    var compactSettingsButton: Bool { didSet { save(compactSettingsButton, "compactSettingsButton") } }
+    /// With the compact control bar: the Auto Read / Auto Scroll button floats above it.
+    var compactAutoReadButton: Bool { didSet { save(compactAutoReadButton, "compactAutoReadButton") } }
+    /// Only a tap in the middle shows or hides the reader's controls; the sides do nothing.
+    var controlsMiddleOnly: Bool { didSet { save(controlsMiddleOnly, "controlsMiddleOnly") } }
+    /// Favorites reload each time their tab is opened.
+    var favoritesRefreshOnOpen: Bool { didSet { save(favoritesRefreshOnOpen, "favoritesRefreshOnOpen") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
     /// Gap between pages in the "Continuous with Gaps" mode, in points.
     var pageGap: Double { didSet { save(pageGap, "pageGap") } }
@@ -609,6 +619,11 @@ final class AppSettings {
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         doubleTapTopToStart = d.object(forKey: "doubleTapTopToStart") as? Bool ?? true
+        compactControls = d.object(forKey: "compactControls") as? Bool ?? false
+        compactSettingsButton = d.object(forKey: "compactSettingsButton") as? Bool ?? false
+        compactAutoReadButton = d.object(forKey: "compactAutoReadButton") as? Bool ?? false
+        controlsMiddleOnly = d.object(forKey: "controlsMiddleOnly") as? Bool ?? false
+        favoritesRefreshOnOpen = d.object(forKey: "favoritesRefreshOnOpen") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
         pageGap = d.object(forKey: "pageGap") as? Double ?? 6
         screenOn = ScreenOn(rawValue: d.string(forKey: "screenOn") ?? "") ?? .fiveMinutes
@@ -732,6 +747,11 @@ final class AppSettings {
         values["preloadPages"] = preloadPages
         values["tapToTurnPages"] = tapToTurnPages
         values["doubleTapTopToStart"] = doubleTapTopToStart
+        values["compactControls"] = compactControls
+        values["compactSettingsButton"] = compactSettingsButton
+        values["compactAutoReadButton"] = compactAutoReadButton
+        values["controlsMiddleOnly"] = controlsMiddleOnly
+        values["favoritesRefreshOnOpen"] = favoritesRefreshOnOpen
         values["animatePageTurns"] = animatePageTurns
         values["pageGap"] = pageGap
         values["screenOn"] = screenOn.rawValue
@@ -833,6 +853,11 @@ final class AppSettings {
         case "preloadPages": set(\.preloadPages, number.map { min(max($0.intValue, 1), 10) })
         case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
         case "doubleTapTopToStart": set(\.doubleTapTopToStart, number?.boolValue)
+        case "compactControls": set(\.compactControls, number?.boolValue)
+        case "compactSettingsButton": set(\.compactSettingsButton, number?.boolValue)
+        case "compactAutoReadButton": set(\.compactAutoReadButton, number?.boolValue)
+        case "controlsMiddleOnly": set(\.controlsMiddleOnly, number?.boolValue)
+        case "favoritesRefreshOnOpen": set(\.favoritesRefreshOnOpen, number?.boolValue)
         case "animatePageTurns":
             set(\.animatePageTurns, number?.boolValue)
             // From the Android app: a slide or a fade (Spread Fade stays, it has none).

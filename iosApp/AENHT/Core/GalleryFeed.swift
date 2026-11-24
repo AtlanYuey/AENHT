@@ -30,6 +30,12 @@ final class GalleryFeed {
     /// Browsing lists leave out galleries hidden by the filter rules (not favorites).
     @ObservationIgnored var filtered = true
 
+    /// Takes [uids] out of the list (favorites removed in the app).
+    func remove(uids: Set<String>) {
+        items.removeAll { uids.contains($0.uid) }
+        loaded.removeAll { uids.contains($0.uid) }
+    }
+
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
         watchFilters()
