@@ -120,7 +120,7 @@ fun Modifier.glass(
 /** Press feedback of glass controls (stretch and glow under the finger). */
 @Composable
 fun rememberGlassHighlight(): InteractiveHighlight {
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     return remember(scope) { InteractiveHighlight(animationScope = scope) }
 }
 

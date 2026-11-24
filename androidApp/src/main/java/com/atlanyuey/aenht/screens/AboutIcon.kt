@@ -62,7 +62,7 @@ private val faces = listOf(
  */
 @Composable
 fun AboutIcon() {
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     val haptics = LocalHapticFeedback.current
     val spin = remember { Animatable(0f) }
     val hue = remember { Animatable(0f) }

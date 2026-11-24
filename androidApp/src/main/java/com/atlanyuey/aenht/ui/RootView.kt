@@ -169,7 +169,7 @@ fun RootView(
     }
 
     // Links opened from outside or copied (nhentai, E-Hentai, ExHentai).
-    val linkScope = androidx.compose.runtime.rememberCoroutineScope()
+    val linkScope = com.atlanyuey.aenht.core.rememberSafeScope()
     val openLink: (com.atlanyuey.aenht.shared.site.GalleryLink) -> Unit = { link ->
         when (link) {
             is com.atlanyuey.aenht.shared.site.GalleryLink.Nh -> tabs.all[selected].push(GalleryScreen(link.id, null))

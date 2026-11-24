@@ -633,4 +633,8 @@ T = [
     "Khi đọc, giữ bút phía trên màn hình rồi bấm nút bút; bút có nút Bluetooth (Android 14 trở lên) dùng được cả khi cách xa màn hình. Số nút tùy theo bút.",
     "Galaxy S Pen: bật AENHT trong Cài đặt › Tính năng nâng cao › S Pen › Air actions. Sau đó bấm nút S Pen một lần để sang trang sau, hai lần để về trang trước, vẫy sang trái hoặc phải trên không cũng lật trang.",
     "Bút Windows ghép nối qua Bluetooth (như Surface Pen): bấm nút trên cùng một lần để sang trang sau, hai lần để về trang trước.",
+    "Dán cookie",
+    "Đã điền từ văn bản đã sao chép.",
+    "Văn bản đã sao chép không có cookie E-Hentai.",
+    "Cookie đã sao chép được tự động điền cùng lúc: header Cookie, bản xuất của tiện ích cookie hoặc tệp cookies.txt. Dán vào ô bất kỳ cũng được.",
 ]

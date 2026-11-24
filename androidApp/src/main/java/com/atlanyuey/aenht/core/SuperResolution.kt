@@ -234,7 +234,7 @@ object SrModels {
     var state by mutableStateOf<State>(State.Absent)
         private set
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + LogErrors)
     private var job: Job? = null
 
     fun files(context: Context): Pair<File, File> {

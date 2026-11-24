@@ -633,3 +633,7 @@
 "While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "읽는 중에 화면 위에 펜을 띄운 채 버튼을 누르세요. 블루투스 버튼이 있는 펜(Android 14 이상)은 화면에서 떼어도 됩니다. 버튼 구성은 펜마다 다릅니다.";
 "Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen: 설정 › 유용한 기능 › S Pen › 에어 액션에서 AENHT를 켜세요. S Pen 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어가며, 공중에서 좌우로 움직여도 넘길 수 있습니다.";
 "A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "블루투스로 연결한 Windows 펜(Surface 펜 등): 윗부분 버튼을 한 번 누르면 다음 페이지, 두 번 누르면 이전 페이지로 넘어갑니다.";
+"Paste Cookies" = "쿠키 붙여넣기";
+"Filled in from the copied text." = "복사한 텍스트로 채웠습니다.";
+"The copied text has no E-Hentai cookies." = "복사한 텍스트에 E-Hentai 쿠키가 없습니다.";
+"Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too." = "복사한 쿠키는 자동으로 인식되어 한 번에 채워집니다. Cookie 헤더, 쿠키 확장 프로그램의 내보내기, cookies.txt 파일 모두 됩니다. 아무 칸에 붙여넣어도 됩니다.";

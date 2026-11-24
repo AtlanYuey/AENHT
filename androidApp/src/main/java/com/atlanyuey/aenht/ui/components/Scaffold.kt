@@ -1,5 +1,10 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -76,9 +81,14 @@ fun ScreenScaffold(
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val bottomBar = LocalBottomBarHeight.current
     val barHeight = NAV_BAR_HEIGHT.dp
-    val bottomInset = maxOf(bottomBar, navBottom)
+    // While the keyboard is up the content ends at its top (a field being typed
+    // in scrolls into sight); the tab bar is under the keyboard then.
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    val typing = WindowInsets.isImeVisible
+    val bottomInset = if (typing) 0.dp else maxOf(bottomBar, navBottom)
     val padding = PaddingValues(top = statusTop + barHeight, bottom = bottomInset + 12.dp)
     val bg = if (background.isSpecified) background else AppTheme.colors.background
+    val aboveKeyboard = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.ime.only(WindowInsetsSides.Bottom))
 
     Box(modifier.fillMaxSize()) {
         Box(
@@ -87,9 +97,9 @@ fun ScreenScaffold(
                 .layerBackdrop(backdrop)
                 .background(bg),
         ) {
-            if (contentUnderGlass) content(padding)
+            if (contentUnderGlass) Box(aboveKeyboard) { content(padding) }
         }
-        if (!contentUnderGlass) Box(Modifier.fillMaxSize()) { content(padding) }
+        if (!contentUnderGlass) Box(aboveKeyboard) { content(padding) }
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
             SoftEdge(statusTop + barHeight + 18.dp, Modifier.align(Alignment.TopCenter))
             if (bottomInset > 0.dp) {

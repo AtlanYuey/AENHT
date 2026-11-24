@@ -558,7 +558,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         )
         LaunchedEffect(mode) { autoRead = false }
         val backdrop = rememberLayerBackdrop()
-        uiScope = rememberCoroutineScope()
+        uiScope = com.atlanyuey.aenht.core.rememberSafeScope()
 
         // Immersive mode while the controls are hidden; screen on.
         DisposableEffect(chromeVisible) {

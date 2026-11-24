@@ -634,9 +634,13 @@
     <string name="l_631">Durante a leitura, pressione um botão da caneta sobre a tela; canetas com botões Bluetooth (Android 14 ou posterior) funcionam também longe dela. Os botões dependem da caneta.</string>
     <string name="l_632">Galaxy S Pen: ative o AENHT em Configurações › Recursos avançados › S Pen › Air actions. Depois, um toque no botão da S Pen vai para a próxima página, dois para a anterior, e gestos para a esquerda e direita no ar também viram a página.</string>
     <string name="l_633">Uma caneta do Windows pareada por Bluetooth (como a Surface Pen): um clique no botão de cima vai para a próxima página, dois cliques para a anterior.</string>
-    <string name="l_634">Backup dos ajustes</string>
-    <string name="l_635">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_636">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_637">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_638">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_634">Colar cookies</string>
+    <string name="l_635">Preenchido a partir do texto copiado.</string>
+    <string name="l_636">O texto copiado não tem cookies do E-Hentai.</string>
+    <string name="l_637">Os cookies copiados são preenchidos sozinhos, todos de uma vez: um cabeçalho Cookie, a exportação de uma extensão de cookies ou um arquivo cookies.txt. Colar em qualquer campo também funciona.</string>
+    <string name="l_638">Backup dos ajustes</string>
+    <string name="l_639">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_640">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_641">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_642">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

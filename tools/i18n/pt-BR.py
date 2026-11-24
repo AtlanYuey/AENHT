@@ -633,4 +633,8 @@ T = [
     "Durante a leitura, pressione um botão da caneta sobre a tela; canetas com botões Bluetooth (Android 14 ou posterior) funcionam também longe dela. Os botões dependem da caneta.",
     "Galaxy S Pen: ative o AENHT em Configurações › Recursos avançados › S Pen › Air actions. Depois, um toque no botão da S Pen vai para a próxima página, dois para a anterior, e gestos para a esquerda e direita no ar também viram a página.",
     "Uma caneta do Windows pareada por Bluetooth (como a Surface Pen): um clique no botão de cima vai para a próxima página, dois cliques para a anterior.",
+    "Colar cookies",
+    "Preenchido a partir do texto copiado.",
+    "O texto copiado não tem cookies do E-Hentai.",
+    "Os cookies copiados são preenchidos sozinhos, todos de uma vez: um cabeçalho Cookie, a exportação de uma extensão de cookies ou um arquivo cookies.txt. Colar em qualquer campo também funciona.",
 ]

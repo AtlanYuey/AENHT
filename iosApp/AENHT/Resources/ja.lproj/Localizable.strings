@@ -633,3 +633,7 @@
 "While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "読書中、画面の上にかざしたペンのボタンを押します。Bluetooth ボタン付きのペン（Android 14 以降）は画面から離しても使えます。どのボタンがあるかはペンによります。";
 "Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen：「設定 › 便利な機能 › S Pen › エアアクション」で AENHT をオンにします。S Pen のボタンを 1 回押すと次のページ、2 回押すと前のページへ、空中で左右に振ってもページをめくれます。";
 "A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "Bluetooth でペアリングした Windows 用ペン（Surface ペンなど）：上部ボタンを 1 回押すと次のページ、2 回で前のページへ。";
+"Paste Cookies" = "Cookie をペースト";
+"Filled in from the copied text." = "コピーしたテキストから入力しました。";
+"The copied text has no E-Hentai cookies." = "コピーしたテキストに E-Hentai の Cookie がありません。";
+"Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too." = "コピーした Cookie は自動で認識され、まとめて入力されます。Cookie ヘッダ、Cookie 拡張機能のエクスポート、cookies.txt ファイルに対応しています。どの欄にペーストしても構いません。";

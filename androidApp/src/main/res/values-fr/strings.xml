@@ -634,9 +634,13 @@
     <string name="l_631">Pendant la lecture, appuyez sur un bouton du stylet tenu au-dessus de l\'écran ; les stylets à boutons Bluetooth (Android 14 ou ultérieur) fonctionnent aussi à distance. Les boutons dépendent du stylet.</string>
     <string name="l_632">Galaxy S Pen : activez AENHT dans Paramètres › Fonctions avancées › S Pen › Air actions. Un appui sur le bouton du S Pen passe alors à la page suivante, deux appuis à la précédente, et des gestes vers la gauche ou la droite en l\'air tournent aussi les pages.</string>
     <string name="l_633">Un stylet Windows jumelé en Bluetooth (comme le Surface Pen) : un clic sur son bouton du haut passe à la page suivante, un double clic à la précédente.</string>
-    <string name="l_634">Sauvegarde des réglages</string>
-    <string name="l_635">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_636">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_637">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_638">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_634">Coller les cookies</string>
+    <string name="l_635">Rempli à partir du texte copié.</string>
+    <string name="l_636">Le texte copié ne contient pas de cookies E-Hentai.</string>
+    <string name="l_637">Les cookies copiés sont remplis automatiquement, tous à la fois : un en-tête Cookie, l’export d’une extension de cookies ou un fichier cookies.txt. Les coller dans n’importe quel champ fonctionne aussi.</string>
+    <string name="l_638">Sauvegarde des réglages</string>
+    <string name="l_639">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_640">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_641">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_642">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

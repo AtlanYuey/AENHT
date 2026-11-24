@@ -634,9 +634,13 @@
     <string name="l_631">Saat membaca, tekan tombol stylus yang diarahkan di atas layar; pena dengan tombol Bluetooth (Android 14 dan lebih baru) juga berfungsi dari jauh. Tombol yang ada bergantung pada penanya.</string>
     <string name="l_632">Galaxy S Pen: aktifkan AENHT di Pengaturan › Fitur lanjutan › S Pen › Air actions. Lalu satu tekan tombol S Pen ke halaman berikutnya, dua tekan ke halaman sebelumnya, dan gerakan ke kiri dan kanan di udara juga membalik halaman.</string>
     <string name="l_633">Pena Windows yang dipasangkan lewat Bluetooth (seperti Surface Pen): sekali klik tombol atasnya ke halaman berikutnya, klik dua kali ke halaman sebelumnya.</string>
-    <string name="l_634">Cadangan Pengaturan</string>
-    <string name="l_635">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_636">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_637">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_638">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_634">Tempel Cookie</string>
+    <string name="l_635">Diisi dari teks yang disalin.</string>
+    <string name="l_636">Teks yang disalin tidak berisi cookie E-Hentai.</string>
+    <string name="l_637">Cookie yang disalin diisi sendiri, semuanya sekaligus: header Cookie, ekspor ekstensi cookie, atau file cookies.txt. Menempel ke kolom mana pun juga bisa.</string>
+    <string name="l_638">Cadangan Pengaturan</string>
+    <string name="l_639">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_640">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_641">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_642">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

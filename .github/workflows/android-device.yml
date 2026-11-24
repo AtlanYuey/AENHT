@@ -18,7 +18,7 @@ jobs:
   device:
     name: Regexes on ICU, tests on an Android 15 emulator
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
 
@@ -57,8 +57,9 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
+            adb logcat -G 16M || true
             adb logcat -c
-            adb shell "nohup screenrecord --time-limit 175 /sdcard/device-tests.mp4 > /dev/null 2>&1 &"
+            adb shell "nohup screenrecord --time-limit 180 /sdcard/device-tests.mp4 > /dev/null 2>&1 &"
             ./gradlew --no-daemon -Paenht.emulator :androidApp:connectedDebugAndroidTest || touch device-tests-failed
             adb shell pkill -INT screenrecord || true
             sleep 5

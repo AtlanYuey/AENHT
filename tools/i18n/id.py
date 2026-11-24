@@ -633,4 +633,8 @@ T = [
     "Saat membaca, tekan tombol stylus yang diarahkan di atas layar; pena dengan tombol Bluetooth (Android 14 dan lebih baru) juga berfungsi dari jauh. Tombol yang ada bergantung pada penanya.",
     "Galaxy S Pen: aktifkan AENHT di Pengaturan › Fitur lanjutan › S Pen › Air actions. Lalu satu tekan tombol S Pen ke halaman berikutnya, dua tekan ke halaman sebelumnya, dan gerakan ke kiri dan kanan di udara juga membalik halaman.",
     "Pena Windows yang dipasangkan lewat Bluetooth (seperti Surface Pen): sekali klik tombol atasnya ke halaman berikutnya, klik dua kali ke halaman sebelumnya.",
+    "Tempel Cookie",
+    "Diisi dari teks yang disalin.",
+    "Teks yang disalin tidak berisi cookie E-Hentai.",
+    "Cookie yang disalin diisi sendiri, semuanya sekaligus: header Cookie, ekspor ekstensi cookie, atau file cookies.txt. Menempel ke kolom mana pun juga bisa.",
 ]

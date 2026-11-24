@@ -633,4 +633,8 @@ T = [
     "Durante la lettura, premi un tasto della penna tenuta sopra lo schermo; le penne con tasti Bluetooth (Android 14 e successivi) funzionano anche lontano. I tasti dipendono dalla penna.",
     "Galaxy S Pen: attiva AENHT in Impostazioni › Funzioni avanzate › S Pen › Air actions. Poi una pressione del tasto della S Pen va alla pagina successiva, due alla precedente, e i movimenti a sinistra e a destra nell'aria girano le pagine.",
     "Una penna Windows associata via Bluetooth (come Surface Pen): un clic sul tasto superiore va alla pagina successiva, un doppio clic alla precedente.",
+    "Incolla cookie",
+    "Compilato dal testo copiato.",
+    "Il testo copiato non contiene cookie di E-Hentai.",
+    "I cookie copiati vengono compilati da soli, tutti insieme: un’intestazione Cookie, l’esportazione di un’estensione per cookie o un file cookies.txt. Funziona anche incollarli in un campo qualsiasi.",
 ]

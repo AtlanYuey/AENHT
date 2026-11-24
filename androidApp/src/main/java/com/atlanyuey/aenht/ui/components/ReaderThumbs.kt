@@ -82,7 +82,7 @@ fun FollowReader(gallery: String, state: androidx.compose.foundation.lazy.grid.L
  */
 @Composable
 fun rememberRowJump(state: LazyListState): () -> Unit {
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     val saved = androidx.compose.runtime.remember { arrayOfNulls<Pair<Int, Int>>(1) }
     val jumping = androidx.compose.runtime.remember { booleanArrayOf(false) }
     LaunchedEffect(state) {

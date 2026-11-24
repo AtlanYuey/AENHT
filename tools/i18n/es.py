@@ -633,4 +633,8 @@ T = [
     "Mientras lees, pulsa un botón del lápiz sostenido sobre la pantalla; los lápices con botones Bluetooth (Android 14 o posterior) funcionan también lejos de ella. Los botones dependen del lápiz.",
     "Galaxy S Pen: activa AENHT en Ajustes › Funciones avanzadas › S Pen › Air actions. Así, una pulsación del botón del S Pen pasa a la página siguiente, dos a la anterior, y deslizar a izquierda o derecha en el aire también pasa página.",
     "Un lápiz de Windows emparejado por Bluetooth (como Surface Pen): un clic en su botón superior pasa a la página siguiente, dos clics a la anterior.",
+    "Pegar cookies",
+    "Rellenado a partir del texto copiado.",
+    "El texto copiado no tiene cookies de E-Hentai.",
+    "Las cookies copiadas se rellenan solas, todas a la vez: una cabecera Cookie, la exportación de una extensión de cookies o un archivo cookies.txt. También puedes pegarlas en cualquier campo.",
 ]

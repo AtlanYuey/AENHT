@@ -1063,7 +1063,7 @@ private fun androidx.compose.foundation.layout.BoxScope.ReadingProgress(entry: H
 @Composable
 fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
     val density = LocalDensity.current
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     val offset = remember { Animatable(0f) }
     val reveal = with(density) { 88.dp.toPx() }
     BoxWithConstraints(Modifier.fillMaxWidth()) {

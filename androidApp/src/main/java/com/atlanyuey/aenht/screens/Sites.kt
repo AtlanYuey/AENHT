@@ -276,18 +276,62 @@ class EhCookieLoginScreen : Screen() {
     private var passHash by mutableStateOf("")
     private var igneous by mutableStateOf("")
     private var working by mutableStateOf(false)
+    /** What the fields were last filled in from (shown under them), or why they weren't. */
+    private var filledNote by mutableStateOf<String?>(null)
+    /** The clipboard text already used: it isn't filled in again over what was typed since. */
+    private var usedClip: String? = null
+
+    /** Fills the fields with the cookies in [text]; false when it has none. */
+    private fun fill(text: String): Boolean {
+        val found = com.atlanyuey.aenht.shared.eh.EhCookieText.find(text) ?: return false
+        found.memberId?.let { memberId = it }
+        found.passHash?.let { passHash = it }
+        found.igneous?.let { igneous = it }
+        return true
+    }
+
+    /** A field's new text: pasted cookies (with their names) go to their fields. */
+    private fun typed(value: String, set: (String) -> Unit) {
+        val named = listOf("ipb_member_id", "ipb_pass_hash", "igneous").any { value.contains(it) }
+        if (!(named && fill(value))) set(value.trim())
+    }
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
         val overlays = LocalOverlays.current
+        val context = androidx.compose.ui.platform.LocalContext.current
         val failedTitle = tr("Couldn't Log In")
         val failedMessage = tr("E-Hentai didn't accept these cookies.")
+        val filledText = tr("Filled in from the copied text.")
+        val noneText = tr("The copied text has no E-Hentai cookies.")
+        fun clipboard(): String? = runCatching {
+            context.getSystemService(android.content.ClipboardManager::class.java)
+                .primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()
+        }.getOrNull()
+        // Copied in a browser and back here (or copied before opening): filled in at once.
+        androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+            val text = clipboard() ?: return@LifecycleEventEffect
+            if (text == usedClip) return@LifecycleEventEffect
+            usedClip = text
+            if (fill(text)) filledNote = filledText
+        }
         GroupedListScreen(tr("Log In with Cookies")) {
-            section(footer = { FooterText(tr("Copy these cookies of e-hentai.org from a browser where you are logged in. igneous is only needed for ExHentai, and is usually picked up by itself.")) }) {
-                Field("ipb_member_id", memberId) { memberId = it }
-                Field("ipb_pass_hash", passHash) { passHash = it }
-                Field("igneous", igneous, last = true) { igneous = it }
+            section(footer = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    filledNote?.let { FooterText(it) }
+                    FooterText(tr("Copy these cookies of e-hentai.org from a browser where you are logged in. igneous is only needed for ExHentai, and is usually picked up by itself."))
+                    FooterText(tr("Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too."))
+                }
+            }) {
+                Field("ipb_member_id", memberId) { typed(it) { v -> memberId = v } }
+                Field("ipb_pass_hash", passHash) { typed(it) { v -> passHash = v } }
+                Field("igneous", igneous) { typed(it) { v -> igneous = v } }
+                ButtonRow(tr("Paste Cookies"), {
+                    val text = clipboard()
+                    usedClip = text
+                    filledNote = if (text != null && fill(text)) filledText else noneText
+                }, last = true)
             }
             section {
                 ButtonRow(tr("Log In"), {

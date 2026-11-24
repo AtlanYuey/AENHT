@@ -52,7 +52,7 @@ class WebDavScreen : Screen() {
     @Composable
     override fun Content() {
         val overlays = LocalOverlays.current
-        val scope = rememberCoroutineScope()
+        val scope = com.atlanyuey.aenht.core.rememberSafeScope()
         val service = WebDavService
         val title = tr("WebDAV Sync")
         val connected = tr("Connected. The app keeps its file in the AENHT folder.")

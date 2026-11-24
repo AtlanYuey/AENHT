@@ -52,10 +52,7 @@ abstract class Screen {
     val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate +
             androidx.compose.ui.platform.AndroidUiDispatcher.Main[androidx.compose.runtime.MonotonicFrameClock]!! +
-            kotlinx.coroutines.CoroutineExceptionHandler { _, error ->
-                android.util.Log.e("AENHT", "Error in a screen's work", error)
-                com.atlanyuey.aenht.shared.app.Diagnostics.log("error", android.util.Log.getStackTraceString(error).take(3000))
-            },
+            com.atlanyuey.aenht.core.LogErrors,
     )
 
     /** Hides the tab bar while this screen is on top (the reader). */
@@ -227,7 +224,7 @@ val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No navigator")
 @Composable
 fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
     val holder = rememberSaveableStateHolder()
-    navigator.uiScope = androidx.compose.runtime.rememberCoroutineScope()
+    navigator.uiScope = com.atlanyuey.aenht.core.rememberSafeScope()
     if (navigator.removed.isNotEmpty()) {
         navigator.removed.forEach { holder.removeState(it.id) }
         navigator.removed.clear()

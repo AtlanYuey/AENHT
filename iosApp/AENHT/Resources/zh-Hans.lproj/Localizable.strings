@@ -676,3 +676,7 @@
 "While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "阅读时，把笔悬停在屏幕上方按笔上的按键；带蓝牙按键的笔（Android 14 及以上）离开屏幕也能用。笔有哪些按键取决于笔的型号。";
 "Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen：在「设置 › 高级功能 › S Pen › 隔空操作」里打开 AENHT。之后按一下 S Pen 按键翻到下一页，按两下翻到上一页，在空中向左、向右挥动也能翻页。";
 "A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "通过蓝牙配对的 Windows 笔（如 Surface 触控笔）：按一下笔尾按键翻到下一页，按两下翻到上一页。";
+"Paste Cookies" = "粘贴 Cookie";
+"Filled in from the copied text." = "已根据复制的文本自动填入。";
+"The copied text has no E-Hentai cookies." = "复制的文本里没有 E-Hentai 的 Cookie。";
+"Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too." = "复制的 Cookie 会自动识别并一次填好：Cookie 请求头、Cookie 扩展导出的内容或 cookies.txt 文件都可以。粘贴到任意一栏也可以。";

@@ -127,7 +127,7 @@ fun PullToRefresh(
 ) {
     val density = LocalDensity.current
     val threshold = with(density) { 80.dp.toPx() }
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     val offset = remember { Animatable(0f) }
     var dragging by remember { mutableStateOf(false) }
     val connection = remember(refreshing) {

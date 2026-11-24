@@ -633,4 +633,8 @@ T = [
     "Beim Lesen eine Taste des über dem Bildschirm gehaltenen Stifts drücken; Stifte mit Bluetooth-Tasten (Android 14 und neuer) funktionieren auch weiter weg. Welche Tasten es gibt, hängt vom Stift ab.",
     "Galaxy S Pen: AENHT unter Einstellungen › Erweiterte Funktionen › S Pen › Air Actions einschalten. Dann blättert ein Druck auf die S Pen-Taste zur nächsten Seite, ein Doppeldruck zur vorherigen, und Wischen nach links und rechts in der Luft blättert auch.",
     "Ein per Bluetooth gekoppelter Windows-Stift (etwa Surface Pen): ein Klick auf die obere Taste blättert zur nächsten Seite, ein Doppelklick zur vorherigen.",
+    "Cookies einsetzen",
+    "Aus dem kopierten Text ausgefüllt.",
+    "Der kopierte Text enthält keine E-Hentai-Cookies.",
+    "Kopierte Cookies werden automatisch und alle auf einmal ausgefüllt: ein Cookie-Header, der Export einer Cookie-Erweiterung oder eine cookies.txt-Datei. Einsetzen in ein beliebiges Feld geht auch.",
 ]

@@ -51,7 +51,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Coroutine scope for app-wide work (saving files, downloads). */
-val AppScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+val AppScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + LogErrors)
 
 // MARK: - History
 

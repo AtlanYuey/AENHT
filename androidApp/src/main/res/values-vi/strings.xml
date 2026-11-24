@@ -634,9 +634,13 @@
     <string name="l_631">Khi đọc, giữ bút phía trên màn hình rồi bấm nút bút; bút có nút Bluetooth (Android 14 trở lên) dùng được cả khi cách xa màn hình. Số nút tùy theo bút.</string>
     <string name="l_632">Galaxy S Pen: bật AENHT trong Cài đặt › Tính năng nâng cao › S Pen › Air actions. Sau đó bấm nút S Pen một lần để sang trang sau, hai lần để về trang trước, vẫy sang trái hoặc phải trên không cũng lật trang.</string>
     <string name="l_633">Bút Windows ghép nối qua Bluetooth (như Surface Pen): bấm nút trên cùng một lần để sang trang sau, hai lần để về trang trước.</string>
-    <string name="l_634">Sao lưu cài đặt</string>
-    <string name="l_635">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_636">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_637">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_638">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_634">Dán cookie</string>
+    <string name="l_635">Đã điền từ văn bản đã sao chép.</string>
+    <string name="l_636">Văn bản đã sao chép không có cookie E-Hentai.</string>
+    <string name="l_637">Cookie đã sao chép được tự động điền cùng lúc: header Cookie, bản xuất của tiện ích cookie hoặc tệp cookies.txt. Dán vào ô bất kỳ cũng được.</string>
+    <string name="l_638">Sao lưu cài đặt</string>
+    <string name="l_639">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_640">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_641">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_642">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

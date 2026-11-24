@@ -634,9 +634,13 @@
     <string name="l_631">Beim Lesen eine Taste des über dem Bildschirm gehaltenen Stifts drücken; Stifte mit Bluetooth-Tasten (Android 14 und neuer) funktionieren auch weiter weg. Welche Tasten es gibt, hängt vom Stift ab.</string>
     <string name="l_632">Galaxy S Pen: AENHT unter Einstellungen › Erweiterte Funktionen › S Pen › Air Actions einschalten. Dann blättert ein Druck auf die S Pen-Taste zur nächsten Seite, ein Doppeldruck zur vorherigen, und Wischen nach links und rechts in der Luft blättert auch.</string>
     <string name="l_633">Ein per Bluetooth gekoppelter Windows-Stift (etwa Surface Pen): ein Klick auf die obere Taste blättert zur nächsten Seite, ein Doppelklick zur vorherigen.</string>
-    <string name="l_634">Einstellungen sichern</string>
-    <string name="l_635">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_636">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_637">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_638">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_634">Cookies einsetzen</string>
+    <string name="l_635">Aus dem kopierten Text ausgefüllt.</string>
+    <string name="l_636">Der kopierte Text enthält keine E-Hentai-Cookies.</string>
+    <string name="l_637">Kopierte Cookies werden automatisch und alle auf einmal ausgefüllt: ein Cookie-Header, der Export einer Cookie-Erweiterung oder eine cookies.txt-Datei. Einsetzen in ein beliebiges Feld geht auch.</string>
+    <string name="l_638">Einstellungen sichern</string>
+    <string name="l_639">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_640">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_641">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_642">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

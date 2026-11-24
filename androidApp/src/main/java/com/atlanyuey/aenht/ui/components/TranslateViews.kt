@@ -37,7 +37,7 @@ fun TranslateLine(
     onResult: ((Translation) -> Unit)? = null,
 ) {
     if (!TranslationService.isAvailable) return
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     var result by remember(text) { mutableStateOf<Translation?>(null) }
     var error by remember(text) { mutableStateOf<String?>(null) }
     var working by remember(text) { mutableStateOf(false) }

@@ -38,3 +38,18 @@ object CrashLog {
         }
     }
 }
+
+/**
+ * For coroutines of work that isn't the screen's drawing (loading, saving,
+ * syncing, a tap's action): an error left uncaught in one is logged (About ›
+ * Diagnostics) instead of closing the app.
+ */
+val LogErrors = kotlinx.coroutines.CoroutineExceptionHandler { _, error ->
+    android.util.Log.e("AENHT", "Uncaught error in background work", error)
+    Diagnostics.log("error", Diagnostics.redact(android.util.Log.getStackTraceString(error).take(3000)))
+}
+
+/** A composable's coroutine scope ([androidx.compose.runtime.rememberCoroutineScope]) whose errors are logged ([LogErrors]). */
+@androidx.compose.runtime.Composable
+fun rememberSafeScope(): kotlinx.coroutines.CoroutineScope = androidx.compose.runtime.rememberCoroutineScope { LogErrors }
+

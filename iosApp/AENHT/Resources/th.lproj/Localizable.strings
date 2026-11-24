@@ -633,3 +633,7 @@
 "While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "ขณะอ่าน ให้ถือปากกาลอยเหนือหน้าจอแล้วกดปุ่มปากกา ปากกาที่มีปุ่มบลูทูธ (Android 14 ขึ้นไป) ใช้ได้แม้อยู่ห่างจากหน้าจอ ปุ่มที่มีขึ้นอยู่กับรุ่นปากกา";
 "Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen: เปิด AENHT ใน การตั้งค่า › คุณสมบัติขั้นสูง › S Pen › Air actions จากนั้นกดปุ่ม S Pen หนึ่งครั้งเพื่อไปหน้าถัดไป กดสองครั้งเพื่อไปหน้าก่อนหน้า และปัดซ้ายขวากลางอากาศก็พลิกหน้าได้";
 "A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "ปากกา Windows ที่จับคู่ผ่านบลูทูธ (เช่น Surface Pen): กดปุ่มด้านบนหนึ่งครั้งเพื่อไปหน้าถัดไป กดสองครั้งเพื่อไปหน้าก่อนหน้า";
+"Paste Cookies" = "วางคุกกี้";
+"Filled in from the copied text." = "กรอกจากข้อความที่คัดลอกแล้ว";
+"The copied text has no E-Hentai cookies." = "ข้อความที่คัดลอกไม่มีคุกกี้ของ E-Hentai";
+"Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too." = "คุกกี้ที่คัดลอกไว้จะถูกกรอกให้เองทั้งหมดในครั้งเดียว: ส่วนหัว Cookie, ไฟล์ส่งออกจากส่วนขยายคุกกี้ หรือไฟล์ cookies.txt วางลงในช่องใดก็ได้เช่นกัน";

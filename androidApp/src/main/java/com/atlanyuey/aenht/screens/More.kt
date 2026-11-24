@@ -605,7 +605,7 @@ class DownloadsScreen : Screen() {
         val failed = tr("Couldn't Save")
         val context = LocalContext.current
         val overlays = LocalOverlays.current
-        val scope = rememberCoroutineScope()
+        val scope = com.atlanyuey.aenht.core.rememberSafeScope()
         return { key ->
             val record = Downloads.record(key)
             buildList {

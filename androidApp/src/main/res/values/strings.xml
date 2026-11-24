@@ -634,9 +634,13 @@
     <string name="l_631">While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen.</string>
     <string name="l_632">Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen\'s button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too.</string>
     <string name="l_633">A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one.</string>
-    <string name="l_634">Settings Backup</string>
-    <string name="l_635">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_636">Android\'s own backup also keeps these settings.</string>
-    <string name="l_637">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_638">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_634">Paste Cookies</string>
+    <string name="l_635">Filled in from the copied text.</string>
+    <string name="l_636">The copied text has no E-Hentai cookies.</string>
+    <string name="l_637">Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension\'s export or a cookies.txt file. Pasting into any field works too.</string>
+    <string name="l_638">Settings Backup</string>
+    <string name="l_639">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_640">Android\'s own backup also keeps these settings.</string>
+    <string name="l_641">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_642">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

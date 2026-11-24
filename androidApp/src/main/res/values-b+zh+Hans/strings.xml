@@ -634,9 +634,13 @@
     <string name="l_631">阅读时，把笔悬停在屏幕上方按笔上的按键；带蓝牙按键的笔（Android 14 及以上）离开屏幕也能用。笔有哪些按键取决于笔的型号。</string>
     <string name="l_632">Galaxy S Pen：在「设置 › 高级功能 › S Pen › 隔空操作」里打开 AENHT。之后按一下 S Pen 按键翻到下一页，按两下翻到上一页，在空中向左、向右挥动也能翻页。</string>
     <string name="l_633">通过蓝牙配对的 Windows 笔（如 Surface 触控笔）：按一下笔尾按键翻到下一页，按两下翻到上一页。</string>
-    <string name="l_634">设置备份</string>
-    <string name="l_635">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_636">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_637">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_638">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_634">粘贴 Cookie</string>
+    <string name="l_635">已根据复制的文本自动填入。</string>
+    <string name="l_636">复制的文本里没有 E-Hentai 的 Cookie。</string>
+    <string name="l_637">复制的 Cookie 会自动识别并一次填好：Cookie 请求头、Cookie 扩展导出的内容或 cookies.txt 文件都可以。粘贴到任意一栏也可以。</string>
+    <string name="l_638">设置备份</string>
+    <string name="l_639">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_640">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_641">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_642">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

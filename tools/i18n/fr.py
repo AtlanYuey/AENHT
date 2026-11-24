@@ -633,4 +633,8 @@ T = [
     "Pendant la lecture, appuyez sur un bouton du stylet tenu au-dessus de l'écran ; les stylets à boutons Bluetooth (Android 14 ou ultérieur) fonctionnent aussi à distance. Les boutons dépendent du stylet.",
     "Galaxy S Pen : activez AENHT dans Paramètres › Fonctions avancées › S Pen › Air actions. Un appui sur le bouton du S Pen passe alors à la page suivante, deux appuis à la précédente, et des gestes vers la gauche ou la droite en l'air tournent aussi les pages.",
     "Un stylet Windows jumelé en Bluetooth (comme le Surface Pen) : un clic sur son bouton du haut passe à la page suivante, un double clic à la précédente.",
+    "Coller les cookies",
+    "Rempli à partir du texte copié.",
+    "Le texte copié ne contient pas de cookies E-Hentai.",
+    "Les cookies copiés sont remplis automatiquement, tous à la fois : un en-tête Cookie, l’export d’une extension de cookies ou un fichier cookies.txt. Les coller dans n’importe quel champ fonctionne aussi.",
 ]

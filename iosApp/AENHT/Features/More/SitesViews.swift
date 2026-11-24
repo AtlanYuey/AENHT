@@ -312,20 +312,36 @@ struct EhLoginWebView: UIViewRepresentable {
 /// Logs in with the cookies of a browser where the user is logged in.
 struct EhCookieLoginView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var memberId = ""
     @State private var passHash = ""
     @State private var igneous = ""
     @State private var working = false
     @State private var failed = false
+    /// What the fields were last filled in from, or why they weren't.
+    @State private var filledNote: LocalizedStringKey?
+    /// The clipboard contents already looked at (its change count): not filled
+    /// in again over what was typed since, nor asked for again (iOS asks to paste).
+    @State private var usedClip: Int?
 
     var body: some View {
         Form {
             Section {
-                TextField("ipb_member_id", text: $memberId)
-                TextField("ipb_pass_hash", text: $passHash)
-                TextField("igneous", text: $igneous)
+                TextField("ipb_member_id", text: typed($memberId))
+                TextField("ipb_pass_hash", text: typed($passHash))
+                TextField("igneous", text: typed($igneous))
+                PasteButton(payloadType: String.self) { strings in
+                    let text = strings.joined(separator: "\n")
+                    usedClip = UIPasteboard.general.changeCount
+                    filledNote = fill(text) ? "Filled in from the copied text." : "The copied text has no E-Hentai cookies."
+                }
+                .labelStyle(.titleAndIcon)
             } footer: {
-                Text("Copy these cookies of e-hentai.org from a browser where you are logged in. igneous is only needed for ExHentai, and is usually picked up by itself.")
+                VStack(alignment: .leading, spacing: 6) {
+                    if let filledNote { Text(filledNote) }
+                    Text("Copy these cookies of e-hentai.org from a browser where you are logged in. igneous is only needed for ExHentai, and is usually picked up by itself.")
+                    Text("Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too.")
+                }
             }
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -344,12 +360,41 @@ struct EhCookieLoginView: View {
         }
         .navigationTitle("Log In with Cookies")
         .navigationBarTitleDisplayMode(.inline)
+        // Copied in a browser and back here (or copied before opening): filled in at once.
+        .onAppear { fillFromClipboard() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { fillFromClipboard() } }
         .alert("Couldn't Log In", isPresented: $failed) {
             Button("OK", role: .cancel) {}
         } message: {
             if let reason = EhSession.shared.loginError { Text(verbatim: reason) }
             else { Text("E-Hentai didn't accept these cookies.") }
         }
+    }
+
+    /// Fills the fields with the cookies in [text]; false when it has none.
+    private func fill(_ text: String) -> Bool {
+        guard let found = EhCookieText.shared.find(text: text) else { return false }
+        if let value = found.memberId { memberId = value }
+        if let value = found.passHash { passHash = value }
+        if let value = found.igneous { igneous = value }
+        return true
+    }
+
+    /// A field: pasted cookies (with their names) go to their fields.
+    private func typed(_ field: Binding<String>) -> Binding<String> {
+        Binding(get: { field.wrappedValue }, set: { value in
+            let named = ["ipb_member_id", "ipb_pass_hash", "igneous"].contains { value.contains($0) }
+            if !(named && fill(value)) { field.wrappedValue = value.trimmingCharacters(in: .whitespacesAndNewlines) }
+        })
+    }
+
+    /// The cookies on the clipboard, once for each thing copied.
+    private func fillFromClipboard() {
+        let change = UIPasteboard.general.changeCount
+        guard change != usedClip, UIPasteboard.general.hasStrings else { return }
+        usedClip = change
+        guard let text = UIPasteboard.general.string else { return }
+        if fill(text) { filledNote = "Filled in from the copied text." }
     }
 }
 

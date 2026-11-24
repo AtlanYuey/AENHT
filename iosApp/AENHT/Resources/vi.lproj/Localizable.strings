@@ -633,3 +633,7 @@
 "While reading, press a button of the stylus held over the screen; pens with Bluetooth buttons (Android 14 and later) work away from it too. Which buttons a pen has depends on the pen." = "Khi đọc, giữ bút phía trên màn hình rồi bấm nút bút; bút có nút Bluetooth (Android 14 trở lên) dùng được cả khi cách xa màn hình. Số nút tùy theo bút.";
 "Galaxy S Pen: turn on AENHT in Settings › Advanced features › S Pen › Air actions. Then a press of the S Pen's button turns to the next page, a double press to the previous one, and swipes left and right in the air turn too." = "Galaxy S Pen: bật AENHT trong Cài đặt › Tính năng nâng cao › S Pen › Air actions. Sau đó bấm nút S Pen một lần để sang trang sau, hai lần để về trang trước, vẫy sang trái hoặc phải trên không cũng lật trang.";
 "A Windows pen paired over Bluetooth (such as Surface Pen): a click of its top button turns to the next page, a double click to the previous one." = "Bút Windows ghép nối qua Bluetooth (như Surface Pen): bấm nút trên cùng một lần để sang trang sau, hai lần để về trang trước.";
+"Paste Cookies" = "Dán cookie";
+"Filled in from the copied text." = "Đã điền từ văn bản đã sao chép.";
+"The copied text has no E-Hentai cookies." = "Văn bản đã sao chép không có cookie E-Hentai.";
+"Copied cookies are filled in by themselves, all of them at once: a Cookie header, a cookie extension's export or a cookies.txt file. Pasting into any field works too." = "Cookie đã sao chép được tự động điền cùng lúc: header Cookie, bản xuất của tiện ích cookie hoặc tệp cookies.txt. Dán vào ô bất kỳ cũng được.";

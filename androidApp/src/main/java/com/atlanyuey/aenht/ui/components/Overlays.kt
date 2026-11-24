@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -162,7 +163,7 @@ fun <T> pickerItems(options: List<T>, selected: T, title: (T) -> String, onSelec
 
 @Composable
 fun OverlayHost(controller: OverlayController, backdrop: Backdrop) {
-    controller.uiScope = rememberCoroutineScope()
+    controller.uiScope = com.atlanyuey.aenht.core.rememberSafeScope()
     val items = controller.items
     BackHandler(enabled = items.isNotEmpty()) {
         items.lastOrNull()?.let { controller.dismissAnimated(it) }
@@ -413,10 +414,11 @@ private fun ActionSheetOverlay(sheet: Overlay.ActionSheet, dismiss: () -> Unit) 
 @Composable
 private fun SheetOverlay(sheet: Overlay.Sheet, dismiss: () -> Unit) {
     val v = sheet.visible.value
-    val scope = rememberCoroutineScope()
+    val scope = com.atlanyuey.aenht.core.rememberSafeScope()
     val drag = remember { Animatable(0f) }
     Scrim(v, dismiss)
-    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding(), contentAlignment = Alignment.BottomCenter) {
+    // Above the keyboard while it is up (a sheet with a field: the API key, a page number…).
+    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().imePadding(), contentAlignment = Alignment.BottomCenter) {
         val maxHeight = maxHeight
         Column(
             Modifier
@@ -469,7 +471,7 @@ fun OverlayController.prompt(
         val focus = remember { androidx.compose.ui.focus.FocusRequester() }
         val colors = AppTheme.colors
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Txt(title, style = Type.headline)
