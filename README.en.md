@@ -211,15 +211,15 @@ The app switcher can blur images only, blur images and text, blur the whole app,
 - Left/right or top/bottom tap zones; long perpendicular swipes can exit, toggle controls, or start/stop auto reading. Pinch and double tap zoom the page.
 - Keep-awake: off, five minutes, ten minutes, or always. Super-resolution: off, automatic, or always, with downloadable higher-quality models.
 - Page-only brightness, grayscale, and inversion; jump to a page, save or share one page; Android volume-key page turns.
-- Controls hide after inactivity. Settings are grouped into Reading, Display, and Controls.
+- Controls hide after inactivity. **Compact Control Bar** leaves one row (the slider, with the page and the pages left), with optional floating Reader Settings and Auto Read buttons; the controls can also be set to show only from a tap in the middle. Settings are grouped into Reading (direction, page turns, auto read, preload), Display (filters, page size, super-resolution, keep-awake), and Controls (control bar, taps and swipes, keys and devices).
 </details>
 
 <details>
 <summary><b>Favorites, history, and downloads</b></summary>
 
 - Account favorites are copied locally and combined by favorite time for offline browsing. nhentai supplies no favorite timestamps: the initial order is preserved, and newly discovered favorites receive timestamps afterward.
-- Filter favorites by site or E-Hentai's ten folders, choose which folders appear under All, and search favorites. Favorite/unfavorite actions roll back if the request fails.
-- Combined history is grouped by date, with site filters, search, and reading progress.
+- Filter favorites by site or E-Hentai's ten folders, choose which folders appear under All, and search favorites. Favorite/unfavorite actions roll back if the request fails. Favorites reload when their tab is opened (unless scrolled down). Select several to remove them, on the site too.
+- Combined history is grouped by date, with site filters, search, reading progress, and multi-select deletion.
 - Downloads from both sites are grouped by status, with multi-selection, pause, resume, deletion, and CBZ export through sharing or the file/download folder.
 - Configure concurrent galleries/pages, retries, page delays, and original-image downloading. History and downloads offer card and list layouts.
 </details>

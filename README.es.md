@@ -210,15 +210,15 @@ En el selector de aplicaciones se pueden desenfocar solo imágenes, imágenes y 
 - Zonas táctiles laterales o superiores/inferiores; gestos largos perpendiculares para salir, mostrar controles o activar la lectura automática; pellizco y doble toque para ampliar.
 - Pantalla encendida: desactivado, 5 minutos, 10 minutos o siempre. Superresolución: desactivada, automática o siempre, con modelos adicionales.
 - Brillo, escala de grises e inversión solo en las páginas; salto, guardado y uso compartido de páginas; botones de volumen para pasar página en Android.
-- Controles ocultos tras inactividad. Ajustes separados en Lectura, Pantalla y Controles.
+- Controles ocultos tras inactividad. La **barra de controles compacta** deja una sola fila (el deslizador, con la página y las páginas restantes), con botones flotantes opcionales de ajustes del lector y lectura automática; también se puede mostrar solo al tocar el centro. Ajustes separados en Lectura (dirección, paso de página, lectura automática, precarga), Pantalla (filtros, tamaño de página, superresolución, pantalla encendida) y Controles (barra de controles, toques y gestos, teclas y dispositivos).
 </details>
 
 <details>
 <summary><b>Favoritos, historial y descargas</b></summary>
 
 - Copias locales de favoritos de ambas cuentas, unificadas por fecha y disponibles sin conexión. nhentai no facilita fechas: se conserva el orden inicial y se fecha cada favorito descubierto después.
-- Filtro por sitio y por las diez carpetas de E-Hentai, selección de carpetas visibles en Todos y búsqueda de favoritos. Si una acción de añadir/quitar falla, se revierte.
-- Historial conjunto por días, con filtros de sitio, búsqueda y progreso de lectura.
+- Filtro por sitio y por las diez carpetas de E-Hentai, selección de carpetas visibles en Todos y búsqueda de favoritos. Si una acción de añadir/quitar falla, se revierte. Se actualizan al abrir su pestaña (salvo si la lista está desplazada) y se pueden seleccionar varios para quitarlos, también en el sitio.
+- Historial conjunto por días, con filtros de sitio, búsqueda, progreso de lectura y borrado de varios a la vez.
 - Descargas agrupadas por estado, selección múltiple, pausa, continuación, eliminación y exportación CBZ para compartir o guardar en archivos/descargas.
 - Ajustes de galerías y páginas simultáneas, reintentos, espera entre páginas e imágenes originales; historial y descargas en tarjetas o lista.
 </details>
