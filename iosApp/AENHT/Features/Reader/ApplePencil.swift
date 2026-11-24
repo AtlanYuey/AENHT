@@ -115,7 +115,7 @@ struct ApplePencilSettingsView: View {
     @State private var clear: Task<Void, Never>?
 
     var body: some View {
-        Form {
+        SettingsForm {
             ApplePencilSection(received: received)
             Section {
                 Text("Try it here: double-tap or squeeze the pencil.")

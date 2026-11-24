@@ -320,6 +320,7 @@ struct PadTabBar: View {
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: selected ? "\(item.icon).fill" : item.icon)
+                    .contentTransition(.symbolEffect(.replace))
                     .font(.system(size: 20, weight: .medium))
                     .frame(height: 24)
                 Text(item.title)

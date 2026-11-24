@@ -243,6 +243,7 @@ struct CoverView: View {
                     ZStack(alignment: .topTrailing) {
                         Color.black.opacity(chosen ? 0 : 0.18)
                         Image(systemName: chosen ? "checkmark.circle.fill" : "circle")
+                            .contentTransition(.symbolEffect(.replace))
                             .font(.title3.weight(.semibold))
                             .symbolRenderingMode(.palette)
                             .foregroundStyle(.white, chosen ? Color.accentColor : Color.black.opacity(0.3))
@@ -757,5 +758,16 @@ struct GallerySelectionBar: View {
         .frame(maxWidth: 560)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
+    }
+}
+
+/// A settings page's form: rows shown or hidden by a switch or a choice
+/// (an option turned on, another mode) come and go smoothly.
+struct SettingsForm<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Form { content() }
+            .animation(.smooth(duration: 0.3), value: AppSettings.shared.layoutRevision)
     }
 }

@@ -32,7 +32,13 @@ fun GallerySelectionBar(
 ) {
     val count = selection.keys.size
     val all = items.isNotEmpty() && items.all { it in selection }
+    // It rises into place when choosing starts.
+    val shown = androidx.compose.runtime.remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+      androidx.compose.animation.AnimatedVisibility(
+          shown,
+          enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically { it },
+      ) {
         Row(
             Modifier
                 .navigationBarsPadding()
@@ -50,5 +56,6 @@ fun GallerySelectionBar(
             Spacer(Modifier.weight(1f))
             TextButton(action, onAction, enabled = count > 0, bold = true)
         }
+      }
     }
 }

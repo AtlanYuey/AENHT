@@ -375,6 +375,8 @@ struct CircleButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
+                // Another state (favorited, downloaded…): the symbol changes smoothly.
+                .contentTransition(.symbolEffect(.replace))
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.tint))
                 .contentTransition(.symbolEffect(.replace))

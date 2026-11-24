@@ -712,8 +712,14 @@ final class AppSettings {
 
     func setChangedAt(_ value: Int64) { defaults.set(Double(value), forKey: "settingsChangedAt") }
 
+    /// Counts the changes of switches and choices (not sliders): settings
+    /// pages animate the rows they show or hide when it changes.
+    private(set) var layoutRevision = 0
+
     private func save(_ value: Any, _ key: String) {
         defaults.set(value, forKey: key)
+        // A slider's value isn't counted: animated, the thumb would lag behind the finger.
+        if value is Bool || value is String { layoutRevision &+= 1 }
         if !isApplyingSynced { setChangedAt(Int64(Date.now.timeIntervalSince1970 * 1000)) }
         if !isApplyingSynced, syncColumns || !Self.columnKeys.contains(key) {
             SettingsSync.shared.settingChanged(key, value)

@@ -7,7 +7,7 @@ struct TabletLayoutSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section {
                 Toggle("Tablet Layout on Home", isOn: $settings.tabletHome)
             } footer: {

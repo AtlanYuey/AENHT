@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.animation.core.VisibilityThreshold
 import com.atlanyuey.aenht.core.privacyText
 import com.atlanyuey.aenht.core.label
 import com.atlanyuey.aenht.core.shortLabel
@@ -203,7 +204,9 @@ fun CoverView(
 /** Over a cover while choosing: a check in a circle (filled when chosen), the cover dimmed when not. */
 @Composable
 private fun BoxScope.SelectionMark(chosen: Boolean) {
-    if (!chosen) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.18f)))
+    // Chosen or not, it changes smoothly.
+    val dim by androidx.compose.animation.core.animateFloatAsState(if (chosen) 0f else 0.18f, label = "dim")
+    Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = dim)))
     Box(
         Modifier
             .align(Alignment.TopEnd)
@@ -214,7 +217,9 @@ private fun BoxScope.SelectionMark(chosen: Boolean) {
             .border(1.5.dp, Color.White, androidx.compose.foundation.shape.CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        if (chosen) AppIcon(Icons.Check, null, tint = Color.White, size = 14.dp)
+        androidx.compose.animation.AnimatedVisibility(chosen, enter = androidx.compose.animation.scaleIn() + androidx.compose.animation.fadeIn(), exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut()) {
+            AppIcon(Icons.Check, null, tint = Color.White, size = 14.dp)
+        }
     }
 }
 
@@ -653,16 +658,28 @@ fun LazyStaggeredGridScope.galleryItems(items: List<GallerySummary>, style: Gall
     // One of each (a key used twice closes the app).
     itemsIndexed(items.distinctBy { it.key.storageKey }, key = { _, item -> item.key.storageKey }) { index, item ->
         androidx.compose.runtime.LaunchedEffect(item.key) { onItemShown(index) }
-        if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
+        // Cards come in softly, and slide into place when others go (deleted, filtered).
+        Box(Modifier.animateItem(fadeInSpec = listFadeIn, placementSpec = listPlacement, fadeOutSpec = listFadeOut)) {
+            if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
+        }
     }
 }
 
 /** A full-width item in a [GalleryGrid] (headers, footers). */
 fun LazyStaggeredGridScope.fullLine(key: Any? = null, content: @Composable () -> Unit) {
     item(key = key, span = StaggeredGridItemSpan.FullLine) {
-        Box(Modifier.padding(horizontal = 0.dp)) { content() }
+        Box(if (key != null) Modifier.animateItem(fadeInSpec = listFadeIn, placementSpec = listPlacement, fadeOutSpec = listFadeOut) else Modifier) { content() }
     }
 }
+
+/** How list items come, move and go (cards, rows, headers): soft, never a jump. */
+val listFadeIn = androidx.compose.animation.core.tween<Float>(220)
+val listFadeOut = androidx.compose.animation.core.tween<Float>(160)
+val listPlacement = androidx.compose.animation.core.spring(
+    dampingRatio = 1f,
+    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+    visibilityThreshold = androidx.compose.ui.unit.IntOffset.VisibilityThreshold,
+)
 
 /** Footer of an infinite list: spinner while loading, error with retry. */
 fun LazyStaggeredGridScope.feedFooter(feed: GalleryFeed, empty: Pair<String, ImageVector>) {

@@ -682,56 +682,59 @@ class DownloadsScreen : Screen() {
                 )
             }
             items(group.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { record ->
-                val anchor = rememberAnchor()
-                val storageKey = record.key.storageKey
-                SwipeToDelete(onDelete = { Downloads.delete(record.key) }) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(AppTheme.colors.background)
-                            .anchor(anchor)
-                            .combinedClickable(
-                                onClick = {
-                                    if (selecting) {
-                                        if (storageKey in selected) selected.remove(storageKey) else selected.add(storageKey)
-                                    } else {
-                                        navigator.push(galleryScreen(record.summary))
-                                    }
-                                },
-                                onLongClick = { if (!selecting) overlays.menu(anchor.bounds, listOf(menu(record.key))) },
-                            )
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (selecting) {
-                            val on = storageKey in selected
-                            Box(
-                                Modifier.size(24.dp).clip(CircleShape)
-                                    .background(if (on) AppTheme.tint else Color.Transparent)
-                                    .border(1.5.dp, if (on) AppTheme.tint else AppTheme.colors.tertiaryLabel, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (on) AppIcon(Icons.CheckCircle, null, tint = Color.White, size = 22.dp)
+                // Rows come in softly, and slide into place when others go.
+                Box(Modifier.animateItem(fadeInSpec = com.atlanyuey.aenht.ui.components.listFadeIn, placementSpec = com.atlanyuey.aenht.ui.components.listPlacement, fadeOutSpec = com.atlanyuey.aenht.ui.components.listFadeOut)) {
+                    val anchor = rememberAnchor()
+                    val storageKey = record.key.storageKey
+                    SwipeToDelete(onDelete = { Downloads.delete(record.key) }) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .background(AppTheme.colors.background)
+                                .anchor(anchor)
+                                .combinedClickable(
+                                    onClick = {
+                                        if (selecting) {
+                                            if (storageKey in selected) selected.remove(storageKey) else selected.add(storageKey)
+                                        } else {
+                                            navigator.push(galleryScreen(record.summary))
+                                        }
+                                    },
+                                    onLongClick = { if (!selecting) overlays.menu(anchor.bounds, listOf(menu(record.key))) },
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (selecting) {
+                                val on = storageKey in selected
+                                Box(
+                                    Modifier.size(24.dp).clip(CircleShape)
+                                        .background(if (on) AppTheme.tint else Color.Transparent)
+                                        .border(1.5.dp, if (on) AppTheme.tint else AppTheme.colors.tertiaryLabel, CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (on) AppIcon(Icons.CheckCircle, null, tint = Color.White, size = 22.dp)
+                                }
                             }
-                        }
-                        CompositionLocalProvider(LocalShowsSiteBadge provides showSite) {
-                            CoverView(record.summary, Modifier.width(72.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
-                        }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Txt(GalleryItem.pretty(record.title), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 2)
-                            if (record.state == DownloadRecord.FINISHED) {
-                                Txt(tr("%lld pages", record.totalPages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
-                            } else {
-                                ProgressBar(record.progress)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Txt("${record.completed} / ${record.totalPages}", Modifier.weight(1f), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
-                                    val (label, action) = when (record.state) {
-                                        DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> tr("Pause") to { Downloads.pause(record.key) }
-                                        DownloadRecord.PAUSED -> tr("Resume") to { Downloads.resume(record.key) }
-                                        else -> tr("Retry") to { Downloads.resume(record.key) }
+                            CompositionLocalProvider(LocalShowsSiteBadge provides showSite) {
+                                CoverView(record.summary, Modifier.width(72.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
+                            }
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Txt(GalleryItem.pretty(record.title), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 2)
+                                if (record.state == DownloadRecord.FINISHED) {
+                                    Txt(tr("%lld pages", record.totalPages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                                } else {
+                                    ProgressBar(record.progress)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Txt("${record.completed} / ${record.totalPages}", Modifier.weight(1f), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                                        val (label, action) = when (record.state) {
+                                            DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> tr("Pause") to { Downloads.pause(record.key) }
+                                            DownloadRecord.PAUSED -> tr("Resume") to { Downloads.resume(record.key) }
+                                            else -> tr("Retry") to { Downloads.resume(record.key) }
+                                        }
+                                        com.atlanyuey.aenht.ui.components.TextButton(label, action)
                                     }
-                                    com.atlanyuey.aenht.ui.components.TextButton(label, action)
                                 }
                             }
                         }

@@ -159,7 +159,10 @@ fun GlassCircleButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        AppIcon(icon, contentDescription, tint = if (enabled) color else color.copy(alpha = 0.35f), size = iconSize)
+        // A new icon (play / pause, heart / filled heart…) crossfades in.
+        androidx.compose.animation.Crossfade(icon, animationSpec = androidx.compose.animation.core.tween(180), label = "icon") { shown ->
+            AppIcon(shown, contentDescription, tint = if (enabled) color else color.copy(alpha = 0.35f), size = iconSize)
+        }
     }
 }
 

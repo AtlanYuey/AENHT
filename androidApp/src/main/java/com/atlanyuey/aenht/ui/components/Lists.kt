@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -81,7 +82,14 @@ fun LazyListScope.section(
     rows: @Composable ColumnScope.() -> Unit,
 ) {
     item(key = key) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        // Rows shown or hidden (an option turned on), a footer that changes: the
+        // section grows and shrinks smoothly instead of jumping.
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .animateContentSize(androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
+                .padding(horizontal = 16.dp),
+        ) {
             if (header != null) {
                 Txt(
                     tr(header),

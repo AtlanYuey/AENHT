@@ -11,7 +11,7 @@ struct WebDavSettingsView: View {
 
     var body: some View {
         @Bindable var service = service
-        Form {
+        SettingsForm {
             Section {
                 TextField("Address", text: $url, prompt: Text(verbatim: "https://dav.example.com/remote.php/dav/files/me"))
                     .keyboardType(.URL)

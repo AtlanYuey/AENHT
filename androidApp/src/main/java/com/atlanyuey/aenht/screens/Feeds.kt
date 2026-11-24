@@ -1160,17 +1160,20 @@ class HistoryScreen : Screen(), TabRoot {
             sections.forEach { (day, dayEntries) ->
                 item("day$day") { DayHeader(day) }
                 items(dayEntries.distinctBy { it.key.storageKey }, key = { it.key.storageKey }) { entry ->
-                    val row = @Composable {
-                        CompositionLocalProvider(LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1)) {
-                            GalleryRow(
-                                entry.summary,
-                                Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
-                                subtitle = historySubtitle(entry),
-                            )
+                    // Rows come in softly, and slide into place when others go.
+                    Box(Modifier.animateItem(fadeInSpec = com.atlanyuey.aenht.ui.components.listFadeIn, placementSpec = com.atlanyuey.aenht.ui.components.listPlacement, fadeOutSpec = com.atlanyuey.aenht.ui.components.listFadeOut)) {
+                        val row = @Composable {
+                            CompositionLocalProvider(LocalShowsSiteBadge provides (site == null && AppSettings.enabledSites.size > 1)) {
+                                GalleryRow(
+                                    entry.summary,
+                                    Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
+                                    subtitle = historySubtitle(entry),
+                                )
+                            }
                         }
+                        // Choosing: a tap chooses, no swipe.
+                        if (selection != null) row() else SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) { row() }
                     }
-                    // Choosing: a tap chooses, no swipe.
-                    if (selection != null) row() else SwipeToDelete(onDelete = { HistoryStore.delete(entry.key) }) { row() }
                 }
             }
             if (selection != null) item("selection-room") { androidx.compose.foundation.layout.Spacer(Modifier.height(64.dp)) }
@@ -1408,33 +1411,36 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
                     }
                 }
                 items(recents.toList().distinct(), key = { it }) { entry ->
-                    // An entry is a search on a site (shown at its end): tapping it searches there.
-                    val term = com.atlanyuey.aenht.shared.site.SearchHistory.query(entry)
-                    val entrySite = com.atlanyuey.aenht.shared.site.SearchHistory.site(entry)
-                    SwipeToDelete(onDelete = { AppSettings.removeRecentSearch(entry) }) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .background(AppTheme.colors.background)
-                                .combinedClickable(
-                                    onClick = {
-                                        if (entrySite != null && entrySite in AppSettings.enabledSites) state.site = entrySite
-                                        state.submit(term)
-                                    },
-                                    onLongClick = {
-                                        overlays.actionSheet(term, null, listOf(
-                                            DialogButton(deleteLabel, ButtonRole.Destructive) { AppSettings.removeRecentSearch(entry) },
-                                        ))
-                                    },
-                                )
-                                .padding(horizontal = 20.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            AppIcon(Icons.Clock, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
-                            Txt(term, Modifier.weight(1f), maxLines = 1)
-                            if (entrySite != null && AppSettings.enabledSites.size > 1) {
-                                Txt(entrySite.badge, style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                    // Rows come in softly, and slide into place when others go.
+                    Box(Modifier.animateItem(fadeInSpec = com.atlanyuey.aenht.ui.components.listFadeIn, placementSpec = com.atlanyuey.aenht.ui.components.listPlacement, fadeOutSpec = com.atlanyuey.aenht.ui.components.listFadeOut)) {
+                        // An entry is a search on a site (shown at its end): tapping it searches there.
+                        val term = com.atlanyuey.aenht.shared.site.SearchHistory.query(entry)
+                        val entrySite = com.atlanyuey.aenht.shared.site.SearchHistory.site(entry)
+                        SwipeToDelete(onDelete = { AppSettings.removeRecentSearch(entry) }) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(AppTheme.colors.background)
+                                    .combinedClickable(
+                                        onClick = {
+                                            if (entrySite != null && entrySite in AppSettings.enabledSites) state.site = entrySite
+                                            state.submit(term)
+                                        },
+                                        onLongClick = {
+                                            overlays.actionSheet(term, null, listOf(
+                                                DialogButton(deleteLabel, ButtonRole.Destructive) { AppSettings.removeRecentSearch(entry) },
+                                            ))
+                                        },
+                                    )
+                                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                AppIcon(Icons.Clock, null, tint = AppTheme.colors.secondaryLabel, size = 18.dp)
+                                Txt(term, Modifier.weight(1f), maxLines = 1)
+                                if (entrySite != null && AppSettings.enabledSites.size > 1) {
+                                    Txt(entrySite.badge, style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                                }
                             }
                         }
                     }

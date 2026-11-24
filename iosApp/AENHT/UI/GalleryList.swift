@@ -320,7 +320,12 @@ final class GalleryListController: UIViewController, UICollectionViewDelegate {
             let again = relayout || redraw ? snapshot.itemIdentifiers : changed
             let existing = again.filter { before.contains($0) }
             if !existing.isEmpty { snapshot.reconfigureItems(existing) }
-            dataSource.apply(snapshot, animatingDifferences: false)
+            // Cards that went (deleted, removed, filtered out): the others slide into
+            // place. Pages loaded and a new list come at once (no long animation).
+            let after = Set(snapshot.itemIdentifiers)
+            let removed = before.subtracting(after).count
+            let animate = removed > 0 && removed < 80 && !before.isEmpty && after.isSubset(of: before.union(Set(views.keys)))
+            dataSource.apply(snapshot, animatingDifferences: animate && !relayout)
         }
         if relayout || cardsChanged { collectionView.collectionViewLayout.invalidateLayout() }
     }

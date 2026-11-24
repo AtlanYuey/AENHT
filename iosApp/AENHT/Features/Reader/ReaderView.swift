@@ -823,6 +823,7 @@ struct ReaderView: View {
     /// A tap starts or stops; a long press shows the speed and the options.
     private var autoReadButton: some View {
         Image(systemName: autoRead ? "pause.fill" : "play.fill")
+            .contentTransition(.symbolEffect(.replace))
             .floatingTarget()
             .onTapGesture { autoRead.toggle() }
             .onLongPressGesture(minimumDuration: 0.4) { showAutoReadOptions = true }
@@ -1034,7 +1035,7 @@ struct AutoReadOptionsSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form { AutoReadOptionsSection(settings: settings) }
+            SettingsForm { AutoReadOptionsSection(settings: settings) }
                 .navigationTitle(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")
                 .navigationBarTitleDisplayMode(.inline)
                 .barToolbar {
@@ -1052,7 +1053,7 @@ struct ReaderSettingsSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            SettingsForm {
                 ReadingSettingsSections(settings: settings)
             }
             .navigationTitle("Reader Settings")

@@ -12,7 +12,7 @@ struct SyncSettingsView: View {
 
     var body: some View {
         @Bindable var sync = sync
-        Form {
+        SettingsForm {
             Section {
                 Toggle("Sync Settings with iCloud", isOn: $sync.isEnabled)
                 if sync.isEnabled {

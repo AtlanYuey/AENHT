@@ -387,6 +387,7 @@ struct EhGalleryView: View {
     /// gallery, the current one removes it). Logged out, a tap logs in.
     @ViewBuilder private var favoriteButton: some View {
         let heart = Image(systemName: model.folder != nil ? "heart.fill" : "heart")
+            .contentTransition(.symbolEffect(.replace))
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(model.folder.map { EhSession.folderColors[$0] == .black ? Color.pink : EhSession.folderColors[$0] } ?? Color.accentColor)
             .frame(width: 44, height: 44)
@@ -1059,11 +1060,13 @@ struct EhTagVoteView: View {
                             Spacer()
                             Button { Task { await vote(full, up: true, mark: full) } } label: {
                                 Image(systemName: voted[full] == true ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                    .contentTransition(.symbolEffect(.replace))
                             }
                             .buttonStyle(.borderless)
                             .tint(voted[full] == true ? .green : .secondary)
                             Button { Task { await vote(full, up: false, mark: full) } } label: {
                                 Image(systemName: voted[full] == false ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                                    .contentTransition(.symbolEffect(.replace))
                             }
                             .buttonStyle(.borderless)
                             .tint(voted[full] == false ? .red : .secondary)

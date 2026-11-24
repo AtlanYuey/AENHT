@@ -71,7 +71,7 @@ struct MoreOverview: View {
     @Query private var history: [HistoryEntry]
 
     var body: some View {
-        Form {
+        SettingsForm {
             // The logged-in accounts side by side (nhentai first), each opening Accounts.
             Section("Accounts") {
                 entry(.accounts) {

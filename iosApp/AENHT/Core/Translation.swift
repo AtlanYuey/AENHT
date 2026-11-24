@@ -260,7 +260,7 @@ struct TranslationSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             let services = service.services
             Section {
                 ForEach(services, id: \.id) { s in
@@ -488,7 +488,7 @@ struct LlmServiceEditor: View {
     }
 
     private var form: some View {
-        Form {
+        SettingsForm {
             Section("Service Details") {
                 TextField("Service Name", text: $name)
                 LabeledContent("Provider") {
@@ -711,7 +711,7 @@ struct LlmRequestOptionsView: View {
     let draft: () -> LlmService
 
     var body: some View {
-        Form {
+        SettingsForm {
             Section {
                 Picker("Parameter Preset", selection: $preset) {
                     ForEach(LlmParameterPreset.entries, id: \.key) {

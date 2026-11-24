@@ -325,7 +325,7 @@ struct EhCookieLoginView: View {
     @State private var usedClip: Int?
 
     var body: some View {
-        Form {
+        SettingsForm {
             Section {
                 TextField("ipb_member_id", text: typed($memberId))
                 TextField("ipb_pass_hash", text: typed($passHash))
@@ -407,7 +407,7 @@ struct SitesSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section {
                 Toggle("nhentai", isOn: Binding(get: { settings.nhentaiEnabled },
                                                 set: { if $0 || settings.ehentaiEnabled { settings.nhentaiEnabled = $0 } }))
@@ -503,7 +503,7 @@ struct FiltersSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section {
                 Picker("Match", selection: $target) {
                     ForEach(["tag", "title", "uploader", "comment", "commenter"], id: \.self) { Text(title($0)).tag($0) }
@@ -577,7 +577,7 @@ struct HomeRowsSettingsView: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        Form {
+        SettingsForm {
             ForEach(settings.enabledSites) { site in
                 let rows = settings.homeRows(for: site)
                 Section {

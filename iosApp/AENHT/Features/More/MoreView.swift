@@ -519,7 +519,7 @@ struct AppearanceSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section("Theme") {
                 Picker("Appearance", selection: $settings.theme) {
                     ForEach(ThemeMode.allCases) { Text($0.title).tag($0) }
@@ -659,7 +659,7 @@ struct CardSizeView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             ColumnsSection(title: "Portrait", isLandscape: false, range: AppSettings.portraitColumns,
                            columns: isPad ? $settings.padColumnsPortrait : $settings.phoneColumnsPortrait)
             ColumnsSection(title: "Landscape", isLandscape: true, range: AppSettings.landscapeColumns,
@@ -755,7 +755,7 @@ struct ReadingSettingsView: View {
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        Form {
+        SettingsForm {
             ReadingSettingsSections(settings: settings)
         }
         .navigationTitle("Reading")
@@ -770,7 +770,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section("Home") {
                 NavigationLink("Pinned Rows") { HomeRowsSettingsView().pageTint() }
                 Picker("Language", selection: $settings.homeLanguage) {
@@ -1062,7 +1062,7 @@ struct DownloadSettingsView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        Form {
+        SettingsForm {
             Section {
                 Stepper("Galleries at Once: \(settings.downloadGalleries)", value: $settings.downloadGalleries, in: 1...5)
                 Stepper("Pages at Once: \(settings.downloadPages)", value: $settings.downloadPages, in: 1...6)

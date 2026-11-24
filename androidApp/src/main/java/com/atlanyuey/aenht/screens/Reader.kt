@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.screens
 
+import androidx.compose.animation.togetherWith
 import com.atlanyuey.aenht.ui.components.RemoteImage
 import androidx.compose.foundation.layout.size
 import kotlin.math.roundToInt
@@ -1771,10 +1772,17 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // While the slider is held: the pages around it, over the finger.
+                // While the slider is held: the pages around it, over the finger (they crossfade
+                // with the buttons).
                 val scrub = scrubPage
-                if (scrub != null) {
-                    ScrubStrip(scrub, trackLeft, trackWidth)
+                androidx.compose.animation.AnimatedContent(
+                    scrub != null,
+                    transitionSpec = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(160)) togetherWith androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) },
+                    contentAlignment = Alignment.BottomCenter,
+                    label = "strip",
+                ) { scrubbing ->
+                if (scrubbing) {
+                    ScrubStrip(scrubPage ?: page, trackLeft, trackWidth)
                 } else {
                     Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                         Row(Modifier.align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1790,6 +1798,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             if (showSettings && !settingsOnLeft) settingsButton()
                         }
                     }
+                }
                 }
                 // One row: the page, the slider, the pages left (as high above as below).
                 val shown = scrub ?: page
