@@ -251,6 +251,18 @@ enum class ScreenOn(val raw: String, val title: String, val minutes: Int) {
 }
 
 /** Where taps turn pages in the reader. */
+/** Where the reader's Auto Read button floats, next to Reader Settings (on the other side). */
+enum class AutoReadSide(val raw: String, val title: String) {
+    /** The side of the hand: where the screen was last touched. */
+    Hand("hand", "Follows Your Hand"),
+    Left("left", "Left"),
+    Right("right", "Right");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Hand
+    }
+}
+
 enum class TapZones(val raw: String, val title: String) {
     LeftRight("leftRight", "Left and Right"),
     TopBottom("topBottom", "Top and Bottom");
@@ -361,9 +373,9 @@ object AppSettings {
         preloadPages = p.getInt("preloadPages", 4)
         tapToTurnPages = p.getBoolean("tapToTurnPages", true)
         doubleTapTopToStart = p.getBoolean("doubleTapTopToStart", true)
-        compactControls = p.getBoolean("compactControls", false)
-        compactSettingsButton = p.getBoolean("compactSettingsButton", false)
-        compactAutoReadButton = p.getBoolean("compactAutoReadButton", false)
+        readerSettingsButton = p.getBoolean("readerSettingsButton", true)
+        autoReadButton = p.getBoolean("autoReadButton", true)
+        autoReadSide = AutoReadSide.of(p.getString("autoReadSide", null))
         controlsMiddleOnly = p.getBoolean("controlsMiddleOnly", false)
         favoritesRefreshOnOpen = p.getBoolean("favoritesRefreshOnOpen", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
@@ -522,12 +534,12 @@ object AppSettings {
     var tapToTurnPages by Pref(true) { save("tapToTurnPages", it) }
     /** The reader: a double tap on the title goes to the first page. */
     var doubleTapTopToStart by Pref(true) { save("doubleTapTopToStart", it) }
-    /** The reader's control bar in one row (the slider); its buttons float above it, when on. */
-    var compactControls by Pref(false) { save("compactControls", it) }
-    /** With the compact control bar: the Reader Settings button floats above it. */
-    var compactSettingsButton by Pref(false) { save("compactSettingsButton", it) }
-    /** With the compact control bar: the Auto Read / Auto Scroll button floats above it. */
-    var compactAutoReadButton by Pref(false) { save("compactAutoReadButton", it) }
+    /** The reader's Reader Settings button, floating on one side above the control bar. */
+    var readerSettingsButton by Pref(true) { save("readerSettingsButton", it) }
+    /** The reader's Auto Read / Auto Scroll button, floating on one side above the control bar. */
+    var autoReadButton by Pref(true) { save("autoReadButton", it) }
+    /** With both buttons: Auto Read's side (Reader Settings on the other). */
+    var autoReadSide by Pref(AutoReadSide.Hand) { save("autoReadSide", it.raw) }
     /** Only a tap in the middle shows or hides the reader's controls; the sides do nothing. */
     var controlsMiddleOnly by Pref(false) { save("controlsMiddleOnly", it) }
     /** Favorites reload each time their tab is opened. */
@@ -763,9 +775,9 @@ object AppSettings {
         "preloadPages" to preloadPages,
         "tapToTurnPages" to tapToTurnPages,
         "doubleTapTopToStart" to doubleTapTopToStart,
-        "compactControls" to compactControls,
-        "compactSettingsButton" to compactSettingsButton,
-        "compactAutoReadButton" to compactAutoReadButton,
+        "readerSettingsButton" to readerSettingsButton,
+        "autoReadButton" to autoReadButton,
+        "autoReadSide" to autoReadSide.raw,
         "controlsMiddleOnly" to controlsMiddleOnly,
         "favoritesRefreshOnOpen" to favoritesRefreshOnOpen,
         "animatePageTurns" to animatePageTurns,
@@ -887,9 +899,9 @@ object AppSettings {
                 "preloadPages" -> number?.let { preloadPages = it.toInt().coerceIn(1, 10) }
                 "tapToTurnPages" -> bool?.let { tapToTurnPages = it }
                 "doubleTapTopToStart" -> bool?.let { doubleTapTopToStart = it }
-                "compactControls" -> bool?.let { compactControls = it }
-                "compactSettingsButton" -> bool?.let { compactSettingsButton = it }
-                "compactAutoReadButton" -> bool?.let { compactAutoReadButton = it }
+                "readerSettingsButton" -> bool?.let { readerSettingsButton = it }
+                "autoReadButton" -> bool?.let { autoReadButton = it }
+                "autoReadSide" -> string?.let { autoReadSide = AutoReadSide.of(it) }
                 "controlsMiddleOnly" -> bool?.let { controlsMiddleOnly = it }
                 "favoritesRefreshOnOpen" -> bool?.let { favoritesRefreshOnOpen = it }
                 "animatePageTurns" -> bool?.let {

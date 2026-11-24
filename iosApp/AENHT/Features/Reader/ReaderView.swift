@@ -634,8 +634,8 @@ struct ReaderView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 0) {
-            if settings.compactControls { floatingButtons }
-            if settings.compactControls { compactBar } else { fullBar }
+            floatingButtons
+            compactBar
         }
         .frame(maxWidth: 640)
     }
@@ -743,8 +743,8 @@ struct ReaderView: View {
     /// With the compact bar: the buttons turned on (and Reset Size, when the
     /// pages were resized), floating on the left above it.
     @ViewBuilder private var floatingButtons: some View {
-        let showSettingsButton = settings.compactSettingsButton
-        let showAutoRead = settings.compactAutoReadButton
+        let showSettingsButton = settings.readerSettingsButton
+        let showAutoRead = settings.autoReadButton
         if showSettingsButton || showAutoRead || isResized {
             HStack(spacing: 10) {
                 if showSettingsButton {
@@ -1059,11 +1059,8 @@ struct ReadingSettingsSections: View {
     /// turner, Apple Pencil).
     @ViewBuilder private var controls: some View {
         Section {
-            Toggle("Compact Control Bar", isOn: $settings.compactControls)
-            if settings.compactControls {
-                Toggle("Reader Settings Button", isOn: $settings.compactSettingsButton)
-                Toggle(settings.readMode.isPaged ? "Auto Read Button" : "Auto Scroll Button", isOn: $settings.compactAutoReadButton)
-            }
+            Toggle("Reader Settings Button", isOn: $settings.readerSettingsButton)
+            Toggle(settings.readMode.isPaged ? "Auto Read Button" : "Auto Scroll Button", isOn: $settings.autoReadButton)
             Toggle("Tap the Middle to Show Controls", isOn: $settings.controlsMiddleOnly)
         } header: {
             Text("Control Bar")

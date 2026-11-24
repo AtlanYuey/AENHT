@@ -162,6 +162,21 @@ enum ScreenOn: String, CaseIterable, Identifiable {
 }
 
 /// Where taps turn pages in the reader.
+/// Where the reader's Auto Read button floats, next to Reader Settings (on the other side).
+enum AutoReadSide: String, CaseIterable, Identifiable {
+    /// The side of the hand: where the screen was last touched.
+    case hand, left, right
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .hand: String(localized: "Follows Your Hand")
+        case .left: String(localized: "Left")
+        case .right: String(localized: "Right")
+        }
+    }
+}
+
 enum TapZones: String, CaseIterable, Identifiable {
     case leftRight, topBottom
 
@@ -422,12 +437,12 @@ final class AppSettings {
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
     /// The reader: a double tap on the status bar or the title goes to the first page (a single tap does nothing).
     var doubleTapTopToStart: Bool { didSet { save(doubleTapTopToStart, "doubleTapTopToStart") } }
-    /// The reader's control bar in one row (the slider); its buttons float above it, when on.
-    var compactControls: Bool { didSet { save(compactControls, "compactControls") } }
-    /// With the compact control bar: the Reader Settings button floats above it.
-    var compactSettingsButton: Bool { didSet { save(compactSettingsButton, "compactSettingsButton") } }
-    /// With the compact control bar: the Auto Read / Auto Scroll button floats above it.
-    var compactAutoReadButton: Bool { didSet { save(compactAutoReadButton, "compactAutoReadButton") } }
+    /// The reader's Reader Settings button, floating on one side above the control bar.
+    var readerSettingsButton: Bool { didSet { save(readerSettingsButton, "readerSettingsButton") } }
+    /// The reader's Auto Read / Auto Scroll button, floating on one side above the control bar.
+    var autoReadButton: Bool { didSet { save(autoReadButton, "autoReadButton") } }
+    /// With both buttons: Auto Read's side (Reader Settings on the other).
+    var autoReadSide: AutoReadSide { didSet { save(autoReadSide.rawValue, "autoReadSide") } }
     /// Only a tap in the middle shows or hides the reader's controls; the sides do nothing.
     var controlsMiddleOnly: Bool { didSet { save(controlsMiddleOnly, "controlsMiddleOnly") } }
     /// Favorites reload each time their tab is opened.
@@ -619,9 +634,9 @@ final class AppSettings {
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         doubleTapTopToStart = d.object(forKey: "doubleTapTopToStart") as? Bool ?? true
-        compactControls = d.object(forKey: "compactControls") as? Bool ?? false
-        compactSettingsButton = d.object(forKey: "compactSettingsButton") as? Bool ?? false
-        compactAutoReadButton = d.object(forKey: "compactAutoReadButton") as? Bool ?? false
+        readerSettingsButton = d.object(forKey: "readerSettingsButton") as? Bool ?? true
+        autoReadButton = d.object(forKey: "autoReadButton") as? Bool ?? true
+        autoReadSide = AutoReadSide(rawValue: d.string(forKey: "autoReadSide") ?? "") ?? .hand
         controlsMiddleOnly = d.object(forKey: "controlsMiddleOnly") as? Bool ?? false
         favoritesRefreshOnOpen = d.object(forKey: "favoritesRefreshOnOpen") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
@@ -747,9 +762,9 @@ final class AppSettings {
         values["preloadPages"] = preloadPages
         values["tapToTurnPages"] = tapToTurnPages
         values["doubleTapTopToStart"] = doubleTapTopToStart
-        values["compactControls"] = compactControls
-        values["compactSettingsButton"] = compactSettingsButton
-        values["compactAutoReadButton"] = compactAutoReadButton
+        values["readerSettingsButton"] = readerSettingsButton
+        values["autoReadButton"] = autoReadButton
+        values["autoReadSide"] = autoReadSide.rawValue
         values["controlsMiddleOnly"] = controlsMiddleOnly
         values["favoritesRefreshOnOpen"] = favoritesRefreshOnOpen
         values["animatePageTurns"] = animatePageTurns
@@ -853,9 +868,9 @@ final class AppSettings {
         case "preloadPages": set(\.preloadPages, number.map { min(max($0.intValue, 1), 10) })
         case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
         case "doubleTapTopToStart": set(\.doubleTapTopToStart, number?.boolValue)
-        case "compactControls": set(\.compactControls, number?.boolValue)
-        case "compactSettingsButton": set(\.compactSettingsButton, number?.boolValue)
-        case "compactAutoReadButton": set(\.compactAutoReadButton, number?.boolValue)
+        case "readerSettingsButton": set(\.readerSettingsButton, number?.boolValue)
+        case "autoReadButton": set(\.autoReadButton, number?.boolValue)
+        case "autoReadSide": set(\.autoReadSide, string.flatMap(AutoReadSide.init(rawValue:)))
         case "controlsMiddleOnly": set(\.controlsMiddleOnly, number?.boolValue)
         case "favoritesRefreshOnOpen": set(\.favoritesRefreshOnOpen, number?.boolValue)
         case "animatePageTurns":

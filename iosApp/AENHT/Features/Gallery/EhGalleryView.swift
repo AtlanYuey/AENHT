@@ -144,6 +144,7 @@ struct EhGalleryView: View {
     @Environment(DownloadManager.self) private var downloads
     @Environment(TagStore.self) private var tagStore
     @Environment(\.galleryNamespace) private var namespace
+    @Environment(EhSession.self) private var ehSession
     /// The page in the middle of the row of pages (the one being read).
     @State private var centeredPage: Int?
     /// Where the row was when its title took it to the first page.
@@ -375,6 +376,25 @@ struct EhGalleryView: View {
                     .frame(maxWidth: .infinity)
             }
             .modifier(ProminentButtonStyle())
+            favoriteButton
+            downloadButton(detail, card: card, record: record)
+        }
+        .padding(.horizontal)
+        .padding(.top, 22)
+    }
+
+    /// The heart: a tap lists the folders (picking one adds or moves the
+    /// gallery, the current one removes it). Logged out, a tap logs in.
+    @ViewBuilder private var favoriteButton: some View {
+        let heart = Image(systemName: model.folder != nil ? "heart.fill" : "heart")
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(model.folder.map { EhSession.folderColors[$0] == .black ? Color.pink : EhSession.folderColors[$0] } ?? Color.accentColor)
+            .frame(width: 44, height: 44)
+        if !ehSession.isLoggedIn {
+            Button { showLogin = true } label: { heart }
+                .modifier(CircleGlassStyle())
+                .accessibilityLabel("Favorite")
+        } else {
             Menu {
                 ForEach(Array(EhSession.shared.folderNames.enumerated()), id: \.offset) { index, name in
                     Button {
@@ -389,20 +409,11 @@ struct EhGalleryView: View {
                         Task { alertMessage = await model.setFolder(nil) }
                     }
                 }
-            } label: {
-                Image(systemName: model.folder != nil ? "heart.fill" : "heart")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(model.folder.map { EhSession.folderColors[$0] == .black ? Color.pink : EhSession.folderColors[$0] } ?? Color.accentColor)
-                    .frame(width: 44, height: 44)
-            } primaryAction: {
-                if !EhSession.shared.isLoggedIn { showLogin = true }
-            }
+            } label: { heart }
             .modifier(CircleGlassStyle())
             .disabled(model.busy)
-            downloadButton(detail, card: card, record: record)
+            .accessibilityLabel(model.folder != nil ? "Unfavorite" : "Favorite")
         }
-        .padding(.horizontal)
-        .padding(.top, 22)
     }
 
     @ViewBuilder
@@ -445,7 +456,20 @@ struct EhGalleryView: View {
     }
 
     /// The rating under the title (tap: rate the gallery).
+    /// A tap lists the ratings; logged out, a tap logs in.
+    @ViewBuilder
     private func ratingMenu(_ detail: EhGalleryDetail) -> some View {
+        let label = HStack(spacing: 4) {
+            RatingStars(rating: model.rating, size: 11)
+            Text(model.rating, format: .number.precision(.fractionLength(2)))
+                .font(.footnote.weight(.semibold).monospacedDigit())
+                .foregroundStyle(detail.ratedByUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+        }
+        .fixedSize()
+        if !ehSession.isLoggedIn {
+            Button { showLogin = true } label: { label }
+                .buttonStyle(.plain)
+        } else {
         Menu {
             Section("\(Int(detail.ratingCount)) ratings") {
                 ForEach((1...10).reversed(), id: \.self) { half in
@@ -455,18 +479,9 @@ struct EhGalleryView: View {
                     }
                 }
             }
-        } label: {
-            HStack(spacing: 4) {
-                RatingStars(rating: model.rating, size: 11)
-                Text(model.rating, format: .number.precision(.fractionLength(2)))
-                    .font(.footnote.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(detail.ratedByUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
-            }
-            .fixedSize()
-        } primaryAction: {
-            if !EhSession.shared.isLoggedIn { showLogin = true }
-        }
+        } label: { label }
         .buttonStyle(.plain)
+        }
     }
 
     // MARK: Tags

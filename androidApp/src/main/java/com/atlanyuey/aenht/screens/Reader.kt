@@ -1604,7 +1604,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun BottomPanel() {
         val overlays = LocalOverlays.current
-        val compact = AppSettings.compactControls
+        val compact = true
         val autoReadLabel = if (AppSettings.readMode.isPaged) {
             if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
         } else {
@@ -1616,8 +1616,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         ) {
             if (compact) {
                 // The buttons turned on (Controls › Control Bar), floating on the left above the bar.
-                val showSettings = AppSettings.compactSettingsButton
-                val showAutoRead = AppSettings.compactAutoReadButton
+                val showSettings = AppSettings.readerSettingsButton
+                val showAutoRead = AppSettings.autoReadButton
                 if (showSettings || showAutoRead || resized) {
                     Row(
                         Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 16.dp),
@@ -1951,11 +1951,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
         }
     }) {
-        ToggleRow(tr("Compact Control Bar"), AppSettings.compactControls, { AppSettings.compactControls = it })
-        if (AppSettings.compactControls) {
-            ToggleRow(tr("Reader Settings Button"), AppSettings.compactSettingsButton, { AppSettings.compactSettingsButton = it })
-            ToggleRow(tr(if (paged) "Auto Read Button" else "Auto Scroll Button"), AppSettings.compactAutoReadButton, { AppSettings.compactAutoReadButton = it })
-        }
+        ToggleRow(tr("Reader Settings Button"), AppSettings.readerSettingsButton, { AppSettings.readerSettingsButton = it })
+        ToggleRow(tr(if (paged) "Auto Read Button" else "Auto Scroll Button"), AppSettings.autoReadButton, { AppSettings.autoReadButton = it })
         ToggleRow(tr("Tap the Middle to Show Controls"), AppSettings.controlsMiddleOnly, { AppSettings.controlsMiddleOnly = it }, last = true)
     }
     section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
