@@ -135,6 +135,11 @@ android {
             vcsInfo.include = false
         }
     }
+    // The sample sites (TestSites.kt), for the tests on the JVM and on a device.
+    sourceSets {
+        getByName("test").kotlin.directories.add("src/testShared/java")
+        getByName("androidTest").kotlin.directories.add("src/testShared/java")
+    }
     buildFeatures {
         compose = true
         buildConfig = true

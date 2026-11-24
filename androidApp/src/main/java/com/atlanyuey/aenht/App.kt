@@ -26,6 +26,7 @@ class App : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        com.atlanyuey.aenht.core.CrashLog.install(this)
         L10n.context = this
         com.atlanyuey.aenht.core.Connectivity.init(this)
         AppSettings.init(this)
