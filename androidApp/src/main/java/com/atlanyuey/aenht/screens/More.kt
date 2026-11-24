@@ -451,6 +451,7 @@ class LoginScreen : Screen() {
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                         webViewClient = object : WebViewClient() {
                             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                if (com.atlanyuey.aenht.BuildConfig.DEBUG) android.util.Log.d("AENHT-WEB", "nhentai login page: ${url?.substringBefore('?')}")
                                 loading = true
                                 check()
                             }

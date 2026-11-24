@@ -56,7 +56,18 @@ class DeviceLoginScreenTest {
         Thread.sleep(6000) // The page loads.
         val samples = (0 until 50).map { Thread.sleep(200); brightness() }
         Log.i("AENHT-SCREEN", "$name brightness: ${samples.joinToString { "%.0f".format(it) }}")
+        screenshot(name)
         return samples.zipWithNext().count { (a, b) -> kotlin.math.abs(a - b) > jump }
+    }
+
+    /** The screen as a PNG on the device (/sdcard/aenht-device/), kept by CI. */
+    private fun screenshot(name: String) {
+        val file = "/sdcard/aenht-device/" + name.replace(' ', '-') + ".png"
+        for (command in listOf("mkdir -p /sdcard/aenht-device", "screencap -p $file")) {
+            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).use { fd ->
+                android.os.ParcelFileDescriptor.AutoCloseInputStream(fd).readBytes()
+            }
+        }
     }
 
     @Test fun nhentaiLoginOpensAndHoldsStill() {

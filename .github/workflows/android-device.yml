@@ -60,8 +60,10 @@ jobs:
             adb logcat -c
             adb shell "nohup screenrecord --time-limit 175 /sdcard/device-tests.mp4 > /dev/null 2>&1 &"
             ./gradlew --no-daemon -Paenht.emulator :androidApp:connectedDebugAndroidTest || touch device-tests-failed
+            adb shell pkill -INT screenrecord || true
             sleep 5
             adb pull /sdcard/device-tests.mp4 . || true
+            adb pull /sdcard/aenht-device . || true
             adb logcat -d > logcat.txt
             test ! -f device-tests-failed
 
@@ -78,6 +80,7 @@ jobs:
           name: android-device
           path: |
             device-tests.mp4
+            aenht-device/
             logcat.txt
             androidApp/build/reports/androidTests/
             androidApp/build/outputs/androidTest-results/
