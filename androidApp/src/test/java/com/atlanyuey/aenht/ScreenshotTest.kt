@@ -160,6 +160,26 @@ class ScreenshotTest {
         shoot("04_gallery", tabs)
     }
 
+    @Test fun galleryOpensOutOfItsCover() {
+        // Home with the card, then its page: it grows out of the cover, its details fade in once it's there.
+        val tabs = Tabs()
+        shoot("04a_home_before", tabs)
+        assertTrue("the card's cover is on screen", com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey.nh(500001)) != null)
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread { tabs.home.push(GalleryScreen(500001, null)) }
+        compose.mainClock.advanceTimeBy(80)
+        compose.onRoot().captureRoboImage("build/screens/04b_gallery_zoom_early.png")
+        compose.mainClock.advanceTimeBy(120)
+        compose.onRoot().captureRoboImage("build/screens/04c_gallery_zoom_mid.png")
+        compose.mainClock.advanceTimeBy(1500)
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        Thread.sleep(300)
+        compose.mainClock.advanceTimeBy(800)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/04d_gallery_zoom_end.png")
+    }
+
     @Test fun reader() {
         val tabs = Tabs()
         val source = ReaderSource(
@@ -193,8 +213,18 @@ class ScreenshotTest {
         compose.mainClock.advanceTimeBy(600)
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/05c_reader_scrub.png")
+        // 40 % of the track from page 4: about page 13 (the finger's place, not a step or two).
+        val shown = compose.onAllNodes(androidx.compose.ui.test.hasText(" / 24", substring = true)).fetchSemanticsNodes()
+            .flatMap { it.config.getOrElse(androidx.compose.ui.semantics.SemanticsProperties.Text) { emptyList() } }
+            .mapNotNull { Regex("""^(\d+) / 24$""").find(it.text)?.groupValues?.get(1)?.toInt() }
+        assertTrue("the slider follows the finger: $shown", shown.any { it in 10..16 })
         slider.performTouchInput { up() }
         compose.waitForIdle()
+        // Let go: the reader is on that page.
+        val after = compose.onAllNodes(androidx.compose.ui.test.hasText(" / 24", substring = true)).fetchSemanticsNodes()
+            .flatMap { it.config.getOrElse(androidx.compose.ui.semantics.SemanticsProperties.Text) { emptyList() } }
+            .mapNotNull { Regex("""^(\d+) / 24$""").find(it.text)?.groupValues?.get(1)?.toInt() }
+        assertTrue("the reader went to the page: $after", after.isNotEmpty() && after.all { it in 10..16 })
     }
 
     @Test fun readerRetry() {

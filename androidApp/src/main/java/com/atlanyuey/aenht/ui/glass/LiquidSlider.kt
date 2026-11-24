@@ -61,6 +61,10 @@ fun LiquidSlider(
 ) {
     val dragStart = androidx.compose.runtime.rememberUpdatedState(onDragStart)
     val dragEnd = androidx.compose.runtime.rememberUpdatedState(onDragEnd)
+    // The latest value and callback: the drag animation below is made once, and with
+    // the first ones it kept the value it started with (a drag hardly moved the thumb).
+    val currentValue = androidx.compose.runtime.rememberUpdatedState(value)
+    val currentOnValueChange = androidx.compose.runtime.rememberUpdatedState(onValueChange)
     val isLightTheme = !LocalIsDark.current
     val accentColor = LocalTint.current
     val trackColor =
@@ -78,6 +82,8 @@ fun LiquidSlider(
         val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
         val animationScope = rememberCoroutineScope()
         var didDrag by remember { mutableStateOf(false) }
+        // Where the finger has taken the value during a drag (each move adds to it).
+        val dragValue = remember { floatArrayOf(0f) }
         val dampedDragAnimation = remember(animationScope) {
             DampedDragAnimation(
                 animationScope = animationScope,
@@ -86,10 +92,13 @@ fun LiquidSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
-                onDragStarted = { dragStart.value() },
+                onDragStarted = {
+                    dragValue[0] = targetValue
+                    dragStart.value()
+                },
                 onDragStopped = {
                     if (didDrag) {
-                        onValueChange(targetValue)
+                        currentOnValueChange.value(dragValue[0])
                     }
                     dragEnd.value()
                 },
@@ -98,15 +107,16 @@ fun LiquidSlider(
                         didDrag = dragAmount.x != 0f
                     }
                     val delta = (valueRange.endInclusive - valueRange.start) * (dragAmount.x / trackWidth)
-                    onValueChange(
-                        if (isLtr) (targetValue + delta).coerceIn(valueRange)
-                        else (targetValue - delta).coerceIn(valueRange)
-                    )
+                    val next = (if (isLtr) dragValue[0] + delta else dragValue[0] - delta).coerceIn(valueRange)
+                    dragValue[0] = next
+                    // The thumb follows the finger at once (not only when the new value comes back).
+                    updateValue(next)
+                    currentOnValueChange.value(next)
                 }
             )
         }
         LaunchedEffect(dampedDragAnimation) {
-            snapshotFlow { value() }
+            snapshotFlow { currentValue.value() }
                 .collectLatest { value ->
                     if (dampedDragAnimation.targetValue != value) {
                         dampedDragAnimation.updateValue(value)
@@ -127,7 +137,7 @@ fun LiquidSlider(
                                 else valueRange.endInclusive - delta)
                                     .coerceIn(valueRange)
                             dampedDragAnimation.animateToValue(targetValue)
-                            onValueChange(targetValue)
+                            currentOnValueChange.value(targetValue)
                         }
                     }
                     .height(6f.dp)

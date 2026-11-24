@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.FadeIn
+import com.atlanyuey.aenht.ui.components.arrived
 import com.atlanyuey.aenht.core.AppSettings
 import com.atlanyuey.aenht.core.TabletDetailContent
 import com.atlanyuey.aenht.ui.components.pagesPaneWidth
@@ -199,6 +201,10 @@ class ReaderSource(
 // MARK: - Gallery page
 
 class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem?) : Screen() {
+    /** Opens out of its card's cover, and closes back into it (when a list shows it). */
+    override fun zoomTarget(): androidx.compose.ui.geometry.Rect? =
+        com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId))
+
     private var detail by mutableStateOf<GalleryDetail?>(null)
     /** The gallery's JSON as loaded; a download keeps it for offline use. */
     private var json: kotlinx.serialization.json.JsonObject? = null
@@ -294,6 +300,8 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
     override fun Content() {
         val context = LocalContext.current
         LaunchedEffect(Unit) { if (detail == null) load() }
+        // While the page comes in: the header only (the card's); then the rest fades in.
+        val arrived = arrived()
         ScreenScaffold(
             title = detail?.displayTitle ?: preview?.title,
             showTitle = { list.firstVisibleItemIndex > 1 },
@@ -316,13 +324,13 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
                 ) {
                     item("header") { Header() }
-                    val d = detail
+                    val d = detail?.takeIf { arrived }
                     if (d != null) {
-                        item("actions") { Actions(d) }
-                        item("info") { InfoStrip(d, numFavorites) }
-                        item("tags") { TagsSection(d) }
+                        item("actions") { FadeIn { Actions(d) } }
+                        item("info") { FadeIn { InfoStrip(d, numFavorites) } }
+                        item("tags") { FadeIn { TagsSection(d) } }
                         // The pages, unless they have the right half to themselves.
-                        if (tablet != TabletDetailContent.Pages) item("pages") { PreviewSection(d) }
+                        if (tablet != TabletDetailContent.Pages) item("pages") { FadeIn { PreviewSection(d) } }
                         // The rest, unless it is the right half.
                         if (tablet != TabletDetailContent.Related) related(d, cutStart = false, cutEnd = wide)
                     } else if (error != null) {
@@ -341,7 +349,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         }
                     }
                 }
-                val d = detail
+                val d = detail?.takeIf { arrived }
                 if (tablet == TabletDetailContent.Pages && d != null) {
                     // The pages run the full height, under the bars' soft edges like the details.
                     PagesGrid(

@@ -38,6 +38,27 @@ object ReaderThumbs {
     }
 }
 
+/**
+ * Where each gallery's cover is in the lists on screen ("nh:123", "eh:123"):
+ * a gallery's page opens out of its cover and closes back into it.
+ */
+object GalleryCovers {
+    private val rects = mutableStateMapOf<String, Rect>()
+
+    fun key(key: com.atlanyuey.aenht.shared.site.GalleryKey) = "${key.site.key}:${key.id}"
+
+    /** Where the cover of [key] is (window coordinates), if a list has it laid out. */
+    fun rect(key: com.atlanyuey.aenht.shared.site.GalleryKey): Rect? = rects[key(key)]
+
+    internal fun put(key: String, rect: Rect) {
+        if (rect.isEmpty) rects.remove(key) else if (rects[key] != rect) rects[key] = rect
+    }
+}
+
+/** Marks a card's cover as where its gallery's page opens from and closes back into. */
+fun Modifier.galleryCover(item: com.atlanyuey.aenht.shared.site.GallerySummary): Modifier =
+    onGloballyPositioned { GalleryCovers.put(GalleryCovers.key(item.key), it.boundsInWindow()) }
+
 /** Marks a page thumbnail as where the reader zooms from and back to. */
 fun Modifier.readerThumb(gallery: String, page: Int): Modifier =
     onGloballyPositioned { ReaderThumbs.put(gallery, page, it.boundsInWindow()) }

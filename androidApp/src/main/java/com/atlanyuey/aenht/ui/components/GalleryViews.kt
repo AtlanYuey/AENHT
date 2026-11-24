@@ -339,7 +339,7 @@ fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifie
     Column(modifier.galleryClick(item), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (style) {
             GalleryListStyle.Grid -> {
-                CoverView(item, aspectRatio = 3f / 4f)
+                CoverView(item, Modifier.galleryCover(item), aspectRatio = 3f / 4f)
                 Txt(
                     GalleryItem.pretty(item.title),
                     Modifier.fillMaxWidth().heightIn(min = 34.dp).privacyText(),
@@ -347,9 +347,9 @@ fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifie
                     maxLines = 2,
                 )
             }
-            GalleryListStyle.Compact -> CoverView(item) { m -> CompactOverlay(item, m) }
+            GalleryListStyle.Compact -> CoverView(item, Modifier.galleryCover(item)) { m -> CompactOverlay(item, m) }
             else -> {
-                CoverView(item)
+                CoverView(item, Modifier.galleryCover(item))
                 Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
                 CardFooter(item, overlay = false)
             }
@@ -473,7 +473,7 @@ fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: St
         modifier.fillMaxWidth().galleryClick(item).padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        CoverView(item, Modifier.width(84.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
+        CoverView(item, Modifier.width(84.dp).galleryCover(item), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
             when {

@@ -36,6 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -216,6 +217,32 @@ class Navigator(root: Screen) {
 }
 
 val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No navigator") }
+
+/**
+ * Whether this screen has come in: false while it is being pushed (its
+ * animation runs), true once it's in place, and at once when it's shown
+ * again (going back to it). What it loads can wait for this: added in the
+ * middle of the animation, it made the animation stutter.
+ */
+@Composable
+fun Screen.arrived(): Boolean {
+    val navigator = LocalNavigator.current
+    val screen = this
+    var arrived by remember { mutableStateOf(!(navigator.top === screen && navigator.progress < 1f)) }
+    if (!arrived) {
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            androidx.compose.runtime.snapshotFlow { navigator.top !== screen || navigator.progress >= 1f }.first { it }
+            arrived = true
+        }
+    }
+    return arrived
+}
+
+/** A list item that fades in when it first shows (a gallery page's details once loaded). */
+@Composable
+fun androidx.compose.foundation.lazy.LazyItemScope.FadeIn(content: @Composable () -> Unit) {
+    Box(Modifier.animateItem(fadeInSpec = androidx.compose.animation.core.tween(240), placementSpec = null, fadeOutSpec = null)) { content() }
+}
 
 /**
  * Shows the top of a navigation stack. The screen below stays visible while

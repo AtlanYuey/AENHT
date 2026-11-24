@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.FadeIn
+import com.atlanyuey.aenht.ui.components.arrived
 import com.atlanyuey.aenht.ui.components.readerThumb
 import com.atlanyuey.aenht.core.privacyText
 import android.content.ClipData
@@ -128,6 +130,10 @@ fun EhThumbnailImage(thumb: EhThumbnail, modifier: Modifier = Modifier) {
 }
 
 class EhGalleryScreen(private val gid: Long, private val token: String, private val preview: GallerySummary?) : Screen() {
+    /** Opens out of its card's cover, and closes back into it (when a list shows it). */
+    override fun zoomTarget(): androidx.compose.ui.geometry.Rect? =
+        com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token))
+
     private var detail by mutableStateOf<EhGalleryDetail?>(null)
     private var error by mutableStateOf<String?>(null)
     private var folder by mutableStateOf<Int?>(null)
@@ -265,6 +271,8 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
     override fun Content() {
         val context = LocalContext.current
         LaunchedEffect(Unit) { if (detail == null) load() }
+        // While the page comes in: the header only (the card's); then the rest fades in.
+        val arrived = arrived()
         ScreenScaffold(
             title = detail?.title ?: preview?.title,
             showTitle = { list.firstVisibleItemIndex > 1 },
@@ -310,13 +318,13 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 110.dp),
                 ) {
                     item("header") { Header() }
-                    val d = detail
+                    val d = detail?.takeIf { arrived }
                     if (d != null) {
-                        item("actions") { Actions(d) }
-                        item("info") { Info(d) }
-                        item("tags") { Tags(d) }
+                        item("actions") { FadeIn { Actions(d) } }
+                        item("info") { FadeIn { Info(d) } }
+                        item("tags") { FadeIn { Tags(d) } }
                         // The pages, unless they have the right half to themselves.
-                        if (tablet != TabletDetailContent.Pages) item("pages") { Previews(d) }
+                        if (tablet != TabletDetailContent.Pages) item("pages") { FadeIn { Previews(d) } }
                         // The rest, unless it is the right half.
                         if (tablet != TabletDetailContent.Related) related(d, cutStart = false, cutEnd = wide)
                     } else if (error != null) {
@@ -330,7 +338,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                         }
                     }
                 }
-                val d = detail
+                val d = detail?.takeIf { arrived }
                 val card = summary
                 if (tablet == TabletDetailContent.Pages && d != null && card != null) {
                     val pages = remember(d) { EhPagesState(d, scope) }
