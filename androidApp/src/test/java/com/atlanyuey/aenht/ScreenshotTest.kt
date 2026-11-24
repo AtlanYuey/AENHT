@@ -203,7 +203,8 @@ class ScreenshotTest {
             },
             "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
         )
-        tabs.home.push(ReaderScreen(source, 3))
+        val reader = ReaderScreen(source, 3)
+        tabs.home.push(reader)
         shoot("05b_reader_bar", tabs, settle = 500)
         val slider = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo))
         slider.performTouchInput {
@@ -220,11 +221,12 @@ class ScreenshotTest {
         assertTrue("the slider follows the finger: $shown", shown.any { it in 10..16 })
         slider.performTouchInput { up() }
         compose.waitForIdle()
-        // Let go: the reader is on that page.
-        val after = compose.onAllNodes(androidx.compose.ui.test.hasText(" / 24", substring = true)).fetchSemanticsNodes()
-            .flatMap { it.config.getOrElse(androidx.compose.ui.semantics.SemanticsProperties.Text) { emptyList() } }
-            .mapNotNull { Regex("""^(\d+) / 24$""").find(it.text)?.groupValues?.get(1)?.toInt() }
-        assertTrue("the reader went to the page: $after", after.isNotEmpty() && after.all { it in 10..16 })
+        // Let go: the reader is on that page (read from the reader: the controls may have hidden).
+        val page = ReaderScreen::class.java.getDeclaredField("page\$delegate").let {
+            it.isAccessible = true
+            (it.get(reader) as androidx.compose.runtime.MutableIntState).intValue
+        }
+        assertTrue("the reader went to the page: ${page + 1}", page + 1 in 10..16)
     }
 
     @Test fun readerRetry() {
