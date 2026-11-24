@@ -43,6 +43,9 @@ object EhPages {
         cacheDir = File(context.cacheDir, "eh-pages")
     }
 
+    /** Thumbnails seen, by gallery and page (the reader's slider shows them). */
+    private val thumbs = androidx.compose.runtime.mutableStateMapOf<Pair<Long, Int>, EhThumbnail>()
+
     /** Page links of the first thumbnail page (from the gallery page). */
     fun remember(gid: Long, thumbnails: List<EhThumbnail>) {
         if (thumbnails.isEmpty()) return
@@ -50,6 +53,22 @@ object EhPages {
             val map = links.getOrPut(gid) { mutableMapOf() }
             thumbnails.forEach { map[it.page] = it.pageUrl }
             perThumbnailPage.putIfAbsent(gid, thumbnails.size)
+        }
+        val update = { thumbnails.forEach { thumbs[gid to it.page] = it } }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) update()
+        else android.os.Handler(android.os.Looper.getMainLooper()).post(update)
+    }
+
+    /** The thumbnail of [page] (1-based), if it has been seen. */
+    fun thumbnail(gid: Long, page: Int): EhThumbnail? = thumbs[gid to page]
+
+    /** Reads the thumbnail page with [page] on it (one request), unless it's known. */
+    suspend fun loadThumbnail(gid: Long, token: String, page: Int) {
+        if (thumbs.containsKey(gid to page)) return
+        lock(gid).withLock {
+            if (thumbs.containsKey(gid to page)) return@withLock
+            val per = synchronized(links) { perThumbnailPage[gid] } ?: 20
+            remember(gid, EhClient.thumbnails(gid, token, (page - 1) / per))
         }
     }
 

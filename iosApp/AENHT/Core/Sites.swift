@@ -496,6 +496,15 @@ actor EhPageDirectory {
         for t in thumbnails { map[Int(t.page)] = t.pageUrl }
         links[gid] = map
         if perPage[gid] == nil { perPage[gid] = thumbnails.count }
+        let seen = thumbnails
+        Task { @MainActor in EhThumbs.shared.add(gid: gid, seen) }
+    }
+
+    /// Reads the thumbnail page with [page] on it (one request): the reader's slider shows them.
+    func loadThumbnail(gid: Int, token: String, page: Int) async {
+        let per = perPage[gid] ?? 20
+        guard let thumbs = try? await EhService.shared.thumbnails(gid: gid, token: token, page: (page - 1) / max(per, 1)) else { return }
+        remember(gid: gid, thumbnails: thumbs)
     }
 
     private func link(gid: Int, token: String, page: Int) async throws -> String {
@@ -530,6 +539,20 @@ actor EhPageDirectory {
             reloadKey = key
         }
         throw lastError
+    }
+}
+
+/// E-Hentai thumbnails seen, by gallery and page (the reader's slider shows them).
+@MainActor @Observable
+final class EhThumbs {
+    static let shared = EhThumbs()
+    private var thumbs: [String: EhThumbnail] = [:]
+
+    /// The thumbnail of [page] (1-based), if it has been seen.
+    func thumbnail(gid: Int, page: Int) -> EhThumbnail? { thumbs["\(gid)-\(page)"] }
+
+    func add(gid: Int, _ list: [EhThumbnail]) {
+        for t in list { thumbs["\(gid)-\(Int(t.page))"] = t }
     }
 }
 

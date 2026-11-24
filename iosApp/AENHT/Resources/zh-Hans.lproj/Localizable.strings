@@ -684,12 +684,10 @@
 "Page Turns" = "翻页方式";
 "Page Size" = "页面大小";
 "Control Bar" = "控制栏";
-"Compact Control Bar" = "精简控制栏";
 "Reader Settings Button" = "阅读设置按钮";
 "Auto Read Button" = "自动阅读按钮";
 "Auto Scroll Button" = "自动滚动按钮";
 "Tap the Middle to Show Controls" = "仅点击中间呼出控制栏";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "精简：只有一行，进度条下面显示当前页和剩余页数。打开的按钮会悬浮在它左上方。阅读设置也可以从右上角的菜单打开。";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "仅点击中间呼出控制栏：点击两侧（点击翻页区域所在的位置；连续模式下为左右两侧）不会呼出或隐藏控制栏。";
 "Refresh Favorites When Opened" = "打开收藏时自动刷新";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "打开「收藏」时会重新读取网站上的列表，刚收藏的作品不用下拉刷新就会出现。列表已经往下翻时不会刷新（保留浏览位置）。「全部」在本地副本超过 15 分钟时同步。";
@@ -701,3 +699,7 @@
 "Remove %lld from favorites?" = "从收藏中移除 %lld 项？";
 "They are removed from your favorites on the site too." = "网站上的收藏也会一起移除。";
 "Delete %lld from history?" = "从历史记录中删除 %lld 项？";
+"Follows Your Hand" = "跟随手的位置";
+"Auto Read Button Side" = "自动阅读按钮位置";
+"Auto Scroll Button Side" = "自动滚动按钮位置";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "按钮悬浮在进度条上方：只开一个时，放在手的那一侧（点击呼出控制栏的位置）；两个都开时，自动阅读按钮放在选定的一侧，阅读设置按钮放在另一侧。阅读设置也可以从右上角的菜单打开。";

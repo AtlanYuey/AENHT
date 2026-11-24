@@ -144,7 +144,8 @@ import java.util.Locale
 
 // MARK: - Reader source
 
-data class ReaderPage(val index: Int, val url: Any?, val aspectRatio: Float)
+/** A page of the reader: its image ([url]: a link, a file, an E-Hentai page), and its small picture (the slider's preview). */
+data class ReaderPage(val index: Int, val url: Any?, val aspectRatio: Float, val thumb: Any? = null)
 
 /** What the reader shows: a gallery's pages (local files when downloaded). */
 class ReaderSource(
@@ -163,7 +164,7 @@ class ReaderSource(
             id = detail.id,
             title = detail.displayTitle,
             pages = detail.pages.mapIndexed { index, page ->
-                ReaderPage(index, Downloads.localFile(detail.id, index) ?: page.imageUrl, page.aspectRatio)
+                ReaderPage(index, Downloads.localFile(detail.id, index) ?: page.imageUrl, page.aspectRatio, page.thumbUrl)
             },
             shareUrl = detail.url,
             summary = GallerySummary.from(detail.asItem).copy(title = detail.displayTitle, pages = detail.numPages),

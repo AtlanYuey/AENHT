@@ -210,7 +210,7 @@ En el selector de aplicaciones se pueden desenfocar solo imágenes, imágenes y 
 - Zonas táctiles laterales o superiores/inferiores; gestos largos perpendiculares para salir, mostrar controles o activar la lectura automática; pellizco y doble toque para ampliar.
 - Pantalla encendida: desactivado, 5 minutos, 10 minutos o siempre. Superresolución: desactivada, automática o siempre, con modelos adicionales.
 - Brillo, escala de grises e inversión solo en las páginas; salto, guardado y uso compartido de páginas; botones de volumen para pasar página en Android.
-- Controles ocultos tras inactividad. La **barra de controles compacta** deja una sola fila (el deslizador, con la página y las páginas restantes), con botones flotantes opcionales de ajustes del lector y lectura automática; también se puede mostrar solo al tocar el centro. Ajustes separados en Lectura (dirección, paso de página, lectura automática, precarga), Pantalla (filtros, tamaño de página, superresolución, pantalla encendida) y Controles (barra de controles, toques y gestos, teclas y dispositivos).
+- Controles ocultos tras inactividad. La barra de controles es una sola fila (la página, el deslizador, las páginas restantes); al arrastrar el deslizador se ven las páginas cercanas. Los ajustes del lector y la lectura automática flotan a los lados (uno solo sigue a tu mano); también se puede mostrar solo al tocar el centro. Ajustes separados en Lectura (dirección, paso de página, lectura automática, precarga), Pantalla (filtros, tamaño de página, superresolución, pantalla encendida) y Controles (barra de controles, toques y gestos, teclas y dispositivos).
 </details>
 
 <details>

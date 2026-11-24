@@ -174,6 +174,29 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("build/screens/23_reader_idle.png")
     }
 
+    @Test fun readerScrub() {
+        // Holding the slider: the page follows the finger, the pages around it show above.
+        val tabs = Tabs()
+        val source = ReaderSource(
+            500001, "Sample Gallery", (0 until 24).map {
+                com.atlanyuey.aenht.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f, "https://t.nhentai.net/galleries/9/${it + 1}t.jpg")
+            },
+            "https://nhentai.net/g/500001/", com.atlanyuey.aenht.shared.site.GallerySummary.from(com.atlanyuey.aenht.core.GalleryItem(500001, numPages = 24)),
+        )
+        tabs.home.push(ReaderScreen(source, 3))
+        shoot("05b_reader_bar", tabs, settle = 500)
+        val slider = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo))
+        slider.performTouchInput {
+            down(centerLeft + androidx.compose.ui.geometry.Offset(width * 0.14f, 0f))
+            repeat(10) { moveBy(androidx.compose.ui.geometry.Offset(width * 0.04f, 0f)) }
+        }
+        compose.mainClock.advanceTimeBy(600)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/05c_reader_scrub.png")
+        slider.performTouchInput { up() }
+        compose.waitForIdle()
+    }
+
     @Test fun readerRetry() {
         // D004: a page that failed loads again on Retry (a new request reaches the loader), twice in a row.
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()

@@ -273,11 +273,15 @@ fun GlassSlider(
     modifier: Modifier = Modifier,
     background: Color = AppTheme.colors.secondaryGroupedBackground,
     label: String? = null,
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
 ) {
     val backdrop = rememberCanvasBackdrop { drawRect(background) }
     LiquidSlider(
         value = { value },
         onValueChange = onChange,
+        onDragStart = onDragStart,
+        onDragEnd = onDragEnd,
         valueRange = range,
         visibilityThreshold = (range.endInclusive - range.start) / 1000f,
         backdrop = backdrop,

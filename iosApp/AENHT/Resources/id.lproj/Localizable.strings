@@ -641,12 +641,10 @@
 "Page Turns" = "Membalik Halaman";
 "Page Size" = "Ukuran Halaman";
 "Control Bar" = "Bilah Kontrol";
-"Compact Control Bar" = "Bilah Kontrol Ringkas";
 "Reader Settings Button" = "Tombol Pengaturan Pembaca";
 "Auto Read Button" = "Tombol Baca Otomatis";
 "Auto Scroll Button" = "Tombol Gulir Otomatis";
 "Tap the Middle to Show Controls" = "Ketuk Tengah untuk Kontrol";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "Ringkas: satu baris, penggeser halaman dengan halaman dan sisa halaman di bawahnya. Tombol yang dinyalakan melayang di kiri atasnya. Pengaturan Pembaca juga ada di menu kanan atas.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "Ketuk Tengah untuk Kontrol: ketukan di sisi (tempat area ketuk; kiri dan kanan saat menggulir) tidak menampilkan atau menyembunyikan kontrol.";
 "Refresh Favorites When Opened" = "Segarkan Favorit Saat Dibuka";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "Membuka Favorit memuat ulang daftar situs, jadi galeri yang baru difavoritkan langsung ada tanpa tarik untuk menyegarkan. Tidak saat daftar sudah digulir ke bawah (posisi tetap). Semua menyinkronkan salinannya bila lebih dari 15 menit.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "Hapus %lld dari favorit?";
 "They are removed from your favorites on the site too." = "Juga dihapus dari favorit di situs.";
 "Delete %lld from history?" = "Hapus %lld dari riwayat?";
+"Follows Your Hand" = "Mengikuti Tangan";
+"Auto Read Button Side" = "Sisi Tombol Baca Otomatis";
+"Auto Scroll Button Side" = "Sisi Tombol Gulir Otomatis";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Tombol melayang di atas penggeser: satu saja di sisi tangan (tempat Anda mengetuk untuk menampilkan kontrol); keduanya, Baca Otomatis di sisi yang dipilih dan Pengaturan Pembaca di sisi lain. Pengaturan Pembaca juga ada di menu kanan atas.";

@@ -1,5 +1,14 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.RemoteImage
+import androidx.compose.foundation.layout.size
+import kotlin.math.roundToInt
+import androidx.compose.foundation.border
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.height
@@ -260,6 +269,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 
     private var page by mutableIntStateOf(start.coerceIn(0, maxOf(0, source.pages.size - 1)))
     private var chromeVisible by mutableStateOf(true)
+    /** The side of the screen last touched to bring the controls (their buttons go there). */
+    private var handOnLeft by mutableStateOf(false)
+    /** The slider's page while a finger holds it (it goes there when let go); null otherwise. */
+    private var scrubPage by mutableStateOf<Int?>(null)
     private var autoRead by mutableStateOf(false)
     private enum class PageLoad { Loading, Ready, Failed }
     private val pageLoads = mutableStateMapOf<Int, PageLoad>()
@@ -816,6 +829,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             if (event.type == PointerEventType.Press) {
                                 chromeActivity++
                                 lastTouch = android.os.SystemClock.uptimeMillis()
+                                // The hand: the side touched while the controls were away
+                                // (the tap that brings them); their buttons go there.
+                                if (!chromeVisible) event.changes.firstOrNull()?.let { handOnLeft = it.position.x < size.width / 2f }
                             }
                         }
                     }
@@ -1604,76 +1620,89 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun BottomPanel() {
         val overlays = LocalOverlays.current
-        val compact = true
         val autoReadLabel = if (AppSettings.readMode.isPaged) {
             if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
         } else {
             if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
         }
-        Column(
-            Modifier.fillMaxWidth().navigationBarsPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (compact) {
-                // The buttons turned on (Controls › Control Bar), floating on the left above the bar.
-                val showSettings = AppSettings.readerSettingsButton
-                val showAutoRead = AppSettings.autoReadButton
-                if (showSettings || showAutoRead || resized) {
-                    Row(
-                        Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        if (showSettings) GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) })
-                        if (showAutoRead) GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead })
-                        AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
+        // Reader Settings and Auto Read float on the sides: one alone on the hand's
+        // side; both, Auto Read where Controls › Auto Read Button Side says.
+        val showSettings = AppSettings.readerSettingsButton
+        val showAutoRead = AppSettings.autoReadButton
+        val autoLeft = when (AppSettings.autoReadSide) {
+            com.atlanyuey.aenht.core.AutoReadSide.Hand -> handOnLeft
+            com.atlanyuey.aenht.core.AutoReadSide.Left -> true
+            com.atlanyuey.aenht.core.AutoReadSide.Right -> false
+        }
+        val autoReadOnLeft = if (showSettings) autoLeft else handOnLeft
+        val settingsOnLeft = if (showAutoRead) !autoLeft else handOnLeft
+        val settingsButton = @Composable { GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) }) }
+        val autoReadButton = @Composable { GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead }) }
+        var trackLeft by remember { mutableStateOf(0f) }
+        var trackWidth by remember { mutableStateOf(0f) }
+        Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
+            Column(
+                Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // While the slider is held: the pages around it, over the finger.
+                val scrub = scrubPage
+                if (scrub != null) {
+                    ScrubStrip(scrub, trackLeft, trackWidth)
+                } else {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                        Row(Modifier.align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (showSettings && settingsOnLeft) settingsButton()
+                            if (showAutoRead && autoReadOnLeft) autoReadButton()
+                        }
+                        // Pinched smaller or bigger: back to the usual size.
+                        androidx.compose.animation.AnimatedVisibility(resized, Modifier.align(Alignment.Center), enter = fadeIn(), exit = fadeOut()) {
                             GlassCircleButton(Icons.Scan, tr("Reset Size"), { resetSize() })
                         }
-                    }
-                }
-            }
-            Column(
-                Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .widthIn(max = 640.dp)
-                    .fillMaxWidth()
-                    .glass(RoundedCornerShape(if (compact) 22.dp else 28.dp), GlassStyle.Panel)
-                    .padding(horizontal = 20.dp, vertical = if (compact) 8.dp else 12.dp),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (!compact) Txt("${page + 1}", style = Type.footnote, maxLines = 1)
-                    Box(Modifier.weight(1f)) { PageSlider() }
-                    if (!compact) Txt("$count", style = Type.footnote, maxLines = 1)
-                }
-                if (compact) {
-                    // One row: under the slider, the page and the pages left.
-                    Box(Modifier.fillMaxWidth()) {
-                        Txt("${page + 1} / $count", Modifier.align(Alignment.Center), style = Type.caption2, maxLines = 1)
-                        Txt(
-                            L10n.string("Pages left: %lld", (count - 1 - page).coerceAtLeast(0)),
-                            Modifier.align(Alignment.CenterEnd),
-                            style = Type.caption2,
-                            color = AppTheme.colors.secondaryLabel,
-                            maxLines = 1,
-                        )
-                    }
-                } else {
-                    // Turning is a tap or a swipe on the page: no arrows here.
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PanelButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel) { autoRead = !autoRead }
-                        androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-                        // Pinched smaller or bigger: back to the usual size.
-                        AnimatedVisibility(resized, enter = fadeIn(), exit = fadeOut()) {
-                            PanelButton(Icons.Scan, tr("Reset Size")) { resetSize() }
+                        Row(Modifier.align(Alignment.CenterEnd), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (showAutoRead && !autoReadOnLeft) autoReadButton()
+                            if (showSettings && !settingsOnLeft) settingsButton()
                         }
-                        PanelButton(Icons.Sliders, null, tr("Reader Settings")) { openSettings(overlays) }
                     }
+                }
+                // One row: the page, the slider, the pages left (as high above as below).
+                val shown = scrub ?: page
+                Row(
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth()
+                        .glass(RoundedCornerShape(26.dp), GlassStyle.Panel)
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Txt(
+                        "${shown + 1} / $count",
+                        Modifier.widthIn(min = 56.dp),
+                        style = Type.footnote.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
+                        maxLines = 1,
+                    )
+                    Box(
+                        Modifier.weight(1f).onGloballyPositioned { c ->
+                            trackLeft = c.positionInRoot().x
+                            trackWidth = c.size.width.toFloat()
+                        },
+                    ) { PageSlider() }
+                    Txt(
+                        L10n.string("Pages left: %lld", (count - 1 - shown).coerceAtLeast(0)),
+                        style = Type.caption1.copy(fontFeatureSettings = "tnum"),
+                        color = AppTheme.colors.secondaryLabel,
+                        maxLines = 1,
+                    )
                 }
             }
         }
     }
 
-    /** The page slider of the control bar (right to left for right-to-left reading). */
+    /**
+     * The page slider: while held, the page shown and the pages around it
+     * follow the finger ([scrubPage]); let go, the reader goes to that page.
+     */
     @Composable
     private fun PageSlider() {
         var slider by remember(page) { mutableStateOf(page.toFloat()) }
@@ -1681,16 +1710,105 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             GlassSlider(
                 value = slider,
                 onChange = { value ->
-                    autoRead = false
                     slider = value
-                    val target = value.toInt().coerceIn(0, count - 1)
-                    if (target != page) {
+                    val target = Math.round(value).coerceIn(0, count - 1)
+                    if (scrubPage != null) {
+                        scrubPage = target
+                    } else if (target != page) {
+                        // Not a drag (accessibility): there at once.
+                        autoRead = false
                         jumpToPage(target)
                     }
                 },
                 range = 0f..maxOf(1f, (count - 1).toFloat()),
                 background = Color(0xFF2C2C2E),
+                onDragStart = {
+                    autoRead = false
+                    scrubPage = page
+                },
+                onDragEnd = {
+                    val target = scrubPage
+                    scrubPage = null
+                    if (target != null && target != page) jumpToPage(target)
+                },
             )
+        }
+    }
+
+    /**
+     * Five pages (two before, the one under the finger, two after), centred
+     * over the slider's thumb ([trackLeft], [trackWidth]: the track in the root).
+     */
+    @Composable
+    private fun ScrubStrip(current: Int, trackLeft: Float, trackWidth: Float) {
+        val pages = (current - 2..current + 2).filter { it in 0 until count }.let { if (isRtl) it.reversed() else it }
+        var stripWidth by remember { mutableStateOf(0) }
+        var boxLeft by remember { mutableStateOf(0f) }
+        var boxWidth by remember { mutableStateOf(0) }
+        // E-Hentai: the thumbnails of pages not seen yet, once the finger rests a moment.
+        val gid = source.summary.key.id
+        LaunchedEffect(current) {
+            kotlinx.coroutines.delay(250)
+            for (i in pages) {
+                val ref = source.pages[i].url as? com.atlanyuey.aenht.core.EhPageRef ?: continue
+                runCatching { com.atlanyuey.aenht.core.EhPages.loadThumbnail(gid, ref.token, i + 1) }
+            }
+        }
+        Box(
+            Modifier.fillMaxWidth().height(150.dp).onGloballyPositioned { c ->
+                boxLeft = c.positionInRoot().x
+                boxWidth = c.size.width
+            },
+        ) {
+            val fraction = if (count > 1) current / (count - 1f) else 0f
+            val thumbX = trackLeft + trackWidth * (if (isRtl) 1f - fraction else fraction) - boxLeft
+            val x = (thumbX - stripWidth / 2f).coerceIn(0f, maxOf(0f, (boxWidth - stripWidth).toFloat()))
+            Row(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .offset { IntOffset(x.roundToInt(), 0) }
+                    .onSizeChanged { stripWidth = it.width }
+                    .glass(RoundedCornerShape(18.dp), GlassStyle.Panel)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                for (i in pages) {
+                    val here = i == current
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Box(
+                            Modifier
+                                .size(width = if (here) 64.dp else 46.dp, height = if (here) 90.dp else 64.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF2C2C2E))
+                                .then(if (here) Modifier.border(2.dp, Color.White, RoundedCornerShape(6.dp)) else Modifier),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            PageThumb(i)
+                        }
+                        Txt("${i + 1}", style = Type.caption2.copy(fontWeight = if (here) FontWeight.SemiBold else FontWeight.Normal),
+                            color = if (here) Color.White else Color.White.copy(alpha = 0.6f), maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+
+    /** A page's small picture: its thumbnail, the downloaded file, or its number. */
+    @Composable
+    private fun PageThumb(index: Int) {
+        val readerPage = source.pages[index]
+        val url = readerPage.url
+        val image: Any? = when {
+            url is java.io.File -> url
+            readerPage.thumb != null -> readerPage.thumb
+            else -> null
+        }
+        val ehThumb = (url as? com.atlanyuey.aenht.core.EhPageRef)?.let { com.atlanyuey.aenht.core.EhPages.thumbnail(it.gid, it.page) }
+        when {
+            image != null -> RemoteImage(image, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, targetWidth = 120.dp)
+            ehThumb != null -> EhThumbnailImage(ehThumb, Modifier.fillMaxSize())
+            else -> Txt("${index + 1}", style = Type.caption1, color = Color.White.copy(alpha = 0.5f))
         }
     }
 
@@ -1947,12 +2065,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     val paged = AppSettings.readMode.isPaged
     section("Control Bar", footer = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FooterText(tr("Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right."))
+            FooterText(tr("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right."))
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
         }
     }) {
         ToggleRow(tr("Reader Settings Button"), AppSettings.readerSettingsButton, { AppSettings.readerSettingsButton = it })
         ToggleRow(tr(if (paged) "Auto Read Button" else "Auto Scroll Button"), AppSettings.autoReadButton, { AppSettings.autoReadButton = it })
+        if (AppSettings.readerSettingsButton && AppSettings.autoReadButton) {
+            PickerRow(tr(if (paged) "Auto Read Button Side" else "Auto Scroll Button Side"), com.atlanyuey.aenht.core.AutoReadSide.entries, AppSettings.autoReadSide,
+                label = { tr(it.title) }, onSelect = { AppSettings.autoReadSide = it })
+        }
         ToggleRow(tr("Tap the Middle to Show Controls"), AppSettings.controlsMiddleOnly, { AppSettings.controlsMiddleOnly = it }, last = true)
     }
     section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {

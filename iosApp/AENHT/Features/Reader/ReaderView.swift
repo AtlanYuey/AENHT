@@ -11,6 +11,8 @@ struct ReaderPage: Hashable, Identifiable {
     let index: Int
     let url: URL?
     let aspectRatio: CGFloat
+    /// Its small picture (the slider's preview), when the site gives one.
+    var thumb: URL? = nil
     var id: Int { index }
 }
 
@@ -46,7 +48,8 @@ struct ReaderSource: Hashable {
         pages = detail.pages.enumerated().map { offset, page in
             ReaderPage(index: offset,
                        url: downloads.localURL(gallery: detail.id, page: offset) ?? page.imageURL,
-                       aspectRatio: page.aspectRatio)
+                       aspectRatio: page.aspectRatio,
+                       thumb: page.thumbURL)
         }
     }
 
@@ -258,7 +261,13 @@ struct ReaderView: View {
                 // open rebuilds the toolbar and closes the menu under the
                 // finger, before its item acts.
                 awake.touched()
-                guard chromeVisible else { return }
+                guard chromeVisible else {
+                    // The hand: the side touched while the controls were away (the
+                    // tap that brings them); their buttons go there.
+                    let left = touch.location.x < canvasSize.width / 2
+                    if handOnLeft != left { handOnLeft = left }
+                    return
+                }
                 if touch.onOverlay || touch.location.y < touch.safeArea.top + 64 {
                     // A menu, a sheet, or the top bar (its menu may be
                     // opening): the controls stay until a touch elsewhere.
@@ -561,6 +570,12 @@ struct ReaderView: View {
 
     /// The reader's size in points (where a tap is, as a fraction of it).
     @State private var canvasSize: CGSize = .zero
+    /// The side of the screen last touched to bring the controls (their buttons go there).
+    @State private var handOnLeft = false
+    /// The slider's track in the control panel (the pages around the finger go over it).
+    @State private var trackFrame: CGRect = .zero
+    @State private var stripWidth: CGFloat = 0
+    private var ehThumbs = EhThumbs.shared
 
     /// The title's taps, counted to find a double tap.
     @State private var topTaps = DoubleTapCounter()
@@ -634,13 +649,19 @@ struct ReaderView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 0) {
-            floatingButtons
-            compactBar
+            // While the slider is held: the pages around it, over the finger.
+            if sliderEditing { scrubStrip } else { floatingButtons }
+            pageBar
         }
+        .coordinateSpace(.named("readerPanel"))
         .frame(maxWidth: 640)
     }
 
-    /// The page slider (right to left for right-to-left reading).
+    /// The page shown in the bar: the slider's while it's held.
+    private var shownPage: Int { sliderEditing ? Int(sliderValue.rounded()) : page }
+
+    /// The page slider (right to left for right-to-left reading): held, the
+    /// page and the pages around follow it; let go, the reader goes there.
     private var pageSlider: some View {
         Slider(
             value: $sliderValue,
@@ -648,143 +669,157 @@ struct ReaderView: View {
             step: 1,
             onEditingChanged: { editing in
                 sliderEditing = editing
-                if !editing { goFromPanel(Int(sliderValue)) }
+                if !editing { goFromPanel(Int(sliderValue.rounded())) }
             }
         )
         .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
     }
 
-    /// The control bar: the slider, then Auto Read, Reset Size and the settings.
+    /// One row: the page, the slider, the pages left (as much room above as below).
     /// Turning is a tap or a swipe on the page: no arrows here.
-    private var fullBar: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
-                Text("\(page + 1)")
-                    .font(.footnote.monospacedDigit())
-                    .frame(minWidth: 28)
-                pageSlider
-                Text("\(pageCount)")
-                    .font(.footnote.monospacedDigit())
-                    .frame(minWidth: 28)
-            }
-            // Each control is touched over at least 44 × 44 pt (the glyphs alone are
-            // too small to hit on iPad), and a touch between them stays on the panel.
-            HStack(spacing: 0) {
-                Button {
-                    autoRead.toggle()
-                } label: {
-                    Label(autoReadTitle,
-                          systemImage: autoRead ? "pause.fill" : "play.fill")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .panelTarget()
-                }
-                Spacer(minLength: 8)
-                if isResized {
-                    // Pinched smaller or bigger: back to the usual size.
-                    Button {
-                        resetSize()
-                    } label: {
-                        Label("Reset Size", systemImage: "arrow.up.left.and.down.right.magnifyingglass")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                            .panelTarget()
-                    }
-                    .transition(.opacity)
-                    Spacer(minLength: 8)
-                }
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3").panelTarget()
-                }
-                .accessibilityLabel("Reader Settings")
-            }
-            .buttonStyle(.borderless)
-            .font(.body.weight(.medium))
-            .labelStyle(.titleAndIcon)
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 14)
-        .padding(.bottom, 6)
-        .modifier(GlassPanel())
-        // The whole panel takes touches: one that misses a control doesn't
-        // reach the page under it (which would hide the controls).
-        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-    }
-
-    /// Controls › Control Bar › Compact: one row, the slider with the page
-    /// and the pages left under it.
-    private var compactBar: some View {
-        VStack(spacing: 0) {
+    private var pageBar: some View {
+        HStack(spacing: 12) {
+            Text(verbatim: "\(shownPage + 1) / \(pageCount)")
+                .font(.footnote.weight(.semibold).monospacedDigit())
+                .frame(minWidth: 56, alignment: .leading)
             pageSlider
-            ZStack {
-                Text(verbatim: "\(page + 1) / \(pageCount)")
-                    .monospacedDigit()
-                Text("Pages left: \(max(0, pageCount - 1 - page))")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .font(.caption2)
-            .lineLimit(1)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("readerPanel")) } action: { trackFrame = $0 }
+            Text("Pages left: \(max(0, pageCount - 1 - shownPage))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
         }
+        .lineLimit(1)
         .padding(.horizontal, 18)
-        .padding(.top, 4)
-        .padding(.bottom, 8)
-        .modifier(GlassPanel(cornerRadius: 22))
-        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(.vertical, 12)
+        .modifier(GlassPanel(cornerRadius: 26))
+        // The whole panel takes touches: one that misses the slider doesn't
+        // reach the page under it (which would hide the controls).
+        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
         .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.vertical, 8)
     }
 
-    /// With the compact bar: the buttons turned on (and Reset Size, when the
-    /// pages were resized), floating on the left above it.
+    /// Reader Settings and Auto Read float on the sides above the bar: one
+    /// alone on the hand's side; both, Auto Read where Controls › Auto Read
+    /// Button Side says. Reset Size in the middle, when the pages were resized.
     @ViewBuilder private var floatingButtons: some View {
         let showSettingsButton = settings.readerSettingsButton
         let showAutoRead = settings.autoReadButton
+        let autoLeft: Bool = switch settings.autoReadSide {
+        case .hand: handOnLeft
+        case .left: true
+        case .right: false
+        }
+        let autoOnLeft = showSettingsButton ? autoLeft : handOnLeft
+        let settingsOnLeft = showAutoRead ? !autoLeft : handOnLeft
         if showSettingsButton || showAutoRead || isResized {
-            HStack(spacing: 10) {
-                if showSettingsButton {
-                    Button { showSettings = true } label: {
-                        Image(systemName: "slider.horizontal.3").floatingTarget()
-                    }
-                    .accessibilityLabel("Reader Settings")
-                }
-                if showAutoRead {
-                    Button { autoRead.toggle() } label: {
-                        Image(systemName: autoRead ? "pause.fill" : "play.fill").floatingTarget()
-                    }
-                    .accessibilityLabel(autoReadTitle)
+            ZStack {
+                HStack(spacing: 10) {
+                    if showSettingsButton, settingsOnLeft { settingsButton }
+                    if showAutoRead, autoOnLeft { autoReadButton }
+                    Spacer(minLength: 0)
                 }
                 if isResized {
+                    // Pinched smaller or bigger: back to the usual size.
                     Button { resetSize() } label: {
                         Image(systemName: "arrow.up.left.and.down.right.magnifyingglass").floatingTarget()
                     }
                     .accessibilityLabel("Reset Size")
                     .transition(.opacity)
                 }
-                Spacer(minLength: 0)
+                HStack(spacing: 10) {
+                    Spacer(minLength: 0)
+                    if showAutoRead, !autoOnLeft { autoReadButton }
+                    if showSettingsButton, !settingsOnLeft { settingsButton }
+                }
             }
             .buttonStyle(.borderless)
             .font(.body.weight(.medium))
             .padding(.horizontal, 16)
-            .padding(.bottom, 2)
+        }
+    }
+
+    private var settingsButton: some View {
+        Button { showSettings = true } label: {
+            Image(systemName: "slider.horizontal.3").floatingTarget()
+        }
+        .accessibilityLabel("Reader Settings")
+    }
+
+    private var autoReadButton: some View {
+        Button { autoRead.toggle() } label: {
+            Image(systemName: autoRead ? "pause.fill" : "play.fill").floatingTarget()
+        }
+        .accessibilityLabel(autoReadTitle)
+    }
+
+    /// Five pages (two before, the one under the finger, two after), centred
+    /// over the slider's thumb.
+    private var scrubStrip: some View {
+        let current = min(max(Int(sliderValue.rounded()), 0), max(pageCount - 1, 0))
+        let around = Array(max(0, current - 2)...max(0, min(pageCount - 1, current + 2)))
+        let indices = isRTL ? Array(around.reversed()) : around
+        let fraction = pageCount > 1 ? CGFloat(current) / CGFloat(pageCount - 1) : 0
+        // The thumb's centre: the track less the thumb's own half at each end.
+        let inset: CGFloat = 14
+        let thumbX = trackFrame.minX + inset + max(0, trackFrame.width - 2 * inset) * (isRTL ? 1 - fraction : fraction)
+        return GeometryReader { geometry in
+            let left = min(max(0, thumbX - stripWidth / 2), max(0, geometry.size.width - stripWidth))
+            HStack(alignment: .bottom, spacing: 6) {
+                ForEach(indices, id: \.self) { index in scrubThumb(index, current: index == current) }
+            }
+            .padding(8)
+            .modifier(GlassPanel(cornerRadius: 18))
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stripWidth = $0 }
+            .offset(x: left)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+        .frame(height: 140)
+        .allowsHitTesting(false)
+        .task(id: current) {
+            // E-Hentai: the thumbnails of pages not seen yet, once the finger rests a moment.
+            guard source.item.site == .ehentai, let token = source.item.token else { return }
+            try? await Task.sleep(for: .milliseconds(250))
+            for index in indices where !Task.isCancelled {
+                if source.pages[index].url?.isFileURL == true { continue }
+                if ehThumbs.thumbnail(gid: source.item.id, page: index + 1) != nil { continue }
+                await EhPageDirectory.shared.loadThumbnail(gid: source.item.id, token: token, page: index + 1)
+            }
+        }
+    }
+
+    private func scrubThumb(_ index: Int, current: Bool) -> some View {
+        VStack(spacing: 3) {
+            pageThumb(index)
+                .frame(width: current ? 64 : 46, height: current ? 90 : 64)
+                .background(Color(white: 0.17))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay {
+                    if current { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(.white, lineWidth: 2) }
+                }
+            Text(verbatim: "\(index + 1)")
+                .font(.caption2.weight(current ? .semibold : .regular).monospacedDigit())
+                .foregroundStyle(.white.opacity(current ? 1 : 0.6))
+        }
+    }
+
+    /// A page's small picture: the downloaded file, its thumbnail, or its number.
+    @ViewBuilder private func pageThumb(_ index: Int) -> some View {
+        let readerPage = source.pages[index]
+        if let url = readerPage.url, url.isFileURL {
+            RemoteImage(url: url, targetWidth: 120)
+        } else if let thumb = readerPage.thumb {
+            RemoteImage(url: thumb, targetWidth: 120)
+        } else if source.item.site == .ehentai, let thumb = ehThumbs.thumbnail(gid: source.item.id, page: index + 1) {
+            EhThumbnailView(thumb: thumb)
+        } else {
+            Text(verbatim: "\(index + 1)").font(.caption).foregroundStyle(.white.opacity(0.5))
         }
     }
 }
 
 private extension View {
-    /// A control of the reader's panel: at least 44 × 44 pt to touch, all of it.
-    func panelTarget() -> some View {
-        frame(minWidth: 44, minHeight: 44)
-            .padding(.horizontal, 4)
-            .contentShape(Rectangle())
-    }
-
-    /// A floating round button above the compact control bar (44 pt).
+    /// A floating round button above the control bar (44 pt).
     func floatingTarget() -> some View {
         frame(width: 44, height: 44)
             .modifier(GlassPanel(cornerRadius: 22))
@@ -1061,12 +1096,17 @@ struct ReadingSettingsSections: View {
         Section {
             Toggle("Reader Settings Button", isOn: $settings.readerSettingsButton)
             Toggle(settings.readMode.isPaged ? "Auto Read Button" : "Auto Scroll Button", isOn: $settings.autoReadButton)
+            if settings.readerSettingsButton, settings.autoReadButton {
+                Picker(settings.readMode.isPaged ? "Auto Read Button Side" : "Auto Scroll Button Side", selection: $settings.autoReadSide) {
+                    ForEach(AutoReadSide.allCases) { Text($0.title).tag($0) }
+                }
+            }
             Toggle("Tap the Middle to Show Controls", isOn: $settings.controlsMiddleOnly)
         } header: {
             Text("Control Bar")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right.")
+                Text("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.")
                 Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")
             }
         }

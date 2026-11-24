@@ -641,12 +641,10 @@
 "Page Turns" = "페이지 넘김";
 "Page Size" = "페이지 크기";
 "Control Bar" = "컨트롤 바";
-"Compact Control Bar" = "간결한 컨트롤 바";
 "Reader Settings Button" = "리더 설정 버튼";
 "Auto Read Button" = "자동 넘김 버튼";
 "Auto Scroll Button" = "자동 스크롤 버튼";
 "Tap the Middle to Show Controls" = "가운데를 탭할 때만 컨트롤 표시";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "간결: 한 줄로, 슬라이더 아래에 현재 페이지와 남은 페이지 수를 표시합니다. 켠 버튼은 그 왼쪽 위에 떠서 표시됩니다. 리더 설정은 오른쪽 위 메뉴에서도 열 수 있습니다.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "가운데를 탭할 때만 컨트롤 표시: 양쪽(탭 영역이 있는 곳, 연속 모드에서는 좌우)을 탭해도 컨트롤이 나타나거나 사라지지 않습니다.";
 "Refresh Favorites When Opened" = "즐겨찾기를 열 때 새로 고침";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "즐겨찾기를 열면 사이트의 목록을 다시 읽어서, 방금 즐겨찾기한 작품이 당겨서 새로 고치지 않아도 나타납니다. 목록을 아래로 스크롤한 상태에서는 새로 고치지 않습니다(위치 유지). 전체는 저장된 사본이 15분보다 오래되면 동기화합니다.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "즐겨찾기에서 %lld개를 제거할까요?";
 "They are removed from your favorites on the site too." = "사이트의 즐겨찾기에서도 제거됩니다.";
 "Delete %lld from history?" = "기록에서 %lld개를 삭제할까요?";
+"Follows Your Hand" = "손 위치 따라가기";
+"Auto Read Button Side" = "자동 넘김 버튼 위치";
+"Auto Scroll Button Side" = "자동 스크롤 버튼 위치";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "버튼은 슬라이더 위에 떠 있습니다. 하나만 켜면 손 쪽(탭해서 컨트롤을 연 쪽)에, 둘 다 켜면 자동 넘김은 고른 쪽에, 리더 설정은 반대쪽에 놓입니다. 리더 설정은 오른쪽 위 메뉴에서도 열 수 있습니다.";

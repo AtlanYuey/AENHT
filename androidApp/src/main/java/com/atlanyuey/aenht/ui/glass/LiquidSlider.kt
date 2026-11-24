@@ -54,8 +54,13 @@ fun LiquidSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     visibilityThreshold: Float,
     backdrop: Backdrop,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** The finger went down on the slider / came off it (after the last value). */
+    onDragStart: () -> Unit = {},
+    onDragEnd: () -> Unit = {},
 ) {
+    val dragStart = androidx.compose.runtime.rememberUpdatedState(onDragStart)
+    val dragEnd = androidx.compose.runtime.rememberUpdatedState(onDragEnd)
     val isLightTheme = !LocalIsDark.current
     val accentColor = LocalTint.current
     val trackColor =
@@ -81,11 +86,12 @@ fun LiquidSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
-                onDragStarted = {},
+                onDragStarted = { dragStart.value() },
                 onDragStopped = {
                     if (didDrag) {
                         onValueChange(targetValue)
                     }
+                    dragEnd.value()
                 },
                 onDrag = { _, dragAmount ->
                     if (!didDrag) {

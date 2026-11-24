@@ -641,12 +641,10 @@
 "Page Turns" = "ページめくり";
 "Page Size" = "ページサイズ";
 "Control Bar" = "コントロールバー";
-"Compact Control Bar" = "コンパクトなコントロールバー";
 "Reader Settings Button" = "リーダー設定ボタン";
 "Auto Read Button" = "自動めくりボタン";
 "Auto Scroll Button" = "自動スクロールボタン";
 "Tap the Middle to Show Controls" = "中央のタップでのみコントロールを表示";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "コンパクト：1 行だけで、スライダーの下に現在のページと残りページ数を表示します。オンにしたボタンはその左上に浮かんで表示されます。リーダー設定は右上のメニューからも開けます。";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "中央のタップでのみコントロールを表示：両端（タップゾーンの位置、連続モードでは左右）をタップしてもコントロールは表示・非表示になりません。";
 "Refresh Favorites When Opened" = "お気に入りを開いたら更新";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "「お気に入り」を開くとサイトのリストを読み直すので、お気に入りに追加したばかりの作品が引っ張って更新しなくても表示されます。下までスクロールしている場合は更新しません（位置はそのまま）。「すべて」は保存したコピーが 15 分以上前のものなら同期します。";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "お気に入りから %lld 件を削除しますか？";
 "They are removed from your favorites on the site too." = "サイト上のお気に入りからも削除されます。";
 "Delete %lld from history?" = "履歴から %lld 件を削除しますか？";
+"Follows Your Hand" = "手の位置に合わせる";
+"Auto Read Button Side" = "自動めくりボタンの位置";
+"Auto Scroll Button Side" = "自動スクロールボタンの位置";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ボタンはスライダーの上に浮かびます。1 つだけのときは手の側（タップしてコントロールを表示した側）、2 つのときは自動めくりを選んだ側に、リーダー設定を反対側に置きます。リーダー設定は右上のメニューからも開けます。";

@@ -641,12 +641,10 @@
 "Page Turns" = "Перелистывание";
 "Page Size" = "Размер страниц";
 "Control Bar" = "Панель управления";
-"Compact Control Bar" = "Компактная панель управления";
 "Reader Settings Button" = "Кнопка настроек читалки";
 "Auto Read Button" = "Кнопка автолистания";
 "Auto Scroll Button" = "Кнопка автопрокрутки";
 "Tap the Middle to Show Controls" = "Панель только по нажатию в центре";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "Компактная: одна строка — ползунок, под ним текущая страница и сколько осталось. Включённые кнопки парят слева над ней. Настройки читалки есть и в меню справа вверху.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "Панель только по нажатию в центре: нажатие по краю (там, где зоны нажатия; слева и справа при прокрутке) не показывает и не скрывает панель.";
 "Refresh Favorites When Opened" = "Обновлять избранное при открытии";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "При открытии «Избранного» список сайта читается заново, так что только что добавленная галерея появляется без обновления потягиванием. Не происходит, если список прокручен вниз (место сохраняется). «Все» синхронизирует копию, если ей больше 15 минут.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "Удалить из избранного: %lld?";
 "They are removed from your favorites on the site too." = "Они будут удалены и из избранного на сайте.";
 "Delete %lld from history?" = "Удалить из истории: %lld?";
+"Follows Your Hand" = "Следует за рукой";
+"Auto Read Button Side" = "Сторона кнопки автолистания";
+"Auto Scroll Button Side" = "Сторона кнопки автопрокрутки";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Кнопки парят над ползунком: одна — со стороны руки (там, где вы нажали, чтобы показать панель); обе — автолистание на выбранной стороне, настройки читалки на другой. Настройки читалки есть и в меню справа вверху.";

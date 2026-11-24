@@ -641,12 +641,10 @@
 "Page Turns" = "Cambio pagina";
 "Page Size" = "Dimensione pagina";
 "Control Bar" = "Barra dei controlli";
-"Compact Control Bar" = "Barra dei controlli compatta";
 "Reader Settings Button" = "Pulsante Impostazioni lettore";
 "Auto Read Button" = "Pulsante Lettura automatica";
 "Auto Scroll Button" = "Pulsante Scorrimento automatico";
 "Tap the Middle to Show Controls" = "Mostra i controlli solo toccando al centro";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "Compatta: una sola riga, il cursore con la pagina e le pagine rimaste sotto. I pulsanti attivati fluttuano a sinistra, sopra. Le impostazioni del lettore sono anche nel menu in alto a destra.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "Mostra i controlli solo toccando al centro: un tocco su un lato (dove sono le zone di tocco; a sinistra e a destra scorrendo) non mostra né nasconde i controlli.";
 "Refresh Favorites When Opened" = "Aggiorna i preferiti all’apertura";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "Aprendo Preferiti la lista del sito viene riletta, così una galleria appena aggiunta compare senza trascinare per aggiornare. Non quando la lista è scorsa in basso (la posizione resta). Tutti sincronizza la copia se ha più di 15 minuti.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "Rimuovere %lld dai preferiti?";
 "They are removed from your favorites on the site too." = "Vengono rimossi anche dai preferiti sul sito.";
 "Delete %lld from history?" = "Eliminare %lld dalla cronologia?";
+"Follows Your Hand" = "Segue la mano";
+"Auto Read Button Side" = "Lato del pulsante Lettura automatica";
+"Auto Scroll Button Side" = "Lato del pulsante Scorrimento automatico";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "I pulsanti fluttuano sopra il cursore: uno solo, dal lato della mano (dove hai toccato per mostrare i controlli); tutti e due, la lettura automatica dal lato scelto e le impostazioni del lettore dall’altro. Le impostazioni del lettore sono anche nel menu in alto a destra.";

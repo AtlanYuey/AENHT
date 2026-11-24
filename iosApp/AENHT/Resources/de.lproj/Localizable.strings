@@ -641,12 +641,10 @@
 "Page Turns" = "Umblättern";
 "Page Size" = "Seitengröße";
 "Control Bar" = "Steuerleiste";
-"Compact Control Bar" = "Kompakte Steuerleiste";
 "Reader Settings Button" = "Taste „Leser-Einstellungen“";
 "Auto Read Button" = "Taste „Automatisch lesen“";
 "Auto Scroll Button" = "Taste „Automatisch scrollen“";
 "Tap the Middle to Show Controls" = "Steuerung nur per Tippen in die Mitte";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "Kompakt: eine Zeile, der Seitenregler mit Seite und verbleibenden Seiten darunter. Eingeschaltete Tasten schweben links darüber. Die Leser-Einstellungen gibt es auch im Menü oben rechts.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "Steuerung nur per Tippen in die Mitte: Tippen an einer Seite (wo die Tippbereiche sind; links und rechts beim Scrollen) blendet die Steuerung weder ein noch aus.";
 "Refresh Favorites When Opened" = "Favoriten beim Öffnen aktualisieren";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "Beim Öffnen der Favoriten wird die Liste der Seite neu gelesen, so ist eine gerade favorisierte Galerie da, ohne zum Aktualisieren zu ziehen. Nicht, wenn die Liste nach unten gescrollt ist (die Position bleibt). Alle synchronisiert seine Kopie, wenn sie älter als 15 Minuten ist.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "%lld aus den Favoriten entfernen?";
 "They are removed from your favorites on the site too." = "Sie werden auch auf der Seite aus den Favoriten entfernt.";
 "Delete %lld from history?" = "%lld aus dem Verlauf löschen?";
+"Follows Your Hand" = "Folgt der Hand";
+"Auto Read Button Side" = "Seite der Taste „Automatisch lesen“";
+"Auto Scroll Button Side" = "Seite der Taste „Automatisch scrollen“";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Die Tasten schweben über dem Regler: eine allein auf der Seite der Hand (wo du zum Einblenden der Steuerung getippt hast); beide, „Automatisch lesen“ auf der gewählten Seite und die Leser-Einstellungen auf der anderen. Die Leser-Einstellungen gibt es auch im Menü oben rechts.";

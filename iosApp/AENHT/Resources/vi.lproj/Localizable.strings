@@ -641,12 +641,10 @@
 "Page Turns" = "Lật trang";
 "Page Size" = "Kích thước trang";
 "Control Bar" = "Thanh điều khiển";
-"Compact Control Bar" = "Thanh điều khiển gọn";
 "Reader Settings Button" = "Nút cài đặt trình đọc";
 "Auto Read Button" = "Nút tự động đọc";
 "Auto Scroll Button" = "Nút tự động cuộn";
 "Tap the Middle to Show Controls" = "Chỉ chạm giữa để hiện điều khiển";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "Gọn: một hàng, thanh trượt cùng trang hiện tại và số trang còn lại bên dưới. Các nút được bật nổi phía trên bên trái. Cài đặt trình đọc cũng có trong menu ở góc trên bên phải.";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "Chỉ chạm giữa để hiện điều khiển: chạm vào hai bên (nơi có vùng chạm; trái và phải khi cuộn) không hiện hay ẩn điều khiển.";
 "Refresh Favorites When Opened" = "Làm mới yêu thích khi mở";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "Mở Yêu thích sẽ tải lại danh sách của trang, nên tác phẩm vừa thêm sẽ có ngay mà không cần kéo để làm mới. Không làm khi danh sách đã cuộn xuống (giữ nguyên vị trí). Tất cả đồng bộ bản sao khi nó cũ hơn 15 phút.";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "Gỡ %lld khỏi yêu thích?";
 "They are removed from your favorites on the site too." = "Chúng cũng bị gỡ khỏi yêu thích trên trang.";
 "Delete %lld from history?" = "Xóa %lld khỏi lịch sử?";
+"Follows Your Hand" = "Theo vị trí tay";
+"Auto Read Button Side" = "Vị trí nút tự động đọc";
+"Auto Scroll Button Side" = "Vị trí nút tự động cuộn";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Các nút nổi phía trên thanh trượt: chỉ một nút thì ở phía tay (nơi bạn chạm để hiện điều khiển); cả hai thì nút tự động đọc ở phía đã chọn, cài đặt trình đọc ở phía còn lại. Cài đặt trình đọc cũng có trong menu ở góc trên bên phải.";

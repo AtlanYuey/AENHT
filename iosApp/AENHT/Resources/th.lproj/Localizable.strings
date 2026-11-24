@@ -641,12 +641,10 @@
 "Page Turns" = "การพลิกหน้า";
 "Page Size" = "ขนาดหน้า";
 "Control Bar" = "แถบควบคุม";
-"Compact Control Bar" = "แถบควบคุมแบบย่อ";
 "Reader Settings Button" = "ปุ่มการตั้งค่าโปรแกรมอ่าน";
 "Auto Read Button" = "ปุ่มอ่านอัตโนมัติ";
 "Auto Scroll Button" = "ปุ่มเลื่อนอัตโนมัติ";
 "Tap the Middle to Show Controls" = "แตะตรงกลางเท่านั้นเพื่อแสดงตัวควบคุม";
-"Compact: one row, the page slider with the page and the pages left under it. The buttons turned on float on the left above it. Reader Settings is also in the menu at the top right." = "แบบย่อ: มีแถวเดียว แถบเลื่อนพร้อมหน้าปัจจุบันและจำนวนหน้าที่เหลือด้านล่าง ปุ่มที่เปิดไว้จะลอยอยู่ด้านซ้ายเหนือแถบ การตั้งค่าโปรแกรมอ่านเปิดได้จากเมนูมุมขวาบนด้วย";
 "Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls." = "แตะตรงกลางเท่านั้นเพื่อแสดงตัวควบคุม: การแตะด้านข้าง (ตำแหน่งของพื้นที่แตะ ซ้ายและขวาเมื่อเลื่อน) จะไม่แสดงหรือซ่อนตัวควบคุม";
 "Refresh Favorites When Opened" = "รีเฟรชรายการโปรดเมื่อเปิด";
 "Opening Favorites reloads the site's list, so a gallery just favorited is there without pulling to refresh. Not when the list is scrolled down (your place stays). All syncs its copy when it's older than 15 minutes." = "การเปิดรายการโปรดจะโหลดรายการของเว็บใหม่ ผลงานที่เพิ่งเพิ่มจะแสดงโดยไม่ต้องดึงเพื่อรีเฟรช ไม่ทำเมื่อเลื่อนรายการลงไปแล้ว (ตำแหน่งยังอยู่) ทั้งหมดจะซิงค์สำเนาเมื่อเก่ากว่า 15 นาที";
@@ -658,3 +656,7 @@
 "Remove %lld from favorites?" = "นำ %lld รายการออกจากรายการโปรด?";
 "They are removed from your favorites on the site too." = "จะถูกนำออกจากรายการโปรดบนเว็บไซต์ด้วย";
 "Delete %lld from history?" = "ลบ %lld รายการจากประวัติ?";
+"Follows Your Hand" = "ตามตำแหน่งมือ";
+"Auto Read Button Side" = "ด้านของปุ่มอ่านอัตโนมัติ";
+"Auto Scroll Button Side" = "ด้านของปุ่มเลื่อนอัตโนมัติ";
+"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ปุ่มลอยอยู่เหนือแถบเลื่อน: ถ้ามีปุ่มเดียวจะอยู่ด้านเดียวกับมือ (ด้านที่แตะเพื่อแสดงตัวควบคุม) ถ้ามีสองปุ่ม ปุ่มอ่านอัตโนมัติอยู่ด้านที่เลือก และการตั้งค่าโปรแกรมอ่านอยู่อีกด้าน การตั้งค่าโปรแกรมอ่านเปิดได้จากเมนูมุมขวาบนด้วย";
