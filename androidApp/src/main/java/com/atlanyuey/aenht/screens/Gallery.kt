@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.galleryHeaderTitle
+import com.atlanyuey.aenht.ui.components.galleryHeaderCover
 import com.atlanyuey.aenht.ui.components.FadeIn
 import com.atlanyuey.aenht.ui.components.arrived
 import com.atlanyuey.aenht.core.AppSettings
@@ -201,9 +203,18 @@ class ReaderSource(
 // MARK: - Gallery page
 
 class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem?) : Screen() {
-    /** Opens out of its card's cover, and closes back into it (when a list shows it). */
-    override fun zoomTarget(): androidx.compose.ui.geometry.Rect? =
-        com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId))
+    /** The card's cover flies to this page's cover and back (when it was opened from a card on screen). */
+    override fun sharedCover(): com.atlanyuey.aenht.ui.components.SharedCover? {
+        val item = preview?.let { GallerySummary.from(it) } ?: return null
+        val key = com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId)
+        val from = com.atlanyuey.aenht.ui.components.GalleryCovers.rect(key) ?: return null
+        return com.atlanyuey.aenht.ui.components.SharedCover(
+            com.atlanyuey.aenht.ui.components.GalleryCovers.key(key), item, from,
+            com.atlanyuey.aenht.ui.components.GalleryCovers.headerRect(key),
+            com.atlanyuey.aenht.ui.components.GalleryCovers.cardTitle(key),
+            com.atlanyuey.aenht.ui.components.GalleryCovers.headerTitle(key),
+        )
+    }
 
     private var detail by mutableStateOf<GalleryDetail?>(null)
     /** The gallery's JSON as loaded; a download keeps it for offline use. */
@@ -420,11 +431,14 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                     Modifier
                         .width(if (wide) 200.dp else 132.dp)
                         .onSizeChanged { coverHeight = it.height }
+                        // Where the card's cover flies to (hidden, its shadow too, while it flies).
+                        .galleryHeaderCover(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId))
                         .shadow(14.dp, RoundedCornerShape(14.dp)),
                 ) {
                     val cover = item
                     if (cover != null) {
-                        CoverView(GallerySummary.from(cover), cornerRadius = 14.dp, targetWidth = 500.dp)
+                        // The card's picture (the same size: it's in memory already), where the card's cover flies to.
+                        CoverView(GallerySummary.from(cover), cornerRadius = 14.dp)
                     } else {
                         Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(AppTheme.colors.quaternaryFill))
                     }
@@ -482,10 +496,10 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         } else {
                             Int.MAX_VALUE
                         }
-                        Txt(title, Modifier.privacyText(), style = titleStyle, maxLines = lines)
+                        Txt(title, Modifier.galleryHeaderTitle(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId), title, titleStyle, lines).privacyText(), style = titleStyle, maxLines = lines)
                     }
                 } else {
-                    Txt(title, Modifier.privacyText(), style = titleStyle)
+                    Txt(title, Modifier.galleryHeaderTitle(com.atlanyuey.aenht.shared.site.GalleryKey.nh(galleryId), title, titleStyle, Int.MAX_VALUE).privacyText(), style = titleStyle)
                 }
                 detail?.subtitle?.let {
                     Txt(it, Modifier.privacyText(), style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)

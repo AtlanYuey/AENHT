@@ -662,9 +662,11 @@
     <string name="l_659">Lato del pulsante Scorrimento automatico</string>
     <string name="l_660">I pulsanti fluttuano sopra il cursore: uno solo, dal lato della mano (dove hai toccato per mostrare i controlli); tutti e due, la lettura automatica dal lato scelto e le impostazioni del lettore dall’altro. Le impostazioni del lettore sono anche nel menu in alto a destra.</string>
     <string name="l_661">Tieni premuto il pulsante Lettura automatica per velocità e opzioni; toccalo per avviarla o fermarla.</string>
-    <string name="l_662">Backup impostazioni</string>
-    <string name="l_663">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_664">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_665">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_666">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_662">Ricarica la pagina</string>
+    <string name="l_663">Pagina %d</string>
+    <string name="l_664">Backup impostazioni</string>
+    <string name="l_665">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_666">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_667">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_668">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

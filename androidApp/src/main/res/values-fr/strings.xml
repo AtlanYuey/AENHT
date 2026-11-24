@@ -662,9 +662,11 @@
     <string name="l_659">Côté du bouton Défilement automatique</string>
     <string name="l_660">Les boutons flottent au-dessus du curseur : un seul, du côté de votre main (là où vous avez touché pour afficher les commandes) ; les deux, la lecture automatique du côté choisi et les réglages du lecteur de l’autre. Les réglages du lecteur sont aussi dans le menu en haut à droite.</string>
     <string name="l_661">Appuyez longuement sur le bouton Lecture automatique pour sa vitesse et ses options ; touchez-le pour la lancer ou l’arrêter.</string>
-    <string name="l_662">Sauvegarde des réglages</string>
-    <string name="l_663">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_664">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_665">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_666">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_662">Recharger la page</string>
+    <string name="l_663">Page %d</string>
+    <string name="l_664">Sauvegarde des réglages</string>
+    <string name="l_665">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_666">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_667">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_668">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

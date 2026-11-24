@@ -164,9 +164,11 @@ class ScreenshotTest {
         // Home with the card, then its page: it grows out of the cover, its details fade in once it's there.
         val tabs = Tabs()
         shoot("04a_home_before", tabs)
-        assertTrue("the card's cover is on screen", com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey.nh(500001)) != null)
         compose.mainClock.autoAdvance = false
-        compose.runOnUiThread { tabs.home.push(GalleryScreen(500001, null)) }
+        // The card "Night Walk" (500001), tapped: its cover flies to the page's cover.
+        compose.onAllNodes(androidx.compose.ui.test.hasText("Night Walk", substring = true))[0].performClick()
+        assertTrue("the card's cover is where it flies from",
+            com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey.nh(500001)) != null)
         compose.mainClock.advanceTimeBy(80)
         compose.onRoot().captureRoboImage("build/screens/04b_gallery_zoom_early.png")
         compose.mainClock.advanceTimeBy(120)

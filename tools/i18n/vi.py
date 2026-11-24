@@ -661,4 +661,6 @@ T = [
     "Vị trí nút tự động cuộn",
     "Các nút nổi phía trên thanh trượt: chỉ một nút thì ở phía tay (nơi bạn chạm để hiện điều khiển); cả hai thì nút tự động đọc ở phía đã chọn, cài đặt trình đọc ở phía còn lại. Cài đặt trình đọc cũng có trong menu ở góc trên bên phải.",
     "Nhấn giữ nút tự động đọc để chỉnh tốc độ và tùy chọn; chạm để bắt đầu hoặc dừng.",
+    "Tải lại trang",
+    "Trang %lld",
 ]

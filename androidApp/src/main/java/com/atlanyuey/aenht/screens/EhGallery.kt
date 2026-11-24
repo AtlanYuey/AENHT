@@ -1,5 +1,7 @@
 package com.atlanyuey.aenht.screens
 
+import com.atlanyuey.aenht.ui.components.galleryHeaderTitle
+import com.atlanyuey.aenht.ui.components.galleryHeaderCover
 import com.atlanyuey.aenht.ui.components.FadeIn
 import com.atlanyuey.aenht.ui.components.arrived
 import com.atlanyuey.aenht.ui.components.readerThumb
@@ -130,9 +132,18 @@ fun EhThumbnailImage(thumb: EhThumbnail, modifier: Modifier = Modifier) {
 }
 
 class EhGalleryScreen(private val gid: Long, private val token: String, private val preview: GallerySummary?) : Screen() {
-    /** Opens out of its card's cover, and closes back into it (when a list shows it). */
-    override fun zoomTarget(): androidx.compose.ui.geometry.Rect? =
-        com.atlanyuey.aenht.ui.components.GalleryCovers.rect(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token))
+    /** The card's cover flies to this page's cover and back (when it was opened from a card on screen). */
+    override fun sharedCover(): com.atlanyuey.aenht.ui.components.SharedCover? {
+        val item = preview ?: return null
+        val key = com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token)
+        val from = com.atlanyuey.aenht.ui.components.GalleryCovers.rect(key) ?: return null
+        return com.atlanyuey.aenht.ui.components.SharedCover(
+            com.atlanyuey.aenht.ui.components.GalleryCovers.key(key), item, from,
+            com.atlanyuey.aenht.ui.components.GalleryCovers.headerRect(key),
+            com.atlanyuey.aenht.ui.components.GalleryCovers.cardTitle(key),
+            com.atlanyuey.aenht.ui.components.GalleryCovers.headerTitle(key),
+        )
+    }
 
     private var detail by mutableStateOf<EhGalleryDetail?>(null)
     private var error by mutableStateOf<String?>(null)
@@ -387,9 +398,11 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                Box(Modifier.width(if (wide) 200.dp else 132.dp).shadow(14.dp, RoundedCornerShape(14.dp))) {
+                // Where the card's cover flies to (hidden, its shadow too, while it flies).
+                Box(Modifier.width(if (wide) 200.dp else 132.dp).galleryHeaderCover(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token)).shadow(14.dp, RoundedCornerShape(14.dp))) {
                     if (card != null) {
-                        CoverView(card, cornerRadius = 14.dp, targetWidth = 500.dp)
+                        // The card's picture (the same size: it's in memory already), where the card's cover flies to.
+                        CoverView(card, cornerRadius = 14.dp)
                     } else {
                         Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(AppTheme.colors.quaternaryFill))
                     }
@@ -400,9 +413,10 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                     var titleTranslation by remember(detail?.gid) { mutableStateOf<com.atlanyuey.aenht.shared.translate.Translation?>(null) }
                     var showsOriginal by remember(detail?.gid) { mutableStateOf(false) }
                     val title = titleTranslation?.takeIf { !showsOriginal }?.text ?: detail?.title ?: preview?.title ?: ""
+                    val titleStyle = if (wide) Type.title2.copy(fontWeight = FontWeight.SemiBold) else Type.title3
                     Txt(
                         title,
-                        Modifier.privacyText().combinedClickable(
+                        Modifier.galleryHeaderTitle(com.atlanyuey.aenht.shared.site.GalleryKey(com.atlanyuey.aenht.shared.site.Site.EHENTAI, gid, token), title, titleStyle, if (titleExpanded) Int.MAX_VALUE else 5).privacyText().combinedClickable(
                             interactionSource = null, indication = null,
                             onClick = { if (titleTranslation != null) showsOriginal = !showsOriginal else titleExpanded = !titleExpanded },
                             onLongClick = {
@@ -410,7 +424,7 @@ class EhGalleryScreen(private val gid: Long, private val token: String, private 
                                 context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("title", text))
                             },
                         ),
-                        style = if (wide) Type.title2.copy(fontWeight = FontWeight.SemiBold) else Type.title3,
+                        style = titleStyle,
                         maxLines = if (titleExpanded) Int.MAX_VALUE else 5,
                     )
                     detail?.japaneseTitle?.let {

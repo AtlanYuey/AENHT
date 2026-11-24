@@ -108,6 +108,10 @@ struct ReaderView: View {
     @State private var showSettings = false
     /// Auto Read's speed and options (a long press on its button).
     @State private var showAutoReadOptions = false
+    /// The page whose menu is open (a long press on it: Reload Page…).
+    @State private var pageMenu: Int?
+    /// Pages reloaded, and how many times (their pictures are loaded again).
+    @State private var reloads: [Int: Int] = [:]
     @State private var sliderValue: Double
     @State private var sliderEditing = false
     /// Hides the controls a while after the last touch.
@@ -252,6 +256,15 @@ struct ReaderView: View {
             .sheet(isPresented: $showSettings) {
                 ReaderSettingsSheet()
                     .presentationDetents([.medium, .large])
+            }
+            .confirmationDialog(Text("Page \((pageMenu ?? 0) + 1)"), isPresented: Binding(
+                get: { pageMenu != nil }, set: { if !$0 { pageMenu = nil } }
+            ), titleVisibility: .visible) {
+                if let index = pageMenu {
+                    Button("Reload Page") { reloadPage(index) }
+                    Button("Save Page") { Task { await savePage() } }
+                    Button("Share Page") { Task { await sharePage() } }
+                }
             }
             .sheet(isPresented: $showAutoReadOptions) {
                 AutoReadOptionsSheet()
@@ -433,13 +446,17 @@ struct ReaderView: View {
             }, onClose: {
                 dismiss()
             })
-            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)")
+            .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)-\(reloads.values.reduce(0, +))")
+            // Held still: the page's menu (Reload Page…).
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in pageMenu = page })
         } else {
             ContinuousReader(pages: source.pages, imageOptions: imageOptions, page: $page,
                              request: scrollRequest, running: $autoRead, scale: $stripScale,
-                             movable: $stripMovable, resetRequest: sizeReset) {
+                             movable: $stripMovable, resetRequest: sizeReset, reloads: reloads) {
                 chromeVisible = false
             }
+            // Held still: the menu of the page on screen (Reload Page…).
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in pageMenu = page })
             .contentShape(Rectangle())
             .onTapGesture { location in
                 let point = CGPoint(x: location.x / max(canvasSize.width, 1), y: location.y / max(canvasSize.height, 1))
@@ -537,6 +554,20 @@ struct ReaderView: View {
     private func pageImage() async -> UIImage? {
         guard source.pages.indices.contains(page), let url = source.pages[page].url else { return nil }
         return try? await ImagePipeline.shared.image(for: AutoCropProcessor.request(url))
+    }
+
+    /// Reload Page: the page loaded again from the site, whatever went wrong
+    /// (a broken picture, a wrong one): its copy on disk and the pictures in
+    /// memory (and enlarged ones) are dropped first.
+    private func reloadPage(_ index: Int) {
+        guard source.pages.indices.contains(index) else { return }
+        if let url = source.pages[index].url, !url.isFileURL {
+            ImagePipeline.shared.cache.removeCachedData(for: ImageRequest(url: url))
+        }
+        ImagePipeline.shared.cache.removeAll(caches: [.memory])
+        SuperResolver.shared.forgetEnlarged()
+        Diagnostics.shared.log(category: "reader", message: "Reload Page \(index + 1)")
+        reloads[index, default: 0] += 1
     }
 
     private func savePage() async {

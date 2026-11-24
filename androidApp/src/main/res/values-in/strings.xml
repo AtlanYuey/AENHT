@@ -662,9 +662,11 @@
     <string name="l_659">Sisi Tombol Gulir Otomatis</string>
     <string name="l_660">Tombol melayang di atas penggeser: satu saja di sisi tangan (tempat Anda mengetuk untuk menampilkan kontrol); keduanya, Baca Otomatis di sisi yang dipilih dan Pengaturan Pembaca di sisi lain. Pengaturan Pembaca juga ada di menu kanan atas.</string>
     <string name="l_661">Tekan lama tombol Baca Otomatis untuk kecepatan dan opsinya; ketuk untuk memulai atau menghentikan.</string>
-    <string name="l_662">Cadangan Pengaturan</string>
-    <string name="l_663">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_664">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_665">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_666">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_662">Muat Ulang Halaman</string>
+    <string name="l_663">Halaman %d</string>
+    <string name="l_664">Cadangan Pengaturan</string>
+    <string name="l_665">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_666">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_667">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_668">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

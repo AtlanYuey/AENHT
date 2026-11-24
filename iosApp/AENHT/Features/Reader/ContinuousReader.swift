@@ -23,6 +23,8 @@ struct ContinuousReader: View {
     @Binding var movable: Bool
     /// Counts the reader's Reset Size taps: back to the default width.
     let resetRequest: Int
+    /// Pages reloaded (Reload Page in a page's menu): how many times each.
+    var reloads: [Int: Int] = [:]
     let onInteraction: () -> Void
 
     @Environment(AppSettings.self) private var settings
@@ -61,7 +63,7 @@ struct ContinuousReader: View {
             ScrollView([.vertical, .horizontal]) {
                 LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
                     ForEach(pages) { item in
-                        ContinuousReaderPage(item: item, retry: retries[item.index, default: 0],
+                        ContinuousReaderPage(item: item, retry: retries[item.index, default: 0] + reloads[item.index, default: 0] * 1000,
                                              knownRatio: driver.knownRatios[item.index],
                                              enhancement: item.url.flatMap { imageOptions.enhancement(for: $0, continuous: true) },
                                              enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index) { state in

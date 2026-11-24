@@ -13,12 +13,15 @@
 
 #include "cpu.h"
 #include "gpu.h"
+#include <atomic>
 #include "net.h"
 
 namespace {
 
 std::once_flag gpuOnce;
 bool hasGpu = false;
+/// The GPU gave broken pictures on this device (checked in Kotlin): the CPU from then on.
+std::atomic<bool> cpuOnly{false};
 
 bool gpu() {
     std::call_once(gpuOnce, [] {
@@ -30,7 +33,7 @@ bool gpu() {
 
 ncnn::Net* newNet() {
     auto* net = new ncnn::Net;
-    bool vulkan = gpu();
+    bool vulkan = gpu() && !cpuOnly.load();
     net->opt.use_vulkan_compute = vulkan;
     net->opt.use_fp16_packed = vulkan;
     net->opt.use_fp16_storage = vulkan;
@@ -93,13 +96,18 @@ Java_com_atlanyuey_aenht_core_SrNative_loadFiles(JNIEnv* env, jclass, jstring pa
 }
 
 JNIEXPORT void JNICALL
+Java_com_atlanyuey_aenht_core_SrNative_setCpuOnly(JNIEnv*, jclass, jboolean value) {
+    cpuOnly.store(value == JNI_TRUE);
+}
+
+JNIEXPORT void JNICALL
 Java_com_atlanyuey_aenht_core_SrNative_release(JNIEnv*, jclass, jlong handle) {
     delete reinterpret_cast<ncnn::Net*>(handle);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_atlanyuey_aenht_core_SrNative_usesGpu(JNIEnv*, jclass) {
-    return gpu();
+    return gpu() && !cpuOnly.load();
 }
 
 /// Runs the region (rx, ry, rw, rh) of [input] (its context included), and

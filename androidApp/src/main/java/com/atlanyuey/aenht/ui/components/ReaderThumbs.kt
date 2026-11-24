@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
@@ -38,26 +41,117 @@ object ReaderThumbs {
     }
 }
 
+/** A title on screen (window coordinates), as it's drawn: its text flies between a card and a page. */
+class TitleSpot {
+    var rect by androidx.compose.runtime.mutableStateOf<Rect?>(null)
+    var text = ""
+    var style = androidx.compose.ui.text.TextStyle.Default
+    var maxLines = 2
+}
+
+/** Where one card's cover (and title) is on screen (window coordinates), while the card is shown. */
+class CoverSpot {
+    var rect by androidx.compose.runtime.mutableStateOf<Rect?>(null)
+    val title = TitleSpot()
+    internal var attached = true
+}
+
 /**
- * Where each gallery's cover is in the lists on screen ("nh:123", "eh:123"):
- * a gallery's page opens out of its cover and closes back into it.
+ * The covers of the cards a gallery's page was opened from, and of the pages'
+ * headers ("nh:123", "eh:123"): the cover itself flies from the card to the
+ * page's header, and back.
  */
 object GalleryCovers {
-    private val rects = mutableStateMapOf<String, Rect>()
+    private val sources = mutableStateMapOf<String, CoverSpot>()
+    private val headers = mutableStateMapOf<String, Rect>()
+    private val headerTitles = mutableStateMapOf<String, TitleSpot>()
+
+    /** The gallery whose cover is flying now (both its covers on screen are hidden meanwhile). */
+    var flying by androidx.compose.runtime.mutableStateOf<String?>(null)
 
     fun key(key: com.atlanyuey.aenht.shared.site.GalleryKey) = "${key.site.key}:${key.id}"
 
-    /** Where the cover of [key] is (window coordinates), if a list has it laid out. */
-    fun rect(key: com.atlanyuey.aenht.shared.site.GalleryKey): Rect? = rects[key(key)]
+    /** Where the card [key]'s page was opened from is (window coordinates), if it's shown. */
+    fun rect(key: com.atlanyuey.aenht.shared.site.GalleryKey): Rect? = sources[key(key)]?.rect
 
-    internal fun put(key: String, rect: Rect) {
-        if (rect.isEmpty) rects.remove(key) else if (rects[key] != rect) rects[key] = rect
+    /** The title of the card [key]'s page was opened from (if the card has one). */
+    fun cardTitle(key: com.atlanyuey.aenht.shared.site.GalleryKey): TitleSpot? = sources[key(key)]?.title?.takeIf { it.rect != null }
+
+    /** The title in the header of [key]'s page, while it's laid out. */
+    fun headerTitle(key: com.atlanyuey.aenht.shared.site.GalleryKey): TitleSpot? = headerTitles[key(key)]?.takeIf { it.rect != null }
+
+    internal fun putHeaderTitle(key: String, spot: TitleSpot?) {
+        if (spot == null) headerTitles.remove(key) else if (headerTitles[key] !== spot) headerTitles[key] = spot
+    }
+
+    /** Where the cover in the header of [key]'s page is, while it's laid out. */
+    fun headerRect(key: com.atlanyuey.aenht.shared.site.GalleryKey): Rect? = headers[key(key)]
+
+    /** [key]'s page is opened from the card whose cover is [spot]. */
+    fun opened(key: com.atlanyuey.aenht.shared.site.GalleryKey, spot: CoverSpot) {
+        sources[key(key)] = spot
+    }
+
+    /** A card laid out: it takes the place of the one its page was opened from when that one is gone (back to the list). */
+    internal fun relink(key: String, spot: CoverSpot) {
+        val current = sources[key] ?: return
+        if (current !== spot && !current.attached) sources[key] = spot
+    }
+
+    internal fun putHeader(key: String, rect: Rect?) {
+        if (rect == null || rect.isEmpty) headers.remove(key) else if (headers[key] != rect) headers[key] = rect
     }
 }
 
-/** Marks a card's cover as where its gallery's page opens from and closes back into. */
-fun Modifier.galleryCover(item: com.atlanyuey.aenht.shared.site.GallerySummary): Modifier =
-    onGloballyPositioned { GalleryCovers.put(GalleryCovers.key(item.key), it.boundsInWindow()) }
+/** A card's cover: where its gallery's page opens from and closes back into; hidden while it flies. */
+fun Modifier.galleryCover(item: com.atlanyuey.aenht.shared.site.GallerySummary, spot: CoverSpot): Modifier {
+    val key = GalleryCovers.key(item.key)
+    return onGloballyPositioned {
+        spot.rect = it.boundsInWindow()
+        GalleryCovers.relink(key, spot)
+    }.graphicsLayer { if (GalleryCovers.flying == key) alpha = 0f }
+}
+
+/** A card's title: it flies to the page's title; hidden while it flies. */
+fun Modifier.galleryTitle(
+    item: com.atlanyuey.aenht.shared.site.GallerySummary, spot: CoverSpot,
+    text: String, style: androidx.compose.ui.text.TextStyle, maxLines: Int,
+): Modifier {
+    val key = GalleryCovers.key(item.key)
+    spot.title.text = text
+    spot.title.style = style
+    spot.title.maxLines = maxLines
+    return onGloballyPositioned { spot.title.rect = it.boundsInWindow() }
+        .graphicsLayer { if (GalleryCovers.flying == key) alpha = 0f }
+}
+
+/** The title in a gallery page's header: where the card's title flies to; hidden while it flies. */
+@androidx.compose.runtime.Composable
+fun Modifier.galleryHeaderTitle(
+    galleryKey: com.atlanyuey.aenht.shared.site.GalleryKey,
+    text: String, style: androidx.compose.ui.text.TextStyle, maxLines: Int,
+): Modifier {
+    val key = GalleryCovers.key(galleryKey)
+    val spot = androidx.compose.runtime.remember(key) { TitleSpot() }
+    spot.text = text
+    spot.style = style
+    spot.maxLines = maxLines
+    androidx.compose.runtime.DisposableEffect(key) {
+        GalleryCovers.putHeaderTitle(key, spot)
+        onDispose { GalleryCovers.putHeaderTitle(key, null) }
+    }
+    return onGloballyPositioned { spot.rect = it.boundsInWindow() }
+        .graphicsLayer { if (GalleryCovers.flying == key) alpha = 0f }
+}
+
+/** The cover in a gallery page's header: where the card's cover flies to; hidden while it flies. */
+@androidx.compose.runtime.Composable
+fun Modifier.galleryHeaderCover(galleryKey: com.atlanyuey.aenht.shared.site.GalleryKey): Modifier {
+    val key = GalleryCovers.key(galleryKey)
+    androidx.compose.runtime.DisposableEffect(key) { onDispose { GalleryCovers.putHeader(key, null) } }
+    return onGloballyPositioned { GalleryCovers.putHeader(key, it.boundsInWindow()) }
+        .graphicsLayer { if (GalleryCovers.flying == key) alpha = 0f }
+}
 
 /** Marks a page thumbnail as where the reader zooms from and back to. */
 fun Modifier.readerThumb(gallery: String, page: Int): Modifier =

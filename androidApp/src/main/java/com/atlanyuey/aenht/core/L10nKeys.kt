@@ -667,10 +667,12 @@ object L10nKeys {
         "Auto Scroll Button Side" to R.string.l_659,
         "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." to R.string.l_660,
         "Long-press the Auto Read button for its speed and options; a tap starts or stops it." to R.string.l_661,
-        "Settings Backup" to R.string.l_662,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_663,
-        "Android's own backup also keeps these settings." to R.string.l_664,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_665,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_666,
+        "Reload Page" to R.string.l_662,
+        "Page %lld" to R.string.l_663,
+        "Settings Backup" to R.string.l_664,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_665,
+        "Android's own backup also keeps these settings." to R.string.l_666,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_667,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_668,
     )
 }

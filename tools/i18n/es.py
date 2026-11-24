@@ -661,4 +661,6 @@ T = [
     "Lado del botón de desplazamiento automático",
     "Los botones flotan sobre el deslizador: uno solo, en el lado de tu mano (donde tocaste para mostrar los controles); los dos, la lectura automática en el lado elegido y los ajustes del lector en el otro. Los ajustes del lector también están en el menú de arriba a la derecha.",
     "Mantén pulsado el botón de lectura automática para ajustar la velocidad y las opciones; tócalo para iniciarla o detenerla.",
+    "Volver a cargar la página",
+    "Página %lld",
 ]

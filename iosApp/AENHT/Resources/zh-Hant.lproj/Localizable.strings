@@ -661,3 +661,5 @@
 "Auto Scroll Button Side" = "自動捲動按鈕位置";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "按鈕懸浮在進度條上方：只開一個時，放在手的那一側（點擊叫出控制列的位置）；兩個都開時，自動閱讀按鈕放在選定的一側，閱讀設定按鈕放在另一側。閱讀設定也可以從右上角的選單打開。";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "長按自動閱讀按鈕可以調整速度和相關選項；點一下開始或停止。";
+"Reload Page" = "重新載入此頁";
+"Page %lld" = "第 %lld 頁";

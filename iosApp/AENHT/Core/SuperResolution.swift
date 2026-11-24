@@ -230,6 +230,11 @@ actor SuperResolver {
         memory.totalCostLimit = Int(min(ProcessInfo.processInfo.physicalMemory / 5, 384 * 1024 * 1024))
     }
 
+    /// Forgets the enlarged pages kept in memory (Reload Page: made again).
+    nonisolated func forgetEnlarged() {
+        memory.removeAllObjects()
+    }
+
     /// Keeps an enlarged page in memory, counted by its decoded size.
     private func remember(_ image: UIImage, _ name: String) {
         let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0

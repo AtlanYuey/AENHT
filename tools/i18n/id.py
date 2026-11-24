@@ -661,4 +661,6 @@ T = [
     "Sisi Tombol Gulir Otomatis",
     "Tombol melayang di atas penggeser: satu saja di sisi tangan (tempat Anda mengetuk untuk menampilkan kontrol); keduanya, Baca Otomatis di sisi yang dipilih dan Pengaturan Pembaca di sisi lain. Pengaturan Pembaca juga ada di menu kanan atas.",
     "Tekan lama tombol Baca Otomatis untuk kecepatan dan opsinya; ketuk untuk memulai atau menghentikan.",
+    "Muat Ulang Halaman",
+    "Halaman %lld",
 ]

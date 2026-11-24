@@ -1,5 +1,8 @@
 package com.atlanyuey.aenht.ui.components
 
+import com.atlanyuey.aenht.core.privacyText
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.activity.compose.PredictiveBackHandler
@@ -66,6 +69,13 @@ abstract class Screen {
     open fun zoomTarget(): androidx.compose.ui.geometry.Rect? = null
 
     /**
+     * A cover shared with the card this screen was opened from (a gallery's
+     * page): the cover itself flies between them while this screen fades in
+     * or out, instead of the screen sliding.
+     */
+    open fun sharedCover(): SharedCover? = null
+
+    /**
      * Back doesn't leave this screen now (the reader with a page enlarged):
      * it does [onBackHeld] instead. Read in composition (snapshot state).
      */
@@ -83,6 +93,20 @@ abstract class Screen {
         scope.cancel()
     }
 }
+
+/**
+ * A cover that flies from a card ([from]) to the same cover on the screen
+ * opened from it ([to], once laid out), as one picture ([item]'s cover).
+ */
+class SharedCover(
+    val key: String,
+    val item: com.atlanyuey.aenht.shared.site.GallerySummary,
+    val from: androidx.compose.ui.geometry.Rect,
+    val to: androidx.compose.ui.geometry.Rect?,
+    /** The card's title and the page's: one flies into the other (crossfading), with the cover. */
+    val titleFrom: TitleSpot? = null,
+    val titleTo: TitleSpot? = null,
+)
 
 /**
  * A navigation stack with iOS push / pop transitions.
@@ -275,10 +299,15 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     val p = navigator.progress
+                                    // A shared cover (a gallery's page): the cover flies (drawn below);
+                                    // the page fades in around it, the screen under it stays.
+                                    val shared = if (p < 1f) topScreen.sharedCover() else null
                                     // A zooming screen (the reader) grows out of and shrinks back
                                     // into its thumbnail; the one under it stays in place.
-                                    val target = if (p < 1f) topScreen.zoomTarget() else null
-                                    if (target != null) {
+                                    val target = if (p < 1f && shared == null) topScreen.zoomTarget() else null
+                                    if (shared != null) {
+                                        if (isTop) alpha = ((p - 0.1f) / 0.75f).coerceIn(0f, 1f)
+                                    } else if (target != null) {
                                         if (isTop) {
                                             val rect = target.translate(-hostOrigin)
                                             val scale = maxOf(rect.width / width, rect.height / height)
@@ -294,7 +323,7 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
                                         translationX = if (isTop) width * (1f - p) else -width * 0.3f * p
                                     }
                                 }
-                                .then(if (isTop && topScreen.zoomTarget() == null) Modifier.leadingShadow { navigator.progress } else Modifier),
+                                .then(if (isTop && topScreen.zoomTarget() == null && topScreen.sharedCover() == null) Modifier.leadingShadow { navigator.progress } else Modifier),
                         ) {
                             holder.SaveableStateProvider(screen.id) { screen.Content() }
                             if (isUnder) {
@@ -306,6 +335,42 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
                                 )
                             }
                         }
+                    }
+                }
+            }
+            // The shared cover, flying between the card and the page (over both).
+            val flying = if (inTransition) topScreen.sharedCover() else null
+            androidx.compose.runtime.SideEffect { GalleryCovers.flying = flying?.key }
+            if (flying != null) {
+                key(flying.key) {
+                    val radius = with(androidx.compose.ui.platform.LocalDensity.current) { 13.dp.toPx() }
+                    Box(
+                        Modifier
+                            .layout { measurable, constraints ->
+                                val p = navigator.progress.coerceIn(0f, 1f)
+                                val now = topScreen.sharedCover()
+                                val from = (now?.from ?: flying.from).translate(-hostOrigin)
+                                val to = (now?.to ?: now?.from ?: flying.from).translate(-hostOrigin)
+                                val r = androidx.compose.ui.geometry.lerp(from, to, p)
+                                val w = r.width.roundToInt().coerceAtLeast(1)
+                                val h = r.height.roundToInt().coerceAtLeast(1)
+                                val placeable = measurable.measure(androidx.compose.ui.unit.Constraints.fixed(w, h))
+                                layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(r.left.roundToInt(), r.top.roundToInt()) }
+                            }
+                            .graphicsLayer {
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(radius)
+                                clip = true
+                            },
+                    ) {
+                        CoverView(flying.item, Modifier.fillMaxSize(), cornerRadius = 13.dp)
+                    }
+                    // The title flies too: the card's fades out as it moves and grows into the
+                    // page's place; the page's fades in from the card's place, at the card's size.
+                    val fromTitle = flying.titleFrom
+                    val toTitle = flying.titleTo
+                    if (fromTitle != null && toTitle != null) {
+                        FlyingTitle(fromTitle, fromTitle, toTitle, outgoing = true, progress = { navigator.progress }, hostOrigin = { hostOrigin })
+                        FlyingTitle(toTitle, fromTitle, toTitle, outgoing = false, progress = { navigator.progress }, hostOrigin = { hostOrigin })
                     }
                 }
             }
@@ -327,6 +392,45 @@ fun NavHost(navigator: Navigator, modifier: Modifier = Modifier) {
         }
     }
     androidx.activity.compose.BackHandler(enabled = held && !overlayOpen) { navigator.top.onBackHeld() }
+}
+
+/**
+ * [spot]'s text, as it's drawn there (its width, style and lines), moving
+ * from [from]'s place to [to]'s and scaled from one's width to the other's:
+ * the card's title fading out ([outgoing]), or the page's fading in.
+ */
+@Composable
+private fun FlyingTitle(spot: TitleSpot, from: TitleSpot, to: TitleSpot, outgoing: Boolean, progress: () -> Float, hostOrigin: () -> Offset) {
+    val ownWidth = (spot.rect?.width ?: 0f).roundToInt().coerceAtLeast(1)
+    Box(
+        Modifier.layout { measurable, constraints ->
+            val p = progress().coerceIn(0f, 1f)
+            val a = from.rect ?: return@layout layout(0, 0) {}
+            val b = to.rect ?: return@layout layout(0, 0) {}
+            val origin = hostOrigin()
+            val x = a.left + (b.left - a.left) * p - origin.x
+            val y = a.top + (b.top - a.top) * p - origin.y
+            val placeable = measurable.measure(androidx.compose.ui.unit.Constraints(minWidth = ownWidth, maxWidth = ownWidth))
+            layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(x.roundToInt(), y.roundToInt()) }
+        },
+    ) {
+        Txt(
+            spot.text,
+            Modifier.graphicsLayer {
+                val p = progress().coerceIn(0f, 1f)
+                val a = from.rect?.width ?: 1f
+                val b = to.rect?.width ?: 1f
+                // The card's text grows to the page's width; the page's starts at the card's.
+                val s = if (outgoing) 1f + (b / a - 1f) * p else a / b + (1f - a / b) * p
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                scaleX = s
+                scaleY = s
+                alpha = if (outgoing) (1f - p * 1.6f).coerceIn(0f, 1f) else ((p - 0.25f) / 0.75f).coerceIn(0f, 1f)
+            }.privacyText(),
+            style = spot.style,
+            maxLines = spot.maxLines,
+        )
+    }
 }
 
 /** The soft shadow on the leading edge of a screen sliding over another. */

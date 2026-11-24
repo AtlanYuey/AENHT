@@ -304,7 +304,7 @@ fun galleryMenu(context: Context, item: GallerySummary, share: String, copy: Str
 /** Tapping opens the gallery; a long press shows the gallery menu. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Modifier.galleryClick(item: GallerySummary): Modifier {
+fun Modifier.galleryClick(item: GallerySummary, spot: CoverSpot? = null): Modifier {
     val navigator = LocalNavigator.current
     val overlays = LocalOverlays.current
     val context = LocalContext.current
@@ -322,7 +322,11 @@ fun Modifier.galleryClick(item: GallerySummary): Modifier {
     return this
         .anchor(anchor)
         .combinedClickable(
-            onClick = { navigator.push(galleryScreen(item)) },
+            onClick = {
+                // Its cover flies to the page from this card.
+                spot?.let { GalleryCovers.opened(item.key, it) }
+                navigator.push(galleryScreen(item))
+            },
             onLongClick = {
                 val first = buildList {
                     if (select != null) add(MenuItem(selectLabel, Icons.CheckCircle) { select(item) })
@@ -333,24 +337,35 @@ fun Modifier.galleryClick(item: GallerySummary): Modifier {
         )
 }
 
+/** Where this card's cover is (its page opens out of it); let go when the card goes. */
+@Composable
+private fun rememberCoverSpot(item: GallerySummary): CoverSpot {
+    val spot = remember(item.key) { CoverSpot() }
+    androidx.compose.runtime.DisposableEffect(spot) { onDispose { spot.attached = false } }
+    return spot
+}
+
 /** Card used by the grid / waterfall styles. */
 @Composable
 fun GalleryCard(item: GallerySummary, style: GalleryListStyle, modifier: Modifier = Modifier) {
-    Column(modifier.galleryClick(item), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val spot = rememberCoverSpot(item)
+    Column(modifier.galleryClick(item, spot), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         when (style) {
             GalleryListStyle.Grid -> {
-                CoverView(item, Modifier.galleryCover(item), aspectRatio = 3f / 4f)
+                CoverView(item, Modifier.galleryCover(item, spot), aspectRatio = 3f / 4f)
+                val titleStyle = Type.footnote.copy(fontWeight = FontWeight.Medium)
                 Txt(
                     GalleryItem.pretty(item.title),
-                    Modifier.fillMaxWidth().heightIn(min = 34.dp).privacyText(),
-                    style = Type.footnote.copy(fontWeight = FontWeight.Medium),
+                    Modifier.fillMaxWidth().heightIn(min = 34.dp).galleryTitle(item, spot, GalleryItem.pretty(item.title), titleStyle, 2).privacyText(),
+                    style = titleStyle,
                     maxLines = 2,
                 )
             }
-            GalleryListStyle.Compact -> CoverView(item, Modifier.galleryCover(item)) { m -> CompactOverlay(item, m) }
+            GalleryListStyle.Compact -> CoverView(item, Modifier.galleryCover(item, spot)) { m -> CompactOverlay(item, m) }
             else -> {
-                CoverView(item, Modifier.galleryCover(item))
-                Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.footnote.copy(fontWeight = FontWeight.Medium), maxLines = 2)
+                CoverView(item, Modifier.galleryCover(item, spot))
+                val titleStyle = Type.footnote.copy(fontWeight = FontWeight.Medium)
+                Txt(GalleryItem.pretty(item.title), Modifier.galleryTitle(item, spot, GalleryItem.pretty(item.title), titleStyle, 2).privacyText(), style = titleStyle, maxLines = 2)
                 CardFooter(item, overlay = false)
             }
         }
@@ -469,13 +484,15 @@ fun FittingRow(spacing: Dp, modifier: Modifier = Modifier, content: @Composable 
 /** Row used by the list style and history. */
 @Composable
 fun GalleryRow(item: GallerySummary, modifier: Modifier = Modifier, subtitle: String? = null) {
+    val spot = rememberCoverSpot(item)
     Row(
-        modifier.fillMaxWidth().galleryClick(item).padding(vertical = 6.dp),
+        modifier.fillMaxWidth().galleryClick(item, spot).padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        CoverView(item, Modifier.width(84.dp).galleryCover(item), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
+        CoverView(item, Modifier.width(84.dp).galleryCover(item, spot), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Txt(GalleryItem.pretty(item.title), Modifier.privacyText(), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 3)
+            val titleStyle = Type.subheadline.copy(fontWeight = FontWeight.SemiBold)
+            Txt(GalleryItem.pretty(item.title), Modifier.galleryTitle(item, spot, GalleryItem.pretty(item.title), titleStyle, 3).privacyText(), style = titleStyle, maxLines = 3)
             when {
                 subtitle != null -> Txt(subtitle, style = Type.footnote, color = AppTheme.colors.secondaryLabel)
                 item.pages > 0 -> Txt(tr("%lld pages", item.pages), style = Type.footnote, color = AppTheme.colors.secondaryLabel)

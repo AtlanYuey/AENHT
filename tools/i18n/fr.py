@@ -661,4 +661,6 @@ T = [
     "Côté du bouton Défilement automatique",
     "Les boutons flottent au-dessus du curseur : un seul, du côté de votre main (là où vous avez touché pour afficher les commandes) ; les deux, la lecture automatique du côté choisi et les réglages du lecteur de l’autre. Les réglages du lecteur sont aussi dans le menu en haut à droite.",
     "Appuyez longuement sur le bouton Lecture automatique pour sa vitesse et ses options ; touchez-le pour la lancer ou l’arrêter.",
+    "Recharger la page",
+    "Page %lld",
 ]

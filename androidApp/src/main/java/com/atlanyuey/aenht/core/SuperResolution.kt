@@ -57,6 +57,8 @@ internal object SrNative {
     @JvmStatic external fun loadFiles(param: String, model: String): Long
     @JvmStatic external fun release(handle: Long)
     @JvmStatic external fun usesGpu(): Boolean
+    /** The CPU only, for the networks made from now on (the GPU gave broken pictures). */
+    @JvmStatic external fun setCpuOnly(value: Boolean)
     @JvmStatic external fun tile(
         handle: Long, input: Bitmap,
         rx: Int, ry: Int, rw: Int, rh: Int,
@@ -93,8 +95,15 @@ object SuperResolution {
         engines.remove(model)?.let { handle -> CoroutineScope(worker).launch { SrNative.release(handle) } }
     }
 
+    /** Whether this device's choice of the CPU (the GPU gave broken pictures before) was applied. */
+    private var cpuChecked = false
+
     private fun engine(context: Context, model: SrModel): Long {
         engines[model]?.let { return it }
+        if (!cpuChecked) {
+            cpuChecked = true
+            if (context.getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("srCpuOnly", false)) SrNative.setCpuOnly(true)
+        }
         val handle = when (model) {
             SrModel.Standard -> SrNative.loadAssets(context.assets, "sr/AnimeSR.param", "sr/AnimeSR.bin")
             SrModel.High -> {
@@ -126,8 +135,24 @@ object SuperResolution {
                 }
             }
             runCatching {
-                val result = run(context, model, bitmap, plan.scale, plan.width, plan.height) ?: return@runCatching null
+                var result = run(context, model, bitmap, plan.scale, plan.width, plan.height) ?: return@runCatching null
                 coroutineContext.ensureActive()
+                // A broken picture (some GPUs' drivers give noise): the CPU from now on, and this page again.
+                if (!looksLike(result, bitmap)) {
+                    result.recycle()
+                    val onGpu = SrNative.usesGpu()
+                    com.atlanyuey.aenht.shared.app.Diagnostics.log("super-resolution",
+                        "A broken picture from the ${if (onGpu) "GPU" else "CPU"} (${bitmap.width}×${bitmap.height} → ${plan.width}×${plan.height}); the page is shown without it.")
+                    if (!onGpu) return@runCatching null
+                    useCpuOnly(context)
+                    result = run(context, model, bitmap, plan.scale, plan.width, plan.height) ?: return@runCatching null
+                    coroutineContext.ensureActive()
+                    if (!looksLike(result, bitmap)) {
+                        result.recycle()
+                        com.atlanyuey.aenht.shared.app.Diagnostics.log("super-resolution", "Broken on the CPU too: the page is shown without it.")
+                        return@runCatching null
+                    }
+                }
                 memory.put(plan.name, result)
                 save(context, result, file)
                 result
@@ -140,6 +165,39 @@ object SuperResolution {
         plan(width, height, key, targetWidth, targetHeight, mode, model)?.let { memory.get(it.name) }
 
     private data class Plan(val scale: Float, val width: Int, val height: Int, val name: String)
+
+    /**
+     * Whether [result] is [input] enlarged: both made small (32 pixels wide)
+     * differ little. A broken picture (noise, wrong colors) differs a lot.
+     */
+    internal fun looksLike(result: Bitmap, input: Bitmap): Boolean {
+        val w = 32
+        val h = maxOf(1, (32f * input.height / input.width).roundToInt())
+        val a = Bitmap.createScaledBitmap(result, w, h, true)
+        val b = Bitmap.createScaledBitmap(if (input.config == Bitmap.Config.HARDWARE) input.copy(Bitmap.Config.ARGB_8888, false) else input, w, h, true)
+        val pa = IntArray(w * h).also { a.getPixels(it, 0, w, 0, 0, w, h) }
+        val pb = IntArray(w * h).also { b.getPixels(it, 0, w, 0, 0, w, h) }
+        if (a !== result) a.recycle()
+        if (b !== input) b.recycle()
+        var total = 0L
+        for (i in pa.indices) {
+            val x = pa[i]
+            val y = pb[i]
+            total += kotlin.math.abs(((x shr 16) and 0xFF) - ((y shr 16) and 0xFF)) +
+                kotlin.math.abs(((x shr 8) and 0xFF) - ((y shr 8) and 0xFF)) +
+                kotlin.math.abs((x and 0xFF) - (y and 0xFF))
+        }
+        val mean = total.toDouble() / (pa.size * 3)
+        return mean < 24.0
+    }
+
+    /** The GPU gave broken pictures: the CPU from now on (remembered on this device). */
+    private fun useCpuOnly(context: Context) {
+        SrNative.setCpuOnly(true)
+        context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit().putBoolean("srCpuOnly", true).apply()
+        engines.values.forEach { SrNative.release(it) }
+        engines.clear()
+    }
 
     private fun plan(width: Int, height: Int, key: String, targetWidth: Int, targetHeight: Int,
                      mode: SrMode, model: SrModel): Plan? {
@@ -195,7 +253,8 @@ object SuperResolution {
     }
 
     private fun cacheName(key: String, model: SrModel, width: Int): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest("$key|${model.raw}|$width".toByteArray())
+        // "v2": pictures saved before they were checked (some broken, from a GPU) aren't used.
+        val digest = MessageDigest.getInstance("SHA-256").digest("v2|$key|${model.raw}|$width".toByteArray())
         return digest.take(16).joinToString("") { "%02x".format(it) } + ".jpg"
     }
 

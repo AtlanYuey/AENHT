@@ -661,3 +661,5 @@
 "Auto Scroll Button Side" = "Сторона кнопки автопрокрутки";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Кнопки парят над ползунком: одна — со стороны руки (там, где вы нажали, чтобы показать панель); обе — автолистание на выбранной стороне, настройки читалки на другой. Настройки читалки есть и в меню справа вверху.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Удерживайте кнопку автолистания, чтобы настроить скорость и параметры; нажатие запускает или останавливает его.";
+"Reload Page" = "Перезагрузить страницу";
+"Page %lld" = "Страница %lld";

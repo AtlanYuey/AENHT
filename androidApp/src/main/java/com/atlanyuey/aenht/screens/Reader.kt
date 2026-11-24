@@ -391,6 +391,27 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
+    /** A long press on a page: its menu (set while the reader shows). */
+    private var pageMenu: ((Offset, Int) -> Unit)? = null
+
+    /**
+     * Reload Page: the page loaded again from the site, whatever went wrong
+     * (a broken picture, a wrong one): its copies in the memory and on disk,
+     * and its enhanced picture, are dropped first.
+     */
+    private fun reloadPage(context: android.content.Context, index: Int) {
+        val data = source.pages.getOrNull(index)?.url ?: return
+        val loader = coil3.SingletonImageLoader.get(context)
+        when (data) {
+            is com.atlanyuey.aenht.core.EhPageRef -> com.atlanyuey.aenht.core.EhPages.forget(data)
+            is String -> loader.diskCache?.remove(data)
+        }
+        val name = data.toString()
+        loader.memoryCache?.let { cache -> cache.keys.filter { it.key == name || it.key.startsWith(name) }.forEach { cache.remove(it) } }
+        com.atlanyuey.aenht.shared.app.Diagnostics.log("reader", "Reload Page ${index + 1}")
+        retryContinuousPage(index)
+    }
+
     private fun retryContinuousPage(index: Int) {
         pageLoads[index] = PageLoad.Loading
         pageRetries[index] = (pageRetries[index] ?: 0) + 1
@@ -744,6 +765,36 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         // …and so does leaving them alone for a while (Reading settings, 3 s
         // at least; not while a finger is down or a menu or sheet is open).
         val overlays = LocalOverlays.current
+        // A long press on a page: Reload Page, Save Page, Share Page (of that page).
+        val reloadTitle = tr("Reload Page")
+        val saveTitle = tr("Save Page")
+        val shareTitle = tr("Share Page")
+        val savedText = tr("Saved to Photos.")
+        val saveFailed = tr("Couldn't Save")
+        val saveNeeds10 = tr("Saving pages needs Android 10 or later. Share the page instead.")
+        val pageContext = LocalContext.current
+        pageMenu = { at, index ->
+            overlays.menu(
+                androidx.compose.ui.geometry.Rect(at, androidx.compose.ui.geometry.Size(1f, 1f)),
+                listOf(
+                    listOf(MenuItem(reloadTitle, Icons.Refresh) { reloadPage(pageContext, index) }),
+                    listOf(
+                        MenuItem(saveTitle, Icons.Download) {
+                            if (android.os.Build.VERSION.SDK_INT < 29) {
+                                overlays.alert(saveFailed, saveNeeds10)
+                            } else {
+                                uiScope.launch {
+                                    val ok = runCatching { savePage(pageContext, index) }.getOrDefault(false)
+                                    overlays.alert(if (ok) saveTitle else saveFailed, if (ok) savedText else null)
+                                }
+                            }
+                        },
+                        MenuItem(shareTitle, Icons.Photo) { uiScope.launch { runCatching { sharePage(pageContext, index) } } },
+                    ),
+                ),
+                L10n.string("Page %lld", index + 1),
+            )
+        }
         // (Not Auto Read's own options, from a long press on its button: it keeps going.)
         LaunchedEffect(overlays.items.size) {
             if (overlays.items.isNotEmpty() && !(autoReadOptionsOpen && overlays.items.size == 1)) autoRead = false
@@ -889,10 +940,24 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var lastTapPosition = Offset.Zero
 
     /** Taps seen before the image handles them (no wait for a double tap at the edges). */
-    private fun Modifier.readerTaps(zoomed: () -> Boolean, paged: Boolean): Modifier = pointerInput(paged) {
+    private fun Modifier.readerTaps(zoomed: () -> Boolean, paged: Boolean, pageAt: (Offset, Int) -> Int?): Modifier = pointerInput(paged) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            val up = waitForUpOrCancellation(PointerEventPass.Initial) ?: return@awaitEachGesture
+            // Held still: the page's menu (Reload Page…), when the finger is still down.
+            val up = try {
+                withTimeout(viewConfiguration.longPressTimeoutMillis) { waitForUpOrCancellation(PointerEventPass.Initial) }
+            } catch (_: androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException) {
+                val now = currentEvent.changes
+                val finger = now.firstOrNull { it.id == down.id }
+                if (finger != null && finger.pressed && now.count { it.pressed } == 1 &&
+                    (finger.position - down.position).getDistance() < viewConfiguration.touchSlop
+                ) {
+                    pageAt(down.position, size.width)?.let { index -> pageMenu?.invoke(down.position, index) }
+                    // The rest of this touch is the menu's.
+                    while (currentEvent.changes.any { it.pressed }) awaitPointerEvent(PointerEventPass.Initial)
+                }
+                return@awaitEachGesture
+            } ?: return@awaitEachGesture
             val delta = up.position - down.position
             if (delta.getDistance() > viewConfiguration.touchSlop) {
                 if (!zoomed()) {
@@ -1142,7 +1207,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         Box(
             Modifier
                 .fillMaxSize()
-                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true)
+                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true, pageAt = { at, width ->
+                    // The half held (left or right).
+                    ordered.getOrNull(if (at.x < width / 2f) 0 else 1) ?: ordered.firstOrNull()
+                })
                 .zoomable(zoomState, onDoubleClick = doubleTap),
         ) {
             // A fixed double-page seam. Page Gap adjusts only continuous reading with gaps.
@@ -1153,14 +1221,16 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
                         val context = LocalContext.current
                         // Each half loads (and is retried) on its own: the other one stays.
-                        var attempt by remember(p) { mutableIntStateOf(0) }
+                        var tries by remember(p) { mutableIntStateOf(0) }
+                        // Reload Page (its menu) counts as another attempt.
+                        val attempt = tries + (pageRetries[p] ?: 0) * 1000
                         var failed by remember(p, attempt) { mutableStateOf(false) }
                         val sharp = enhancedPage(context, p, options, 2, visible, attempt)
                         // A new image node per attempt: Coil takes an equal request for the same
                         // one (a failed one stays failed), and only this half loads again.
                         androidx.compose.runtime.key(attempt) {
                             coil3.compose.AsyncImage(
-                                model = remember(p, options) { options.request(context, source.pages[p].url, 2).build() },
+                                model = remember(p, options, pageRetries[p]) { options.request(context, source.pages[p].url, 2).build() },
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
                                 alignment = align,
@@ -1171,7 +1241,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         if (sharp != null && !failed) androidx.compose.foundation.Image(
                             sharp.asImageBitmap(), null, Modifier.fillMaxSize(), alignment = align, contentScale = ContentScale.Fit,
                         )
-                        if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { attempt++ } }
+                        if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { tries++ } }
                     }
                 }
             }
@@ -1189,14 +1259,16 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         Box(
             Modifier
                 .fillMaxSize()
-                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true),
+                .readerTaps(zoomed = { zoomState.userZoom > 1.01f }, paged = true, pageAt = { _, _ -> index }),
             contentAlignment = Alignment.Center,
         ) {
             val context = LocalContext.current
-            var attempt by remember(index) { mutableIntStateOf(0) }
+            var tries by remember(index) { mutableIntStateOf(0) }
+            // Reload Page (its menu) counts as another attempt.
+            val attempt = tries + (pageRetries[index] ?: 0) * 1000
             // One state for every attempt: the request (made once) reports into it.
             var failed by remember(index) { mutableStateOf(false) }
-            val model = remember(index, options) {
+            val model = remember(index, options, pageRetries[index]) {
                 options.request(context, source.pages[index].url, 1).listener(onError = { _, _ -> failed = true }).build()
             }
             val sharp = enhancedPage(context, index, options, 1, visible, attempt) {
@@ -1217,7 +1289,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 )
             }
             when {
-                failed -> PageRetry { failed = false; attempt++ }
+                failed -> PageRetry { failed = false; tries++ }
                 !imageState.isImageDisplayed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
             }
         }
@@ -1344,7 +1416,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 Modifier
                     .fillMaxSize()
                     .stripGestures(base, minScale, viewportWidth)
-                    .readerTaps(zoomed = { enlarged }, paged = false),
+                    .readerTaps(zoomed = { enlarged }, paged = false, pageAt = { at, _ ->
+                        // The page under the finger in the strip.
+                        val y = at.y.toInt()
+                        list.layoutInfo.visibleItemsInfo.firstOrNull { y >= it.offset && y < it.offset + it.size }?.index
+                    }),
                 state = list,
                 verticalArrangement = Arrangement.spacedBy(gap),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1445,7 +1521,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val data = source.pages[index].url ?: return null
         if (options.mode == SrMode.Off) return null
         val key = PreparedPage(index, options, pagesPerTurn)
-        val cacheKey = options.enhancementKey(data)
+        // Reloaded (its menu): a new enhancement, not the one kept.
+        val reloads = pageRetries[index] ?: 0
+        val cacheKey = options.enhancementKey(data) + if (reloads > 0) "#reload$reloads" else ""
         val target = options.target(pagesPerTurn)
         val cached = preparedSizes[key]?.let { size ->
             SuperResolution.cached(size.width, size.height, cacheKey, target.width, target.height, options.mode, options.model)
@@ -1568,19 +1646,19 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     /** The page shown, as decoded (from the image cache when it's there). */
-    private suspend fun pageBitmap(context: android.content.Context): android.graphics.Bitmap? {
-        val request = coil3.request.ImageRequest.Builder(context).data(source.pages[page].url).allowHardware(false).build()
+    private suspend fun pageBitmap(context: android.content.Context, index: Int = page): android.graphics.Bitmap? {
+        val request = coil3.request.ImageRequest.Builder(context).data(source.pages[index].url).allowHardware(false).build()
         val result = coil3.SingletonImageLoader.get(context).execute(request) as? coil3.request.SuccessResult ?: return null
         return result.image.toBitmap()
     }
 
     /** Saves the page to Pictures/AENHT (Android 10 and later need no permission). */
     @androidx.annotation.RequiresApi(29)
-    private suspend fun savePage(context: android.content.Context): Boolean {
-        val bitmap = pageBitmap(context) ?: return false
+    private suspend fun savePage(context: android.content.Context, index: Int = page): Boolean {
+        val bitmap = pageBitmap(context, index) ?: return false
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             val values = android.content.ContentValues().apply {
-                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "${source.id}-${page + 1}.jpg")
+                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "${source.id}-${index + 1}.jpg")
                 put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AENHT")
             }
@@ -1590,11 +1668,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
-    private suspend fun sharePage(context: android.content.Context) {
-        val bitmap = pageBitmap(context) ?: return
+    private suspend fun sharePage(context: android.content.Context, index: Int = page) {
+        val bitmap = pageBitmap(context, index) ?: return
         val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             val dir = java.io.File(context.cacheDir, "shared").apply { mkdirs() }
-            java.io.File(dir, "page-${page + 1}.jpg").also { f -> f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) } }
+            java.io.File(dir, "page-${index + 1}.jpg").also { f -> f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it) } }
         }
         val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".files", file)
         val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {

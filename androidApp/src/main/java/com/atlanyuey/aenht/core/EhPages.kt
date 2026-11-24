@@ -87,6 +87,11 @@ object EhPages {
 
     private fun file(ref: EhPageRef) = File(cacheDir, "${ref.gid}/${ref.page}")
 
+    /** Forgets the page's image on disk (Reload Page: it's downloaded again). */
+    fun forget(ref: EhPageRef) {
+        runCatching { file(ref).delete() }
+    }
+
     /** The page's image on disk: from the cache, or downloaded (another node if the first fails). */
     suspend fun image(ref: EhPageRef): File {
         val file = file(ref)
