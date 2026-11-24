@@ -18,7 +18,7 @@
 </p>
 
 > [!WARNING]
-> Current version: 0.2.4. The project is actively developed. For adults aged 18 and over only.
+> Current version: 0.2.5. The project is actively developed. For adults aged 18 and over only.
 > This project is not affiliated with nhentai or E-Hentai.
 
 <p align="center">

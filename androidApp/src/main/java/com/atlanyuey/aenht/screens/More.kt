@@ -425,6 +425,9 @@ class AccountScreen : Screen() {
  * proof of work); the API tokens are read from the cookies it sets.
  */
 class LoginScreen : Screen() {
+    /** A web page: the whole height (the tab bar covered its bottom, Cloudflare's checkbox there). */
+    override val hidesTabBar: Boolean get() = true
+
     private var loading by mutableStateOf(true)
     private var done = false
 
@@ -442,7 +445,7 @@ class LoginScreen : Screen() {
             contentUnderGlass = false,
         ) { padding ->
             AndroidView(
-                modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
+                modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
                     WebView(context).apply {
                         settings.javaScriptEnabled = true

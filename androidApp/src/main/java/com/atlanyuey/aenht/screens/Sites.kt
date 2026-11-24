@@ -198,6 +198,9 @@ class EhAccountScreen : Screen() {
  * checks); the login cookies are read from it and checked with the site.
  */
 class EhLoginScreen : Screen() {
+    /** A web page: the whole height (the tab bar covered its bottom, Cloudflare's checkbox there). */
+    override val hidesTabBar: Boolean get() = true
+
     private var loading by mutableStateOf(true)
     private var done = false
 
@@ -218,7 +221,7 @@ class EhLoginScreen : Screen() {
             contentUnderGlass = false,
         ) { padding ->
             AndroidView(
-                modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
+                modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
                     WebView(context).apply {
                         settings.javaScriptEnabled = true
@@ -870,6 +873,9 @@ private fun tr0(s: String) = s
  * the account's cookies; ExHentai's when it is in use.
  */
 class EhWebScreen(private val url: String, private val titleKey: String) : Screen() {
+    /** A web page: the whole height (the tab bar covered its bottom, Cloudflare's checkbox there). */
+    override val hidesTabBar: Boolean get() = true
+
     private var loading by mutableStateOf(true)
 
     @SuppressLint("SetJavaScriptEnabled")
