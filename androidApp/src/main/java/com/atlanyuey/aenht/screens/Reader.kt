@@ -1225,7 +1225,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         // Reload Page (its menu) counts as another attempt.
                         val attempt = tries + (pageRetries[p] ?: 0) * 1000
                         var failed by remember(p, attempt) { mutableStateOf(false) }
+                        var shown by remember(p, attempt) { mutableStateOf(false) }
                         val sharp = enhancedPage(context, p, options, 2, visible, attempt)
+                        // Until the page shows: its thumbnail (from memory) at its size.
+                        if (!shown && !failed) PageThumb(p, Modifier.fillMaxSize(), ContentScale.Fit, align, number = false)
                         // A new image node per attempt: Coil takes an equal request for the same
                         // one (a failed one stays failed), and only this half loads again.
                         androidx.compose.runtime.key(attempt) {
@@ -1235,7 +1238,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 contentScale = ContentScale.Fit,
                                 alignment = align,
                                 modifier = Modifier.fillMaxSize(),
-                                onState = { failed = it is coil3.compose.AsyncImagePainter.State.Error },
+                                onState = {
+                                    failed = it is coil3.compose.AsyncImagePainter.State.Error
+                                    shown = it is coil3.compose.AsyncImagePainter.State.Success
+                                },
                             )
                         }
                         if (sharp != null && !failed) androidx.compose.foundation.Image(
@@ -1277,6 +1283,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val enhanced = remember(sharp) {
                 sharp?.let { ImageRequest.Builder(context).data(it).crossfade(250).memoryCachePolicy(CachePolicy.DISABLED).build() }
             }
+            // Until the page shows: its thumbnail, at the page's size (the picture the reader
+            // grew out of, from memory), instead of an empty page and a spinner.
+            val thumbed = hasThumb(index)
+            if (thumbed && !imageState.isImageDisplayed && !failed) {
+                PageThumb(index, Modifier.fillMaxSize(), ContentScale.Fit, number = false)
+            }
             // A new image node per attempt (see SpreadPage): the zoom stays.
             androidx.compose.runtime.key(attempt) {
                 ZoomableAsyncImage(
@@ -1290,7 +1302,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
             when {
                 failed -> PageRetry { failed = false; tries++ }
-                !imageState.isImageDisplayed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
+                !imageState.isImageDisplayed && !thumbed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
             }
         }
     }
@@ -1445,6 +1457,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             .graphicsLayer { translationX = stripShift.coerceIn(-stripSlack, stripSlack) },
                         contentAlignment = Alignment.Center,
                     ) {
+                        // Until the page shows: its thumbnail (from memory) at the page's size.
+                        if (state !is coil3.compose.AsyncImagePainter.State.Success && state !is coil3.compose.AsyncImagePainter.State.Error) {
+                            PageThumb(readerPage.index, Modifier.fillMaxSize(), ContentScale.Fit, number = false)
+                        }
                         androidx.compose.runtime.key(attempt) {
                             coil3.compose.AsyncImage(
                                 model = request,
@@ -1904,9 +1920,22 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
     }
 
-    /** A page's small picture: its thumbnail, the downloaded file, or its number. */
+    /** Whether [index] has a small picture (its thumbnail, or the downloaded file). */
+    private fun hasThumb(index: Int): Boolean {
+        val readerPage = source.pages.getOrNull(index) ?: return false
+        val url = readerPage.url
+        return url is java.io.File || readerPage.thumb != null ||
+            (url as? com.atlanyuey.aenht.core.EhPageRef)?.let { com.atlanyuey.aenht.core.EhPages.thumbnail(it.gid, it.page) } != null
+    }
+
+    /**
+     * A page's small picture: its thumbnail, the downloaded file, or its
+     * number. The same request as the gallery page's pages (240 dp): it's in
+     * memory already, nothing loads again.
+     */
     @Composable
-    private fun PageThumb(index: Int) {
+    private fun PageThumb(index: Int, modifier: Modifier = Modifier.fillMaxSize(), contentScale: ContentScale = ContentScale.Crop,
+                          alignment: Alignment = Alignment.Center, number: Boolean = true) {
         val readerPage = source.pages[index]
         val url = readerPage.url
         val image: Any? = when {
@@ -1916,9 +1945,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
         val ehThumb = (url as? com.atlanyuey.aenht.core.EhPageRef)?.let { com.atlanyuey.aenht.core.EhPages.thumbnail(it.gid, it.page) }
         when {
-            image != null -> RemoteImage(image, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, targetWidth = 120.dp)
-            ehThumb != null -> EhThumbnailImage(ehThumb, Modifier.fillMaxSize())
-            else -> Txt("${index + 1}", style = Type.caption1, color = Color.White.copy(alpha = 0.5f))
+            image != null -> RemoteImage(image, modifier, contentScale = contentScale, targetWidth = 240.dp)
+            ehThumb != null -> EhThumbnailImage(ehThumb, modifier)
+            number -> Txt("${index + 1}", style = Type.caption1, color = Color.White.copy(alpha = 0.5f))
         }
     }
 

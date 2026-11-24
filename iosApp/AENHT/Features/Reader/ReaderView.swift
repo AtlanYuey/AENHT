@@ -16,6 +16,40 @@ struct ReaderPage: Hashable, Identifiable {
     var id: Int { index }
 }
 
+/// The thumbnails of the reader's pages, from memory: a page shows its
+/// thumbnail (the picture the reader grew out of) until it has loaded,
+/// instead of an empty page. The same requests as the gallery page's pages.
+@MainActor
+enum ReaderPlaceholders {
+    private static var thumbs: [URL: ImageRequest] = [:]
+
+    /// The pages of [source] (their thumbnails, as the gallery page asks for them).
+    static func register(_ source: ReaderSource) {
+        for page in source.pages {
+            guard let url = page.url else { continue }
+            if url.isFileURL {
+                thumbs[url] = ImageRequest(url: url, processors: [.resize(width: 240)])
+            } else if let thumb = page.thumb {
+                thumbs[url] = ImageRequest(url: thumb, processors: [.resize(width: 240)])
+            }
+        }
+    }
+
+    /// The thumbnail of the page at [url], if it's in memory.
+    static func image(for url: URL) -> UIImage? {
+        if let request = thumbs[url], let container = ImagePipeline.shared.cache[request] { return container.image }
+        // E-Hentai ("ehpage://gid/token/page"): its tile of the thumbnails' sprite.
+        guard url.scheme == "ehpage", let gid = Int(url.host() ?? ""),
+              let page = Int(url.lastPathComponent),
+              let thumb = EhThumbs.shared.thumbnail(gid: gid, page: page),
+              let thumbURL = URL(string: thumb.imageUrl) else { return nil }
+        let processors: [any ImageProcessing] = thumb.isSprite && thumb.width > 0
+            ? [SpriteCrop(x: Int(thumb.offsetX), width: Int(thumb.width), height: Int(thumb.height))]
+            : []
+        return ImagePipeline.shared.cache[ImageRequest(url: thumbURL, processors: processors)]?.image
+    }
+}
+
 /// What the reader shows: a gallery's pages (local files when downloaded).
 struct ReaderSource: Hashable {
     let id: Int
@@ -155,6 +189,8 @@ struct ReaderView: View {
         // Keep Page Size: the width set last time.
         let settings = AppSettings.shared
         _stripScale = State(initialValue: settings.keepContinuousPageSize ? CGFloat(settings.continuousPageScale) : 1)
+        // Each page shows its thumbnail (from memory) until it has loaded.
+        ReaderPlaceholders.register(route.source)
     }
 
     private var pageCount: Int { source.pages.count }
@@ -850,10 +886,11 @@ struct ReaderView: View {
     /// A page's small picture: the downloaded file, its thumbnail, or its number.
     @ViewBuilder private func pageThumb(_ index: Int) -> some View {
         let readerPage = source.pages[index]
+        // The gallery page's requests (240 pt): from memory, nothing loads again.
         if let url = readerPage.url, url.isFileURL {
-            RemoteImage(url: url, targetWidth: 120)
+            RemoteImage(url: url, targetWidth: 240)
         } else if let thumb = readerPage.thumb {
-            RemoteImage(url: thumb, targetWidth: 120)
+            RemoteImage(url: thumb, targetWidth: 240)
         } else if source.item.site == .ehentai, let thumb = ehThumbs.thumbnail(gid: source.item.id, page: index + 1) {
             EhThumbnailView(thumb: thumb)
         } else {
@@ -2466,7 +2503,14 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
             refreshPresentation(animated: false)
             return
         }
-        spinner.startAnimating()
+        // Until it's loaded: its thumbnail (from memory, the picture the reader grew
+        // out of), at the page's place; the page fades in over it.
+        let placeholders = urls.compactMap { ReaderPlaceholders.image(for: $0) }
+        if let options = self.options, placeholders.count == urls.count {
+            show(placeholders, options: options, animated: false)
+        } else {
+            spinner.startAnimating()
+        }
         loadTask = Task { [weak self] in
             do {
                 let images: [UIImage]

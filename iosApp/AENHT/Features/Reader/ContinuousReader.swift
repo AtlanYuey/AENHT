@@ -302,7 +302,9 @@ private struct ContinuousReaderPage: View {
             .overlay {
                 RemoteImage(url: item.url, contentMode: .fit, targetWidth: nil, retryOnFailure: true,
                             makeRequest: { ReaderStripImages.request(for: $0) },
-                            enhancement: enhancement, enhanceNow: enhanceNow) { state in
+                            enhancement: enhancement, enhanceNow: enhanceNow,
+                            // Until it's loaded: its thumbnail, from memory.
+                            placeholder: item.url.flatMap { ReaderPlaceholders.image(for: $0) }) { state in
                     if case .ready(let size) = state, size.width > 0, size.height > 0 { loadedRatio = size.width / size.height }
                     onLoad(state)
                 }

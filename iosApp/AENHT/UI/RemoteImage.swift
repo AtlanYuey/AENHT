@@ -22,6 +22,8 @@ struct RemoteImage: View {
     var makeRequest: ((URL) -> ImageRequest)? = nil
     var enhancement: ReaderImageEnhancement? = nil
     var enhanceNow = false
+    /// Shown while it loads (a reader page's thumbnail, already in memory), instead of an empty box.
+    var placeholder: UIImage? = nil
     var onLoadState: ((RemoteImageLoadState) -> Void)? = nil
     @State private var attempt = 0
     /// The picture couldn't be loaded: it is loaded again when the network comes back.
@@ -66,6 +68,8 @@ struct RemoteImage: View {
                             }
                         }
                     }
+            } else if let placeholder {
+                Image(uiImage: placeholder).resizable().aspectRatio(contentMode: contentMode)
             } else {
                 Rectangle().fill(.quaternary.opacity(0.6))
             }
