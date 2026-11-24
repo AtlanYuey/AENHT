@@ -438,6 +438,8 @@ class LoginScreen : Screen() {
         ScreenScaffold(
             title = tr("Log In"),
             trailing = { if (loading) ActivityIndicator() },
+            // A WebView: not drawn into the bar's glass (it flickered there).
+            contentUnderGlass = false,
         ) { padding ->
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),

@@ -214,6 +214,8 @@ class EhLoginScreen : Screen() {
                 if (loading) ActivityIndicator()
                 TextButton(tr("Cookies"), { navigator.push(EhCookieLoginScreen()) })
             },
+            // A WebView: not drawn into the bar's glass (it flickered there).
+            contentUnderGlass = false,
         ) { padding ->
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
@@ -873,7 +875,8 @@ class EhWebScreen(private val url: String, private val titleKey: String) : Scree
     @Composable
     override fun Content() {
         val target = if (exHentaiActive) url.replace("https://e-hentai.org", "https://exhentai.org") else url
-        ScreenScaffold(title = tr(titleKey), trailing = { if (loading) ActivityIndicator(size = 18.dp) }) { padding ->
+        // A WebView: not drawn into the bar's glass (it flickered there).
+        ScreenScaffold(title = tr(titleKey), trailing = { if (loading) ActivityIndicator(size = 18.dp) }, contentUnderGlass = false) { padding ->
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->

@@ -10,7 +10,8 @@ import com.atlanyuey.aenht.shared.eh.EhGalleryDetail
  */
 object GalleryVersions {
     private val brackets = listOf(
-        Regex("""\[[^\]]*]"""), Regex("""\([^)]*\)"""), Regex("""\{[^}]*}"""),
+        // Every bracket escaped: Android's regex engine (ICU) refuses a lone "}" (issue #12).
+        Regex("""\[[^\]]*\]"""), Regex("""\([^)]*\)"""), Regex("""\{[^}]*\}"""),
         Regex("""【[^】]*】"""), Regex("""（[^）]*）"""), Regex("""「[^」]*」"""),
     )
 

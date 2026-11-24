@@ -63,6 +63,11 @@ fun ScreenScaffold(
     overlay: @Composable () -> Unit = {},
     /** Makes the inline title a menu (with a chevron), like iOS's title menu. */
     titleMenu: (() -> List<List<MenuItem>>)? = null,
+    /**
+     * The content is drawn into the glass bar's backdrop (blurred under it).
+     * Off for a WebView: drawn a second time into that layer it flickers.
+     */
+    contentUnderGlass: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val backdrop = rememberLayerBackdrop()
@@ -82,8 +87,9 @@ fun ScreenScaffold(
                 .layerBackdrop(backdrop)
                 .background(bg),
         ) {
-            content(padding)
+            if (contentUnderGlass) content(padding)
         }
+        if (!contentUnderGlass) Box(Modifier.fillMaxSize()) { content(padding) }
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
             SoftEdge(statusTop + barHeight + 18.dp, Modifier.align(Alignment.TopCenter))
             if (bottomInset > 0.dp) {
