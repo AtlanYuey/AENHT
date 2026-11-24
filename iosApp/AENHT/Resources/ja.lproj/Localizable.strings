@@ -660,3 +660,4 @@
 "Auto Read Button Side" = "自動めくりボタンの位置";
 "Auto Scroll Button Side" = "自動スクロールボタンの位置";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ボタンはスライダーの上に浮かびます。1 つだけのときは手の側（タップしてコントロールを表示した側）、2 つのときは自動めくりを選んだ側に、リーダー設定を反対側に置きます。リーダー設定は右上のメニューからも開けます。";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "自動めくりボタンを長押しすると速度やオプションを調整できます。タップで開始・停止します。";

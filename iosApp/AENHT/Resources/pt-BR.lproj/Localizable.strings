@@ -660,3 +660,4 @@
 "Auto Read Button Side" = "Lado do botão de leitura automática";
 "Auto Scroll Button Side" = "Lado do botão de rolagem automática";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Os botões flutuam acima do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, a leitura automática do lado escolhido e os ajustes do leitor do outro. Os ajustes do leitor também estão no menu no canto superior direito.";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Toque e segure o botão de leitura automática para a velocidade e as opções; toque para iniciar ou parar.";

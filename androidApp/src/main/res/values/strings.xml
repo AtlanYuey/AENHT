@@ -661,9 +661,10 @@
     <string name="l_658">Auto Read Button Side</string>
     <string name="l_659">Auto Scroll Button Side</string>
     <string name="l_660">The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.</string>
-    <string name="l_661">Settings Backup</string>
-    <string name="l_662">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_663">Android\'s own backup also keeps these settings.</string>
-    <string name="l_664">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_665">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_661">Long-press the Auto Read button for its speed and options; a tap starts or stops it.</string>
+    <string name="l_662">Settings Backup</string>
+    <string name="l_663">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_664">Android\'s own backup also keeps these settings.</string>
+    <string name="l_665">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_666">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

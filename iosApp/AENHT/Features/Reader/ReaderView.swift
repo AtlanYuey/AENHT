@@ -106,6 +106,8 @@ struct ReaderView: View {
     @State private var chromeVisible = true
     @State private var autoRead = false
     @State private var showSettings = false
+    /// Auto Read's speed and options (a long press on its button).
+    @State private var showAutoReadOptions = false
     @State private var sliderValue: Double
     @State private var sliderEditing = false
     /// Hides the controls a while after the last touch.
@@ -251,6 +253,10 @@ struct ReaderView: View {
                 ReaderSettingsSheet()
                     .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showAutoReadOptions) {
+                AutoReadOptionsSheet()
+                    .presentationDetents([.height(300), .medium])
+            }
     }
 
     // Keep SwiftUI type inference bounded without changing modifier order.
@@ -286,6 +292,7 @@ struct ReaderView: View {
                 if showSettings { autoRead = false }
                 scheduleHide()
             }
+            .onChange(of: showAutoReadOptions) { scheduleHide() }
             .onChange(of: askPage) { if askPage { autoRead = false } }
             .onChange(of: scenePhase) { if scenePhase != .active { autoRead = false } }
             .onChange(of: autoRead) { if autoRead { chromeVisible = false } }
@@ -446,7 +453,7 @@ struct ReaderView: View {
     /// least) after they were last touched, unless the slider or the
     /// settings are in use.
     private func scheduleHide() {
-        guard chromeVisible, !sliderEditing, !showSettings else {
+        guard chromeVisible, !sliderEditing, !showSettings, !showAutoReadOptions else {
             hider.cancel()
             return
         }
@@ -746,11 +753,17 @@ struct ReaderView: View {
         .accessibilityLabel("Reader Settings")
     }
 
+    /// A tap starts or stops; a long press shows the speed and the options.
     private var autoReadButton: some View {
-        Button { autoRead.toggle() } label: {
-            Image(systemName: autoRead ? "pause.fill" : "play.fill").floatingTarget()
-        }
-        .accessibilityLabel(autoReadTitle)
+        Image(systemName: autoRead ? "pause.fill" : "play.fill")
+            .floatingTarget()
+            .onTapGesture { autoRead.toggle() }
+            .onLongPressGesture(minimumDuration: 0.4) { showAutoReadOptions = true }
+            .accessibilityElement()
+            .accessibilityLabel(autoReadTitle)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { autoRead.toggle() }
+            .accessibilityAction(named: Text(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")) { showAutoReadOptions = true }
     }
 
     /// Five pages (two before, the one under the finger, two after), centred
@@ -886,6 +899,85 @@ struct GlassPanel: ViewModifier {
     }
 }
 
+/// Auto Read's interval (paged) or Auto Scroll's speed and whether it goes
+/// on while dragging (continuous): in Reading settings, and in the reader
+/// when its Auto Read button is long-pressed.
+struct AutoReadOptionsSection: View {
+    @Bindable var settings: AppSettings
+
+    var body: some View {
+        Section {
+            if settings.readMode.isPaged {
+                VStack(alignment: .leading) {
+                    LabeledContent("Auto Read Interval") {
+                        Text(settings.autoReadInterval, format: .number.precision(.fractionLength(1)))
+                            + Text(" s")
+                    }
+                    Slider(value: $settings.autoReadInterval, in: 1...10, step: 0.5) {
+                        Text("Auto Read Interval")
+                    } minimumValueLabel: {
+                        Image(systemName: "hare")
+                    } maximumValueLabel: {
+                        Image(systemName: "tortoise")
+                    }
+                }
+            } else {
+                VStack(alignment: .leading) {
+                    if settings.autoScrollSecondsPerScreen <= 3 {
+                        Text("Auto Scroll Speed")
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text("Speed may be too fast for comfortable reading")
+                                .font(.caption).fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
+                                + Text(" s / screen")
+                        }
+                        .foregroundStyle(.red)
+                    } else {
+                        LabeledContent("Auto Scroll Speed") {
+                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
+                                + Text(" s / screen")
+                        }
+                    }
+                    // The right end is faster; elapsed time per screen is stored, not pixels per tick.
+                    Slider(value: Binding(
+                        get: { 31 - settings.autoScrollSecondsPerScreen },
+                        set: { settings.autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: 31 - $0) }
+                    ), in: 1...30, step: 0.5) {
+                        Text("Auto Scroll Speed")
+                    } minimumValueLabel: {
+                        Text("Slow")
+                    } maximumValueLabel: {
+                        Text("Fast")
+                    }
+                }
+                Toggle("Continue Auto Scroll While Dragging", isOn: $settings.continueAutoScrollOnDrag)
+            }
+        } header: {
+            Text(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")
+        }
+    }
+}
+
+/// The reader's Auto Read options, from a long press on its button (it keeps going).
+struct AutoReadOptionsSheet: View {
+    @Environment(AppSettings.self) private var settings
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form { AutoReadOptionsSection(settings: settings) }
+                .navigationTitle(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")
+                .navigationBarTitleDisplayMode(.inline)
+                .barToolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "checkmark") { dismiss() }
+                    }
+                }
+        }
+    }
+}
+
 struct ReaderSettingsSheet: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.dismiss) private var dismiss
@@ -985,56 +1077,7 @@ struct ReadingSettingsSections: View {
                 }
             }
         }
-        Section {
-            if settings.readMode.isPaged {
-                VStack(alignment: .leading) {
-                    LabeledContent("Auto Read Interval") {
-                        Text(settings.autoReadInterval, format: .number.precision(.fractionLength(1)))
-                            + Text(" s")
-                    }
-                    Slider(value: $settings.autoReadInterval, in: 1...10, step: 0.5) {
-                        Text("Auto Read Interval")
-                    } minimumValueLabel: {
-                        Image(systemName: "hare")
-                    } maximumValueLabel: {
-                        Image(systemName: "tortoise")
-                    }
-                }
-            } else {
-                VStack(alignment: .leading) {
-                    if settings.autoScrollSecondsPerScreen <= 3 {
-                        Text("Auto Scroll Speed")
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            Text("Speed may be too fast for comfortable reading")
-                                .font(.caption).fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 0)
-                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
-                                + Text(" s / screen")
-                        }
-                        .foregroundStyle(.red)
-                    } else {
-                        LabeledContent("Auto Scroll Speed") {
-                            Text(settings.autoScrollSecondsPerScreen, format: .number.precision(.fractionLength(0...1)))
-                                + Text(" s / screen")
-                        }
-                    }
-                    // The right end is faster; elapsed time per screen is stored, not pixels per tick.
-                    Slider(value: Binding(
-                        get: { 31 - settings.autoScrollSecondsPerScreen },
-                        set: { settings.autoScrollSecondsPerScreen = ReaderAutoScroll.shared.secondsPerScreen(value: 31 - $0) }
-                    ), in: 1...30, step: 0.5) {
-                        Text("Auto Scroll Speed")
-                    } minimumValueLabel: {
-                        Text("Slow")
-                    } maximumValueLabel: {
-                        Text("Fast")
-                    }
-                }
-                Toggle("Continue Auto Scroll While Dragging", isOn: $settings.continueAutoScrollOnDrag)
-            }
-        } header: {
-            Text(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")
-        }
+        AutoReadOptionsSection(settings: settings)
         Section {
             Stepper(value: $settings.preloadPages, in: 1...10) {
                 LabeledContent("Preload Pages", value: "\(settings.preloadPages)")
@@ -1107,6 +1150,7 @@ struct ReadingSettingsSections: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 Text("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.")
+                Text("Long-press the Auto Read button for its speed and options; a tap starts or stops it.")
                 Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")
             }
         }

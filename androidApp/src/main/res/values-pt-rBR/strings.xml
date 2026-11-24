@@ -661,9 +661,10 @@
     <string name="l_658">Lado do botão de leitura automática</string>
     <string name="l_659">Lado do botão de rolagem automática</string>
     <string name="l_660">Os botões flutuam acima do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, a leitura automática do lado escolhido e os ajustes do leitor do outro. Os ajustes do leitor também estão no menu no canto superior direito.</string>
-    <string name="l_661">Backup dos ajustes</string>
-    <string name="l_662">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_663">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_664">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_665">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_661">Toque e segure o botão de leitura automática para a velocidade e as opções; toque para iniciar ou parar.</string>
+    <string name="l_662">Backup dos ajustes</string>
+    <string name="l_663">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_664">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_665">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_666">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

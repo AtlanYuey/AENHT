@@ -1,5 +1,6 @@
 package com.atlanyuey.aenht.ui.components
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -137,6 +138,8 @@ fun GlassCircleButton(
     iconColor: Color = Color.Unspecified,
     enabled: Boolean = true,
     backdrop: Backdrop = LocalBackdrop.current,
+    /** A long press (the reader's Auto Read: its options). */
+    onLongClick: (() -> Unit)? = null,
 ) {
     val highlight = rememberGlassHighlight()
     val color = when {
@@ -150,7 +153,10 @@ fun GlassCircleButton(
             .glass(Capsule(), tint = tint, backdrop = backdrop, interactive = highlight)
             .then(highlight.modifier)
             .then(highlight.gestureModifier)
-            .clickable(enabled = enabled, interactionSource = null, indication = null, role = Role.Button, onClick = onClick),
+            .then(
+                if (onLongClick == null) Modifier.clickable(enabled = enabled, interactionSource = null, indication = null, role = Role.Button, onClick = onClick)
+                else Modifier.combinedClickable(enabled = enabled, interactionSource = null, indication = null, role = Role.Button, onClick = onClick, onLongClick = onLongClick),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         AppIcon(icon, contentDescription, tint = if (enabled) color else color.copy(alpha = 0.35f), size = iconSize)

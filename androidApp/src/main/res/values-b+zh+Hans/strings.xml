@@ -661,9 +661,10 @@
     <string name="l_658">自动阅读按钮位置</string>
     <string name="l_659">自动滚动按钮位置</string>
     <string name="l_660">按钮悬浮在进度条上方：只开一个时，放在手的那一侧（点击呼出控制栏的位置）；两个都开时，自动阅读按钮放在选定的一侧，阅读设置按钮放在另一侧。阅读设置也可以从右上角的菜单打开。</string>
-    <string name="l_661">设置备份</string>
-    <string name="l_662">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_663">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_664">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_665">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_661">长按自动阅读按钮可以调节速度和相关选项；点一下开始或停止。</string>
+    <string name="l_662">设置备份</string>
+    <string name="l_663">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_664">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_665">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_666">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

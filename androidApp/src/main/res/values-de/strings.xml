@@ -661,9 +661,10 @@
     <string name="l_658">Seite der Taste „Automatisch lesen“</string>
     <string name="l_659">Seite der Taste „Automatisch scrollen“</string>
     <string name="l_660">Die Tasten schweben über dem Regler: eine allein auf der Seite der Hand (wo du zum Einblenden der Steuerung getippt hast); beide, „Automatisch lesen“ auf der gewählten Seite und die Leser-Einstellungen auf der anderen. Die Leser-Einstellungen gibt es auch im Menü oben rechts.</string>
-    <string name="l_661">Einstellungen sichern</string>
-    <string name="l_662">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_663">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_664">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_665">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_661">Halte die Taste „Automatisch lesen“ gedrückt für Tempo und Optionen; tippe, um zu starten oder zu stoppen.</string>
+    <string name="l_662">Einstellungen sichern</string>
+    <string name="l_663">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_664">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_665">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_666">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

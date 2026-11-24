@@ -660,3 +660,4 @@
 "Auto Read Button Side" = "ด้านของปุ่มอ่านอัตโนมัติ";
 "Auto Scroll Button Side" = "ด้านของปุ่มเลื่อนอัตโนมัติ";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ปุ่มลอยอยู่เหนือแถบเลื่อน: ถ้ามีปุ่มเดียวจะอยู่ด้านเดียวกับมือ (ด้านที่แตะเพื่อแสดงตัวควบคุม) ถ้ามีสองปุ่ม ปุ่มอ่านอัตโนมัติอยู่ด้านที่เลือก และการตั้งค่าโปรแกรมอ่านอยู่อีกด้าน การตั้งค่าโปรแกรมอ่านเปิดได้จากเมนูมุมขวาบนด้วย";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "กดปุ่มอ่านอัตโนมัติค้างไว้เพื่อปรับความเร็วและตัวเลือก แตะเพื่อเริ่มหรือหยุด";

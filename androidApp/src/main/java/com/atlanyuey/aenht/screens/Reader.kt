@@ -271,6 +271,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var chromeVisible by mutableStateOf(true)
     /** The side of the screen last touched to bring the controls (their buttons go there). */
     private var handOnLeft by mutableStateOf(false)
+    /** Auto Read's options are open (a long press on its button): it keeps going under them. */
+    private var autoReadOptionsOpen = false
     /** The slider's page while a finger holds it (it goes there when let go); null otherwise. */
     private var scrubPage by mutableStateOf<Int?>(null)
     private var autoRead by mutableStateOf(false)
@@ -742,7 +744,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         // …and so does leaving them alone for a while (Reading settings, 3 s
         // at least; not while a finger is down or a menu or sheet is open).
         val overlays = LocalOverlays.current
-        LaunchedEffect(overlays.items.size) { if (overlays.items.isNotEmpty()) autoRead = false }
+        // (Not Auto Read's own options, from a long press on its button: it keeps going.)
+        LaunchedEffect(overlays.items.size) {
+            if (overlays.items.isNotEmpty() && !(autoReadOptionsOpen && overlays.items.size == 1)) autoRead = false
+        }
         LaunchedEffect(chromeVisible, chromeActivity, touching, overlays.items.size) {
             if (!chromeVisible || touching || overlays.items.isNotEmpty()) return@LaunchedEffect
             delay((AppSettings.readerControlsDelay * 1000).toLong())
@@ -1600,6 +1605,29 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         com.atlanyuey.aenht.core.startSafely(context, android.content.Intent.createChooser(send, null))
     }
 
+    /** Auto Read's speed and options, from a long press on its button (it keeps going). */
+    private fun openAutoReadOptions(overlays: com.atlanyuey.aenht.ui.components.OverlayController) {
+        autoReadOptionsOpen = true
+        overlays.sheet { dismiss ->
+            androidx.compose.runtime.DisposableEffect(Unit) { onDispose { autoReadOptionsOpen = false } }
+            CompositionLocalProvider(LocalColors provides DarkColors, LocalIsDark provides true) {
+                Column(Modifier.fillMaxWidth().background(AppTheme.colors.groupedBackground).navigationBarsPadding().padding(bottom = 16.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Txt(tr(if (AppSettings.readMode.isPaged) "Auto Read" else "Auto Scroll"), Modifier.weight(1f), style = Type.headline)
+                        TextButton(tr("Done"), dismiss, bold = true)
+                    }
+                    Column(
+                        Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AppTheme.colors.secondaryGroupedBackground),
+                    ) { AutoReadControls() }
+                }
+            }
+        }
+    }
+
     private fun openSettings(overlays: com.atlanyuey.aenht.ui.components.OverlayController) {
         autoRead = false
         overlays.sheet { dismiss ->
@@ -1637,7 +1665,11 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val autoReadOnLeft = if (showSettings) autoLeft else handOnLeft
         val settingsOnLeft = if (showAutoRead) !autoLeft else handOnLeft
         val settingsButton = @Composable { GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) }) }
-        val autoReadButton = @Composable { GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead }) }
+        // A tap starts or stops; a long press shows the speed and the options.
+        val autoReadButton = @Composable {
+            GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead },
+                onLongClick = { openAutoReadOptions(overlays) })
+        }
         var trackLeft by remember { mutableStateOf(0f) }
         var trackWidth by remember { mutableStateOf(0f) }
         Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
@@ -1928,59 +1960,68 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
                 label = { tr(it.title) }, onSelect = { AppSettings.tapTurn = it }, last = true)
         }
     }
-    section(if (mode.isPaged) "Auto Read" else "Auto Scroll") {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-            if (mode.isPaged) {
-                Row {
-                    Txt(tr("Auto Read Interval"), Modifier.weight(1f))
-                    Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
-                }
-                GlassSlider(
-                    AppSettings.autoReadInterval.toFloat(),
-                    { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
-                    1f..10f,
-                )
-            } else {
-                val speedLabel = tr("Auto Scroll Speed")
-                val timeLabel = java.text.NumberFormat.getNumberInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
-                    .apply { maximumFractionDigits = 1 }.format(AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen")
-                val fast = AppSettings.autoScrollSecondsPerScreen <= 3
-                val warning = tr("Speed may be too fast for comfortable reading")
-                val warningColor = Color(0xFFFF453A)
-                if (fast) {
-                    Txt(speedLabel)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Txt(warning, Modifier.weight(1f), style = Type.caption1, color = warningColor)
-                        Txt(timeLabel, color = warningColor)
-                    }
-                } else {
-                    Row {
-                        Txt(speedLabel, Modifier.weight(1f))
-                        Txt(timeLabel, color = AppTheme.colors.secondaryLabel)
-                    }
-                }
-                GlassSlider(
-                    (31 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
-                    { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round((31 - it) * 2) / 2.0) },
-                    1f..30f,
-                    modifier = Modifier.semantics { stateDescription = if (fast) "$warning, $timeLabel" else timeLabel },
-                    label = speedLabel,
-                )
-                Row {
-                    Txt(tr("Slow"), Modifier.weight(1f), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
-                    Txt(tr("Fast"), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
-                }
-            }
-        }
-        if (!mode.isPaged) {
-            RowSeparator()
-            ToggleRow(tr("Continue Auto Scroll While Dragging"), AppSettings.continueAutoScrollOnDrag, { AppSettings.continueAutoScrollOnDrag = it }, last = true)
-        }
-    }
+    section(if (mode.isPaged) "Auto Read" else "Auto Scroll") { AutoReadControls() }
     section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
         ListRow(tr("Preload Pages"), value = "${AppSettings.preloadPages}", last = true) {
             Stepper(AppSettings.preloadPages, 1..10) { AppSettings.preloadPages = it }
         }
+    }
+}
+
+/**
+ * Auto Read's interval (paged) or Auto Scroll's speed and whether it goes on
+ * while dragging (continuous): in Reading settings, and in the reader when
+ * its Auto Read button is long-pressed.
+ */
+@Composable
+fun AutoReadControls() {
+    val mode = AppSettings.readMode
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+        if (mode.isPaged) {
+            Row {
+                Txt(tr("Auto Read Interval"), Modifier.weight(1f))
+                Txt(String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", AppSettings.autoReadInterval) + tr(" s"), color = AppTheme.colors.secondaryLabel)
+            }
+            GlassSlider(
+                AppSettings.autoReadInterval.toFloat(),
+                { AppSettings.autoReadInterval = (Math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) },
+                1f..10f,
+            )
+        } else {
+            val speedLabel = tr("Auto Scroll Speed")
+            val timeLabel = java.text.NumberFormat.getNumberInstance(androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+                .apply { maximumFractionDigits = 1 }.format(AppSettings.autoScrollSecondsPerScreen) + tr(" s / screen")
+            val fast = AppSettings.autoScrollSecondsPerScreen <= 3
+            val warning = tr("Speed may be too fast for comfortable reading")
+            val warningColor = Color(0xFFFF453A)
+            if (fast) {
+                Txt(speedLabel)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Txt(warning, Modifier.weight(1f), style = Type.caption1, color = warningColor)
+                    Txt(timeLabel, color = warningColor)
+                }
+            } else {
+                Row {
+                    Txt(speedLabel, Modifier.weight(1f))
+                    Txt(timeLabel, color = AppTheme.colors.secondaryLabel)
+                }
+            }
+            GlassSlider(
+                (31 - AppSettings.autoScrollSecondsPerScreen).toFloat(),
+                { AppSettings.autoScrollSecondsPerScreen = ReaderAutoScroll.secondsPerScreen(Math.round((31 - it) * 2) / 2.0) },
+                1f..30f,
+                modifier = Modifier.semantics { stateDescription = if (fast) "$warning, $timeLabel" else timeLabel },
+                label = speedLabel,
+            )
+            Row {
+                Txt(tr("Slow"), Modifier.weight(1f), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+                Txt(tr("Fast"), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
+            }
+        }
+    }
+    if (!mode.isPaged) {
+        RowSeparator()
+        ToggleRow(tr("Continue Auto Scroll While Dragging"), AppSettings.continueAutoScrollOnDrag, { AppSettings.continueAutoScrollOnDrag = it }, last = true)
     }
 }
 
@@ -2066,6 +2107,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     section("Control Bar", footer = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FooterText(tr("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right."))
+            FooterText(tr("Long-press the Auto Read button for its speed and options; a tap starts or stops it."))
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
         }
     }) {

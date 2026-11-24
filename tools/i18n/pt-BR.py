@@ -660,4 +660,5 @@ T = [
     "Lado do botão de leitura automática",
     "Lado do botão de rolagem automática",
     "Os botões flutuam acima do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, a leitura automática do lado escolhido e os ajustes do leitor do outro. Os ajustes do leitor também estão no menu no canto superior direito.",
+    "Toque e segure o botão de leitura automática para a velocidade e as opções; toque para iniciar ou parar.",
 ]

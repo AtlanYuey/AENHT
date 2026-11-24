@@ -660,4 +660,5 @@ T = [
     "Seite der Taste „Automatisch lesen“",
     "Seite der Taste „Automatisch scrollen“",
     "Die Tasten schweben über dem Regler: eine allein auf der Seite der Hand (wo du zum Einblenden der Steuerung getippt hast); beide, „Automatisch lesen“ auf der gewählten Seite und die Leser-Einstellungen auf der anderen. Die Leser-Einstellungen gibt es auch im Menü oben rechts.",
+    "Halte die Taste „Automatisch lesen“ gedrückt für Tempo und Optionen; tippe, um zu starten oder zu stoppen.",
 ]

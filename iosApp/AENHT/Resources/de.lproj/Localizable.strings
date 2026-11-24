@@ -660,3 +660,4 @@
 "Auto Read Button Side" = "Seite der Taste „Automatisch lesen“";
 "Auto Scroll Button Side" = "Seite der Taste „Automatisch scrollen“";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Die Tasten schweben über dem Regler: eine allein auf der Seite der Hand (wo du zum Einblenden der Steuerung getippt hast); beide, „Automatisch lesen“ auf der gewählten Seite und die Leser-Einstellungen auf der anderen. Die Leser-Einstellungen gibt es auch im Menü oben rechts.";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Halte die Taste „Automatisch lesen“ gedrückt für Tempo und Optionen; tippe, um zu starten oder zu stoppen.";

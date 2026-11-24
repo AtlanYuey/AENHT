@@ -105,6 +105,34 @@ class SmoothAutoScrollTest {
         } finally { reset() }
     }
 
+    @Test fun aLongPressOnAutoScrollShowsItsSpeedAndKeepsItGoing() {
+        try {
+            val reader = open(ReadMode.Vertical)
+            val list = list(reader)
+            compose.waitUntil(10_000) { list.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let { it > list.layoutInfo.viewportSize.height * 5 } == true }
+            compose.mainClock.autoAdvance = false
+            // A tap starts it (the controls go); a tap on the page brings them back.
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
+            advance(800)
+            compose.onRoot().performTouchInput { click(center) }
+            compose.waitUntil(3000) {
+                compose.mainClock.advanceTimeBy(32)
+                compose.onAllNodesWithContentDescription("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+            }
+            advance(300)
+            // A long press: the speed and the options, and it keeps going.
+            compose.onNodeWithContentDescription("Pause Auto Scroll").performTouchInput { longClick() }
+            compose.waitUntil(3000) {
+                compose.mainClock.advanceTimeBy(32)
+                compose.onAllNodesWithText("Auto Scroll Speed").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Continue Auto Scroll While Dragging").assertIsDisplayed()
+            val before = list.firstVisibleItemScrollOffset
+            advance(1000)
+            assertTrue("still scrolling under the options", list.firstVisibleItemScrollOffset > before)
+        } finally { reset() }
+    }
+
     @Test fun enabledOptionResumesAfterManualDragWithoutNeedingPlayAgain() {
         try {
             val reader = open(ReadMode.Vertical, continueOnDrag = true)

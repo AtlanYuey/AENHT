@@ -660,3 +660,4 @@
 "Auto Read Button Side" = "Vị trí nút tự động đọc";
 "Auto Scroll Button Side" = "Vị trí nút tự động cuộn";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Các nút nổi phía trên thanh trượt: chỉ một nút thì ở phía tay (nơi bạn chạm để hiện điều khiển); cả hai thì nút tự động đọc ở phía đã chọn, cài đặt trình đọc ở phía còn lại. Cài đặt trình đọc cũng có trong menu ở góc trên bên phải.";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Nhấn giữ nút tự động đọc để chỉnh tốc độ và tùy chọn; chạm để bắt đầu hoặc dừng.";

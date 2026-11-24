@@ -660,4 +660,5 @@ T = [
     "Lato del pulsante Lettura automatica",
     "Lato del pulsante Scorrimento automatico",
     "I pulsanti fluttuano sopra il cursore: uno solo, dal lato della mano (dove hai toccato per mostrare i controlli); tutti e due, la lettura automatica dal lato scelto e le impostazioni del lettore dall’altro. Le impostazioni del lettore sono anche nel menu in alto a destra.",
+    "Tieni premuto il pulsante Lettura automatica per velocità e opzioni; toccalo per avviarla o fermarla.",
 ]

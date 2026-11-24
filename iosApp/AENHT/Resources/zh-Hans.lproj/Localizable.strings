@@ -703,3 +703,4 @@
 "Auto Read Button Side" = "自动阅读按钮位置";
 "Auto Scroll Button Side" = "自动滚动按钮位置";
 "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "按钮悬浮在进度条上方：只开一个时，放在手的那一侧（点击呼出控制栏的位置）；两个都开时，自动阅读按钮放在选定的一侧，阅读设置按钮放在另一侧。阅读设置也可以从右上角的菜单打开。";
+"Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "长按自动阅读按钮可以调节速度和相关选项；点一下开始或停止。";
