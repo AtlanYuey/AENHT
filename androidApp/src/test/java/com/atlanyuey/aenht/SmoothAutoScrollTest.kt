@@ -91,7 +91,7 @@ class SmoothAutoScrollTest {
             val list = list(reader)
             compose.waitUntil(10_000) { list.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let { it > list.layoutInfo.viewportSize.height * 5 } == true }
             compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(1200)
             assertEquals(0, list.firstVisibleItemIndex)
             assertTrue("The final image must scroll while its bottom is still below the screen", list.firstVisibleItemScrollOffset > 100)
@@ -111,7 +111,7 @@ class SmoothAutoScrollTest {
             val list = list(reader)
             compose.waitUntil(10_000) { list.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let { it > list.layoutInfo.viewportSize.height * 5 } == true }
             compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(800)
             val before = list.firstVisibleItemScrollOffset
             compose.onRoot().performTouchInput { swipeUp(durationMillis = 600) }
@@ -123,10 +123,10 @@ class SmoothAutoScrollTest {
             compose.onRoot().performTouchInput { click(center) }
             compose.waitUntil(3000) {
                 compose.mainClock.advanceTimeBy(32)
-                compose.onAllNodesWithText("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithContentDescription("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
             }
             advance(300)
-            compose.onNodeWithText("Pause Auto Scroll").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Pause Auto Scroll").assertIsDisplayed()
         } finally { reset() }
     }
 
@@ -138,21 +138,21 @@ class SmoothAutoScrollTest {
             AppSettings.autoScrollSecondsPerScreen = 1.0
             AppSettings.readerControlsDelay = 3.0
             compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(300)
             compose.onRoot().performTouchInput { click(center) }
             compose.waitUntil(3000) {
                 compose.mainClock.advanceTimeBy(32)
-                compose.onAllNodesWithText("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithContentDescription("Pause Auto Scroll").fetchSemanticsNodes().isNotEmpty()
             }
             advance(300)
             val first = list.firstVisibleItemIndex
             advance(1200)
             assertTrue("This must cross image boundaries while the controls are visible", list.firstVisibleItemIndex > first)
-            compose.onNodeWithText("Pause Auto Scroll").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Pause Auto Scroll").assertIsDisplayed()
             compose.onNodeWithContentDescription("Options").assertIsDisplayed()
             advance(2300)
-            compose.onNodeWithText("Pause Auto Scroll").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Pause Auto Scroll").assertDoesNotExist()
             compose.onNodeWithContentDescription("Options").assertDoesNotExist()
         } finally { AppSettings.readerControlsDelay = previousDelay; reset() }
     }
@@ -171,18 +171,18 @@ class SmoothAutoScrollTest {
                 }
             }
             advance(100)
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(700)
             assertFalse("The actual content bottom should end playback", list.canScrollForward)
             compose.onRoot().performTouchInput { click(center) }
             // Reader taps also use the screen's navigation scope; wait for that callback and its UI frame.
             compose.waitUntil(3000) {
                 compose.mainClock.advanceTimeBy(32)
-                compose.onAllNodesWithText("Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithContentDescription("Auto Scroll").fetchSemanticsNodes().isNotEmpty()
             }
             advance(600)
             compose.onRoot().captureRoboImage("build/screens/auto-scroll-end.png")
-            compose.onNodeWithText("Auto Scroll").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Auto Scroll").assertIsDisplayed()
             val end = list.firstVisibleItemScrollOffset
             advance(1000)
             assertEquals(end, list.firstVisibleItemScrollOffset)
@@ -195,7 +195,7 @@ class SmoothAutoScrollTest {
             val reader = open(ReadMode.Vertical, gate)
             val list = list(reader)
             compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(1200)
             assertEquals(0, list.firstVisibleItemScrollOffset)
             gate.complete(Unit)
@@ -214,7 +214,7 @@ class SmoothAutoScrollTest {
             val list = list(reader)
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
             compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(300)
             compose.onNodeWithText("Auto Scroll Paused").assertIsDisplayed()
             assertEquals(0, list.firstVisibleItemScrollOffset)
@@ -230,10 +230,10 @@ class SmoothAutoScrollTest {
             compose.onRoot().performTouchInput { click(center) }
             compose.waitUntil(3000) {
                 compose.mainClock.advanceTimeBy(32)
-                compose.onAllNodesWithText("Auto Scroll").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithContentDescription("Auto Scroll").fetchSemanticsNodes().isNotEmpty()
             }
             advance(600)
-            compose.onNodeWithText("Auto Scroll").performClick()
+            compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(1200)
             assertTrue(list.firstVisibleItemScrollOffset > 100)
         } finally { reset() }
