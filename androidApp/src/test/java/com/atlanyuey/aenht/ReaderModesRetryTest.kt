@@ -69,14 +69,14 @@ class ReaderModesRetryTest {
         val linked = mutableStateOf<GalleryLink?>(null)
         try {
             compose.setContent { AppTheme { RootView(linked, tabs, 0) } }
-            compose.waitUntil(10_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().size == 1 }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().size == 1 }
             val first = asked.get()
-            compose.onNodeWithText("Retry").performClick()
-            compose.waitUntil(10_000) { asked.get() > first && compose.onAllNodesWithText("Retry").fetchSemanticsNodes().size == 1 }
+            compose.onNodeWithText("Reload Page").performClick()
+            compose.waitUntil(10_000) { asked.get() > first && compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().size == 1 }
             val second = asked.get()
             offline.set(false)
-            compose.onNodeWithText("Retry").performClick()
-            compose.waitUntil(10_000) { asked.get() > second && compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithText("Reload Page").performClick()
+            compose.waitUntil(10_000) { asked.get() > second && compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().isEmpty() }
             println("mode=$mode double=$double actual_loader_requests=${asked.get()} first=$first second=$second")
         } finally {
             AppSettings.readMode = ReadMode.LeftToRight

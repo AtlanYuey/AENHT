@@ -659,7 +659,15 @@
 "Follows Your Hand" = "Segue sua mão";
 "Auto Read Button Side" = "Lado do botão de leitura automática";
 "Auto Scroll Button Side" = "Lado do botão de rolagem automática";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Os botões flutuam acima do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, a leitura automática do lado escolhido e os ajustes do leitor do outro. Os ajustes do leitor também estão no menu no canto superior direito.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Toque e segure o botão de leitura automática para a velocidade e as opções; toque para iniciar ou parar.";
 "Reload Page" = "Recarregar página";
 "Page %lld" = "Página %lld";
+"Button Placement" = "Posição dos botões";
+"Above the Bar" = "Acima da barra";
+"Beside the Bar" = "Ao lado da barra";
+"In the Bar" = "Na barra";
+"Keep Auto Read Button on Screen" = "Manter o botão de leitura automática na tela";
+"Keep Auto Scroll Button on Screen" = "Manter o botão de rolagem automática na tela";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Os botões ficam dos lados do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, Leitura automática do lado escolhido e Ajustes de leitura do outro. Ajustes de leitura também está no menu no canto superior direito.";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "Posição dos botões: acima da barra, ao lado (na mesma altura, cada um em seu círculo) ou dentro dela. Automático os coloca na barra num tablet e acima dela num celular.";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "Manter o botão de leitura automática na tela: ele fica onde está quando os controles somem.";

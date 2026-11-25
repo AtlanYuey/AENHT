@@ -25,6 +25,7 @@ import com.atlanyuey.aenht.ui.RootView
 import com.atlanyuey.aenht.ui.Tabs
 import com.atlanyuey.aenht.ui.theme.AppTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,6 +82,53 @@ class ReaderPageMenuTest {
             compose.onNodeWithText("Reload Page").performClick()
             compose.waitForIdle()
             assertEquals(1, reloads(reader).size)
+        } finally { AppSettings.readMode = ReadMode.LeftToRight }
+    }
+
+    private fun page(reader: ReaderScreen) = ReaderScreen::class.java.getDeclaredField("page\$delegate").let {
+        it.isAccessible = true
+        (it.get(reader) as androidx.compose.runtime.MutableIntState).intValue
+    }
+
+    /** The menu opens where the finger is: its nearest edge is close to it. */
+    private fun assertMenuNear(at: androidx.compose.ui.geometry.Offset) {
+        val menu = compose.onNodeWithText("Reload Page").fetchSemanticsNode().boundsInRoot
+        val dy = when {
+            at.y < menu.top -> menu.top - at.y
+            at.y > menu.bottom -> at.y - menu.bottom
+            else -> 0f
+        }
+        val density = ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+        assertTrue("menu $menu near the finger $at", dy < 200 * density)
+    }
+
+    @Test fun aLongPressOnTheEdgeDoesNotTurnThePage() {
+        try {
+            val reader = open(ReadMode.LeftToRight)
+            var at = androidx.compose.ui.geometry.Offset.Zero
+            // The right edge turns on a tap; held, it's the menu only.
+            compose.onRoot().performTouchInput {
+                at = androidx.compose.ui.geometry.Offset(width * 0.9f, height * 0.25f)
+                longClick(at)
+            }
+            compose.waitUntil(3000) { compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().isNotEmpty() }
+            compose.mainClock.advanceTimeBy(800)
+            compose.waitForIdle()
+            assertEquals("still page 4", 3, page(reader))
+            assertMenuNear(at)
+        } finally { AppSettings.readMode = ReadMode.LeftToRight }
+    }
+
+    @Test fun inTheStripTheMenuOpensAtTheFinger() {
+        try {
+            open(ReadMode.Vertical)
+            var at = androidx.compose.ui.geometry.Offset.Zero
+            compose.onRoot().performTouchInput {
+                at = androidx.compose.ui.geometry.Offset(width * 0.5f, height * 0.8f)
+                longClick(at)
+            }
+            compose.waitUntil(3000) { compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().isNotEmpty() }
+            assertMenuNear(at)
         } finally { AppSettings.readMode = ReadMode.LeftToRight }
     }
 }

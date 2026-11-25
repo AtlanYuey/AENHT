@@ -4,6 +4,8 @@ import androidx.compose.animation.togetherWith
 import com.atlanyuey.aenht.ui.components.RemoteImage
 import androidx.compose.foundation.layout.size
 import kotlin.math.roundToInt
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.foundation.border
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntOffset
@@ -45,6 +47,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -173,6 +176,7 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.changedToDown
 
 val ReadMode.icon
     get() = when (this) {
@@ -272,6 +276,19 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var chromeVisible by mutableStateOf(true)
     /** The side of the screen last touched to bring the controls (their buttons go there). */
     private var handOnLeft by mutableStateOf(false)
+    /** The reader's top left in the window, and where the last finger went down (in the window): a long press's menu opens there. */
+    private var readerOrigin = Offset.Zero
+    private var lastPressInWindow = Offset.Zero
+    /** The reader's size, for the kept-on-screen Auto Read button. */
+    private var readerSize by mutableStateOf(androidx.compose.ui.geometry.Size.Zero)
+    /**
+     * Where Auto Read kept on screen is: from the side it's nearer (x: from
+     * the left if 0 or more, else from the right, negative) and from the
+     * bottom (y). Null until the controls have shown it once.
+     */
+    private var pinnedInset by mutableStateOf<Offset?>(null)
+    private var pinnedInBar by mutableStateOf(false)
+    private var pinnedAbove by mutableStateOf(false)
     /** Auto Read's options are open (a long press on its button): it keeps going under them. */
     private var autoReadOptionsOpen = false
     /** The slider's page while a finger holds it (it goes there when let go); null otherwise. */
@@ -878,6 +895,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             Modifier
                 .fillMaxSize()
                 .background(Color.Black)
+                .onGloballyPositioned {
+                    readerOrigin = it.positionInRoot()
+                    readerSize = androidx.compose.ui.geometry.Size(it.size.width.toFloat(), it.size.height.toFloat())
+                }
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -886,6 +907,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                             if (event.type == PointerEventType.Press) {
                                 chromeActivity++
                                 lastTouch = android.os.SystemClock.uptimeMillis()
+                                event.changes.lastOrNull { it.changedToDown() }?.let { lastPressInWindow = readerOrigin + it.position }
                                 // The hand: the side touched while the controls were away
                                 // (the tap that brings them); their buttons go there.
                                 if (!chromeVisible) event.changes.firstOrNull()?.let { handOnLeft = it.position.x < size.width / 2f }
@@ -928,8 +950,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     enter = fadeIn() + slideInVertically { it / 2 },
                     exit = fadeOut() + slideOutVertically { it / 2 },
                 ) {
-                    BottomPanel()
+                    BottomPanel(settled = transition.currentState == androidx.compose.animation.EnterExitState.Visible &&
+                        transition.targetState == androidx.compose.animation.EnterExitState.Visible)
                 }
+                if (AppSettings.autoReadButton && AppSettings.autoReadPinned) PinnedAutoRead()
             }
         }
     }
@@ -953,7 +977,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 if (finger != null && finger.pressed && now.count { it.pressed } == 1 &&
                     (finger.position - down.position).getDistance() < viewConfiguration.touchSlop
                 ) {
-                    pageAt(down.position, size.width)?.let { index -> pageMenu?.invoke(down.position, index) }
+                    // The menu opens at the finger (the page's own position isn't the window's in the strip).
+                    pageAt(down.position, size.width)?.let { index -> pageMenu?.invoke(lastPressInWindow, index) }
                     // The rest of this touch is the menu's.
                     while (currentEvent.changes.any { it.pressed }) awaitPointerEvent(PointerEventPass.Initial)
                 }
@@ -1222,9 +1247,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = align) {
                         val context = LocalContext.current
                         // Each half loads (and is retried) on its own: the other one stays.
-                        var tries by remember(p) { mutableIntStateOf(0) }
-                        // Reload Page (its menu) counts as another attempt.
-                        val attempt = tries + (pageRetries[p] ?: 0) * 1000
+                        // Reload Page (its menu, or its button on a failed page) is another attempt.
+                        val attempt = pageRetries[p] ?: 0
                         var failed by remember(p, attempt) { mutableStateOf(false) }
                         var shown by remember(p, attempt) { mutableStateOf(false) }
                         val sharp = enhancedPage(context, p, options, 2, visible, attempt)
@@ -1248,7 +1272,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         if (sharp != null && !failed) androidx.compose.foundation.Image(
                             sharp.asImageBitmap(), null, Modifier.fillMaxSize(), alignment = align, contentScale = ContentScale.Fit,
                         )
-                        if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry { tries++ } }
+                        if (failed) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { PageRetry(p) }
+                        else if (!shown) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { SlowPageReload(p) }
                     }
                 }
             }
@@ -1270,9 +1295,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             contentAlignment = Alignment.Center,
         ) {
             val context = LocalContext.current
-            var tries by remember(index) { mutableIntStateOf(0) }
-            // Reload Page (its menu) counts as another attempt.
-            val attempt = tries + (pageRetries[index] ?: 0) * 1000
+            // Reload Page (its menu, or its button on a failed page) is another attempt.
+            val attempt = pageRetries[index] ?: 0
             // One state for every attempt: the request (made once) reports into it.
             var failed by remember(index) { mutableStateOf(false) }
             val model = remember(index, options, pageRetries[index]) {
@@ -1302,18 +1326,50 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 )
             }
             when {
-                failed -> PageRetry { failed = false; tries++ }
-                !imageState.isImageDisplayed && !thumbed -> ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
+                failed -> PageRetry(index) { failed = false }
+                !imageState.isImageDisplayed -> {
+                    if (!thumbed) ActivityIndicator(size = 30.dp, color = Color.White.copy(alpha = 0.6f))
+                    SlowPageReload(index, Modifier.offset(y = 64.dp))
+                }
             }
         }
     }
 
-    /** A page that couldn't be loaded: loads it again (the page and the place stay). */
+    /**
+     * A page that couldn't be loaded, where it is: a tap loads it again from
+     * the start, as Reload Page does (the page and the place stay). Back
+     * online, it does so by itself.
+     */
     @Composable
-    private fun PageRetry(onRetry: () -> Unit) {
-        com.atlanyuey.aenht.core.RetryWhenOnline(onRetry)
-        com.atlanyuey.aenht.ui.components.GlassCapsuleButton(onRetry, height = 36.dp) {
-            Txt(tr("Retry"), style = Type.subheadline, color = Color.White)
+    private fun PageRetry(index: Int, onRetry: () -> Unit = {}) {
+        val context = LocalContext.current
+        val again = { onRetry(); reloadPage(context, index) }
+        com.atlanyuey.aenht.core.RetryWhenOnline(again)
+        ReloadButton(again)
+    }
+
+    /** A page still not there after a while: the same button, under what shows meanwhile. */
+    @Composable
+    private fun SlowPageReload(index: Int, modifier: Modifier = Modifier) {
+        val context = LocalContext.current
+        val attempt = pageRetries[index] ?: 0
+        var slow by remember(index, attempt) { mutableStateOf(false) }
+        LaunchedEffect(index, attempt) {
+            delay(SLOW_PAGE_MILLIS)
+            slow = true
+        }
+        androidx.compose.animation.AnimatedVisibility(slow, modifier, enter = fadeIn(), exit = fadeOut()) {
+            ReloadButton { reloadPage(context, index) }
+        }
+    }
+
+    @Composable
+    private fun ReloadButton(onClick: () -> Unit) {
+        com.atlanyuey.aenht.ui.components.GlassCapsuleButton(onClick, height = 40.dp) {
+            Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                AppIcon(Icons.Refresh, null, tint = Color.White, size = 17.dp)
+                Txt(tr("Reload Page"), style = Type.subheadline, color = Color.White)
+            }
         }
     }
 
@@ -1489,9 +1545,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                         if (sharp != null) androidx.compose.foundation.Image(sharp.asImageBitmap(), null,
                             Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                         when (state) {
-                            is coil3.compose.AsyncImagePainter.State.Error -> PageRetry { retryContinuousPage(readerPage.index) }
+                            is coil3.compose.AsyncImagePainter.State.Error -> PageRetry(readerPage.index)
                             is coil3.compose.AsyncImagePainter.State.Success -> {}
-                            else -> if (sharp == null) ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                            else -> if (sharp == null) {
+                                ActivityIndicator(color = Color.White.copy(alpha = 0.5f))
+                                SlowPageReload(readerPage.index, Modifier.offset(y = 56.dp))
+                            }
                         }
                     }
                 }
@@ -1741,14 +1800,9 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     }
 
     @Composable
-    private fun BottomPanel() {
+    private fun BottomPanel(settled: Boolean) {
         val overlays = LocalOverlays.current
-        val autoReadLabel = if (AppSettings.readMode.isPaged) {
-            if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
-        } else {
-            if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
-        }
-        // Reader Settings and Auto Read float on the sides: one alone on the hand's
+        // Reader Settings and Auto Read on the sides: one alone on the hand's
         // side; both, Auto Read where Controls › Auto Read Button Side says.
         val showSettings = AppSettings.readerSettingsButton
         val showAutoRead = AppSettings.autoReadButton
@@ -1759,17 +1813,63 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         }
         val autoReadOnLeft = if (showSettings) autoLeft else handOnLeft
         val settingsOnLeft = if (showAutoRead) !autoLeft else handOnLeft
-        val settingsButton = @Composable { GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) }) }
-        // A tap starts or stops; a long press shows the speed and the options.
-        val autoReadButton = @Composable {
-            GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel, { autoRead = !autoRead },
-                onLongClick = { openAutoReadOptions(overlays) })
+        // Above the bar, beside it or in it (Controls › Button Placement; Automatic: in it on a tablet).
+        val placement = buttonPlacement()
+        val above = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Above
+        val beside = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
+        val inBar = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.InBar
+        val settingsButton = @Composable {
+            if (inBar) BarButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) })
+            else GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) })
         }
+        // Kept on screen (Controls › Keep Auto Read Button on Screen): the button is drawn
+        // over the reader, and this is only its place (where it shows with the controls).
+        val pinned = AppSettings.autoReadPinned
+        val slot = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
+        fun record() {
+            val c = slot[0]?.takeIf { it.isAttached } ?: return
+            val center = c.boundsInRoot().center - readerOrigin
+            pinnedInset = Offset(if (center.x < readerSize.width / 2f) center.x else center.x - readerSize.width, readerSize.height - center.y)
+            pinnedInBar = inBar
+            pinnedAbove = above
+        }
+        LaunchedEffect(settled, autoReadOnLeft, placement, pinned) {
+            if (settled && pinned) {
+                androidx.compose.runtime.withFrameNanos { }
+                record()
+            }
+        }
+        val autoReadButton = @Composable {
+            val place = Modifier.onGloballyPositioned { c ->
+                slot[0] = c
+                if (settled && pinned) record()
+            }
+            if (pinned && pinnedInset != null) {
+                Box(place.size(if (inBar) 40.dp else 44.dp))
+            } else if (inBar) {
+                BarButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel(), { autoRead = !autoRead },
+                    onLongClick = { openAutoReadOptions(overlays) }, modifier = place)
+            } else {
+                // A tap starts or stops; a long press shows the speed and the options.
+                GlassCircleButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel(), { autoRead = !autoRead },
+                    modifier = place, onLongClick = { openAutoReadOptions(overlays) })
+            }
+        }
+        val left = @Composable {
+            if (showSettings && settingsOnLeft) settingsButton()
+            if (showAutoRead && autoReadOnLeft) autoReadButton()
+        }
+        val right = @Composable {
+            if (showAutoRead && !autoReadOnLeft) autoReadButton()
+            if (showSettings && !settingsOnLeft) settingsButton()
+        }
+        val leftHasOne = (showSettings && settingsOnLeft) || (showAutoRead && autoReadOnLeft)
+        val rightHasOne = (showSettings && !settingsOnLeft) || (showAutoRead && !autoReadOnLeft)
         var trackLeft by remember { mutableStateOf(0f) }
         var trackWidth by remember { mutableStateOf(0f) }
         Box(Modifier.fillMaxWidth().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
             Column(
-                Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 12.dp),
+                Modifier.widthIn(max = if (above) 640.dp else 760.dp).fillMaxWidth().padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // While the slider is held: the pages around it, over the finger (they crossfade
@@ -1785,51 +1885,137 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                     ScrubStrip(scrubPage ?: page, trackLeft, trackWidth)
                 } else {
                     Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                        Row(Modifier.align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            if (showSettings && settingsOnLeft) settingsButton()
-                            if (showAutoRead && autoReadOnLeft) autoReadButton()
-                        }
+                        if (above) Row(Modifier.align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(10.dp)) { left() }
                         // Pinched smaller or bigger: back to the usual size.
                         androidx.compose.animation.AnimatedVisibility(resized, Modifier.align(Alignment.Center), enter = fadeIn(), exit = fadeOut()) {
                             GlassCircleButton(Icons.Scan, tr("Reset Size"), { resetSize() })
                         }
-                        Row(Modifier.align(Alignment.CenterEnd), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            if (showAutoRead && !autoReadOnLeft) autoReadButton()
-                            if (showSettings && !settingsOnLeft) settingsButton()
-                        }
+                        if (above) Row(Modifier.align(Alignment.CenterEnd), horizontalArrangement = Arrangement.spacedBy(10.dp)) { right() }
                     }
                 }
                 }
-                // One row: the page, the slider, the pages left (as high above as below).
+                // One row: the page, the slider, the pages left (as high above as below);
+                // beside it or in it, the buttons.
                 val shown = scrub ?: page
                 Row(
-                    Modifier
-                        .padding(vertical = 8.dp)
-                        .fillMaxWidth()
-                        .glass(RoundedCornerShape(26.dp), GlassStyle.Panel)
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    Modifier.padding(vertical = 8.dp).fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Txt(
-                        "${shown + 1} / $count",
-                        Modifier.widthIn(min = 56.dp),
-                        style = Type.footnote.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
-                        maxLines = 1,
-                    )
-                    Box(
-                        Modifier.weight(1f).onGloballyPositioned { c ->
-                            trackLeft = c.positionInRoot().x
-                            trackWidth = c.size.width.toFloat()
-                        },
-                    ) { PageSlider() }
-                    Txt(
-                        L10n.string("Pages left: %lld", (count - 1 - shown).coerceAtLeast(0)),
-                        style = Type.caption1.copy(fontFeatureSettings = "tnum"),
-                        color = AppTheme.colors.secondaryLabel,
-                        maxLines = 1,
-                    )
+                    if (beside) left()
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .glass(RoundedCornerShape(26.dp), GlassStyle.Panel)
+                            // Buttons in it: as high as without, a button close to each end.
+                            .padding(
+                                start = if (inBar && leftHasOne) 6.dp else 18.dp,
+                                end = if (inBar && rightHasOne) 6.dp else 18.dp,
+                                top = if (inBar) 4.dp else 12.dp,
+                                bottom = if (inBar) 4.dp else 12.dp,
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        if (inBar) left()
+                        Txt(
+                            "${shown + 1} / $count",
+                            Modifier.widthIn(min = 56.dp),
+                            style = Type.footnote.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
+                            maxLines = 1,
+                        )
+                        Box(
+                            Modifier.weight(1f).onGloballyPositioned { c ->
+                                trackLeft = c.positionInRoot().x
+                                trackWidth = c.size.width.toFloat()
+                            },
+                        ) { PageSlider() }
+                        Txt(
+                            L10n.string("Pages left: %lld", (count - 1 - shown).coerceAtLeast(0)),
+                            style = Type.caption1.copy(fontFeatureSettings = "tnum"),
+                            color = AppTheme.colors.secondaryLabel,
+                            maxLines = 1,
+                        )
+                        if (inBar) right()
+                    }
+                    if (beside) right()
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun autoReadLabel(): String = if (AppSettings.readMode.isPaged) {
+        if (autoRead) tr("Stop Auto Read") else tr("Auto Read")
+    } else {
+        if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
+    }
+
+    @Composable
+    private fun buttonPlacement(): com.atlanyuey.aenht.core.ReaderButtonPlacement {
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        return AppSettings.readerButtonPlacement.resolved(isTabletBar(config.smallestScreenWidthDp, config.screenWidthDp))
+    }
+
+    /**
+     * Auto Read kept on screen: where its place in the controls is, also
+     * while they are away; it glides when that place moves. In the bar, the
+     * bar is its background; with the bar away, its own circle fades in.
+     */
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    @Composable
+    private fun PinnedAutoRead() {
+        val inset = pinnedInset ?: return
+        val overlays = LocalOverlays.current
+        val x = if (inset.x >= 0f) inset.x else readerSize.width + inset.x
+        val y = readerSize.height - inset.y
+        val spring = androidx.compose.animation.core.spring<IntOffset>(dampingRatio = 0.9f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
+        val at by androidx.compose.animation.core.animateIntOffsetAsState(IntOffset(x.roundToInt(), y.roundToInt()), spring, label = "pinned")
+        val circle by androidx.compose.animation.core.animateFloatAsState(if (chromeVisible && pinnedInBar) 0f else 1f, label = "circle")
+        // Above the bar, the pages held on the slider show where it is.
+        val shown by androidx.compose.animation.core.animateFloatAsState(if (scrubPage != null && pinnedAbove && chromeVisible) 0f else 1f, label = "shown")
+        Box(
+            Modifier
+                .layout { measurable, _ ->
+                    val placeable = measurable.measure(androidx.compose.ui.unit.Constraints())
+                    layout(0, 0) { placeable.place(at.x - placeable.width / 2, at.y - placeable.height / 2) }
+                }
+                .graphicsLayer { alpha = shown }
+                .size(44.dp),
+        ) {
+            Box(Modifier.matchParentSize().graphicsLayer { alpha = circle }.glass(com.kyant.shapes.Capsule()))
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .combinedClickable(
+                        enabled = shown > 0.5f,
+                        role = androidx.compose.ui.semantics.Role.Button,
+                        onClick = { autoRead = !autoRead },
+                        onLongClick = { openAutoReadOptions(overlays) },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.animation.Crossfade(if (autoRead) Icons.Pause else Icons.Play, animationSpec = androidx.compose.animation.core.tween(180), label = "icon") { icon ->
+                    AppIcon(icon, autoReadLabel(), tint = AppTheme.colors.label, size = 20.dp)
+                }
+            }
+        }
+    }
+
+    /** A button inside the bar: the bar's glass is its background. */
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    @Composable
+    private fun BarButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit, onLongClick: (() -> Unit)? = null, modifier: Modifier = Modifier) {
+        Box(
+            modifier
+                .size(40.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .combinedClickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick, onLongClick = onLongClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.animation.Crossfade(icon, animationSpec = androidx.compose.animation.core.tween(180), label = "icon") { shown ->
+                AppIcon(shown, label, tint = AppTheme.colors.label, size = 20.dp)
             }
         }
     }
@@ -2085,6 +2271,15 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
 }
 
 /**
+ * A tablet (smallest width 600 dp or more) with room across: the reader's
+ * buttons go inside its bottom bar. Phones keep them floating above it.
+ */
+/** How long a page may take before its Reload Page button shows (it may be stuck). */
+internal const val SLOW_PAGE_MILLIS = 10_000L
+
+internal fun isTabletBar(smallestWidthDp: Int, widthDp: Int): Boolean = smallestWidthDp >= 600 && widthDp >= 600
+
+/**
  * Auto Read's interval (paged) or Auto Scroll's speed and whether it goes on
  * while dragging (continuous): in Reading settings, and in the reader when
  * its Auto Read button is long-pressed.
@@ -2222,8 +2417,10 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     val paged = AppSettings.readMode.isPaged
     section("Control Bar", footer = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FooterText(tr("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right."))
+            FooterText(tr("The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right."))
+            FooterText(tr("Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone."))
             FooterText(tr("Long-press the Auto Read button for its speed and options; a tap starts or stops it."))
+            FooterText(tr("Keep Auto Read Button on Screen: it stays where it is when the controls hide."))
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
         }
     }) {
@@ -2232,6 +2429,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
         if (AppSettings.readerSettingsButton && AppSettings.autoReadButton) {
             PickerRow(tr(if (paged) "Auto Read Button Side" else "Auto Scroll Button Side"), com.atlanyuey.aenht.core.AutoReadSide.entries, AppSettings.autoReadSide,
                 label = { tr(it.title) }, onSelect = { AppSettings.autoReadSide = it })
+        }
+        if (AppSettings.readerSettingsButton || AppSettings.autoReadButton) {
+            PickerRow(tr("Button Placement"), com.atlanyuey.aenht.core.ReaderButtonPlacement.entries, AppSettings.readerButtonPlacement,
+                label = { tr(it.title) }, onSelect = { AppSettings.readerButtonPlacement = it })
+        }
+        if (AppSettings.autoReadButton) {
+            ToggleRow(tr(if (paged) "Keep Auto Read Button on Screen" else "Keep Auto Scroll Button on Screen"), AppSettings.autoReadPinned, { AppSettings.autoReadPinned = it })
         }
         ToggleRow(tr("Tap the Middle to Show Controls"), AppSettings.controlsMiddleOnly, { AppSettings.controlsMiddleOnly = it }, last = true)
     }

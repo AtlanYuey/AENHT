@@ -240,7 +240,7 @@ class SmoothAutoScrollTest {
         try {
             val reader = open(ReadMode.Vertical, offline = offline)
             val list = list(reader)
-            compose.waitUntil(10_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText("Reload Page").fetchSemanticsNodes().isNotEmpty() }
             compose.mainClock.autoAdvance = false
             compose.onNodeWithContentDescription("Auto Scroll").performClick()
             advance(300)

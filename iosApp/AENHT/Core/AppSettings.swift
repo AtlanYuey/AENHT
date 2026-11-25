@@ -161,7 +161,28 @@ enum ScreenOn: String, CaseIterable, Identifiable {
     }
 }
 
-/// Where taps turn pages in the reader.
+/// Where the reader's Settings and Auto Read buttons go: floating above the
+/// bar, beside it (level with it, each in its own circle), or in it.
+/// Automatic: in it on an iPad, above it on an iPhone.
+enum ReaderButtonPlacement: String, CaseIterable, Identifiable {
+    case automatic, above, beside, inBar
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .automatic: String(localized: "Automatic")
+        case .above: String(localized: "Above the Bar")
+        case .beside: String(localized: "Beside the Bar")
+        case .inBar: String(localized: "In the Bar")
+        }
+    }
+
+    /// What Automatic is here ([tablet]: an iPad with room across).
+    func resolved(tablet: Bool) -> ReaderButtonPlacement {
+        self == .automatic ? (tablet ? .inBar : .above) : self
+    }
+}
+
 /// Where the reader's Auto Read button floats, next to Reader Settings (on the other side).
 enum AutoReadSide: String, CaseIterable, Identifiable {
     /// The side of the hand: where the screen was last touched.
@@ -177,6 +198,7 @@ enum AutoReadSide: String, CaseIterable, Identifiable {
     }
 }
 
+/// Where taps turn pages in the reader.
 enum TapZones: String, CaseIterable, Identifiable {
     case leftRight, topBottom
 
@@ -445,6 +467,10 @@ final class AppSettings {
     var autoReadSide: AutoReadSide { didSet { save(autoReadSide.rawValue, "autoReadSide") } }
     /// Only a tap in the middle shows or hides the reader's controls; the sides do nothing.
     var controlsMiddleOnly: Bool { didSet { save(controlsMiddleOnly, "controlsMiddleOnly") } }
+    /// Where Reader Settings and Auto Read go (Controls › Control Bar).
+    var readerButtonPlacement: ReaderButtonPlacement { didSet { save(readerButtonPlacement.rawValue, "readerButtonPlacement") } }
+    /// Auto Read stays on screen, where it is, while the controls are away.
+    var autoReadPinned: Bool { didSet { save(autoReadPinned, "autoReadPinned") } }
     /// Favorites reload each time their tab is opened.
     var favoritesRefreshOnOpen: Bool { didSet { save(favoritesRefreshOnOpen, "favoritesRefreshOnOpen") } }
     var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
@@ -638,6 +664,8 @@ final class AppSettings {
         autoReadButton = d.object(forKey: "autoReadButton") as? Bool ?? true
         autoReadSide = AutoReadSide(rawValue: d.string(forKey: "autoReadSide") ?? "") ?? .hand
         controlsMiddleOnly = d.object(forKey: "controlsMiddleOnly") as? Bool ?? false
+        readerButtonPlacement = ReaderButtonPlacement(rawValue: d.string(forKey: "readerButtonPlacement") ?? "") ?? .automatic
+        autoReadPinned = d.object(forKey: "autoReadPinned") as? Bool ?? false
         favoritesRefreshOnOpen = d.object(forKey: "favoritesRefreshOnOpen") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
         pageGap = d.object(forKey: "pageGap") as? Double ?? 6
@@ -772,6 +800,8 @@ final class AppSettings {
         values["autoReadButton"] = autoReadButton
         values["autoReadSide"] = autoReadSide.rawValue
         values["controlsMiddleOnly"] = controlsMiddleOnly
+        values["readerButtonPlacement"] = readerButtonPlacement.rawValue
+        values["autoReadPinned"] = autoReadPinned
         values["favoritesRefreshOnOpen"] = favoritesRefreshOnOpen
         values["animatePageTurns"] = animatePageTurns
         values["pageGap"] = pageGap
@@ -878,6 +908,8 @@ final class AppSettings {
         case "autoReadButton": set(\.autoReadButton, number?.boolValue)
         case "autoReadSide": set(\.autoReadSide, string.flatMap(AutoReadSide.init(rawValue:)))
         case "controlsMiddleOnly": set(\.controlsMiddleOnly, number?.boolValue)
+        case "readerButtonPlacement": set(\.readerButtonPlacement, string.flatMap(ReaderButtonPlacement.init(rawValue:)))
+        case "autoReadPinned": set(\.autoReadPinned, number?.boolValue)
         case "favoritesRefreshOnOpen": set(\.favoritesRefreshOnOpen, number?.boolValue)
         case "animatePageTurns":
             set(\.animatePageTurns, number?.boolValue)

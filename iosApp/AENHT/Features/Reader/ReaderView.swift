@@ -142,8 +142,17 @@ struct ReaderView: View {
     @State private var showSettings = false
     /// Auto Read's speed and options (a long press on its button).
     @State private var showAutoReadOptions = false
-    /// The page whose menu is open (a long press on it: Reload Page…).
-    @State private var pageMenu: Int?
+    /// The menu open on a page (a long press on it: Reload Page…), where the finger is.
+    @State private var pageMenu: PageMenuRequest?
+    /// What touches leave for the gestures (where the finger went down…), without a view update.
+    @State private var touches = ReaderTouches()
+    /// The controls are shown and done moving in.
+    @State private var panelSettled = false
+    /// Auto Read kept on screen: from the nearer side (x, negative: from the
+    /// right) and from the bottom (y). Nil until the controls have shown it.
+    @State private var pinnedInset: CGPoint?
+    @State private var pinnedInBar = false
+    @State private var pinnedAbove = false
     /// Pages reloaded, and how many times (their pictures are loaded again).
     @State private var reloads: [Int: Int] = [:]
     @State private var sliderValue: Double
@@ -293,15 +302,6 @@ struct ReaderView: View {
                 ReaderSettingsSheet()
                     .presentationDetents([.medium, .large])
             }
-            .confirmationDialog(Text("Page \((pageMenu ?? 0) + 1)"), isPresented: Binding(
-                get: { pageMenu != nil }, set: { if !$0 { pageMenu = nil } }
-            ), titleVisibility: .visible) {
-                if let index = pageMenu {
-                    Button("Reload Page") { reloadPage(index) }
-                    Button("Save Page") { Task { await savePage() } }
-                    Button("Share Page") { Task { await sharePage() } }
-                }
-            }
             .sheet(isPresented: $showAutoReadOptions) {
                 AutoReadOptionsSheet()
                     .presentationDetents([.height(300), .medium])
@@ -315,6 +315,8 @@ struct ReaderView: View {
                 // No view state changes here: one while the Options menu is
                 // open rebuilds the toolbar and closes the menu under the
                 // finger, before its item acts.
+                touches.lastDown = touch.location
+                touches.longPressed = false
                 awake.touched()
                 guard chromeVisible else {
                     // The hand: the side touched while the controls were away (the
@@ -332,6 +334,8 @@ struct ReaderView: View {
                 }
             })
             .onChange(of: chromeVisible) { scheduleHide() }
+            .onChange(of: chromeVisible, initial: true) { settleControls() }
+            .onChange(of: settings.autoReadPinned) { recordPin() }
             .onChange(of: settings.screenOn) { awake.touched() }
             .onChange(of: sliderEditing) {
                 if sliderEditing { autoRead = false }
@@ -382,6 +386,7 @@ struct ReaderView: View {
             }
             .background(Color.black)
             .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: { isLandscape = $0 }
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { touches.canvasFrame = $0 }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
                 canvasSize = size
                 viewportPixels = CGSize(width: size.width * displayScale, height: size.height * displayScale)
@@ -392,6 +397,10 @@ struct ReaderView: View {
                 StatusBarTapCatcher().frame(height: 1)
             }
             .ignoresSafeArea()
+            // A long press's menu: Reload Page…, pointing at the finger.
+            .popover(item: $pageMenu, attachmentAnchor: .rect(.rect(CGRect(origin: pageMenu?.at ?? .zero, size: CGSize(width: 1, height: 1))))) { menu in
+                pageMenuContent(menu)
+            }
             .navigationBarTitleDisplayMode(.inline)
             .barToolbar {
                 ToolbarItem(placement: .principal) {
@@ -449,6 +458,7 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .overlay { pinnedAutoRead }
             .statusBarHidden(!chromeVisible)
             .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
             .environment(\.colorScheme, .dark)
@@ -484,7 +494,7 @@ struct ReaderView: View {
             })
             .id("\(settings.readMode.rawValue)-\(spreads == nil ? 1 : 2)-\(settings.doublePageCover)-\(settings.doublePageSingleStep)-\(reloads.values.reduce(0, +))")
             // Held still: the page's menu (Reload Page…).
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in pageMenu = page })
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in openPageMenu() })
         } else {
             ContinuousReader(pages: source.pages, imageOptions: imageOptions, page: $page,
                              request: scrollRequest, running: $autoRead, scale: $stripScale,
@@ -492,9 +502,11 @@ struct ReaderView: View {
                 chromeVisible = false
             }
             // Held still: the menu of the page on screen (Reload Page…).
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in pageMenu = page })
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in openPageMenu() })
             .contentShape(Rectangle())
             .onTapGesture { location in
+                // A long press isn't also a tap.
+                guard !touches.longPressed else { return }
                 let point = CGPoint(x: location.x / max(canvasSize.width, 1), y: location.y / max(canvasSize.height, 1))
                 if ReaderTapZones.togglesControls(at: point, paged: false) { chromeVisible.toggle() }
             }
@@ -543,6 +555,8 @@ struct ReaderView: View {
 
     /// A tap at [point] (fractions of the page's width and height).
     private func handleTap(at point: CGPoint) {
+        // A long press (its menu) isn't also a tap: no turn, the controls stay as they are.
+        guard !touches.longPressed else { return }
         guard let forward = ReaderTapZones.forward(at: point, rightToLeft: isRTL) else {
             chromeVisible.toggle()
             return
@@ -626,14 +640,16 @@ struct ReaderView: View {
         }
     }
 
-    private func sharePage() async {
+    /// The share sheet; on an iPad it points at [point] (in the window), else at the top.
+    private func sharePage(at point: CGPoint? = nil) async {
         guard let image = await pageImage() else { return }
         let controller = UIActivityViewController(activityItems: [image], applicationActivities: nil)
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first { $0.activationState == .foregroundActive }
         var top = scene?.keyWindow?.rootViewController
         while let presented = top?.presentedViewController { top = presented }
         controller.popoverPresentationController?.sourceView = top?.view
-        controller.popoverPresentationController?.sourceRect = CGRect(x: (top?.view.bounds.midX ?? 0), y: 60, width: 1, height: 1)
+        let anchor = point.flatMap { top?.view.convert($0, from: nil) } ?? CGPoint(x: top?.view.bounds.midX ?? 0, y: 60)
+        controller.popoverPresentationController?.sourceRect = CGRect(origin: anchor, size: CGSize(width: 1, height: 1))
         top?.present(controller, animated: true)
     }
 
@@ -725,10 +741,53 @@ struct ReaderView: View {
         VStack(spacing: 0) {
             // While the slider is held: the pages around it, over the finger.
             if sliderEditing { scrubStrip } else { floatingButtons }
-            pageBar
+            HStack(spacing: 10) {
+                if placement == .beside { sideButtons(left: true) }
+                pageBar
+                if placement == .beside { sideButtons(left: false) }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
         .coordinateSpace(.named("readerPanel"))
-        .frame(maxWidth: 640)
+        .frame(maxWidth: placement == .above ? 640 : 760)
+    }
+
+    /// Where Reader Settings and Auto Read go (Controls › Button Placement;
+    /// Automatic: in the bar on an iPad with room across, above it otherwise).
+    private var placement: ReaderButtonPlacement {
+        settings.readerButtonPlacement.resolved(tablet: UIDevice.current.userInterfaceIdiom == .pad && canvasSize.width >= 600)
+    }
+
+    /// One button alone goes on the hand's side; both, Auto Read where
+    /// Controls › Auto Read Button Side says, Reader Settings on the other.
+    private var autoOnLeft: Bool {
+        guard settings.readerSettingsButton else { return handOnLeft }
+        return switch settings.autoReadSide {
+        case .hand: handOnLeft
+        case .left: true
+        case .right: false
+        }
+    }
+
+    private var settingsOnLeft: Bool { settings.autoReadButton ? !autoOnLeft : handOnLeft }
+
+    private func hasButton(left: Bool) -> Bool {
+        (settings.readerSettingsButton && settingsOnLeft == left) || (settings.autoReadButton && autoOnLeft == left)
+    }
+
+    /// The buttons of one side, outermost at the edge.
+    @ViewBuilder private func sideButtons(left: Bool) -> some View {
+        let inBar = placement == .inBar
+        let withSettings = settings.readerSettingsButton && settingsOnLeft == left
+        let withAutoRead = settings.autoReadButton && autoOnLeft == left
+        if withSettings || withAutoRead {
+            HStack(spacing: inBar ? 4 : 10) {
+                if left, withSettings { settingsButton(glass: !inBar) }
+                if withAutoRead { autoReadSlot(inBar: inBar) }
+                if !left, withSettings { settingsButton(glass: !inBar) }
+            }
+        }
     }
 
     /// The page shown in the bar: the slider's while it's held.
@@ -749,10 +808,13 @@ struct ReaderView: View {
         .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
     }
 
-    /// One row: the page, the slider, the pages left (as much room above as below).
-    /// Turning is a tap or a swipe on the page: no arrows here.
+    /// One row: the page, the slider, the pages left (as much room above as below);
+    /// in it, the buttons when they go in the bar. Turning is a tap or a swipe
+    /// on the page: no arrows here.
     private var pageBar: some View {
-        HStack(spacing: 12) {
+        let inBar = placement == .inBar
+        return HStack(spacing: 12) {
+            if inBar { sideButtons(left: true) }
             Text(verbatim: "\(shownPage + 1) / \(pageCount)")
                 .font(.footnote.weight(.semibold).monospacedDigit())
                 .frame(minWidth: 56, alignment: .leading)
@@ -761,37 +823,30 @@ struct ReaderView: View {
             Text("Pages left: \(max(0, pageCount - 1 - shownPage))")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
+            if inBar { sideButtons(left: false) }
         }
         .lineLimit(1)
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        // Buttons in it: as high as without, a button close to each end.
+        .padding(.leading, inBar && hasButton(left: true) ? 6 : 18)
+        .padding(.trailing, inBar && hasButton(left: false) ? 6 : 18)
+        .padding(.vertical, inBar ? 7 : 12)
         .modifier(GlassPanel(cornerRadius: 26))
         // The whole panel takes touches: one that misses the slider doesn't
         // reach the page under it (which would hide the controls).
         .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 
-    /// Reader Settings and Auto Read float on the sides above the bar: one
-    /// alone on the hand's side; both, Auto Read where Controls › Auto Read
-    /// Button Side says. Reset Size in the middle, when the pages were resized.
+    /// Above the bar: the buttons on the sides (when they go there), and
+    /// Reset Size in the middle, when the pages were resized.
     @ViewBuilder private var floatingButtons: some View {
-        let showSettingsButton = settings.readerSettingsButton
-        let showAutoRead = settings.autoReadButton
-        let autoLeft: Bool = switch settings.autoReadSide {
-        case .hand: handOnLeft
-        case .left: true
-        case .right: false
-        }
-        let autoOnLeft = showSettingsButton ? autoLeft : handOnLeft
-        let settingsOnLeft = showAutoRead ? !autoLeft : handOnLeft
-        if showSettingsButton || showAutoRead || isResized {
+        let above = placement == .above
+        if (above && (settings.readerSettingsButton || settings.autoReadButton)) || isResized {
             ZStack {
-                HStack(spacing: 10) {
-                    if showSettingsButton, settingsOnLeft { settingsButton }
-                    if showAutoRead, autoOnLeft { autoReadButton }
-                    Spacer(minLength: 0)
+                if above {
+                    HStack(spacing: 0) {
+                        sideButtons(left: true)
+                        Spacer(minLength: 0)
+                    }
                 }
                 if isResized {
                     // Pinched smaller or bigger: back to the usual size.
@@ -801,10 +856,11 @@ struct ReaderView: View {
                     .accessibilityLabel("Reset Size")
                     .transition(.opacity)
                 }
-                HStack(spacing: 10) {
-                    Spacer(minLength: 0)
-                    if showAutoRead, !autoOnLeft { autoReadButton }
-                    if showSettingsButton, !settingsOnLeft { settingsButton }
+                if above {
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        sideButtons(left: false)
+                    }
                 }
             }
             .buttonStyle(.borderless)
@@ -813,18 +869,38 @@ struct ReaderView: View {
         }
     }
 
-    private var settingsButton: some View {
+    private func settingsButton(glass: Bool) -> some View {
         Button { showSettings = true } label: {
-            Image(systemName: "slider.horizontal.3").floatingTarget()
+            Image(systemName: "slider.horizontal.3").buttonTarget(glass: glass)
         }
+        .buttonStyle(.borderless)
+        .font(.body.weight(.medium))
         .accessibilityLabel("Reader Settings")
     }
 
+    /// Auto Read's place among the controls. Kept on screen (Controls › Keep
+    /// Auto Read Button on Screen), the button itself is drawn over the
+    /// reader ([pinnedAutoRead]) and this only says where.
+    private func autoReadSlot(inBar: Bool) -> some View {
+        Group {
+            if settings.autoReadPinned, pinnedInset != nil {
+                Color.clear.frame(width: inBar ? 40 : 44, height: inBar ? 40 : 44)
+            } else {
+                autoReadButton(glass: !inBar)
+            }
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+            touches.autoSlot = frame
+            if panelSettled { recordPin() }
+        }
+    }
+
     /// A tap starts or stops; a long press shows the speed and the options.
-    private var autoReadButton: some View {
+    private func autoReadButton(glass: Bool) -> some View {
         Image(systemName: autoRead ? "pause.fill" : "play.fill")
             .contentTransition(.symbolEffect(.replace))
-            .floatingTarget()
+            .font(.body.weight(.medium))
+            .buttonTarget(glass: glass)
             .onTapGesture { autoRead.toggle() }
             .onLongPressGesture(minimumDuration: 0.4) { showAutoReadOptions = true }
             .accessibilityElement()
@@ -832,6 +908,104 @@ struct ReaderView: View {
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { autoRead.toggle() }
             .accessibilityAction(named: Text(settings.readMode.isPaged ? "Auto Read" : "Auto Scroll")) { showAutoReadOptions = true }
+    }
+
+    /// Where Auto Read kept on screen goes: its place among the controls,
+    /// from the side it's nearer and from the bottom (so it stays in its
+    /// corner when the screen turns). Taken once the controls are in place.
+    private func recordPin() {
+        guard settings.autoReadPinned, chromeVisible, touches.autoSlot.width > 0, touches.canvasFrame.width > 0 else { return }
+        let canvas = touches.canvasFrame
+        let center = CGPoint(x: touches.autoSlot.midX - canvas.minX, y: touches.autoSlot.midY - canvas.minY)
+        let inset = CGPoint(x: ((center.x < canvas.width / 2 ? center.x : center.x - canvas.width) * 2).rounded() / 2,
+                            y: ((canvas.height - center.y) * 2).rounded() / 2)
+        if pinnedInset != inset { pinnedInset = inset }
+        if pinnedInBar != (placement == .inBar) { pinnedInBar = placement == .inBar }
+        if pinnedAbove != (placement == .above) { pinnedAbove = placement == .above }
+    }
+
+    /// The controls in place (shown, done moving): Auto Read kept on screen takes their place.
+    private func settleControls() {
+        panelSettled = false
+        guard chromeVisible else { return }
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            guard chromeVisible else { return }
+            panelSettled = true
+            recordPin()
+        }
+    }
+
+    /// Auto Read kept on screen: where its place among the controls is, also
+    /// while they are away; it glides when that place moves. In the bar, the
+    /// bar is its background; with the bar away, its own circle fades in.
+    @ViewBuilder private var pinnedAutoRead: some View {
+        if settings.autoReadButton, settings.autoReadPinned, let inset = pinnedInset {
+            GeometryReader { geometry in
+                autoReadButton(glass: false)
+                    .background {
+                        Color.clear
+                            .frame(width: 44, height: 44)
+                            .modifier(GlassPanel(cornerRadius: 22))
+                            .opacity(chromeVisible && pinnedInBar ? 0 : 1)
+                    }
+                    // Above the bar, the pages held on the slider show where it is.
+                    .opacity(sliderEditing && pinnedAbove ? 0 : 1)
+                    .position(x: inset.x >= 0 ? inset.x : geometry.size.width + inset.x,
+                              y: geometry.size.height - inset.y)
+            }
+            .ignoresSafeArea()
+            .animation(.smooth(duration: 0.35), value: inset)
+            .animation(.smooth(duration: 0.25), value: chromeVisible)
+        }
+    }
+
+    /// A long press on a page: its menu, where the finger is.
+    private func openPageMenu() {
+        touches.longPressed = true
+        let canvas = touches.canvasFrame
+        pageMenu = PageMenuRequest(index: page, at: CGPoint(x: touches.lastDown.x - canvas.minX, y: touches.lastDown.y - canvas.minY))
+    }
+
+    private func pageMenuContent(_ menu: PageMenuRequest) -> some View {
+        VStack(spacing: 0) {
+            Text("Page \(menu.index + 1)")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 10)
+            Divider()
+            pageMenuRow("Reload Page", systemImage: "arrow.clockwise") { reloadPage(menu.index) }
+            Divider()
+            pageMenuRow("Save Page", systemImage: "square.and.arrow.down") { Task { await savePage() } }
+            Divider()
+            pageMenuRow("Share Page", systemImage: "square.and.arrow.up") {
+                let window = touches.lastDown
+                Task {
+                    // Once the menu is gone: the share sheet comes out of the same place.
+                    try? await Task.sleep(for: .milliseconds(350))
+                    await sharePage(at: window)
+                }
+            }
+        }
+        .frame(width: 260)
+        .presentationCompactAdaptation(.popover)
+    }
+
+    private func pageMenuRow(_ title: LocalizedStringKey, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button {
+            pageMenu = nil
+            action()
+        } label: {
+            HStack {
+                Text(title)
+                Spacer(minLength: 12)
+                Image(systemName: systemImage)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// Five pages (two before, the one under the finger, two after), centred
@@ -901,6 +1075,15 @@ struct ReaderView: View {
 }
 
 private extension View {
+    /// A button's target: a glass circle, or (in the bar, on its glass) just its place.
+    @ViewBuilder func buttonTarget(glass: Bool) -> some View {
+        if glass {
+            floatingTarget()
+        } else {
+            frame(width: 40, height: 40).contentShape(Circle())
+        }
+    }
+
     /// A floating round button above the control bar (44 pt).
     func floatingTarget() -> some View {
         frame(width: 44, height: 44)
@@ -956,6 +1139,26 @@ private final class ChromeHider {
 }
 
 /// A floating panel: Liquid Glass on iOS 26, material before.
+/// A long press's menu on a page: which page, and where the finger was (in the reader).
+struct PageMenuRequest: Identifiable, Equatable {
+    let index: Int
+    let at: CGPoint
+    var id: String { "\(index)-\(at.x)-\(at.y)" }
+}
+
+/// What touches leave for the reader's gestures, kept out of view state
+/// (a change to it updates nothing on screen).
+@MainActor final class ReaderTouches {
+    /// Where the last finger went down, in the window.
+    var lastDown: CGPoint = .zero
+    /// The current touch was a long press (its menu): its lifting isn't a tap.
+    var longPressed = false
+    /// The reader, in the window.
+    var canvasFrame: CGRect = .zero
+    /// Auto Read's place among the controls, in the window.
+    var autoSlot: CGRect = .zero
+}
+
 struct GlassPanel: ViewModifier {
     var cornerRadius: CGFloat = 28
 
@@ -1213,13 +1416,23 @@ struct ReadingSettingsSections: View {
                     ForEach(AutoReadSide.allCases) { Text($0.title).tag($0) }
                 }
             }
+            if settings.readerSettingsButton || settings.autoReadButton {
+                Picker("Button Placement", selection: $settings.readerButtonPlacement) {
+                    ForEach(ReaderButtonPlacement.allCases) { Text($0.title).tag($0) }
+                }
+            }
+            if settings.autoReadButton {
+                Toggle(settings.readMode.isPaged ? "Keep Auto Read Button on Screen" : "Keep Auto Scroll Button on Screen", isOn: $settings.autoReadPinned)
+            }
             Toggle("Tap the Middle to Show Controls", isOn: $settings.controlsMiddleOnly)
         } header: {
             Text("Control Bar")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text("The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.")
+                Text("The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.")
+                Text("Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone.")
                 Text("Long-press the Auto Read button for its speed and options; a tap starts or stops it.")
+                Text("Keep Auto Read Button on Screen: it stays where it is when the controls hide.")
                 Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")
             }
         }
@@ -2092,10 +2305,11 @@ final class PageController: UIViewController {
 final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private let imageView = UIImageView()
     private let spinner = UIActivityIndicatorView(style: .large)
-    /// Shown when the page couldn't be loaded: tapping it loads it again.
+    /// Shown where the page is when it couldn't be loaded, or is still not
+    /// there after a while: tapping it loads it again from the start.
     private let retryButton: UIButton = {
         var configuration = UIButton.Configuration.gray()
-        configuration.title = String(localized: "Retry")
+        configuration.title = String(localized: "Reload Page")
         configuration.subtitle = String(localized: "Couldn't load the image.")
         configuration.image = UIImage(systemName: "arrow.clockwise")
         configuration.imagePadding = 10
@@ -2106,6 +2320,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }()
     private var retryLoad: (() -> Void)?
     private var loadTask: Task<Void, Never>?
+    /// Shows Reload Page under a page still loading after a while.
+    private var slowTask: Task<Void, Never>?
     private var enhanceTask: Task<Void, Never>?
     private var originals: [UIImage] = []
     private var urls: [URL] = []
@@ -2297,6 +2513,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     deinit {
         glide?.invalidate()
         loadTask?.cancel()
+        slowTask?.cancel()
         enhanceTask?.cancel()
         pendingTap?.cancel()
     }
@@ -2407,19 +2624,35 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         }
         spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
         retryButton.sizeToFit()
-        retryButton.center = spinner.center
+        // Still loading: under the spinner.
+        retryButton.center = CGPoint(x: spinner.center.x, y: spinner.center.y + (spinner.isAnimating ? 64 : 0))
     }
 
     private func showFailure(again: @escaping () -> Void) {
+        slowTask?.cancel()
         spinner.stopAnimating()
         retryLoad = again
+        retryButton.configuration?.subtitle = String(localized: "Couldn't load the image.")
         retryButton.isHidden = false
         setNeedsLayout()
     }
 
+    /// Still not there: the same button, without the failure's words.
+    private func showSlow(again: @escaping () -> Void) {
+        retryLoad = again
+        retryButton.configuration?.subtitle = nil
+        retryButton.alpha = 0
+        retryButton.isHidden = false
+        setNeedsLayout()
+        UIView.animate(withDuration: 0.25) { self.retryButton.alpha = 1 }
+    }
+
     private func hideFailure() {
+        slowTask?.cancel()
+        slowTask = nil
         retryLoad = nil
         retryButton.isHidden = true
+        retryButton.alpha = 1
     }
 
     func resetZoom() {
@@ -2512,6 +2745,18 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         } else {
             spinner.startAnimating()
         }
+        // Loaded again from the start: what's cached of it (the page may be a broken one) goes.
+        let reload = { [weak self] in
+            guard let self, let current = self.options else { return }
+            for url in self.urls { ImagePipeline.shared.cache.removeCachedData(for: ImageRequest(url: url)) }
+            for request in requests { ImagePipeline.shared.cache.removeCachedImage(for: request) }
+            self.load(requested, rightToLeft: rightToLeft, options: current)
+        }
+        slowTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard !Task.isCancelled, let self else { return }
+            self.showSlow(again: reload)
+        }
         loadTask = Task { [weak self] in
             do {
                 let images: [UIImage]
@@ -2523,14 +2768,12 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
                     images = [try await ImagePipeline.shared.image(for: requests[0])]
                 }
                 guard !Task.isCancelled, let self else { return }
+                self.hideFailure()
                 self.originals = images
                 self.refreshPresentation(animated: true)
             } catch {
                 guard !Task.isCancelled, let self else { return }
-                self.showFailure { [weak self] in
-                    guard let self, let current = self.options else { return }
-                    self.load(requested, rightToLeft: rightToLeft, options: current)
-                }
+                self.showFailure(again: reload)
             }
         }
     }

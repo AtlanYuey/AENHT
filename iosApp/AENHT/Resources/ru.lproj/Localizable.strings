@@ -659,7 +659,15 @@
 "Follows Your Hand" = "Следует за рукой";
 "Auto Read Button Side" = "Сторона кнопки автолистания";
 "Auto Scroll Button Side" = "Сторона кнопки автопрокрутки";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Кнопки парят над ползунком: одна — со стороны руки (там, где вы нажали, чтобы показать панель); обе — автолистание на выбранной стороне, настройки читалки на другой. Настройки читалки есть и в меню справа вверху.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Удерживайте кнопку автолистания, чтобы настроить скорость и параметры; нажатие запускает или останавливает его.";
 "Reload Page" = "Перезагрузить страницу";
 "Page %lld" = "Страница %lld";
+"Button Placement" = "Расположение кнопок";
+"Above the Bar" = "Над панелью";
+"Beside the Bar" = "Рядом с панелью";
+"In the Bar" = "В панели";
+"Keep Auto Read Button on Screen" = "Всегда показывать кнопку автолистания";
+"Keep Auto Scroll Button on Screen" = "Всегда показывать кнопку автопрокрутки";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Кнопки располагаются по бокам ползунка: одна — со стороны вашей руки (где вы коснулись, чтобы показать элементы управления); обе — автолистание на выбранной стороне, настройки чтения на другой. Настройки чтения есть и в меню справа вверху.";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "Расположение кнопок: над панелью, рядом с ней (на одном уровне, каждая в своём круге) или в ней. «Автоматически» — в панели на планшете и над ней на телефоне.";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "Всегда показывать кнопку автолистания: она остаётся на месте, когда элементы управления скрываются.";

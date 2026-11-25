@@ -58,12 +58,15 @@ struct RemoteImage: View {
                                 .font(.title3)
                                 .foregroundStyle(.tertiary)
                             if retryOnFailure {
-                                Button("Retry") {
+                                // A reader page, where it is: loaded again from the start.
+                                Button("Reload Page", systemImage: "arrow.clockwise") {
                                     failed = false
+                                    if let url { ImagePipeline.shared.cache.removeCachedData(for: ImageRequest(url: url)) }
                                     onLoadState?(.loading)
                                     attempt += 1
                                 }
                                     .buttonStyle(.bordered)
+                                    .buttonBorderShape(.capsule)
                                     .frame(minHeight: 44)
                             }
                         }

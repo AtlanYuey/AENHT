@@ -659,7 +659,15 @@
 "Follows Your Hand" = "手の位置に合わせる";
 "Auto Read Button Side" = "自動めくりボタンの位置";
 "Auto Scroll Button Side" = "自動スクロールボタンの位置";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ボタンはスライダーの上に浮かびます。1 つだけのときは手の側（タップしてコントロールを表示した側）、2 つのときは自動めくりを選んだ側に、リーダー設定を反対側に置きます。リーダー設定は右上のメニューからも開けます。";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "自動めくりボタンを長押しすると速度やオプションを調整できます。タップで開始・停止します。";
 "Reload Page" = "このページを再読み込み";
 "Page %lld" = "%lld ページ";
+"Button Placement" = "ボタンの位置";
+"Above the Bar" = "バーの上";
+"Beside the Bar" = "バーの横";
+"In the Bar" = "バーの中";
+"Keep Auto Read Button on Screen" = "自動めくりボタンを常に表示";
+"Keep Auto Scroll Button on Screen" = "自動スクロールボタンを常に表示";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "ボタンはスライダーの両側に置かれます。片方だけなら手の側（コントロールを表示するためにタップした側）、両方なら自動めくりは選んだ側、読書設定は反対側です。読書設定は右上のメニューにもあります。";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "ボタンの位置：バーの上、バーの横（バーと同じ高さで、それぞれ丸いボタン）、バーの中。「自動」はタブレットではバーの中、スマートフォンではバーの上です。";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "自動めくりボタンを常に表示：コントロールが隠れても、ボタンはその場所に残ります。";

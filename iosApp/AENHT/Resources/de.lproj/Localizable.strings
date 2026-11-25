@@ -659,7 +659,15 @@
 "Follows Your Hand" = "Folgt der Hand";
 "Auto Read Button Side" = "Seite der Taste „Automatisch lesen“";
 "Auto Scroll Button Side" = "Seite der Taste „Automatisch scrollen“";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Die Tasten schweben über dem Regler: eine allein auf der Seite der Hand (wo du zum Einblenden der Steuerung getippt hast); beide, „Automatisch lesen“ auf der gewählten Seite und die Leser-Einstellungen auf der anderen. Die Leser-Einstellungen gibt es auch im Menü oben rechts.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Halte die Taste „Automatisch lesen“ gedrückt für Tempo und Optionen; tippe, um zu starten oder zu stoppen.";
 "Reload Page" = "Seite neu laden";
 "Page %lld" = "Seite %lld";
+"Button Placement" = "Position der Tasten";
+"Above the Bar" = "Über der Leiste";
+"Beside the Bar" = "Neben der Leiste";
+"In the Bar" = "In der Leiste";
+"Keep Auto Read Button on Screen" = "Taste für automatisches Lesen immer zeigen";
+"Keep Auto Scroll Button on Screen" = "Taste für automatisches Scrollen immer zeigen";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Die Tasten liegen links und rechts vom Schieberegler: eine allein auf der Seite deiner Hand (wo du getippt hast, um die Steuerung zu zeigen); beide: Automatisch lesen auf der gewählten Seite, Leseeinstellungen auf der anderen. Die Leseeinstellungen sind auch im Menü oben rechts.";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "Position der Tasten: über der Leiste, daneben (auf gleicher Höhe, jede in ihrem Kreis) oder darin. Automatisch legt sie auf einem Tablet in die Leiste und auf einem Telefon darüber.";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "Taste für automatisches Lesen immer zeigen: Sie bleibt an ihrem Platz, wenn die Steuerung ausgeblendet wird.";

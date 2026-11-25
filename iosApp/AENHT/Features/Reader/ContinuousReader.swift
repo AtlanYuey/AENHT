@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Nuke
 
 /// A command, separate from observed reading progress. Only an explicit jump scrolls to an ID.
 struct ReaderScrollRequest: Equatable {
@@ -66,7 +67,11 @@ struct ContinuousReader: View {
                         ContinuousReaderPage(item: item, retry: retries[item.index, default: 0] + reloads[item.index, default: 0] * 1000,
                                              knownRatio: driver.knownRatios[item.index],
                                              enhancement: item.url.flatMap { imageOptions.enhancement(for: $0, continuous: true) },
-                                             enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index) { state in
+                                             enhanceNow: scenePhase == .active && visiblePages?.lowerBound == item.index,
+                                             onReload: {
+                                                 if let url = item.url { ImagePipeline.shared.cache.removeCachedData(for: ImageRequest(url: url)) }
+                                                 retries[item.index, default: 0] += 1
+                                             }) { state in
                             switch state {
                             case .loading: driver.image(index: item.index)
                             case .failed: driver.image(index: item.index, failed: true)
@@ -286,8 +291,12 @@ private struct ContinuousReaderPage: View {
     let knownRatio: CGFloat?
     let enhancement: ReaderImageEnhancement?
     let enhanceNow: Bool
+    /// Reload Page, from the button under a page still loading after a while.
+    let onReload: () -> Void
     let onLoad: (RemoteImageLoadState) -> Void
     @State private var loadedRatio: CGFloat?
+    @State private var loading = true
+    @State private var slow = false
 
     private var ratio: CGFloat {
         let value = loadedRatio ?? knownRatio ?? item.url.flatMap {
@@ -306,9 +315,27 @@ private struct ContinuousReaderPage: View {
                             // Until it's loaded: its thumbnail, from memory.
                             placeholder: item.url.flatMap { ReaderPlaceholders.image(for: $0) }) { state in
                     if case .ready(let size) = state, size.width > 0, size.height > 0 { loadedRatio = size.width / size.height }
+                    if case .loading = state { loading = true } else { loading = false }
                     onLoad(state)
                 }
                 .id(retry)
+            }
+            .overlay {
+                // Still not there after a while: Reload Page, where the page is.
+                if loading, slow {
+                    Button("Reload Page", systemImage: "arrow.clockwise", action: onReload)
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .tint(.white)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.25), value: slow && loading)
+            .task(id: retry) {
+                slow = false
+                loading = true
+                try? await Task.sleep(for: .seconds(10))
+                if !Task.isCancelled { slow = true }
             }
             .onAppear { if item.url == nil { onLoad(.failed) } }
     }

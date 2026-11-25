@@ -659,7 +659,15 @@
 "Follows Your Hand" = "Segue la mano";
 "Auto Read Button Side" = "Lato del pulsante Lettura automatica";
 "Auto Scroll Button Side" = "Lato del pulsante Scorrimento automatico";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "I pulsanti fluttuano sopra il cursore: uno solo, dal lato della mano (dove hai toccato per mostrare i controlli); tutti e due, la lettura automatica dal lato scelto e le impostazioni del lettore dall’altro. Le impostazioni del lettore sono anche nel menu in alto a destra.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Tieni premuto il pulsante Lettura automatica per velocità e opzioni; toccalo per avviarla o fermarla.";
 "Reload Page" = "Ricarica la pagina";
 "Page %lld" = "Pagina %lld";
+"Button Placement" = "Posizione dei pulsanti";
+"Above the Bar" = "Sopra la barra";
+"Beside the Bar" = "Accanto alla barra";
+"In the Bar" = "Nella barra";
+"Keep Auto Read Button on Screen" = "Mantieni sullo schermo il pulsante di lettura automatica";
+"Keep Auto Scroll Button on Screen" = "Mantieni sullo schermo il pulsante di scorrimento automatico";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "I pulsanti vanno ai lati del cursore: uno solo, dal lato della tua mano (dove hai toccato per mostrare i controlli); entrambi, Lettura automatica dal lato scelto e Impostazioni di lettura dall’altro. Le Impostazioni di lettura sono anche nel menu in alto a destra.";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "Posizione dei pulsanti: sopra la barra, accanto (alla sua altezza, ciascuno nel suo cerchio) o dentro. Automatico li mette nella barra su un tablet e sopra su un telefono.";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "Mantieni sullo schermo il pulsante di lettura automatica: resta dov’è quando i controlli si nascondono.";

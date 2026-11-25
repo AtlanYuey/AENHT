@@ -211,7 +211,7 @@ The app switcher can blur images only, blur images and text, blur the whole app,
 - Left/right or top/bottom tap zones; long perpendicular swipes can exit, toggle controls, or start/stop auto reading. Pinch and double tap zoom the page.
 - Keep-awake: off, five minutes, ten minutes, or always. Super-resolution: off, automatic, or always, with downloadable higher-quality models.
 - Page-only brightness, grayscale, and inversion; jump to a page, save or share one page; Android volume-key page turns.
-- Controls hide after inactivity. The control bar is one row (the page, the slider, the pages left); dragging the slider previews the pages around it. Reader Settings and Auto Read float on the sides (one alone follows your hand; long-press Auto Read for its speed); the controls can also be set to show only from a tap in the middle. Settings are grouped into Reading (direction, page turns, auto read, preload), Display (filters, page size, super-resolution, keep-awake), and Controls (control bar, taps and swipes, keys and devices).
+- Controls hide after inactivity. The control bar is one row (the page, the slider, the pages left); dragging the slider previews the pages around it. Reader Settings and Auto Read sit on the sides, above the bar, beside it or in it (in it by default on a tablet; one alone follows your hand; long-press Auto Read for its speed; Auto Read can stay on screen); long-press a page to reload it, or tap Reload Page on a page that failed; the controls can also be set to show only from a tap in the middle. Settings are grouped into Reading (direction, page turns, auto read, preload), Display (filters, page size, super-resolution, keep-awake), and Controls (control bar, taps and swipes, keys and devices).
 </details>
 
 <details>

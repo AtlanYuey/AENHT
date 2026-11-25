@@ -252,6 +252,25 @@ enum class ScreenOn(val raw: String, val title: String, val minutes: Int) {
 
 /** Where taps turn pages in the reader. */
 /** Where the reader's Auto Read button floats, next to Reader Settings (on the other side). */
+/**
+ * Where the reader's Settings and Auto Read buttons go: floating above the
+ * bar, beside it (level with it, each in its own circle), or in it.
+ * Automatic: in it on a tablet, above it on a phone.
+ */
+enum class ReaderButtonPlacement(val raw: String, val title: String) {
+    Auto("auto", "Automatic"),
+    Above("above", "Above the Bar"),
+    Beside("beside", "Beside the Bar"),
+    InBar("inBar", "In the Bar");
+
+    /** What Automatic is on this device. */
+    fun resolved(tablet: Boolean): ReaderButtonPlacement = if (this == Auto) (if (tablet) InBar else Above) else this
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Auto
+    }
+}
+
 enum class AutoReadSide(val raw: String, val title: String) {
     /** The side of the hand: where the screen was last touched. */
     Hand("hand", "Follows Your Hand"),
@@ -377,6 +396,8 @@ object AppSettings {
         autoReadButton = p.getBoolean("autoReadButton", true)
         autoReadSide = AutoReadSide.of(p.getString("autoReadSide", null))
         controlsMiddleOnly = p.getBoolean("controlsMiddleOnly", false)
+        readerButtonPlacement = ReaderButtonPlacement.of(p.getString("readerButtonPlacement", null))
+        autoReadPinned = p.getBoolean("autoReadPinned", false)
         favoritesRefreshOnOpen = p.getBoolean("favoritesRefreshOnOpen", true)
         animatePageTurns = p.getBoolean("animatePageTurns", true)
         pageGap = p.getFloat("pageGap", 6f).toDouble()
@@ -542,6 +563,10 @@ object AppSettings {
     var autoReadSide by Pref(AutoReadSide.Hand) { save("autoReadSide", it.raw) }
     /** Only a tap in the middle shows or hides the reader's controls; the sides do nothing. */
     var controlsMiddleOnly by Pref(false) { save("controlsMiddleOnly", it) }
+    /** Where Reader Settings and Auto Read go (Controls › Control Bar). */
+    var readerButtonPlacement by Pref(ReaderButtonPlacement.Auto) { save("readerButtonPlacement", it.raw) }
+    /** Auto Read stays on screen, where it is, while the controls are away. */
+    var autoReadPinned by Pref(false) { save("autoReadPinned", it) }
     /** Favorites reload each time their tab is opened. */
     var favoritesRefreshOnOpen by Pref(true) { save("favoritesRefreshOnOpen", it) }
     var animatePageTurns by Pref(true) { save("animatePageTurns", it) }
@@ -779,6 +804,8 @@ object AppSettings {
         "autoReadButton" to autoReadButton,
         "autoReadSide" to autoReadSide.raw,
         "controlsMiddleOnly" to controlsMiddleOnly,
+        "readerButtonPlacement" to readerButtonPlacement.raw,
+        "autoReadPinned" to autoReadPinned,
         "favoritesRefreshOnOpen" to favoritesRefreshOnOpen,
         "animatePageTurns" to animatePageTurns,
         "pageGap" to pageGap,
@@ -903,6 +930,8 @@ object AppSettings {
                 "autoReadButton" -> bool?.let { autoReadButton = it }
                 "autoReadSide" -> string?.let { autoReadSide = AutoReadSide.of(it) }
                 "controlsMiddleOnly" -> bool?.let { controlsMiddleOnly = it }
+                "readerButtonPlacement" -> string?.let { readerButtonPlacement = ReaderButtonPlacement.of(it) }
+                "autoReadPinned" -> bool?.let { autoReadPinned = it }
                 "favoritesRefreshOnOpen" -> bool?.let { favoritesRefreshOnOpen = it }
                 "animatePageTurns" -> bool?.let {
                     animatePageTurns = it

@@ -659,8 +659,16 @@
  "Follows Your Hand",
  "Auto Read Button Side",
  "Auto Scroll Button Side",
- "The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.",
  "Long-press the Auto Read button for its speed and options; a tap starts or stops it.",
  "Reload Page",
- "Page %lld"
+ "Page %lld",
+ "Button Placement",
+ "Above the Bar",
+ "Beside the Bar",
+ "In the Bar",
+ "Keep Auto Read Button on Screen",
+ "Keep Auto Scroll Button on Screen",
+ "The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.",
+ "Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone.",
+ "Keep Auto Read Button on Screen: it stays where it is when the controls hide."
 ]

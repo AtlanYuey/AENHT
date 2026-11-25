@@ -659,7 +659,15 @@
 "Follows Your Hand" = "Mengikuti Tangan";
 "Auto Read Button Side" = "Sisi Tombol Baca Otomatis";
 "Auto Scroll Button Side" = "Sisi Tombol Gulir Otomatis";
-"The buttons float above the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Tombol melayang di atas penggeser: satu saja di sisi tangan (tempat Anda mengetuk untuk menampilkan kontrol); keduanya, Baca Otomatis di sisi yang dipilih dan Pengaturan Pembaca di sisi lain. Pengaturan Pembaca juga ada di menu kanan atas.";
 "Long-press the Auto Read button for its speed and options; a tap starts or stops it." = "Tekan lama tombol Baca Otomatis untuk kecepatan dan opsinya; ketuk untuk memulai atau menghentikan.";
 "Reload Page" = "Muat Ulang Halaman";
 "Page %lld" = "Halaman %lld";
+"Button Placement" = "Posisi Tombol";
+"Above the Bar" = "Di Atas Bilah";
+"Beside the Bar" = "Di Samping Bilah";
+"In the Bar" = "Di Dalam Bilah";
+"Keep Auto Read Button on Screen" = "Selalu Tampilkan Tombol Baca Otomatis";
+"Keep Auto Scroll Button on Screen" = "Selalu Tampilkan Tombol Gulir Otomatis";
+"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "Tombol berada di kedua sisi penggeser: satu saja, di sisi tangan Anda (tempat Anda mengetuk untuk menampilkan kontrol); keduanya, Baca Otomatis di sisi yang dipilih dan Pengaturan Baca di sisi lain. Pengaturan Baca juga ada di menu kanan atas.";
+"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "Posisi Tombol: di atas bilah, di sampingnya (sejajar, masing-masing dalam lingkarannya), atau di dalamnya. Otomatis menaruhnya di dalam bilah di tablet dan di atasnya di ponsel.";
+"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "Selalu Tampilkan Tombol Baca Otomatis: tombol tetap di tempatnya saat kontrol disembunyikan.";
