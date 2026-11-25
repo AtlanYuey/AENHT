@@ -668,7 +668,7 @@ T = [
     "In der Leiste",
     "Taste für automatisches Lesen immer zeigen",
     "Taste für automatisches Scrollen immer zeigen",
-    "Die Tasten liegen links und rechts vom Schieberegler: eine allein auf der Seite deiner Hand (wo du getippt hast, um die Steuerung zu zeigen); beide: Automatisch lesen auf der gewählten Seite, Leseeinstellungen auf der anderen. Die Leseeinstellungen sind auch im Menü oben rechts.",
-    "Position der Tasten: über der Leiste, daneben (auf gleicher Höhe, jede in ihrem Kreis) oder darin. Automatisch legt sie auf einem Tablet in die Leiste und auf einem Telefon darüber.",
-    "Taste für automatisches Lesen immer zeigen: Sie bleibt an ihrem Platz, wenn die Steuerung ausgeblendet wird.",
+    "Leseeinstellungen liegen links und Automatisch lesen rechts, jede in ihrer eigenen Blase neben der Leiste. Seite der Taste für automatisches Lesen tauscht sie oder lässt sie deiner Hand folgen (eine allein geht auf die Seite, auf die du getippt hast, um die Steuerung zu zeigen). Die Leseeinstellungen sind auch im Menü oben rechts.",
+    "Position der Tasten: neben der Leiste (drei Blasen in einer Reihe), darüber oder darin.",
+    "Taste für automatisches Lesen immer zeigen: Wird die Steuerung ausgeblendet, bleibt sie in der unteren Ecke ihrer Seite.",
 ]

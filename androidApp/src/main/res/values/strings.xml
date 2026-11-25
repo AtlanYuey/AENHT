@@ -669,9 +669,9 @@
     <string name="l_666">In the Bar</string>
     <string name="l_667">Keep Auto Read Button on Screen</string>
     <string name="l_668">Keep Auto Scroll Button on Screen</string>
-    <string name="l_669">The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.</string>
-    <string name="l_670">Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone.</string>
-    <string name="l_671">Keep Auto Read Button on Screen: it stays where it is when the controls hide.</string>
+    <string name="l_669">Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right.</string>
+    <string name="l_670">Button Placement: beside the bar (three bubbles in a row), above it, or in it.</string>
+    <string name="l_671">Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side.</string>
     <string name="l_672">Settings Backup</string>
     <string name="l_673">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
     <string name="l_674">Android\'s own backup also keeps these settings.</string>

@@ -253,32 +253,29 @@ enum class ScreenOn(val raw: String, val title: String, val minutes: Int) {
 /** Where taps turn pages in the reader. */
 /** Where the reader's Auto Read button floats, next to Reader Settings (on the other side). */
 /**
- * Where the reader's Settings and Auto Read buttons go: floating above the
- * bar, beside it (level with it, each in its own circle), or in it.
- * Automatic: in it on a tablet, above it on a phone.
+ * Where the reader's Settings and Auto Read buttons go: beside the bar, each
+ * in its own bubble level with it (three bubbles in a row), floating above
+ * it, or in it.
  */
 enum class ReaderButtonPlacement(val raw: String, val title: String) {
-    Auto("auto", "Automatic"),
-    Above("above", "Above the Bar"),
     Beside("beside", "Beside the Bar"),
+    Above("above", "Above the Bar"),
     InBar("inBar", "In the Bar");
 
-    /** What Automatic is on this device. */
-    fun resolved(tablet: Boolean): ReaderButtonPlacement = if (this == Auto) (if (tablet) InBar else Above) else this
-
     companion object {
-        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Auto
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Beside
     }
 }
 
 enum class AutoReadSide(val raw: String, val title: String) {
-    /** The side of the hand: where the screen was last touched. */
-    Hand("hand", "Follows Your Hand"),
+    /** Auto Read on the right, Reader Settings on the left (the default). */
+    Right("right", "Right"),
     Left("left", "Left"),
-    Right("right", "Right");
+    /** The side of the hand: where the screen was last touched. */
+    Hand("hand", "Follows Your Hand");
 
     companion object {
-        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Hand
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Right
     }
 }
 
@@ -560,11 +557,11 @@ object AppSettings {
     /** The reader's Auto Read / Auto Scroll button, floating on one side above the control bar. */
     var autoReadButton by Pref(true) { save("autoReadButton", it) }
     /** With both buttons: Auto Read's side (Reader Settings on the other). */
-    var autoReadSide by Pref(AutoReadSide.Hand) { save("autoReadSide", it.raw) }
+    var autoReadSide by Pref(AutoReadSide.Right) { save("autoReadSide", it.raw) }
     /** Only a tap in the middle shows or hides the reader's controls; the sides do nothing. */
     var controlsMiddleOnly by Pref(false) { save("controlsMiddleOnly", it) }
     /** Where Reader Settings and Auto Read go (Controls › Control Bar). */
-    var readerButtonPlacement by Pref(ReaderButtonPlacement.Auto) { save("readerButtonPlacement", it.raw) }
+    var readerButtonPlacement by Pref(ReaderButtonPlacement.Beside) { save("readerButtonPlacement", it.raw) }
     /** Auto Read stays on screen, where it is, while the controls are away. */
     var autoReadPinned by Pref(false) { save("autoReadPinned", it) }
     /** Favorites reload each time their tab is opened. */

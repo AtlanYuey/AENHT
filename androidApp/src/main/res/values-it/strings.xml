@@ -669,9 +669,9 @@
     <string name="l_666">Nella barra</string>
     <string name="l_667">Mantieni sullo schermo il pulsante di lettura automatica</string>
     <string name="l_668">Mantieni sullo schermo il pulsante di scorrimento automatico</string>
-    <string name="l_669">I pulsanti vanno ai lati del cursore: uno solo, dal lato della tua mano (dove hai toccato per mostrare i controlli); entrambi, Lettura automatica dal lato scelto e Impostazioni di lettura dall’altro. Le Impostazioni di lettura sono anche nel menu in alto a destra.</string>
-    <string name="l_670">Posizione dei pulsanti: sopra la barra, accanto (alla sua altezza, ciascuno nel suo cerchio) o dentro. Automatico li mette nella barra su un tablet e sopra su un telefono.</string>
-    <string name="l_671">Mantieni sullo schermo il pulsante di lettura automatica: resta dov’è quando i controlli si nascondono.</string>
+    <string name="l_669">Impostazioni di lettura va a sinistra e Lettura automatica a destra, ognuno nella sua bolla accanto alla barra. Lato del pulsante di lettura automatica li scambia o li fa seguire la tua mano (uno solo va dal lato che hai toccato per mostrare i controlli). Le Impostazioni di lettura sono anche nel menu in alto a destra.</string>
+    <string name="l_670">Posizione dei pulsanti: accanto alla barra (tre bolle in fila), sopra o dentro.</string>
+    <string name="l_671">Mantieni sullo schermo il pulsante di lettura automatica: quando i controlli si nascondono, resta nell’angolo in basso del suo lato.</string>
     <string name="l_672">Backup impostazioni</string>
     <string name="l_673">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
     <string name="l_674">Anche il backup di Android conserva queste impostazioni.</string>

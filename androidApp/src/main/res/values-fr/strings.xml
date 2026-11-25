@@ -669,9 +669,9 @@
     <string name="l_666">Dans la barre</string>
     <string name="l_667">Garder le bouton de lecture auto à l’écran</string>
     <string name="l_668">Garder le bouton de défilement auto à l’écran</string>
-    <string name="l_669">Les boutons se placent de part et d’autre du curseur : un seul, du côté de votre main (là où vous avez touché pour afficher les commandes) ; les deux, Lecture auto du côté choisi et Réglages de lecture de l’autre. Les Réglages de lecture sont aussi dans le menu en haut à droite.</string>
-    <string name="l_670">Position des boutons : au-dessus de la barre, à côté (à sa hauteur, chacun dans son cercle) ou dedans. Automatique les met dans la barre sur une tablette et au-dessus sur un téléphone.</string>
-    <string name="l_671">Garder le bouton de lecture auto à l’écran : il reste à sa place quand les commandes se masquent.</string>
+    <string name="l_669">Réglages de lecture va à gauche et Lecture auto à droite, chacun dans sa bulle à côté de la barre. Côté du bouton de lecture auto les inverse, ou les fait suivre votre main (un seul va du côté que vous avez touché pour afficher les commandes). Les Réglages de lecture sont aussi dans le menu en haut à droite.</string>
+    <string name="l_670">Position des boutons : à côté de la barre (trois bulles alignées), au-dessus ou dedans.</string>
+    <string name="l_671">Garder le bouton de lecture auto à l’écran : quand les commandes se masquent, il reste dans le coin inférieur de son côté.</string>
     <string name="l_672">Sauvegarde des réglages</string>
     <string name="l_673">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
     <string name="l_674">La sauvegarde d’Android conserve aussi ces réglages.</string>

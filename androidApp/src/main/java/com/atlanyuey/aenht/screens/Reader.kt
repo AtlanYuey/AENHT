@@ -61,6 +61,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
@@ -1802,19 +1803,14 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun BottomPanel(settled: Boolean) {
         val overlays = LocalOverlays.current
-        // Reader Settings and Auto Read on the sides: one alone on the hand's
-        // side; both, Auto Read where Controls › Auto Read Button Side says.
+        // Reader Settings on the left, Auto Read on the right (Controls › Auto Read
+        // Button Side swaps them, or has them follow the hand).
         val showSettings = AppSettings.readerSettingsButton
         val showAutoRead = AppSettings.autoReadButton
-        val autoLeft = when (AppSettings.autoReadSide) {
-            com.atlanyuey.aenht.core.AutoReadSide.Hand -> handOnLeft
-            com.atlanyuey.aenht.core.AutoReadSide.Left -> true
-            com.atlanyuey.aenht.core.AutoReadSide.Right -> false
-        }
-        val autoReadOnLeft = if (showSettings) autoLeft else handOnLeft
-        val settingsOnLeft = if (showAutoRead) !autoLeft else handOnLeft
-        // Above the bar, beside it or in it (Controls › Button Placement; Automatic: in it on a tablet).
-        val placement = buttonPlacement()
+        val autoReadOnLeft = autoReadOnLeft()
+        val settingsOnLeft = settingsOnLeft()
+        // Beside the bar (three bubbles in a row), above it or in it (Controls › Button Placement).
+        val placement = AppSettings.readerButtonPlacement
         val above = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Above
         val beside = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
         val inBar = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.InBar
@@ -1823,7 +1819,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             else GlassCircleButton(Icons.Sliders, tr("Reader Settings"), { openSettings(overlays) })
         }
         // Kept on screen (Controls › Keep Auto Read Button on Screen): the button is drawn
-        // over the reader, and this is only its place (where it shows with the controls).
+        // over the reader, and this is only its place while the controls show.
         val pinned = AppSettings.autoReadPinned
         val slot = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
         fun record() {
@@ -1844,7 +1840,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                 slot[0] = c
                 if (settled && pinned) record()
             }
-            if (pinned && pinnedInset != null) {
+            if (pinned) {
                 Box(place.size(if (inBar) 40.dp else 44.dp))
             } else if (inBar) {
                 BarButton(if (autoRead) Icons.Pause else Icons.Play, autoReadLabel(), { autoRead = !autoRead },
@@ -1951,29 +1947,49 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         if (autoRead) tr("Pause Auto Scroll") else tr("Auto Scroll")
     }
 
-    @Composable
-    private fun buttonPlacement(): com.atlanyuey.aenht.core.ReaderButtonPlacement {
-        val config = androidx.compose.ui.platform.LocalConfiguration.current
-        return AppSettings.readerButtonPlacement.resolved(isTabletBar(config.smallestScreenWidthDp, config.screenWidthDp))
+    /** Auto Read's side: the right (or the left), or the hand's when it follows the hand. */
+    private fun autoReadOnLeft(): Boolean = when (AppSettings.autoReadSide) {
+        com.atlanyuey.aenht.core.AutoReadSide.Hand -> handOnLeft
+        com.atlanyuey.aenht.core.AutoReadSide.Left -> true
+        com.atlanyuey.aenht.core.AutoReadSide.Right -> false
+    }
+
+    /** Reader Settings' side: the other one (the hand's when alone and following the hand). */
+    private fun settingsOnLeft(): Boolean = when {
+        AppSettings.autoReadButton -> !autoReadOnLeft()
+        AppSettings.autoReadSide == com.atlanyuey.aenht.core.AutoReadSide.Hand -> handOnLeft
+        else -> AppSettings.autoReadSide != com.atlanyuey.aenht.core.AutoReadSide.Left
     }
 
     /**
-     * Auto Read kept on screen: where its place in the controls is, also
-     * while they are away; it glides when that place moves. In the bar, the
-     * bar is its background; with the bar away, its own circle fades in.
+     * Auto Read kept on screen: with the controls, at its place among them;
+     * with them away, in the bottom corner on its side. It glides between
+     * the two. In the bar, the bar is its background; elsewhere its own
+     * bubble shows.
      */
     @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
     @Composable
     private fun PinnedAutoRead() {
-        val inset = pinnedInset ?: return
         val overlays = LocalOverlays.current
-        val x = if (inset.x >= 0f) inset.x else readerSize.width + inset.x
-        val y = readerSize.height - inset.y
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val bottomInset = androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(density)
+        if (readerSize.width <= 0f) return
+        val inset = pinnedInset
+        val atPlace = chromeVisible && inset != null
+        // The corner: as far in as the bubble beside the bar on a phone, as high as the bar's middle.
+        val cornerX = with(density) { 34.dp.toPx() }
+        val cornerY = bottomInset + with(density) { 32.dp.toPx() }
+        val x = when {
+            atPlace -> if (inset!!.x >= 0f) inset.x else readerSize.width + inset.x
+            autoReadOnLeft() -> cornerX
+            else -> readerSize.width - cornerX
+        }
+        val y = readerSize.height - (if (atPlace) inset!!.y else cornerY)
         val spring = androidx.compose.animation.core.spring<IntOffset>(dampingRatio = 0.9f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
         val at by androidx.compose.animation.core.animateIntOffsetAsState(IntOffset(x.roundToInt(), y.roundToInt()), spring, label = "pinned")
-        val circle by androidx.compose.animation.core.animateFloatAsState(if (chromeVisible && pinnedInBar) 0f else 1f, label = "circle")
+        val circle by androidx.compose.animation.core.animateFloatAsState(if (atPlace && pinnedInBar) 0f else 1f, label = "circle")
         // Above the bar, the pages held on the slider show where it is.
-        val shown by androidx.compose.animation.core.animateFloatAsState(if (scrubPage != null && pinnedAbove && chromeVisible) 0f else 1f, label = "shown")
+        val shown by androidx.compose.animation.core.animateFloatAsState(if (scrubPage != null && pinnedAbove && atPlace) 0f else 1f, label = "shown")
         Box(
             Modifier
                 .layout { measurable, _ ->
@@ -2270,14 +2286,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.readingTab() {
     }
 }
 
-/**
- * A tablet (smallest width 600 dp or more) with room across: the reader's
- * buttons go inside its bottom bar. Phones keep them floating above it.
- */
 /** How long a page may take before its Reload Page button shows (it may be stuck). */
 internal const val SLOW_PAGE_MILLIS = 10_000L
-
-internal fun isTabletBar(smallestWidthDp: Int, widthDp: Int): Boolean = smallestWidthDp >= 600 && widthDp >= 600
 
 /**
  * Auto Read's interval (paged) or Auto Scroll's speed and whether it goes on
@@ -2417,16 +2427,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     val paged = AppSettings.readMode.isPaged
     section("Control Bar", footer = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FooterText(tr("The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right."))
-            FooterText(tr("Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone."))
+            FooterText(tr("Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right."))
+            FooterText(tr("Button Placement: beside the bar (three bubbles in a row), above it, or in it."))
             FooterText(tr("Long-press the Auto Read button for its speed and options; a tap starts or stops it."))
-            FooterText(tr("Keep Auto Read Button on Screen: it stays where it is when the controls hide."))
+            FooterText(tr("Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side."))
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))
         }
     }) {
         ToggleRow(tr("Reader Settings Button"), AppSettings.readerSettingsButton, { AppSettings.readerSettingsButton = it })
         ToggleRow(tr(if (paged) "Auto Read Button" else "Auto Scroll Button"), AppSettings.autoReadButton, { AppSettings.autoReadButton = it })
-        if (AppSettings.readerSettingsButton && AppSettings.autoReadButton) {
+        if (AppSettings.readerSettingsButton || AppSettings.autoReadButton) {
             PickerRow(tr(if (paged) "Auto Read Button Side" else "Auto Scroll Button Side"), com.atlanyuey.aenht.core.AutoReadSide.entries, AppSettings.autoReadSide,
                 label = { tr(it.title) }, onSelect = { AppSettings.autoReadSide = it })
         }

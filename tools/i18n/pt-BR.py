@@ -668,7 +668,7 @@ T = [
     "Na barra",
     "Manter o botão de leitura automática na tela",
     "Manter o botão de rolagem automática na tela",
-    "Os botões ficam dos lados do controle deslizante: um só, do lado da sua mão (onde você tocou para mostrar os controles); os dois, Leitura automática do lado escolhido e Ajustes de leitura do outro. Ajustes de leitura também está no menu no canto superior direito.",
-    "Posição dos botões: acima da barra, ao lado (na mesma altura, cada um em seu círculo) ou dentro dela. Automático os coloca na barra num tablet e acima dela num celular.",
-    "Manter o botão de leitura automática na tela: ele fica onde está quando os controles somem.",
+    "Ajustes de leitura fica à esquerda e Leitura automática à direita, cada um em sua bolha ao lado da barra. Lado do botão de leitura automática troca os dois ou faz que sigam sua mão (um só fica do lado que você tocou para mostrar os controles). Ajustes de leitura também está no menu no canto superior direito.",
+    "Posição dos botões: ao lado da barra (três bolhas em fila), acima ou dentro dela.",
+    "Manter o botão de leitura automática na tela: quando os controles somem, ele fica no canto inferior do seu lado.",
 ]

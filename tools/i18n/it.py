@@ -668,7 +668,7 @@ T = [
     "Nella barra",
     "Mantieni sullo schermo il pulsante di lettura automatica",
     "Mantieni sullo schermo il pulsante di scorrimento automatico",
-    "I pulsanti vanno ai lati del cursore: uno solo, dal lato della tua mano (dove hai toccato per mostrare i controlli); entrambi, Lettura automatica dal lato scelto e Impostazioni di lettura dall’altro. Le Impostazioni di lettura sono anche nel menu in alto a destra.",
-    "Posizione dei pulsanti: sopra la barra, accanto (alla sua altezza, ciascuno nel suo cerchio) o dentro. Automatico li mette nella barra su un tablet e sopra su un telefono.",
-    "Mantieni sullo schermo il pulsante di lettura automatica: resta dov’è quando i controlli si nascondono.",
+    "Impostazioni di lettura va a sinistra e Lettura automatica a destra, ognuno nella sua bolla accanto alla barra. Lato del pulsante di lettura automatica li scambia o li fa seguire la tua mano (uno solo va dal lato che hai toccato per mostrare i controlli). Le Impostazioni di lettura sono anche nel menu in alto a destra.",
+    "Posizione dei pulsanti: accanto alla barra (tre bolle in fila), sopra o dentro.",
+    "Mantieni sullo schermo il pulsante di lettura automatica: quando i controlli si nascondono, resta nell’angolo in basso del suo lato.",
 ]

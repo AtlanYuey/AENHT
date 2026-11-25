@@ -339,52 +339,62 @@ class ScreenshotTest {
         }
     }
 
-    /** On a tablet the bar is wide: Reader Settings and Auto Read are in it, level with the slider. */
+    /**
+     * By default, three bubbles in a row: Reader Settings on the left of the
+     * bar, Auto Read on its right, each in its own bubble (not in the bar).
+     */
     @Config(qualifiers = "sw834dp-w1194dp-h834dp-xhdpi")
     @Test fun tabletReaderBar() {
         val tabs = Tabs()
         tabs.home.push(ReaderScreen(sampleSource(), 3))
         shoot("75a_tablet_reader_bar", tabs, settle = 500)
-        assertTrue("buttons in the bar", buttonsLevelWithSlider())
+        assertThreeBubbles()
     }
 
-    /** A phone keeps them floating above the bar. */
-    @Test fun phoneReaderButtonsFloat() {
+    @Test fun phoneReaderButtonsBeside() {
         val tabs = Tabs()
         tabs.home.push(ReaderScreen(sampleSource(), 3))
-        shoot("75b_phone_reader_bar", tabs, settle = 500)
-        assertTrue("buttons above the bar", !buttonsLevelWithSlider())
+        shoot("75c_phone_reader_beside", tabs, settle = 500)
+        assertThreeBubbles()
     }
 
-    /** Beside the Bar on a phone: the two circles level with the bar, outside it. */
-    @Test fun phoneReaderButtonsBeside() {
-        AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
+    /** Above the Bar (a choice): the buttons float above it. */
+    @Test fun phoneReaderButtonsAbove() {
+        AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Above
         try {
             val tabs = Tabs()
             tabs.home.push(ReaderScreen(sampleSource(), 3))
-            shoot("75c_phone_reader_beside", tabs, settle = 500)
-            assertTrue("buttons level with the bar", buttonsLevelWithSlider())
+            shoot("75b_phone_reader_above", tabs, settle = 500)
+            assertTrue("buttons above the bar", !buttonsLevelWithSlider())
         } finally {
-            AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Auto
+            AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
         }
     }
 
-    /** Keep Auto Read Button on Screen: with the controls away, it's still there, in the same place. */
+    /**
+     * Keep Auto Read Button on Screen: with the controls away it's in the
+     * bottom right corner (not where it was beside the bar), and it works.
+     */
+    @Config(qualifiers = "sw834dp-w1194dp-h834dp-xhdpi")
     @Test fun autoReadKeptOnScreen() {
         AppSettings.autoReadPinned = true
         try {
             val tabs = Tabs()
             tabs.home.push(ReaderScreen(sampleSource(), 3))
             shoot("75d_reader_pinned_shown", tabs, settle = 800)
-            val before = compose.onNode(androidx.compose.ui.test.hasContentDescription("Auto Read"), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-            // Left alone, the controls hide; the button stays.
+            val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+            val density = ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+            val shown = autoReadBounds()
+            assertTrue("with the controls, beside the bar: $shown", buttonsLevelWithSlider() && shown.right < root.right - 100 * density)
+            // Left alone, the controls hide; the button goes to the corner.
             compose.mainClock.advanceTimeBy(5000)
             compose.waitForIdle()
             compose.onRoot().captureRoboImage("build/screens/75e_reader_pinned_hidden.png")
             assertTrue("the slider is away",
                 compose.onAllNodes(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo)).fetchSemanticsNodes().isEmpty())
-            val after = compose.onNode(androidx.compose.ui.test.hasContentDescription("Auto Read"), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-            assertTrue("same place: $before → $after", (before.center - after.center).getDistance() < 4f)
+            val hidden = autoReadBounds()
+            assertTrue("bottom right corner: $hidden in $root",
+                hidden.right > root.right - 40 * density && hidden.bottom > root.bottom - 60 * density)
             // And it works: a tap starts Auto Read.
             compose.onNode(androidx.compose.ui.test.hasContentDescription("Auto Read"), useUnmergedTree = true).performClick()
             compose.mainClock.advanceTimeBy(300)
@@ -393,6 +403,23 @@ class ScreenshotTest {
         } finally {
             AppSettings.autoReadPinned = false
         }
+    }
+
+    private fun autoReadBounds() =
+        compose.onNode(androidx.compose.ui.test.hasContentDescription("Auto Read"), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+
+    /** Settings left of the bar, Auto Read right of it, both level with it and outside it. */
+    private fun assertThreeBubbles() {
+        val slider = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo))
+            .fetchSemanticsNode().boundsInRoot
+        val settings = compose.onNode(androidx.compose.ui.test.hasContentDescription("Reader Settings"), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val auto = autoReadBounds()
+        // The bar's page number (the title has one too, at the top).
+        val page = compose.onAllNodes(androidx.compose.ui.test.hasText(" / 24", substring = true)).fetchSemanticsNodes()
+            .map { it.boundsInRoot }.maxBy { it.top }
+        assertTrue("level with the bar", buttonsLevelWithSlider())
+        assertTrue("settings on the left, outside the bar: $settings, page number $page", settings.right < page.left - 20)
+        assertTrue("auto read on the right, outside the bar: $auto, slider $slider", auto.left > slider.right + 60)
     }
 
     private fun buttonsLevelWithSlider(): Boolean {

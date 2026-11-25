@@ -753,24 +753,25 @@ struct ReaderView: View {
         .frame(maxWidth: placement == .above ? 640 : 760)
     }
 
-    /// Where Reader Settings and Auto Read go (Controls › Button Placement;
-    /// Automatic: in the bar on an iPad with room across, above it otherwise).
-    private var placement: ReaderButtonPlacement {
-        settings.readerButtonPlacement.resolved(tablet: UIDevice.current.userInterfaceIdiom == .pad && canvasSize.width >= 600)
-    }
+    /// Where Reader Settings and Auto Read go (Controls › Button Placement):
+    /// beside the bar by default, three bubbles in a row.
+    private var placement: ReaderButtonPlacement { settings.readerButtonPlacement }
 
-    /// One button alone goes on the hand's side; both, Auto Read where
-    /// Controls › Auto Read Button Side says, Reader Settings on the other.
+    /// Auto Read on the right (or the left), or on the hand's side when it
+    /// follows the hand (Controls › Auto Read Button Side).
     private var autoOnLeft: Bool {
-        guard settings.readerSettingsButton else { return handOnLeft }
-        return switch settings.autoReadSide {
+        switch settings.autoReadSide {
         case .hand: handOnLeft
         case .left: true
         case .right: false
         }
     }
 
-    private var settingsOnLeft: Bool { settings.autoReadButton ? !autoOnLeft : handOnLeft }
+    /// Reader Settings on the other side (the hand's when alone and following the hand).
+    private var settingsOnLeft: Bool {
+        if settings.autoReadButton { return !autoOnLeft }
+        return settings.autoReadSide == .hand ? handOnLeft : settings.autoReadSide != .left
+    }
 
     private func hasButton(left: Bool) -> Bool {
         (settings.readerSettingsButton && settingsOnLeft == left) || (settings.autoReadButton && autoOnLeft == left)
@@ -880,10 +881,10 @@ struct ReaderView: View {
 
     /// Auto Read's place among the controls. Kept on screen (Controls › Keep
     /// Auto Read Button on Screen), the button itself is drawn over the
-    /// reader ([pinnedAutoRead]) and this only says where.
+    /// reader ([pinnedAutoRead]) and this only says where, while they show.
     private func autoReadSlot(inBar: Bool) -> some View {
         Group {
-            if settings.autoReadPinned, pinnedInset != nil {
+            if settings.autoReadPinned {
                 Color.clear.frame(width: inBar ? 40 : 44, height: inBar ? 40 : 44)
             } else {
                 autoReadButton(glass: !inBar)
@@ -936,27 +937,35 @@ struct ReaderView: View {
         }
     }
 
-    /// Auto Read kept on screen: where its place among the controls is, also
-    /// while they are away; it glides when that place moves. In the bar, the
-    /// bar is its background; with the bar away, its own circle fades in.
+    /// Auto Read kept on screen: with the controls, at its place among them;
+    /// with them away, in the bottom corner on its side. It glides between
+    /// the two. In the bar, the bar is its background; elsewhere its own
+    /// bubble shows.
     @ViewBuilder private var pinnedAutoRead: some View {
-        if settings.autoReadButton, settings.autoReadPinned, let inset = pinnedInset {
+        if settings.autoReadButton, settings.autoReadPinned {
             GeometryReader { geometry in
+                let frame = geometry.frame(in: .global)
+                let canvas = touches.canvasFrame
+                let atPlace = chromeVisible && pinnedInset != nil && canvas.width > 0
+                // The corner: as far in as the bubble beside the bar on an iPhone, as high as the bar's middle.
+                let corner = CGPoint(x: autoOnLeft ? 34 : geometry.size.width - 34, y: geometry.size.height - 35)
+                let place: CGPoint = {
+                    guard atPlace, let inset = pinnedInset else { return corner }
+                    let x = inset.x >= 0 ? inset.x : canvas.width + inset.x
+                    return CGPoint(x: x - (frame.minX - canvas.minX), y: canvas.height - inset.y - (frame.minY - canvas.minY))
+                }()
                 autoReadButton(glass: false)
                     .background {
                         Color.clear
                             .frame(width: 44, height: 44)
                             .modifier(GlassPanel(cornerRadius: 22))
-                            .opacity(chromeVisible && pinnedInBar ? 0 : 1)
+                            .opacity(atPlace && pinnedInBar ? 0 : 1)
                     }
                     // Above the bar, the pages held on the slider show where it is.
-                    .opacity(sliderEditing && pinnedAbove ? 0 : 1)
-                    .position(x: inset.x >= 0 ? inset.x : geometry.size.width + inset.x,
-                              y: geometry.size.height - inset.y)
+                    .opacity(sliderEditing && pinnedAbove && atPlace ? 0 : 1)
+                    .position(place)
+                    .animation(.smooth(duration: 0.35), value: place)
             }
-            .ignoresSafeArea()
-            .animation(.smooth(duration: 0.35), value: inset)
-            .animation(.smooth(duration: 0.25), value: chromeVisible)
         }
     }
 
@@ -1411,7 +1420,7 @@ struct ReadingSettingsSections: View {
         Section {
             Toggle("Reader Settings Button", isOn: $settings.readerSettingsButton)
             Toggle(settings.readMode.isPaged ? "Auto Read Button" : "Auto Scroll Button", isOn: $settings.autoReadButton)
-            if settings.readerSettingsButton, settings.autoReadButton {
+            if settings.readerSettingsButton || settings.autoReadButton {
                 Picker(settings.readMode.isPaged ? "Auto Read Button Side" : "Auto Scroll Button Side", selection: $settings.autoReadSide) {
                     ForEach(AutoReadSide.allCases) { Text($0.title).tag($0) }
                 }
@@ -1429,10 +1438,10 @@ struct ReadingSettingsSections: View {
             Text("Control Bar")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text("The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right.")
-                Text("Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone.")
+                Text("Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right.")
+                Text("Button Placement: beside the bar (three bubbles in a row), above it, or in it.")
                 Text("Long-press the Auto Read button for its speed and options; a tap starts or stops it.")
-                Text("Keep Auto Read Button on Screen: it stays where it is when the controls hide.")
+                Text("Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side.")
                 Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")
             }
         }

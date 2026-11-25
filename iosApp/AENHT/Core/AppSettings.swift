@@ -161,39 +161,35 @@ enum ScreenOn: String, CaseIterable, Identifiable {
     }
 }
 
-/// Where the reader's Settings and Auto Read buttons go: floating above the
-/// bar, beside it (level with it, each in its own circle), or in it.
-/// Automatic: in it on an iPad, above it on an iPhone.
+/// Where the reader's Settings and Auto Read buttons go: beside the bar,
+/// each in its own bubble level with it (three bubbles in a row), floating
+/// above it, or in it.
 enum ReaderButtonPlacement: String, CaseIterable, Identifiable {
-    case automatic, above, beside, inBar
+    case beside, above, inBar
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .automatic: String(localized: "Automatic")
-        case .above: String(localized: "Above the Bar")
         case .beside: String(localized: "Beside the Bar")
+        case .above: String(localized: "Above the Bar")
         case .inBar: String(localized: "In the Bar")
         }
     }
-
-    /// What Automatic is here ([tablet]: an iPad with room across).
-    func resolved(tablet: Bool) -> ReaderButtonPlacement {
-        self == .automatic ? (tablet ? .inBar : .above) : self
-    }
 }
 
-/// Where the reader's Auto Read button floats, next to Reader Settings (on the other side).
+/// Which side the reader's Auto Read button goes on, Reader Settings on the other.
 enum AutoReadSide: String, CaseIterable, Identifiable {
+    /// Auto Read on the right, Reader Settings on the left (the default).
+    case right, left
     /// The side of the hand: where the screen was last touched.
-    case hand, left, right
+    case hand
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .hand: String(localized: "Follows Your Hand")
-        case .left: String(localized: "Left")
         case .right: String(localized: "Right")
+        case .left: String(localized: "Left")
+        case .hand: String(localized: "Follows Your Hand")
         }
     }
 }
@@ -662,9 +658,9 @@ final class AppSettings {
         doubleTapTopToStart = d.object(forKey: "doubleTapTopToStart") as? Bool ?? true
         readerSettingsButton = d.object(forKey: "readerSettingsButton") as? Bool ?? true
         autoReadButton = d.object(forKey: "autoReadButton") as? Bool ?? true
-        autoReadSide = AutoReadSide(rawValue: d.string(forKey: "autoReadSide") ?? "") ?? .hand
+        autoReadSide = AutoReadSide(rawValue: d.string(forKey: "autoReadSide") ?? "") ?? .right
         controlsMiddleOnly = d.object(forKey: "controlsMiddleOnly") as? Bool ?? false
-        readerButtonPlacement = ReaderButtonPlacement(rawValue: d.string(forKey: "readerButtonPlacement") ?? "") ?? .automatic
+        readerButtonPlacement = ReaderButtonPlacement(rawValue: d.string(forKey: "readerButtonPlacement") ?? "") ?? .beside
         autoReadPinned = d.object(forKey: "autoReadPinned") as? Bool ?? false
         favoritesRefreshOnOpen = d.object(forKey: "favoritesRefreshOnOpen") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true

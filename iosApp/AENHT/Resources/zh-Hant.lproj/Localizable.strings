@@ -668,6 +668,6 @@
 "In the Bar" = "欄內";
 "Keep Auto Read Button on Screen" = "自動閱讀按鈕常駐顯示";
 "Keep Auto Scroll Button on Screen" = "自動捲動按鈕常駐顯示";
-"The buttons go on the sides of the slider: one alone on the side of your hand (where you tapped to show the controls); both, Auto Read on the side chosen and Reader Settings on the other. Reader Settings is also in the menu at the top right." = "按鈕放在進度條兩側：只開一個時，放在你手的一側（點出控制列的那一側）；兩個都開時，自動閱讀在所選的一側，閱讀設定在另一側。右上角的選單裡也有閱讀設定。";
-"Button Placement: above the bar, beside it (level with it, each in its own circle), or in it. Automatic puts them in the bar on a tablet and above it on a phone." = "按鈕位置：在欄上方、欄兩側（和欄平齊，各自一個圓形按鈕）或欄內。「自動」在平板上放在欄內，在手機上放在欄上方。";
-"Keep Auto Read Button on Screen: it stays where it is when the controls hide." = "自動閱讀按鈕常駐顯示：控制列隱藏後，按鈕仍留在原來的位置。";
+"Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right." = "閱讀設定在左，自動閱讀在右，各自一個氣泡放在進度列兩側。「自動閱讀按鈕位置」可以把兩者對調，或改成跟隨手的位置（只開一個時放在點出控制列的那一側）。右上角的選單裡也有閱讀設定。";
+"Button Placement: beside the bar (three bubbles in a row), above it, or in it." = "按鈕位置：欄兩側（三個氣泡排成一行）、欄上方或欄內。";
+"Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side." = "自動閱讀按鈕常駐顯示：控制列隱藏後，按鈕留在它那一側的右下角（或左下角）。";

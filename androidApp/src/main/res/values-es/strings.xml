@@ -669,9 +669,9 @@
     <string name="l_666">En la barra</string>
     <string name="l_667">Mantener el botón de lectura automática en pantalla</string>
     <string name="l_668">Mantener el botón de desplazamiento automático en pantalla</string>
-    <string name="l_669">Los botones van a los lados del control deslizante: uno solo, en el lado de tu mano (donde tocaste para mostrar los controles); los dos, Lectura automática en el lado elegido y Ajustes de lectura en el otro. Ajustes de lectura también está en el menú de arriba a la derecha.</string>
-    <string name="l_670">Posición de los botones: encima de la barra, junto a ella (a su altura, cada uno en su círculo) o dentro. Automático los pone en la barra en una tableta y encima en un teléfono.</string>
-    <string name="l_671">Mantener el botón de lectura automática en pantalla: se queda donde está cuando los controles se ocultan.</string>
+    <string name="l_669">Ajustes de lectura va a la izquierda y Lectura automática a la derecha, cada uno en su burbuja junto a la barra. Lado del botón de lectura automática los intercambia o hace que sigan tu mano (uno solo va en el lado que tocaste para mostrar los controles). Ajustes de lectura también está en el menú de arriba a la derecha.</string>
+    <string name="l_670">Posición de los botones: junto a la barra (tres burbujas en fila), encima o dentro.</string>
+    <string name="l_671">Mantener el botón de lectura automática en pantalla: cuando los controles se ocultan, se queda en la esquina inferior de su lado.</string>
     <string name="l_672">Copia de los ajustes</string>
     <string name="l_673">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
     <string name="l_674">La copia de seguridad de Android también guarda estos ajustes.</string>

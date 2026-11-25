@@ -668,7 +668,7 @@ T = [
     "En la barra",
     "Mantener el botón de lectura automática en pantalla",
     "Mantener el botón de desplazamiento automático en pantalla",
-    "Los botones van a los lados del control deslizante: uno solo, en el lado de tu mano (donde tocaste para mostrar los controles); los dos, Lectura automática en el lado elegido y Ajustes de lectura en el otro. Ajustes de lectura también está en el menú de arriba a la derecha.",
-    "Posición de los botones: encima de la barra, junto a ella (a su altura, cada uno en su círculo) o dentro. Automático los pone en la barra en una tableta y encima en un teléfono.",
-    "Mantener el botón de lectura automática en pantalla: se queda donde está cuando los controles se ocultan.",
+    "Ajustes de lectura va a la izquierda y Lectura automática a la derecha, cada uno en su burbuja junto a la barra. Lado del botón de lectura automática los intercambia o hace que sigan tu mano (uno solo va en el lado que tocaste para mostrar los controles). Ajustes de lectura también está en el menú de arriba a la derecha.",
+    "Posición de los botones: junto a la barra (tres burbujas en fila), encima o dentro.",
+    "Mantener el botón de lectura automática en pantalla: cuando los controles se ocultan, se queda en la esquina inferior de su lado.",
 ]
