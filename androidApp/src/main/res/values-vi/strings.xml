@@ -670,8 +670,8 @@
     <string name="l_667">Luôn hiện nút tự đọc</string>
     <string name="l_668">Luôn hiện nút tự cuộn</string>
     <string name="l_669">Cài đặt đọc ở bên trái và Tự đọc ở bên phải, mỗi nút một bong bóng riêng cạnh thanh. Phía nút tự đọc đổi chỗ hai nút, hoặc cho chúng theo tay bạn (chỉ một nút thì ở phía bạn chạm để hiện điều khiển). Cài đặt đọc cũng có trong menu ở góc trên bên phải.</string>
-    <string name="l_670">Vị trí nút: cạnh thanh (ba bong bóng thành một hàng), phía trên hoặc trong thanh.</string>
-    <string name="l_671">Luôn hiện nút tự đọc: khi các điều khiển ẩn đi, nút ở lại góc dưới bên phía của nó.</string>
+    <string name="l_670">Luôn hiện nút tự đọc: khi các điều khiển ẩn đi, nút ở lại góc dưới bên phía của nó.</string>
+    <string name="l_671">Vị trí nút: cạnh thanh (ba bong bóng thành một hàng), phía trên hoặc trong thanh. Tự động đặt cạnh thanh trên máy tính bảng và phía trên thanh trên điện thoại, nơi thanh trượt cần chỗ; trên điện thoại khi đặt cạnh hoặc trong thanh, số trang còn lại không hiện.</string>
     <string name="l_672">Sao lưu cài đặt</string>
     <string name="l_673">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
     <string name="l_674">Bản sao lưu của Android cũng lưu các cài đặt này.</string>

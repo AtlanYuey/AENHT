@@ -669,6 +669,6 @@ T = [
     "Garder le bouton de lecture auto à l’écran",
     "Garder le bouton de défilement auto à l’écran",
     "Réglages de lecture va à gauche et Lecture auto à droite, chacun dans sa bulle à côté de la barre. Côté du bouton de lecture auto les inverse, ou les fait suivre votre main (un seul va du côté que vous avez touché pour afficher les commandes). Les Réglages de lecture sont aussi dans le menu en haut à droite.",
-    "Position des boutons : à côté de la barre (trois bulles alignées), au-dessus ou dedans.",
     "Garder le bouton de lecture auto à l’écran : quand les commandes se masquent, il reste dans le coin inférieur de son côté.",
+    "Position des boutons : à côté de la barre (trois bulles alignées), au-dessus ou dedans. Automatique les met à côté sur une tablette et au-dessus sur un téléphone, où le curseur a besoin de place ; sur un téléphone, à côté ou dans la barre, les pages restantes ne s’affichent pas.",
 ]

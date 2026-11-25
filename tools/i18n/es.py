@@ -669,6 +669,6 @@ T = [
     "Mantener el botón de lectura automática en pantalla",
     "Mantener el botón de desplazamiento automático en pantalla",
     "Ajustes de lectura va a la izquierda y Lectura automática a la derecha, cada uno en su burbuja junto a la barra. Lado del botón de lectura automática los intercambia o hace que sigan tu mano (uno solo va en el lado que tocaste para mostrar los controles). Ajustes de lectura también está en el menú de arriba a la derecha.",
-    "Posición de los botones: junto a la barra (tres burbujas en fila), encima o dentro.",
     "Mantener el botón de lectura automática en pantalla: cuando los controles se ocultan, se queda en la esquina inferior de su lado.",
+    "Posición de los botones: junto a la barra (tres burbujas en fila), encima o dentro. Automático los pone junto a ella en una tableta y encima en un teléfono, donde el deslizador necesita el espacio; en un teléfono, junto a la barra o dentro, no se muestran las páginas restantes.",
 ]

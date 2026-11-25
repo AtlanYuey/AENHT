@@ -669,6 +669,6 @@ T = [
     "Selalu Tampilkan Tombol Baca Otomatis",
     "Selalu Tampilkan Tombol Gulir Otomatis",
     "Pengaturan Baca di kiri dan Baca Otomatis di kanan, masing-masing dalam gelembungnya di samping bilah. Sisi Tombol Baca Otomatis menukar keduanya, atau membuatnya mengikuti tangan Anda (satu saja berada di sisi yang Anda ketuk untuk menampilkan kontrol). Pengaturan Baca juga ada di menu kanan atas.",
-    "Posisi Tombol: di samping bilah (tiga gelembung sebaris), di atasnya, atau di dalamnya.",
     "Selalu Tampilkan Tombol Baca Otomatis: saat kontrol disembunyikan, tombol tetap di sudut bawah pada sisinya.",
+    "Posisi Tombol: di samping bilah (tiga gelembung sebaris), di atasnya, atau di dalamnya. Otomatis menaruhnya di samping di tablet dan di atas di ponsel, agar penggeser punya ruang; di ponsel, di samping atau di dalam bilah, sisa halaman tidak ditampilkan.",
 ]

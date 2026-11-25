@@ -669,6 +669,6 @@ T = [
     "Mantieni sullo schermo il pulsante di lettura automatica",
     "Mantieni sullo schermo il pulsante di scorrimento automatico",
     "Impostazioni di lettura va a sinistra e Lettura automatica a destra, ognuno nella sua bolla accanto alla barra. Lato del pulsante di lettura automatica li scambia o li fa seguire la tua mano (uno solo va dal lato che hai toccato per mostrare i controlli). Le Impostazioni di lettura sono anche nel menu in alto a destra.",
-    "Posizione dei pulsanti: accanto alla barra (tre bolle in fila), sopra o dentro.",
     "Mantieni sullo schermo il pulsante di lettura automatica: quando i controlli si nascondono, resta nell’angolo in basso del suo lato.",
+    "Posizione dei pulsanti: accanto alla barra (tre bolle in fila), sopra o dentro. Automatico li mette accanto su un tablet e sopra su un telefono, dove il cursore ha bisogno di spazio; su un telefono, accanto o nella barra, le pagine rimanenti non sono mostrate.",
 ]

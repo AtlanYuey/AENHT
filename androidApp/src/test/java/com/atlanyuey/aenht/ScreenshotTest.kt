@@ -351,23 +351,32 @@ class ScreenshotTest {
         assertThreeBubbles()
     }
 
-    @Test fun phoneReaderButtonsBeside() {
+    /** A phone by default (Automatic): the buttons float above the bar, the slider has the whole bar. */
+    @Test fun phoneReaderButtonsAbove() {
         val tabs = Tabs()
         tabs.home.push(ReaderScreen(sampleSource(), 3))
-        shoot("75c_phone_reader_beside", tabs, settle = 500)
-        assertThreeBubbles()
+        shoot("75b_phone_reader_above", tabs, settle = 500)
+        assertTrue("buttons above the bar", !buttonsLevelWithSlider())
     }
 
-    /** Above the Bar (a choice): the buttons float above it. */
-    @Test fun phoneReaderButtonsAbove() {
-        AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Above
+    /**
+     * Beside the Bar chosen on a phone: three bubbles, and the pages left
+     * give way so the slider still has room to drag.
+     */
+    @Test fun phoneReaderButtonsBeside() {
+        AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
         try {
             val tabs = Tabs()
             tabs.home.push(ReaderScreen(sampleSource(), 3))
-            shoot("75b_phone_reader_above", tabs, settle = 500)
-            assertTrue("buttons above the bar", !buttonsLevelWithSlider())
+            shoot("75c_phone_reader_beside", tabs, settle = 500)
+            assertThreeBubbles()
+            val slider = compose.onNode(androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo))
+                .fetchSemanticsNode().boundsInRoot
+            val density = ApplicationProvider.getApplicationContext<android.content.Context>().resources.displayMetrics.density
+            assertTrue("the slider keeps its room: ${slider.width / density} dp", slider.width / density >= 150f)
+            assertTrue("no pages left on a narrow bar", compose.onAllNodes(androidx.compose.ui.test.hasText("Pages left", substring = true)).fetchSemanticsNodes().isEmpty())
         } finally {
-            AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
+            AppSettings.readerButtonPlacement = com.atlanyuey.aenht.core.ReaderButtonPlacement.Auto
         }
     }
 

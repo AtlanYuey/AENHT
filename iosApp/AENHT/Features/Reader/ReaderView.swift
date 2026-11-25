@@ -753,9 +753,16 @@ struct ReaderView: View {
         .frame(maxWidth: placement == .above ? 640 : 760)
     }
 
-    /// Where Reader Settings and Auto Read go (Controls › Button Placement):
-    /// beside the bar by default, three bubbles in a row.
-    private var placement: ReaderButtonPlacement { settings.readerButtonPlacement }
+    /// Where Reader Settings and Auto Read go (Controls › Button Placement;
+    /// Automatic: beside the bar on an iPad, three bubbles in a row; above it
+    /// on an iPhone, where the slider needs the room).
+    private var placement: ReaderButtonPlacement {
+        settings.readerButtonPlacement.resolved(tablet: UIDevice.current.userInterfaceIdiom == .pad)
+    }
+
+    /// A narrow screen with the buttons level with the bar: the pages left
+    /// aren't shown, so the slider keeps its room.
+    private var barIsRoomy: Bool { placement == .above || canvasSize.width >= 600 }
 
     /// Auto Read on the right (or the left), or on the hand's side when it
     /// follows the hand (Controls › Auto Read Button Side).
@@ -821,9 +828,11 @@ struct ReaderView: View {
                 .frame(minWidth: 56, alignment: .leading)
             pageSlider
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("readerPanel")) } action: { trackFrame = $0 }
-            Text("Pages left: \(max(0, pageCount - 1 - shownPage))")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+            if barIsRoomy {
+                Text("Pages left: \(max(0, pageCount - 1 - shownPage))")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
             if inBar { sideButtons(left: false) }
         }
         .lineLimit(1)
@@ -1439,7 +1448,7 @@ struct ReadingSettingsSections: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right.")
-                Text("Button Placement: beside the bar (three bubbles in a row), above it, or in it.")
+                Text("Button Placement: beside the bar (three bubbles in a row), above it, or in it. Automatic puts them beside it on a tablet and above it on a phone, where the slider needs the room; on a phone beside or in the bar, the pages left aren't shown.")
                 Text("Long-press the Auto Read button for its speed and options; a tap starts or stops it.")
                 Text("Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side.")
                 Text("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls.")

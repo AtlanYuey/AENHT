@@ -255,15 +255,20 @@ enum class ScreenOn(val raw: String, val title: String, val minutes: Int) {
 /**
  * Where the reader's Settings and Auto Read buttons go: beside the bar, each
  * in its own bubble level with it (three bubbles in a row), floating above
- * it, or in it.
+ * it, or in it. Automatic: beside it on a tablet, above it on a phone (where
+ * the slider needs the room).
  */
 enum class ReaderButtonPlacement(val raw: String, val title: String) {
+    Auto("auto", "Automatic"),
     Beside("beside", "Beside the Bar"),
     Above("above", "Above the Bar"),
     InBar("inBar", "In the Bar");
 
+    /** What Automatic is on this device. */
+    fun resolved(tablet: Boolean): ReaderButtonPlacement = if (this == Auto) (if (tablet) Beside else Above) else this
+
     companion object {
-        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Beside
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Auto
     }
 }
 
@@ -561,7 +566,7 @@ object AppSettings {
     /** Only a tap in the middle shows or hides the reader's controls; the sides do nothing. */
     var controlsMiddleOnly by Pref(false) { save("controlsMiddleOnly", it) }
     /** Where Reader Settings and Auto Read go (Controls › Control Bar). */
-    var readerButtonPlacement by Pref(ReaderButtonPlacement.Beside) { save("readerButtonPlacement", it.raw) }
+    var readerButtonPlacement by Pref(ReaderButtonPlacement.Auto) { save("readerButtonPlacement", it.raw) }
     /** Auto Read stays on screen, where it is, while the controls are away. */
     var autoReadPinned by Pref(false) { save("autoReadPinned", it) }
     /** Favorites reload each time their tab is opened. */

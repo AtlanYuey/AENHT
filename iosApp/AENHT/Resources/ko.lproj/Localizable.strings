@@ -669,5 +669,5 @@
 "Keep Auto Read Button on Screen" = "자동 넘기기 버튼 항상 표시";
 "Keep Auto Scroll Button on Screen" = "자동 스크롤 버튼 항상 표시";
 "Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right." = "읽기 설정은 왼쪽, 자동 넘기기는 오른쪽에 각각 따로 된 말풍선으로 막대 옆에 놓입니다. ‘자동 넘기기 버튼 위치’에서 서로 바꾸거나 손 쪽을 따르게 할 수 있습니다(하나만 켜면 컨트롤을 표시하려고 탭한 쪽). 읽기 설정은 오른쪽 위 메뉴에도 있습니다.";
-"Button Placement: beside the bar (three bubbles in a row), above it, or in it." = "버튼 위치: 막대 옆(말풍선 세 개가 한 줄로), 막대 위, 막대 안.";
 "Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side." = "자동 넘기기 버튼 항상 표시: 컨트롤이 숨겨지면 버튼은 해당 쪽 아래 모서리에 남습니다.";
+"Button Placement: beside the bar (three bubbles in a row), above it, or in it. Automatic puts them beside it on a tablet and above it on a phone, where the slider needs the room; on a phone beside or in the bar, the pages left aren't shown." = "버튼 위치: 막대 옆(말풍선 세 개가 한 줄로), 막대 위, 막대 안. ‘자동’은 태블릿에서는 막대 옆, 휴대폰에서는 슬라이더 공간을 위해 막대 위입니다. 휴대폰에서 막대 옆이나 안을 고르면 남은 페이지 수는 표시되지 않습니다.";

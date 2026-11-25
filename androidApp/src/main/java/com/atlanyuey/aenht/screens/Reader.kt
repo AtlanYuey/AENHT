@@ -1809,8 +1809,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         val showAutoRead = AppSettings.autoReadButton
         val autoReadOnLeft = autoReadOnLeft()
         val settingsOnLeft = settingsOnLeft()
-        // Beside the bar (three bubbles in a row), above it or in it (Controls › Button Placement).
-        val placement = AppSettings.readerButtonPlacement
+        // Beside the bar (three bubbles in a row), above it or in it (Controls › Button Placement;
+        // Automatic: beside it on a tablet, above it on a phone).
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        val placement = AppSettings.readerButtonPlacement.resolved(config.smallestScreenWidthDp >= 600)
+        // A narrow screen with the buttons level with the bar: the pages left go, the slider keeps its room.
+        val roomy = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Above || config.screenWidthDp >= 600
         val above = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Above
         val beside = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.Beside
         val inBar = placement == com.atlanyuey.aenht.core.ReaderButtonPlacement.InBar
@@ -1926,7 +1930,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
                                 trackWidth = c.size.width.toFloat()
                             },
                         ) { PageSlider() }
-                        Txt(
+                        if (roomy) Txt(
                             L10n.string("Pages left: %lld", (count - 1 - shown).coerceAtLeast(0)),
                             style = Type.caption1.copy(fontFeatureSettings = "tnum"),
                             color = AppTheme.colors.secondaryLabel,
@@ -2428,7 +2432,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.controlsTab() {
     section("Control Bar", footer = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FooterText(tr("Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right."))
-            FooterText(tr("Button Placement: beside the bar (three bubbles in a row), above it, or in it."))
+            FooterText(tr("Button Placement: beside the bar (three bubbles in a row), above it, or in it. Automatic puts them beside it on a tablet and above it on a phone, where the slider needs the room; on a phone beside or in the bar, the pages left aren't shown."))
             FooterText(tr("Long-press the Auto Read button for its speed and options; a tap starts or stops it."))
             FooterText(tr("Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side."))
             FooterText(tr("Tap the Middle to Show Controls: a tap on either side (where the tap zones are; left and right when scrolling) doesn't show or hide the controls."))

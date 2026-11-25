@@ -669,6 +669,6 @@
  "Keep Auto Read Button on Screen",
  "Keep Auto Scroll Button on Screen",
  "Reader Settings goes on the left and Auto Read on the right, each in its own bubble beside the bar. Auto Read Button Side swaps them, or has them follow your hand (one alone goes on the side you tapped to show the controls). Reader Settings is also in the menu at the top right.",
- "Button Placement: beside the bar (three bubbles in a row), above it, or in it.",
- "Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side."
+ "Keep Auto Read Button on Screen: when the controls hide, it stays in the bottom corner on its side.",
+ "Button Placement: beside the bar (three bubbles in a row), above it, or in it. Automatic puts them beside it on a tablet and above it on a phone, where the slider needs the room; on a phone beside or in the bar, the pages left aren't shown."
 ]

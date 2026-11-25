@@ -163,17 +163,24 @@ enum ScreenOn: String, CaseIterable, Identifiable {
 
 /// Where the reader's Settings and Auto Read buttons go: beside the bar,
 /// each in its own bubble level with it (three bubbles in a row), floating
-/// above it, or in it.
+/// above it, or in it. Automatic: beside it on an iPad, above it on an
+/// iPhone (where the slider needs the room).
 enum ReaderButtonPlacement: String, CaseIterable, Identifiable {
-    case beside, above, inBar
+    case automatic, beside, above, inBar
 
     var id: String { rawValue }
     var title: String {
         switch self {
+        case .automatic: String(localized: "Automatic")
         case .beside: String(localized: "Beside the Bar")
         case .above: String(localized: "Above the Bar")
         case .inBar: String(localized: "In the Bar")
         }
+    }
+
+    /// What Automatic is on this device.
+    func resolved(tablet: Bool) -> ReaderButtonPlacement {
+        self == .automatic ? (tablet ? .beside : .above) : self
     }
 }
 
@@ -660,7 +667,7 @@ final class AppSettings {
         autoReadButton = d.object(forKey: "autoReadButton") as? Bool ?? true
         autoReadSide = AutoReadSide(rawValue: d.string(forKey: "autoReadSide") ?? "") ?? .right
         controlsMiddleOnly = d.object(forKey: "controlsMiddleOnly") as? Bool ?? false
-        readerButtonPlacement = ReaderButtonPlacement(rawValue: d.string(forKey: "readerButtonPlacement") ?? "") ?? .beside
+        readerButtonPlacement = ReaderButtonPlacement(rawValue: d.string(forKey: "readerButtonPlacement") ?? "") ?? .automatic
         autoReadPinned = d.object(forKey: "autoReadPinned") as? Bool ?? false
         favoritesRefreshOnOpen = d.object(forKey: "favoritesRefreshOnOpen") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true

@@ -669,6 +669,6 @@ T = [
     "Luôn hiện nút tự đọc",
     "Luôn hiện nút tự cuộn",
     "Cài đặt đọc ở bên trái và Tự đọc ở bên phải, mỗi nút một bong bóng riêng cạnh thanh. Phía nút tự đọc đổi chỗ hai nút, hoặc cho chúng theo tay bạn (chỉ một nút thì ở phía bạn chạm để hiện điều khiển). Cài đặt đọc cũng có trong menu ở góc trên bên phải.",
-    "Vị trí nút: cạnh thanh (ba bong bóng thành một hàng), phía trên hoặc trong thanh.",
     "Luôn hiện nút tự đọc: khi các điều khiển ẩn đi, nút ở lại góc dưới bên phía của nó.",
+    "Vị trí nút: cạnh thanh (ba bong bóng thành một hàng), phía trên hoặc trong thanh. Tự động đặt cạnh thanh trên máy tính bảng và phía trên thanh trên điện thoại, nơi thanh trượt cần chỗ; trên điện thoại khi đặt cạnh hoặc trong thanh, số trang còn lại không hiện.",
 ]

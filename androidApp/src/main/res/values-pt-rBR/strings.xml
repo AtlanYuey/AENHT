@@ -670,8 +670,8 @@
     <string name="l_667">Manter o botão de leitura automática na tela</string>
     <string name="l_668">Manter o botão de rolagem automática na tela</string>
     <string name="l_669">Ajustes de leitura fica à esquerda e Leitura automática à direita, cada um em sua bolha ao lado da barra. Lado do botão de leitura automática troca os dois ou faz que sigam sua mão (um só fica do lado que você tocou para mostrar os controles). Ajustes de leitura também está no menu no canto superior direito.</string>
-    <string name="l_670">Posição dos botões: ao lado da barra (três bolhas em fila), acima ou dentro dela.</string>
-    <string name="l_671">Manter o botão de leitura automática na tela: quando os controles somem, ele fica no canto inferior do seu lado.</string>
+    <string name="l_670">Manter o botão de leitura automática na tela: quando os controles somem, ele fica no canto inferior do seu lado.</string>
+    <string name="l_671">Posição dos botões: ao lado da barra (três bolhas em fila), acima ou dentro dela. Automático os coloca ao lado num tablet e acima num celular, onde o controle deslizante precisa de espaço; num celular, ao lado ou dentro da barra, as páginas restantes não aparecem.</string>
     <string name="l_672">Backup dos ajustes</string>
     <string name="l_673">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
     <string name="l_674">O backup do próprio Android também guarda esses ajustes.</string>
